@@ -5,12 +5,11 @@ services:
     region: frankfurt
     plan: free
 
-    # Render kloont de repo en voert dit uit vanuit de root
     buildCommand: npm install --legacy-peer-deps && npm run build
     startCommand: node dist/index.cjs
 
     envVars:
       - key: NODE_ENV
         value: production
-      # VITE_DEMO_MODE wordt ingebakken via .env.production tijdens de build
-      # PORT wordt automatisch door Render geïnjecteerd — niet overschrijven
+      # VITE_DEMO_MODE is ingebakken via .env.production tijdens de build (DEMO_MODE=true)
+      # PORT wordt automatisch door Render geïnjecteerd op 10000 — niet overschrijven
