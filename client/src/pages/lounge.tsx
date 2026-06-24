@@ -14,6 +14,7 @@
 import { useState, useRef } from "react";
 import { Link } from "wouter";
 import { AppHeader } from "@/components/Brand";
+import { DEMO_MODE, useDemoToast } from "@/lib/demoMode";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -632,8 +633,10 @@ function MuziekKamer() {
 function TalentCafe() {
   const [nieuweBijdrage, setNieuweBijdrage] = useState("");
   const [bijdragen, setBijdragen] = useState(CAFE_BIJDRAGEN);
+  const demoToast = useDemoToast();
 
   function plaatsBijdrage() {
+    if (DEMO_MODE) { demoToast(); return; }
     if (!nieuweBijdrage.trim()) return;
     setBijdragen([
       {
@@ -665,22 +668,30 @@ function TalentCafe() {
           <div className="flex gap-3">
             <Avatar initials="JJ" />
             <div className="flex-1 flex flex-col gap-2">
-              <textarea
-                value={nieuweBijdrage}
-                onChange={(e) => setNieuweBijdrage(e.target.value)}
-                placeholder="Deel een inzicht, stel een vraag of vertel iets…"
-                className="min-h-[72px] w-full resize-none rounded-lg border border-border bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-orange-300 dark:focus:ring-orange-700"
-              />
-              <div className="flex justify-end">
-                <Button
-                  size="sm"
-                  onClick={plaatsBijdrage}
-                  disabled={!nieuweBijdrage.trim()}
-                  className="bg-orange-500 hover:bg-orange-600 text-white border-0"
-                >
-                  Plaatsen
-                </Button>
-              </div>
+              {DEMO_MODE ? (
+                <div className="flex min-h-[72px] items-center justify-center rounded-lg border border-dashed border-orange-200 dark:border-orange-800 bg-orange-50/30 dark:bg-orange-950/10 px-4 py-3 text-sm text-muted-foreground">
+                  Demo-modus — bijdragen plaatsen is uitgeschakeld
+                </div>
+              ) : (
+                <>
+                  <textarea
+                    value={nieuweBijdrage}
+                    onChange={(e) => setNieuweBijdrage(e.target.value)}
+                    placeholder="Deel een inzicht, stel een vraag of vertel iets…"
+                    className="min-h-[72px] w-full resize-none rounded-lg border border-border bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-orange-300 dark:focus:ring-orange-700"
+                  />
+                  <div className="flex justify-end">
+                    <Button
+                      size="sm"
+                      onClick={plaatsBijdrage}
+                      disabled={!nieuweBijdrage.trim()}
+                      className="bg-orange-500 hover:bg-orange-600 text-white border-0"
+                    >
+                      Plaatsen
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </CardContent>
@@ -844,8 +855,10 @@ function Werkplaats() {
 function ReflectieKamer() {
   const [dagboek, setDagboek] = useState("");
   const [opgeslagen, setOpslagen] = useState(false);
+  const demoToast = useDemoToast();
 
   function sla() {
+    if (DEMO_MODE) { demoToast(); return; }
     if (!dagboek.trim()) return;
     setOpslagen(true);
     setTimeout(() => setOpslagen(false), 2000);
@@ -869,27 +882,40 @@ function ReflectieKamer() {
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
           {new Date().toLocaleDateString("nl-BE", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
         </p>
-        <textarea
-          value={dagboek}
-          onChange={(e) => setDagboek(e.target.value)}
-          placeholder="Wat zit er in je hoofd vandaag? Wat vloog er? Wat wil je vasthouden?"
-          className="min-h-[200px] w-full resize-none rounded-xl border border-border bg-background p-4 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-rose-300 dark:focus:ring-rose-700"
-        />
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground/50">{dagboek.length} tekens</span>
-          <Button
-            size="sm"
-            onClick={sla}
-            disabled={!dagboek.trim()}
-            className={`transition-colors ${
-              opgeslagen
-                ? "bg-emerald-500 hover:bg-emerald-500 text-white border-0"
-                : "bg-rose-500 hover:bg-rose-600 text-white border-0"
-            }`}
-          >
-            {opgeslagen ? "✓ Opgeslagen" : "Opslaan"}
-          </Button>
-        </div>
+        {DEMO_MODE ? (
+          <div className="flex min-h-[200px] items-center justify-center rounded-xl border border-dashed border-rose-200 dark:border-rose-800 bg-rose-50/30 dark:bg-rose-950/10 p-6 text-center">
+            <div>
+              <p className="text-sm text-muted-foreground">Persoonlijk dagboek</p>
+              <p className="mt-1 text-xs text-muted-foreground/60">
+                Schrijven is uitgeschakeld in de demo. In de echte Lounge is dit jouw privé-ruimte.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <>
+            <textarea
+              value={dagboek}
+              onChange={(e) => setDagboek(e.target.value)}
+              placeholder="Wat zit er in je hoofd vandaag? Wat vloog er? Wat wil je vasthouden?"
+              className="min-h-[200px] w-full resize-none rounded-xl border border-border bg-background p-4 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-rose-300 dark:focus:ring-rose-700"
+            />
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground/50">{dagboek.length} tekens</span>
+              <Button
+                size="sm"
+                onClick={sla}
+                disabled={!dagboek.trim()}
+                className={`transition-colors ${
+                  opgeslagen
+                    ? "bg-emerald-500 hover:bg-emerald-500 text-white border-0"
+                    : "bg-rose-500 hover:bg-rose-600 text-white border-0"
+                }`}
+              >
+                {opgeslagen ? "✓ Opgeslagen" : "Opslaan"}
+              </Button>
+            </div>
+          </>
+        )}
       </div>
       <Separator />
       <div className="flex flex-col gap-2">
@@ -903,8 +929,10 @@ function ReflectieKamer() {
           ].map((vraag, i) => (
             <button
               key={i}
-              onClick={() => setDagboek((prev) => (prev ? prev + "\n\n" : "") + vraag + "\n")}
-              className="rounded-lg border border-border px-3 py-2 text-left text-xs text-muted-foreground hover:bg-accent/5 hover:text-foreground transition-colors"
+              onClick={() => !DEMO_MODE && setDagboek((prev) => (prev ? prev + "\n\n" : "") + vraag + "\n")}
+              className={`rounded-lg border border-border px-3 py-2 text-left text-xs text-muted-foreground transition-colors ${
+                DEMO_MODE ? "opacity-50 cursor-default" : "hover:bg-accent/5 hover:text-foreground"
+              }`}
             >
               {vraag}
             </button>
@@ -917,6 +945,7 @@ function ReflectieKamer() {
 
 function Buitenterras() {
   const [rsvp, setRsvp] = useState<Set<number>>(new Set());
+  const demoToast = useDemoToast();
   return (
     <div className="flex flex-col gap-5">
       <div>
@@ -971,6 +1000,7 @@ function Buitenterras() {
                         variant={ingeschreven ? "default" : "outline"}
                         disabled={vol && !ingeschreven}
                         onClick={() => {
+                          if (DEMO_MODE) { demoToast(); return; }
                           const s = new Set(rsvp);
                           ingeschreven ? s.delete(i) : s.add(i);
                           setRsvp(s);

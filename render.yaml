@@ -1,18 +1,16 @@
-# Render.com configuratie voor de TaPas Platform demo.
-# Eén Node-webservice; geen aparte Python-sidecar nodig (de AI-chat draait
-# in demo-modus op de ingebouwde kennisbank-engine).
 services:
   - type: web
-    name: tapas-demo
+    name: tapas-platform-demo
     runtime: node
-    plan: free
     region: frankfurt
-    buildCommand: npm install --include=dev && node build.cjs
+    plan: free
+
+    # Render kloont de repo en voert dit uit vanuit de root
+    buildCommand: npm install --legacy-peer-deps && npm run build
     startCommand: node dist/index.cjs
+
     envVars:
       - key: NODE_ENV
         value: production
-      - key: TAPAS_DEMO
-        value: "1"
-      - key: NODE_VERSION
-        value: "20.18.0"
+      # VITE_DEMO_MODE wordt ingebakken via .env.production tijdens de build
+      # PORT wordt automatisch door Render geïnjecteerd — niet overschrijven

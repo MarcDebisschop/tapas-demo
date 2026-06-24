@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { Moon, Sun } from "lucide-react";
+import { DEMO_MODE } from "@/lib/demoMode";
 import { useTheme } from "./ThemeProvider";
 
 export function Logo({ className = "" }: { className?: string }) {
@@ -34,6 +35,12 @@ export function Logo({ className = "" }: { className?: string }) {
 export function AppHeader({ right }: { right?: React.ReactNode }) {
   const { theme, toggle } = useTheme();
   return (
+    <>
+    {DEMO_MODE && (
+      <div className="w-full bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800 px-4 py-1.5 text-center text-xs text-amber-800 dark:text-amber-300">
+        Demo-versie — read-only. Navigeer vrij door het platform.
+      </div>
+    )}
     <header className="border-b border-border bg-card">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
         <Link href="/">
@@ -57,5 +64,6 @@ export function AppHeader({ right }: { right?: React.ReactNode }) {
         </div>
       </div>
     </header>
+    </>
   );
 }
