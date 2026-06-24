@@ -78,9 +78,14 @@ function App() {
             {!introDone && (
               <PoortenIntro onComplete={() => setIntroDone(true)} />
             )}
-            <Router hook={useHashLocation}>
-              <AppRouter />
-            </Router>
+            {/* Router én alle pages mounten pas NA de poorten-intro.
+                Dit voorkomt dat Rondleiding autoStart of andere
+                page-level effects afvuren terwijl de intro loopt. */}
+            {introDone && (
+              <Router hook={useHashLocation}>
+                <AppRouter />
+              </Router>
+            )}
           </TooltipProvider>
         </ThemeProvider>
       </QueryClientProvider>
