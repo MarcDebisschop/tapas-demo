@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { AppHeader } from "@/components/Brand";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -11,22 +10,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Send,
-  Activity,
-  FileText,
-  ShieldCheck,
-  Link2,
-  Server,
-  LayoutDashboard,
-  Compass,
-  Users,
-  Target,
-  ArrowRight,
+  ArrowDown,
   Languages,
-  Sparkles,
-  UserCircle,
   Plane,
+  UserCircle,
+  Compass,
+  Target,
+  Users,
+  Sparkles,
   Coffee,
+  ArrowRight,
+  Building2,
+  GraduationCap,
 } from "lucide-react";
 import {
   TALEN,
@@ -38,84 +33,65 @@ import {
   type Taal,
 } from "@shared/i18n";
 import { Rondleiding, startRondleiding } from "@/components/Rondleiding";
+import { DEMO_MODE } from "@/lib/demoMode";
 
-/**
- * Onderscheidend merkteken voor de hero: een grote kompasroos met
- * concentrische ring. Bouwt voort op het Logo-mark maar staat op zichzelf
- * als rustig, internationaal beeld. Kleur volgt de theme-tokens.
- */
+// ---------------------------------------------------------------------------
+// Kompas SVG — merkteken rechts in hero
+// ---------------------------------------------------------------------------
 function HeroKompas() {
   return (
     <svg
       viewBox="0 0 200 200"
       fill="none"
-      className="h-44 w-44 sm:h-56 sm:w-56 text-accent"
+      className="h-56 w-56 sm:h-72 sm:w-72 opacity-80"
       role="img"
       aria-hidden="true"
     >
-      {/* Buitenring */}
-      <circle cx="100" cy="100" r="92" stroke="currentColor" strokeWidth="1.5" opacity="0.25" />
-      <circle cx="100" cy="100" r="74" stroke="currentColor" strokeWidth="1" opacity="0.15" />
-      {/* Tick-markeringen rondom (32 streepjes) */}
-      {Array.from({ length: 32 }).map((_, i) => {
-        const angle = (i * 360) / 32;
-        const major = i % 8 === 0;
+      {/* Buitenringen */}
+      <circle cx="100" cy="100" r="94" stroke="hsl(38 47% 40%)" strokeWidth="1" opacity="0.35" />
+      <circle cx="100" cy="100" r="76" stroke="hsl(38 47% 40%)" strokeWidth="0.8" opacity="0.2" />
+      <circle cx="100" cy="100" r="58" stroke="hsl(38 47% 40%)" strokeWidth="0.6" opacity="0.15" />
+      {/* Tick-markeringen */}
+      {Array.from({ length: 36 }).map((_, i) => {
+        const angle = (i * 360) / 36;
+        const major = i % 9 === 0;
         return (
           <line
             key={i}
-            x1="100"
-            y1={major ? 12 : 16}
-            x2="100"
-            y2={major ? 22 : 20}
-            stroke="currentColor"
-            strokeWidth={major ? 1.6 : 0.8}
-            opacity={major ? 0.5 : 0.25}
+            x1="100" y1={major ? 8 : 14}
+            x2="100" y2={major ? 20 : 18}
+            stroke="hsl(38 47% 40%)"
+            strokeWidth={major ? 1.8 : 0.7}
+            opacity={major ? 0.6 : 0.25}
             transform={`rotate(${angle} 100 100)`}
           />
         );
       })}
-      {/* Kompasnaald — noord (gevuld), zuid (zacht) */}
-      <path d="M100 24 L116 100 L100 88 L84 100 Z" fill="currentColor" />
-      <path d="M100 176 L84 100 L100 112 L116 100 Z" fill="currentColor" opacity="0.3" />
+      {/* Noordnaald — teal/groen */}
+      <path d="M100 22 L112 100 L100 90 L88 100 Z" fill="hsl(174 60% 40%)" />
+      {/* Zuidnaald — goud, zwakker */}
+      <path d="M100 178 L88 100 L100 110 L112 100 Z" fill="hsl(38 47% 40%)" opacity="0.4" />
       {/* Horizontale as */}
-      <path d="M28 100 L172 100" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
+      <line x1="20" y1="100" x2="180" y2="100" stroke="hsl(38 47% 40%)" strokeWidth="1" opacity="0.25" strokeLinecap="round" />
       {/* Kern */}
-      <circle cx="100" cy="100" r="9" fill="currentColor" />
-      <circle cx="100" cy="100" r="4" fill="var(--card, #fff)" />
+      <circle cx="100" cy="100" r="10" fill="hsl(174 60% 40%)" opacity="0.9" />
+      <circle cx="100" cy="100" r="4" fill="hsl(220 15% 8%)" />
     </svg>
   );
 }
 
+// ---------------------------------------------------------------------------
+// Hoofdpagina
+// ---------------------------------------------------------------------------
 export default function Home() {
   const [uiTaal, setUiTaal] = useState<Taal>(STANDAARD_TAAL);
   const t = maakVertaler(uiTaal);
-
-  const pijlers = [
-    {
-      icon: Send,
-      iconClass: "text-accent",
-      titel: t("home_pijler_versturen_titel"),
-      body: t("home_pijler_versturen_body"),
-    },
-    {
-      icon: Activity,
-      iconClass: "text-accent",
-      titel: t("home_pijler_monitoren_titel"),
-      body: t("home_pijler_monitoren_body"),
-    },
-    {
-      icon: FileText,
-      iconClass: "text-accent",
-      titel: t("home_pijler_rapporteren_titel"),
-      body: t("home_pijler_rapporteren_body"),
-    },
-  ];
 
   const instrumenten = [
     {
       icon: UserCircle,
       titel: "Mijn profiel",
-      body: "Bekijk een uitgewerkt voorbeeld van een persoonlijk dashboard: je beeld in het kort, een gesproken uitleg van je profiel en een profielassistent waaraan je vragen kunt stellen.",
+      body: "Bekijk een uitgewerkt voorbeeld van een persoonlijk dashboard: je beeld in het kort, een gesproken uitleg en een profielassistent.",
       href: "/dashboard/MarcDebisschopShowcaseT4P01",
       cta: "Voorbeeld bekijken",
       testid: "link-inst-profiel",
@@ -147,7 +123,7 @@ export default function Home() {
     {
       icon: Sparkles,
       titel: "Impact-roos",
-      body: "Collaboratief reflectie-instrument dat zelfperceptie naast die van collega's legt langs de assen Ruimte en Verbinding. Bekijk een uitgewerkt voorbeeld.",
+      body: "Collaboratief reflectie-instrument dat zelfperceptie naast die van collega's legt langs de assen Ruimte en Verbinding.",
       href: "/impact",
       cta: "Voorbeeld bekijken",
       testid: "link-inst-impact",
@@ -162,15 +138,11 @@ export default function Home() {
     },
   ];
 
-  const stappen = [
-    { icon: ShieldCheck, titel: t("home_stap1_titel"), body: t("home_stap1_body") },
-    { icon: Link2, titel: t("home_stap2_titel"), body: t("home_stap2_body") },
-    { icon: Server, titel: t("home_stap3_titel"), body: t("home_stap3_body") },
-    { icon: LayoutDashboard, titel: t("home_stap4_titel"), body: t("home_stap4_body") },
-  ];
-
   return (
-    <div className="min-h-[100dvh] bg-background">
+    <div className="min-h-[100dvh] bg-background text-foreground">
+      {/* ------------------------------------------------------------------ */}
+      {/* NAVIGATIE                                                            */}
+      {/* ------------------------------------------------------------------ */}
       <AppHeader
         right={
           <div className="flex items-center gap-2">
@@ -197,182 +169,276 @@ export default function Home() {
               onClick={startRondleiding}
               data-testid="button-rondleiding"
               className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[hsl(var(--gold)/0.4)] px-2.5 text-sm font-medium text-[hsl(var(--gold))] transition hover:bg-[hsl(var(--gold)/0.08)]"
-              aria-label={uiTaal === "fr" ? "Refaire le vol" : uiTaal === "en" ? "Take the flight" : uiTaal === "es" ? "Hacer el vuelo" : uiTaal === "ru" ? "\u0421\u043e\u0432\u0435\u0440\u0448\u0438\u0442\u044c \u043f\u043e\u043b\u0451\u0442" : "Maak de vlucht"}
+              aria-label="De vlucht starten"
             >
               <Plane className="h-4 w-4" />
-              <span className="hidden sm:inline">
-                {uiTaal === "fr" ? "Le vol" : uiTaal === "en" ? "The flight" : uiTaal === "es" ? "El vuelo" : uiTaal === "ru" ? "\u041f\u043e\u043b\u0451\u0442" : "De vlucht"}
-              </span>
+              <span className="hidden sm:inline">De vlucht</span>
             </button>
-            <Link href="/admin">
-              <Button variant="outline" size="sm" data-testid="link-admin" data-tour="admin-cta">
-                {t("admin_titel")}
-              </Button>
-            </Link>
           </div>
         }
       />
 
-      <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-16">
-        {/* ---------- Warm welkom (subtiel goud-accent) ---------- */}
-        <section
-          className="mb-10 rounded-xl border-l-2 py-4 pl-5 pr-4 sm:mb-12 sm:py-5 sm:pl-6"
-          style={{
-            borderLeftColor: "hsl(var(--gold))",
-            background:
-              "linear-gradient(90deg, hsl(var(--gold) / 0.08) 0%, hsl(var(--gold) / 0.025) 60%, transparent 100%)",
-          }}
-          data-testid="section-welkom"
-        >
-          <h2
-            className="text-base font-semibold tracking-tight sm:text-lg"
-            style={{ color: "hsl(var(--gold))" }}
-            data-testid="text-welkom-titel"
-          >
-            {t("home_welkom_titel")}
-          </h2>
+      {/* ------------------------------------------------------------------ */}
+      {/* HERO                                                                 */}
+      {/* ------------------------------------------------------------------ */}
+      <section
+        className="relative flex min-h-[92dvh] flex-col items-start justify-center overflow-hidden px-6 sm:px-12 lg:px-20"
+        style={{
+          background:
+            "radial-gradient(ellipse 70% 55% at 68% 44%, hsl(174 60% 12% / 0.35) 0%, transparent 70%), hsl(220 15% 8%)",
+        }}
+      >
+        {/* Kompas achtergrond rechts */}
+        <div className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 opacity-30 sm:right-16 sm:opacity-40 lg:right-24 lg:opacity-55">
+          <HeroKompas />
+        </div>
+
+        <div className="relative z-10 max-w-2xl">
+          {/* Eyebrow */}
           <p
-            className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-[0.95rem]"
-            data-testid="text-welkom-body"
+            className="mb-5 text-xs font-semibold uppercase tracking-[0.2em]"
+            style={{ color: "hsl(174 60% 52%)" }}
           >
-            {t("home_welkom_body")}
+            Het TaPas-Platform
           </p>
-        </section>
 
-        {/* ---------- Hero ---------- */}
-        <section className="grid items-center gap-8 sm:gap-10 lg:grid-cols-[1.4fr_1fr]">
-          <div>
-            <p className="text-sm font-medium uppercase tracking-wide text-accent" data-testid="text-eyebrow">
-              {t("home_eyebrow")}
-            </p>
-            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-foreground sm:text-[2.4rem] sm:leading-[1.15]">
-              {t("home_titel")}
-            </h1>
-            <p className="mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground">
-              {t("home_intro")}
-            </p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Button
-                data-testid="button-start-afname"
-                data-tour="start-cta"
-                onClick={() => {
-                  const el = document.getElementById("instrumenten-suite");
-                  el?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
-              >
-                {t("home_cta_ontdek")}
-                <ArrowRight className="ml-1.5 h-4 w-4" />
-              </Button>
-              <Link href="/admin">
-                <Button variant="outline" data-testid="button-open-admin">
-                  {t("home_cta_admin")}
-                </Button>
-              </Link>
-            </div>
-          </div>
-          <div className="flex justify-center lg:justify-end">
-            <div className="rounded-full bg-card p-6 ring-1 ring-border">
-              <HeroKompas />
-            </div>
-          </div>
-        </section>
+          {/* Hoofdtitel */}
+          <h1
+            className="text-4xl font-light leading-[1.12] tracking-tight sm:text-5xl lg:text-[3.6rem]"
+            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+          >
+            Zie mensen{" "}
+            <span
+              className="italic"
+              style={{ color: "hsl(174 60% 52%)" }}
+            >
+              zoals ze werkelijk
+            </span>{" "}
+            zijn.
+            <br />
+            En breng ze in beweging.
+          </h1>
 
-        {/* ---------- Drie pijlers ---------- */}
-        <section className="mt-16 sm:mt-20">
-          <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
-            {t("home_pijlers_titel")}
+          {/* Subtekst */}
+          <p className="mt-7 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+            Eén platform, één doordachte gedachtegang — voor het werk én voor de studie. Met
+            aandacht, zonder oordeel, en met respect voor wat ieder mens uniek maakt.
+          </p>
+
+          {/* CTA-knoppen */}
+          <div className="mt-9 flex flex-wrap gap-4">
+            <button
+              type="button"
+              onClick={() => {
+                document.getElementById("werelden")?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="inline-flex items-center gap-2 rounded-md px-6 py-3 text-sm font-semibold text-background transition hover:opacity-90"
+              style={{ background: "hsl(174 60% 40%)" }}
+            >
+              Kies je wereld
+              <ArrowDown className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                document.getElementById("instrumenten-suite")?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="inline-flex items-center gap-2 rounded-md border px-6 py-3 text-sm font-semibold transition hover:bg-accent/10"
+              style={{
+                borderColor: "hsl(var(--gold) / 0.5)",
+                color: "hsl(var(--gold))",
+              }}
+            >
+              Ik ben deelnemer
+            </button>
+          </div>
+        </div>
+
+        {/* Scroll-hint onderaan */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 opacity-30">
+          <ArrowDown className="h-5 w-5 animate-bounce text-muted-foreground" />
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* SECTIE 2 — ÉÉN HUIS, TWEE WERELDEN                                 */}
+      {/* ------------------------------------------------------------------ */}
+      <section
+        id="werelden"
+        className="px-6 py-20 sm:px-12 sm:py-28 lg:px-20"
+        style={{ background: "hsl(220 15% 6%)" }}
+      >
+        <div className="mx-auto max-w-4xl text-center">
+          <p
+            className="mb-4 text-xs font-semibold uppercase tracking-[0.2em]"
+            style={{ color: "hsl(var(--gold))" }}
+          >
+            Één huis, twee werelden
+          </p>
+          <h2
+            className="text-3xl font-light leading-tight tracking-tight sm:text-4xl lg:text-5xl"
+            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+          >
+            Waar wil je je talent mobiliseren?
           </h2>
-          <div className="mt-5 grid gap-4 sm:grid-cols-3">
-            {pijlers.map((p, i) => {
-              const Icon = p.icon;
-              return (
-                <Card key={i} data-testid={`card-pijler-${i}`}>
-                  <CardContent className="p-5">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
-                      <Icon className={`h-5 w-5 ${p.iconClass}`} />
-                    </div>
-                    <h3 className="mt-4 text-base font-semibold text-foreground">{p.titel}</h3>
-                    <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{p.body}</p>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </section>
+          <p className="mt-6 text-base leading-relaxed text-muted-foreground sm:text-lg">
+            Het is dezelfde innerlijke kern — alleen in een andere fase van je leven. Kies je wereld,
+            en je voelt je meteen op je plek.
+          </p>
 
-        {/* ---------- Instrumenten-suite ---------- */}
-        <section id="instrumenten-suite" className="mt-16 scroll-mt-20 sm:mt-20" data-tour="suite">
-          <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+          {/* Twee wereld-kaarten */}
+          <div className="mt-12 grid gap-6 sm:grid-cols-2">
+            {/* Wereld 1: Werk */}
+            <div
+              className="group relative rounded-2xl border p-8 text-left transition hover:border-[hsl(174_60%_40%/0.6)]"
+              style={{
+                borderColor: "hsl(174 60% 40% / 0.2)",
+                background: "hsl(174 60% 40% / 0.05)",
+              }}
+            >
+              <div
+                className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl"
+                style={{ background: "hsl(174 60% 40% / 0.15)" }}
+              >
+                <Building2 className="h-6 w-6" style={{ color: "hsl(174 60% 52%)" }} />
+              </div>
+              <h3 className="text-xl font-semibold">Voor het werk</h3>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                Talentprofiel, teamanalyse, selectie en ontwikkeling — voor professionals, coaches en
+                organisaties die mensen begrijpen én in beweging brengen.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  document.getElementById("instrumenten-suite")?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium transition"
+                style={{ color: "hsl(174 60% 52%)" }}
+              >
+                Ontdek de instrumenten
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Wereld 2: Studie */}
+            <div
+              className="group relative rounded-2xl border p-8 text-left transition hover:border-[hsl(38_47%_40%/0.6)]"
+              style={{
+                borderColor: "hsl(38 47% 40% / 0.2)",
+                background: "hsl(38 47% 40% / 0.05)",
+              }}
+            >
+              <div
+                className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl"
+                style={{ background: "hsl(38 47% 40% / 0.15)" }}
+              >
+                <GraduationCap className="h-6 w-6" style={{ color: "hsl(38 60% 62%)" }} />
+              </div>
+              <h3 className="text-xl font-semibold">Voor de studie</h3>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                Studiekompas voor jongeren die hun richting zoeken — gefundeerd in talent, gedreven
+                door wat hen werkelijk beweegt.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  document.getElementById("instrumenten-suite")?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium transition"
+                style={{ color: "hsl(38 60% 62%)" }}
+              >
+                Ontdek T4Students
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* SECTIE 3 — INSTRUMENTEN-SUITE                                       */}
+      {/* ------------------------------------------------------------------ */}
+      <section
+        id="instrumenten-suite"
+        className="scroll-mt-20 px-6 py-20 sm:px-12 sm:py-28 lg:px-20"
+        style={{ background: "hsl(220 15% 8%)" }}
+      >
+        <div className="mx-auto max-w-5xl">
+          <p
+            className="mb-4 text-xs font-semibold uppercase tracking-[0.2em]"
+            style={{ color: "hsl(var(--gold))" }}
+          >
+            Wat je hier vindt
+          </p>
+          <h2
+            className="text-3xl font-light tracking-tight sm:text-4xl"
+            style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+          >
             {t("home_suite_titel")}
           </h2>
-          <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+          <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground">
             {t("home_suite_intro")}
           </p>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {instrumenten.map((inst, i) => {
               const Icon = inst.icon;
               return (
-                <Card key={i} className="flex flex-col" data-testid={`card-instrument-${i}`}>
-                  <CardContent className="flex flex-1 flex-col p-5">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
-                      <Icon className="h-5 w-5 text-accent" />
-                    </div>
-                    <h3 className="mt-4 text-base font-semibold text-foreground">{inst.titel}</h3>
-                    <p className="mt-1.5 flex-1 text-sm leading-relaxed text-muted-foreground">
-                      {inst.body}
-                    </p>
-                    <div className="mt-4">
-                      <Link href={inst.href}>
-                        <Button variant="outline" size="sm" data-testid={inst.testid}>
-                          {inst.cta}
-                          <ArrowRight className="ml-1.5 h-4 w-4" />
-                        </Button>
-                      </Link>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div
+                  key={i}
+                  className="flex flex-col rounded-xl border p-6 transition hover:border-[hsl(174_60%_40%/0.4)]"
+                  style={{ borderColor: "hsl(215 20% 18%)", background: "hsl(220 15% 6%)" }}
+                  data-testid={`card-instrument-${i}`}
+                >
+                  <div
+                    className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg"
+                    style={{ background: "hsl(174 60% 40% / 0.12)" }}
+                  >
+                    <Icon className="h-5 w-5" style={{ color: "hsl(174 60% 52%)" }} />
+                  </div>
+                  <h3 className="text-base font-semibold">{inst.titel}</h3>
+                  <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">
+                    {inst.body}
+                  </p>
+                  <div className="mt-5">
+                    <Link href={inst.href}>
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1.5 rounded-md border px-4 py-2 text-sm font-medium transition hover:bg-accent/10"
+                        style={{
+                          borderColor: "hsl(174 60% 40% / 0.35)",
+                          color: "hsl(174 60% 52%)",
+                        }}
+                        data-testid={inst.testid}
+                      >
+                        {inst.cta}
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </button>
+                    </Link>
+                  </div>
+                </div>
               );
             })}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* ---------- Hoe het werkt ---------- */}
-        <section className="mt-16 sm:mt-20" data-tour="keten">
-          <h2 className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
-            {t("home_keten_titel")}
-          </h2>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {stappen.map((s, i) => {
-              const Icon = s.icon;
-              return (
-                <Card key={i} data-testid={`card-stap-${i}`}>
-                  <CardContent className="p-5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-muted-foreground">
-                        {String(i + 1).padStart(2, "0")}
-                      </span>
-                      <Icon className="h-4 w-4 text-accent" />
-                    </div>
-                    <h3 className="mt-3 text-sm font-semibold text-foreground">{s.titel}</h3>
-                    <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{s.body}</p>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </section>
+      {/* ------------------------------------------------------------------ */}
+      {/* FOOTER                                                               */}
+      {/* ------------------------------------------------------------------ */}
+      <footer
+        className="border-t px-6 py-10 text-center sm:px-12 lg:px-20"
+        style={{ borderColor: "hsl(215 20% 14%)", background: "hsl(220 15% 6%)" }}
+      >
+        <p className="text-xs text-muted-foreground" data-testid="text-footer-note">
+          {t("home_footer_note")}
+        </p>
+      </footer>
 
-        {/* ---------- Footer-noot ---------- */}
-        <footer className="mt-16 border-t border-border pt-6 sm:mt-20">
-          <p className="text-xs leading-relaxed text-muted-foreground" data-testid="text-footer-note">
-            {t("home_footer_note")}
-          </p>
-        </footer>
-      </main>
-
-      {/* In-app rondleiding: "De vlucht" — start automatisch bij eerste bezoek,
-          herstartbaar via de knop in de header. */}
-      <Rondleiding taal={uiTaal} autoStart />
+      {/* ------------------------------------------------------------------ */}
+      {/* RONDLEIDING — autoStart uitgeschakeld in demo-modus                 */}
+      {/* ------------------------------------------------------------------ */}
+      <Rondleiding taal={uiTaal} autoStart={!DEMO_MODE} />
     </div>
   );
 }
