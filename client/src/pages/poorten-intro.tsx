@@ -848,3 +848,4 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
     document.body
   );
 }
+// BUILD VERIFICATIE: 2026-06-24 15:53 UTC — commit bevat PoortenIntro + Router-na-intro fix
