@@ -266,12 +266,13 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
         userSelect: "none",
       }}
     >
-      {/* Achtergrond: diepe nacht */}
+      {/* Achtergrond: diepe nacht — volledig dekkend, blokkeert alles eronder */}
       <div
         style={{
           position: "absolute",
           inset: 0,
-          background: "radial-gradient(ellipse at center, #0d1a26 0%, #050a0f 100%)",
+          background: "#050a0f",
+          zIndex: 0,
         }}
       />
 
@@ -280,6 +281,7 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
         style={{
           position: "absolute",
           inset: 0,
+          zIndex: 2,
           background:
             "radial-gradient(ellipse 80% 60% at 50% 55%, hsla(210,30%,68%,0.55) 0%, hsla(210,25%,40%,0.3) 45%, transparent 75%)",
           opacity: mistOpacity,
@@ -294,6 +296,7 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
           style={{
             position: "absolute",
             inset: 0,
+            zIndex: 3,
             display: "flex",
             pointerEvents: "none",
           }}
@@ -306,10 +309,11 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
               transform: `perspective(900px) rotateY(${leftDeg}deg)`,
               transition: "transform 1.6s cubic-bezier(0.25, 0.1, 0.1, 1.0)",
               background:
-                "linear-gradient(to right, #1a1008 0%, #2e1f0a 35%, #3d2a0f 60%, #1a1008 100%)",
-              boxShadow: "inset -8px 0 24px rgba(0,0,0,0.7)",
+                "linear-gradient(to right, #0e0904 0%, #231608 30%, #2e1f0a 55%, #1a1008 80%, #0e0904 100%)",
+              boxShadow: "inset -8px 0 32px rgba(0,0,0,0.9), -4px 0 20px rgba(0,0,0,0.8)",
               position: "relative",
               overflow: "hidden",
+              backfaceVisibility: "hidden",
             }}
           >
             {/* Houtnerf textuur */}
@@ -330,10 +334,11 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
               transform: `perspective(900px) rotateY(${rightDeg}deg)`,
               transition: "transform 1.6s cubic-bezier(0.25, 0.1, 0.1, 1.0)",
               background:
-                "linear-gradient(to left, #1a1008 0%, #2e1f0a 35%, #3d2a0f 60%, #1a1008 100%)",
-              boxShadow: "inset 8px 0 24px rgba(0,0,0,0.7)",
+                "linear-gradient(to left, #0e0904 0%, #231608 30%, #2e1f0a 55%, #1a1008 80%, #0e0904 100%)",
+              boxShadow: "inset 8px 0 32px rgba(0,0,0,0.9), 4px 0 20px rgba(0,0,0,0.8)",
               position: "relative",
               overflow: "hidden",
+              backfaceVisibility: "hidden",
             }}
           >
             <WoodGrain side="right" />
@@ -350,6 +355,7 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
           style={{
             position: "absolute",
             inset: 0,
+            zIndex: 4,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -411,6 +417,7 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
         style={{
           position: "absolute",
           inset: 0,
+          zIndex: 5,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
