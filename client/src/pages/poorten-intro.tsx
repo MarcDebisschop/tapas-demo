@@ -1,534 +1,850 @@
 /**
- * PoortenIntro — TaPas demo opening experience
+ * PoortenIntro — exact gereconstrueerd vanuit de originele gecompileerde bundle
+ * (tapas-zip/assets/index-BGJqNXPf.js, functie `fie`)
  *
- * Visuele flow:
- *  0.0s  Zwart scherm, instructietekst "Duw de poorten open" zichtbaar
- *  0.5s  Klik/tik → poorten beginnen te openen (scharnier links/rechts)
- *  1.5s  Poorten volledig open → mistige nevel vult het scherm
- *  2.8s  "TaPas" condenseert uit de mist (fade + blur-in)
- *  4.2s  "TaPas" lost zacht op, nevel trekt weg
- *  5.0s  Callback onComplete() → homepage wordt zichtbaar
+ * Originele timing (Ko):
+ *   kier: 1500ms, openen: 2400ms, poortVol: 6200ms
+ *   mist: 3000ms, condens: 5200ms, woordVol: 8200ms
+ *   oplossen: 10200ms, einde: 11600ms
  *
- * Escape / klik na start → overslaan
- * Reduced-motion → rustige fade-variant (geen rotate)
- * Geen localStorage — elke bezoeker ziet het altijd
+ * Audio: /poort/poort-open.mp3 + synthetische drone
+ * Canvas: 2× canvas — mist/nevel + particle "TaPas"
+ * Poorten: CSS 3D rotateY via perspective 1700px
  */
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 interface PoortenIntroProps {
   onComplete: () => void;
 }
 
-// ─── Web Audio: kriekelend houten poortgeluid ────────────────────────────────
-function playPoortenSound(): () => void {
-  let ctx: AudioContext | null = null;
-  try {
-    ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-  } catch {
-    return () => {};
-  }
+// ─── Timing constanten (exact uit origineel) ─────────────────────────────────
+const Ko = {
+  kier: 1500,
+  openen: 2400,
+  poortVol: 6200,
+  mist: 3000,
+  condens: 5200,
+  woordVol: 8200,
+  oplossen: 10200,
+  einde: 11600,
+};
 
-  const now = ctx.currentTime;
-  const master = ctx.createGain();
-  master.gain.setValueAtTime(0, now);
-  master.gain.linearRampToValueAtTime(0.18, now + 0.3);
-  master.gain.linearRampToValueAtTime(0.12, now + 2.5);
-  master.gain.linearRampToValueAtTime(0, now + 4.5);
-  master.connect(ctx.destination);
-
-  // Laag gekreun van de scharnieren — lage oscillator met freq-sweep
-  function addCreak(freq: number, detune: number, startDelay: number) {
-    if (!ctx) return;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    const filter = ctx.createBiquadFilter();
-
-    osc.type = "sawtooth";
-    osc.frequency.setValueAtTime(freq, now + startDelay);
-    osc.frequency.linearRampToValueAtTime(freq * 1.8, now + startDelay + 1.8);
-    osc.frequency.linearRampToValueAtTime(freq * 0.9, now + startDelay + 3.5);
-    osc.detune.setValueAtTime(detune, now + startDelay);
-
-    filter.type = "bandpass";
-    filter.frequency.setValueAtTime(180, now + startDelay);
-    filter.frequency.linearRampToValueAtTime(320, now + startDelay + 2.0);
-    filter.Q.setValueAtTime(4, now + startDelay);
-
-    gain.gain.setValueAtTime(0, now + startDelay);
-    gain.gain.linearRampToValueAtTime(0.6, now + startDelay + 0.25);
-    gain.gain.linearRampToValueAtTime(0.35, now + startDelay + 2.0);
-    gain.gain.linearRampToValueAtTime(0, now + startDelay + 4.0);
-
-    osc.connect(filter);
-    filter.connect(gain);
-    gain.connect(master);
-    osc.start(now + startDelay);
-    osc.stop(now + startDelay + 4.2);
-  }
-
-  // Warme resonantie onder het gekreun
-  function addResonance() {
-    if (!ctx) return;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(55, now + 0.2);
-    osc.frequency.linearRampToValueAtTime(80, now + 2.5);
-
-    gain.gain.setValueAtTime(0, now + 0.2);
-    gain.gain.linearRampToValueAtTime(0.4, now + 0.8);
-    gain.gain.linearRampToValueAtTime(0.25, now + 2.5);
-    gain.gain.linearRampToValueAtTime(0, now + 4.5);
-
-    osc.connect(gain);
-    gain.connect(master);
-    osc.start(now + 0.2);
-    osc.stop(now + 4.8);
-  }
-
-  // Zachte hoge kriebel voor textuur
-  function addTexture() {
-    if (!ctx) return;
-    const buf = ctx.createBuffer(1, ctx.sampleRate * 3.5, ctx.sampleRate);
-    const data = buf.getChannelData(0);
-    for (let i = 0; i < data.length; i++) {
-      data[i] = (Math.random() * 2 - 1) * 0.015;
-    }
-    const source = ctx.createBufferSource();
-    source.buffer = buf;
-
-    const filter = ctx.createBiquadFilter();
-    filter.type = "bandpass";
-    filter.frequency.value = 600;
-    filter.Q.value = 2;
-
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0, now + 0.5);
-    gain.gain.linearRampToValueAtTime(0.5, now + 1.0);
-    gain.gain.linearRampToValueAtTime(0.2, now + 3.0);
-    gain.gain.linearRampToValueAtTime(0, now + 4.0);
-
-    source.connect(filter);
-    filter.connect(gain);
-    gain.connect(master);
-    source.start(now + 0.5);
-  }
-
-  addCreak(90, 0, 0.4);
-  addCreak(110, -15, 0.55);
-  addResonance();
-  addTexture();
-
-  return () => {
-    try {
-      ctx?.close();
-    } catch {}
-  };
+// ─── Easing functies (exact uit origineel) ───────────────────────────────────
+function easeInOutCubic(e: number) {
+  return e < 0.5 ? 4 * e * e * e : 1 - Math.pow(-2 * e + 2, 3) / 2;
+}
+function easeOutCubic(e: number) {
+  return 1 - Math.pow(1 - e, 3);
+}
+function easeInOutQuad(e: number) {
+  return e < 0.5 ? 2 * e * e : 1 - Math.pow(-2 * e + 2, 2) / 2;
+}
+function clamp01(e: number) {
+  return e < 0 ? 0 : e > 1 ? 1 : e;
 }
 
-// ─── Animatiefases ───────────────────────────────────────────────────────────
-type Phase =
-  | "idle"       // wacht op klik
-  | "opening"    // poorten draaien open
-  | "mist"       // nevel vult scherm
-  | "tapas"      // "TaPas" condenseert
-  | "dissolve"   // "TaPas" lost op
-  | "done";      // fade-out volledig
+// ─── Houtnerf achtergrond (exact uit origineel lL functie) ───────────────────
+function houtNerf(kant: "links" | "rechts"): string {
+  return [
+    `linear-gradient(${kant === "links" ? "90deg" : "270deg"}, #14110d 0%, #0e0c09 60%, #080705 100%)`,
+    "repeating-linear-gradient(90deg, rgba(255,235,200,0.018) 0px, rgba(255,235,200,0.018) 1px, transparent 1px, transparent 58px)",
+    "repeating-linear-gradient(90deg, rgba(0,0,0,0.10) 0px, rgba(0,0,0,0.10) 1px, transparent 1px, transparent 7px)",
+    "repeating-linear-gradient(0deg, rgba(0,0,0,0.16) 0px, rgba(0,0,0,0.16) 2px, transparent 2px, transparent 220px)",
+  ].join(", ");
+}
+
+// ─── Scharnieren en nagels (exact uit origineel cL functie) ──────────────────
+function PoortDetails({ kant }: { kant: "links" | "rechts" }) {
+  const nagels: React.ReactNode[] = [];
+  const xPosities = [0.18, 0.82];
+  const yPosities = [0.12, 0.34, 0.56, 0.78, 0.95];
+  for (const y of yPosities) {
+    for (const x of xPosities) {
+      nagels.push(
+        <span
+          key={`${kant}-${x}-${y}`}
+          style={{
+            position: "absolute",
+            left: `${x * 100}%`,
+            top: `${y * 100}%`,
+            width: 9,
+            height: 9,
+            marginLeft: -4.5,
+            marginTop: -4.5,
+            borderRadius: "50%",
+            background:
+              "radial-gradient(circle at 35% 30%, #57534a 0%, #2b2823 55%, #100f0c 100%)",
+            boxShadow:
+              "0 1px 2px rgba(0,0,0,0.8), inset 0 0 1px rgba(255,235,200,0.2)",
+          }}
+        />
+      );
+    }
+  }
+  const banden = [0.26, 0.7].map((y) => (
+    <div
+      key={`${kant}-band-${y}`}
+      style={{
+        position: "absolute",
+        left: 0,
+        right: 0,
+        top: `${y * 100}%`,
+        height: 18,
+        marginTop: -9,
+        background:
+          "linear-gradient(180deg, #2a2722 0%, #16140f 50%, #0c0a07 100%)",
+        boxShadow:
+          "0 2px 5px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,235,200,0.08)",
+      }}
+    />
+  ));
+  return (
+    <>
+      {banden}
+      {nagels}
+    </>
+  );
+}
+
+// ─── Audio setup (exact uit origineel) ───────────────────────────────────────
+interface AudioHandles {
+  ctx: AudioContext;
+  droneGain: GainNode;
+  drone: OscillatorNode;
+  poortGain: GainNode;
+}
 
 export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
-  const [phase, setPhase] = useState<Phase>("idle");
-  const [tapasOpacity, setTapasOpacity] = useState(0);
-  const [tapasBlur, setTapasBlur] = useState(18);
-  const [mistOpacity, setMistOpacity] = useState(0);
-  const [overlayOpacity, setOverlayOpacity] = useState(1);
-  const [leftDeg, setLeftDeg] = useState(0);
-  const [rightDeg, setRightDeg] = useState(0);
-  const completedRef = useRef(false);
-  const stopAudioRef = useRef<(() => void) | null>(null);
-  // Cooldown: accepteer geen clicks in de eerste 400ms na mount
-  // zodat een navigatie-klik die de pagina laadde niet meteen de animatie start én skip
-  const readyRef = useRef(false);
-  useEffect(() => {
-    const t = setTimeout(() => { readyRef.current = true; }, 400);
-    return () => clearTimeout(t);
-  }, []);
+  const canvasMistRef = useRef<HTMLCanvasElement>(null);
+  const canvasTekstRef = useRef<HTMLCanvasElement>(null);
+  const [weggaand, setWeggaand] = useState(false);
+  const [wachtOpKlik, setWachtOpKlik] = useState(false);
+  const [geluidAan, setGeluidAan] = useState(true);
+
+  const afgeslotenRef = useRef(false);
+  const audioRef = useRef<AudioHandles | null>(null);
+  const mp3BufferRef = useRef<ArrayBuffer | null>(null);
+  const mp3GespeeldRef = useRef(false);
+  const animatieGestartRef = useRef(false);
+  const startTijdRef = useRef(0);
+  const vorigeFrameRef = useRef(0);
+  const rafRef = useRef(0);
+  const mp3SourceLoadedRef = useRef<AudioBuffer | null>(null);
 
   const prefersReducedMotion =
     typeof window !== "undefined" &&
+    typeof window.matchMedia === "function" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  const finish = useCallback(() => {
-    if (completedRef.current) return;
-    completedRef.current = true;
-    stopAudioRef.current?.();
-    setOverlayOpacity(0);
-    setTimeout(() => onComplete(), 600);
-  }, [onComplete]);
+  // Animatiestatus — identiek aan origineel g state
+  const [staat, setStaat] = useState({ open: 0, kier: 0, mist: 0, weg: 0 });
 
-  // Veiligheidsgrens: nooit langer dan 7s hangen
+  // MP3 prefetchen
   useEffect(() => {
-    const safety = setTimeout(finish, 7000);
-    return () => clearTimeout(safety);
-  }, [finish]);
-
-  // Escape → overslaan
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") finish();
+    let cancelled = false;
+    fetch("/poort/poort-open.mp3")
+      .then((r) => r.arrayBuffer())
+      .then((buf) => {
+        if (!cancelled) mp3BufferRef.current = buf;
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
     };
+  }, []);
+
+  // Escape / spatie / enter
+  useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        sluitAf();
+      } else if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        behandelKlik();
+      }
+    }
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [finish]);
+  });
 
-  // Animatievolgorde starten na klik
-  const startAnimation = useCallback(() => {
-    if (phase !== "idle") return;
+  // Audio initialiseren
+  function initAudio() {
+    if (audioRef.current) return;
+    try {
+      const AudioCtx =
+        window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = new AudioCtx();
+      if (ctx.state === "suspended") ctx.resume().catch(() => {});
 
-    // Start audio
-    stopAudioRef.current = playPoortenSound();
+      const droneGain = ctx.createGain();
+      droneGain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      droneGain.gain.linearRampToValueAtTime(0.022, ctx.currentTime + 2.6);
+      droneGain.connect(ctx.destination);
 
-    if (prefersReducedMotion) {
-      // Reduced-motion: gewoon rustige fade
-      setPhase("mist");
-      setMistOpacity(1);
-      setTimeout(() => {
-        setTapasOpacity(1);
-        setTapasBlur(0);
-        setPhase("tapas");
-      }, 800);
-      setTimeout(() => {
-        setTapasOpacity(0);
-        setPhase("dissolve");
-      }, 2600);
-      setTimeout(finish, 3400);
+      const drone = ctx.createOscillator();
+      drone.type = "sine";
+      drone.frequency.setValueAtTime(73, ctx.currentTime);
+      const drone2 = ctx.createOscillator();
+      drone2.type = "sine";
+      drone2.frequency.setValueAtTime(110, ctx.currentTime);
+      const drone2Gain = ctx.createGain();
+      drone2Gain.gain.setValueAtTime(0.35, ctx.currentTime);
+      drone.connect(droneGain);
+      drone2.connect(drone2Gain);
+      drone2Gain.connect(droneGain);
+      drone.start();
+      drone2.start();
+
+      const poortGain = ctx.createGain();
+      poortGain.gain.setValueAtTime(0.9, ctx.currentTime);
+      poortGain.connect(ctx.destination);
+
+      audioRef.current = { ctx, droneGain, drone, poortGain };
+      mp3GespeeldRef.current = false;
+
+      // Decode MP3 buffer als al geladen
+      const decodeer = (buf: ArrayBuffer) => {
+        ctx
+          .decodeAudioData(buf.slice(0))
+          .then((decoded) => {
+            mp3SourceLoadedRef.current = decoded;
+          })
+          .catch(() => {});
+      };
+      if (mp3BufferRef.current) {
+        decodeer(mp3BufferRef.current);
+      } else {
+        fetch("/poort/poort-open.mp3")
+          .then((r) => r.arrayBuffer())
+          .then((buf) => {
+            mp3BufferRef.current = buf;
+            decodeer(buf);
+          })
+          .catch(() => {});
+      }
+    } catch {}
+  }
+
+  // MP3 afspelen op het juiste moment
+  function speelMp3() {
+    const audio = audioRef.current;
+    if (!audio || mp3GespeeldRef.current) return;
+    const decoded = mp3SourceLoadedRef.current;
+    if (decoded) {
+      if (audio.ctx.state !== "running") {
+        audio.ctx.resume().catch(() => {});
+        return;
+      }
+      mp3GespeeldRef.current = true;
+      try {
+        const src = audio.ctx.createBufferSource();
+        src.buffer = decoded;
+        src.connect(audio.poortGain);
+        src.start();
+      } catch {}
+    }
+  }
+
+  // Sluit de intro af en roep onComplete aan
+  function sluitAf() {
+    if (afgeslotenRef.current) return;
+    afgeslotenRef.current = true;
+    setWeggaand(true);
+    const audio = audioRef.current;
+    if (audio) {
+      try {
+        const t = audio.ctx.currentTime;
+        audio.droneGain.gain.cancelScheduledValues(t);
+        audio.droneGain.gain.setValueAtTime(audio.droneGain.gain.value, t);
+        audio.droneGain.gain.linearRampToValueAtTime(0.0001, t + 0.6);
+        audio.poortGain.gain.cancelScheduledValues(t);
+        audio.poortGain.gain.setValueAtTime(audio.poortGain.gain.value, t);
+        audio.poortGain.gain.linearRampToValueAtTime(0.0001, t + 0.6);
+        audio.drone.stop(t + 0.7);
+        setTimeout(() => audio.ctx.close().catch(() => {}), 800);
+      } catch {}
+    }
+    window.setTimeout(onComplete, 750);
+  }
+
+  // Klik handler
+  function behandelKlik() {
+    if (!animatieGestartRef.current) {
+      // Nog niet gestart — resume audio als gesuspended
+      if (geluidAan && !afgeslotenRef.current) {
+        if (audioRef.current) {
+          audioRef.current.ctx.resume().catch(() => {});
+        } else {
+          initAudio();
+        }
+      }
       return;
     }
+    sluitAf();
+  }
 
-    // Normale animatie
-    setPhase("opening");
-
-    // Poorten openen: 0 → -110deg (links) en 0 → 110deg (rechts)
-    // CSS transition doet het werk, we triggeren via state
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setLeftDeg(-108);
-        setRightDeg(108);
-      });
-    });
-
-    // Na 1.4s: nevel
-    setTimeout(() => {
-      setPhase("mist");
-      setMistOpacity(1);
-    }, 1400);
-
-    // Na 2.7s: TaPas condenseert
-    setTimeout(() => {
-      setPhase("tapas");
-      setTapasOpacity(1);
-      setTapasBlur(0);
-    }, 2700);
-
-    // Na 4.1s: TaPas lost op
-    setTimeout(() => {
-      setPhase("dissolve");
-      setTapasOpacity(0);
-      setMistOpacity(0);
-    }, 4100);
-
-    // Na 5.0s: done
-    setTimeout(finish, 5000);
-  }, [phase, prefersReducedMotion, finish]);
-
-  // Klik na start → skip
-  const handleClick = useCallback(() => {
-    if (!readyRef.current) return; // negeer clicks direct na mount
-    if (phase === "idle") {
-      startAnimation();
+  // Geluid toggle
+  function toggleGeluid() {
+    const nieuw = !geluidAan;
+    setGeluidAan(nieuw);
+    if (nieuw) {
+      initAudio();
     } else {
-      finish();
+      const audio = audioRef.current;
+      if (audio) {
+        try {
+          const t = audio.ctx.currentTime;
+          audio.droneGain.gain.linearRampToValueAtTime(0.0001, t + 0.4);
+          audio.poortGain.gain.linearRampToValueAtTime(0.0001, t + 0.4);
+          audio.drone.stop(t + 0.5);
+          setTimeout(() => audio.ctx.close().catch(() => {}), 600);
+        } catch {}
+        audioRef.current = null;
+      }
     }
-  }, [phase, startAnimation, finish]);
+  }
 
-  return (
+  // Pointer/touch → audio starten bij eerste interactie
+  useEffect(() => {
+    let used = false;
+    function handler() {
+      if (used) return;
+      if (geluidAan && !afgeslotenRef.current) {
+        if (audioRef.current) {
+          audioRef.current.ctx.resume().catch(() => {});
+        } else {
+          initAudio();
+        }
+      }
+      used = true;
+      window.removeEventListener("pointerdown", handler);
+      window.removeEventListener("keydown", handler);
+      window.removeEventListener("touchstart", handler);
+    }
+    if (geluidAan && !audioRef.current) initAudio();
+    window.addEventListener("pointerdown", handler);
+    window.addEventListener("keydown", handler);
+    window.addEventListener("touchstart", handler);
+    return () => {
+      used = true;
+      window.removeEventListener("pointerdown", handler);
+      window.removeEventListener("keydown", handler);
+      window.removeEventListener("touchstart", handler);
+    };
+  }, [geluidAan]);
+
+  // ─── Canvas animatielus ────────────────────────────────────────────────────
+  useEffect(() => {
+    let geannuleerd = false;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    let breedte = window.innerWidth;
+    let hoogte = window.innerHeight;
+    let lettertypeGrootte = 140;
+
+    const canvasMist = canvasMistRef.current;
+    const canvasTekst = canvasTekstRef.current;
+    const ctxMist = canvasMist ? canvasMist.getContext("2d") : null;
+    const ctxTekst = canvasTekst ? canvasTekst.getContext("2d") : null;
+
+    // Drijvende mistbollen
+    const mistBollen: {
+      x: number;
+      y: number;
+      r: number;
+      vx: number;
+      faze: number;
+      warm: number;
+    }[] = [];
+
+    // Particle posities voor "TaPas"
+    const deeltjes: {
+      x: number;
+      y: number;
+      dx: number;
+      dy: number;
+      basisX: number;
+      basisY: number;
+      driftFaze: number;
+      driftAmp: number;
+      driftSnel: number;
+      r: number;
+      helder: number;
+      tint: number;
+    }[] = [];
+
+    function herstelAfmeting() {
+      breedte = window.innerWidth;
+      hoogte = window.innerHeight;
+      for (const cv of [canvasMist, canvasTekst]) {
+        if (!cv) continue;
+        cv.width = Math.floor(breedte * dpr);
+        cv.height = Math.floor(hoogte * dpr);
+        cv.style.width = breedte + "px";
+        cv.style.height = hoogte + "px";
+      }
+      ctxMist?.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctxTekst?.setTransform(dpr, 0, 0, dpr, 0, 0);
+      mistBollen.length = 0;
+      const aantalBollen = breedte < 520 ? 7 : 11;
+      for (let i = 0; i < aantalBollen; i++) {
+        mistBollen.push({
+          x: Math.random() * breedte,
+          y: hoogte * 0.32 + Math.random() * hoogte * 0.5,
+          r: Math.min(breedte, hoogte) * (0.16 + Math.random() * 0.22),
+          vx: (Math.random() - 0.5) * 5,
+          faze: Math.random() * Math.PI * 2,
+          warm: Math.random(),
+        });
+      }
+      berekenDeeltjes();
+    }
+
+    function berekenDeeltjes() {
+      const tijdelijkCanvas = document.createElement("canvas");
+      const tijdelijkCtx = tijdelijkCanvas.getContext("2d");
+      if (!tijdelijkCtx) return;
+
+      const maxBreedte = Math.min(breedte * 0.62, 760);
+      lettertypeGrootte = Math.max(64, Math.min(maxBreedte / 3, 200));
+      const fs = lettertypeGrootte;
+
+      tijdelijkCanvas.width = breedte;
+      tijdelijkCanvas.height = hoogte;
+      tijdelijkCtx.clearRect(0, 0, breedte, hoogte);
+      tijdelijkCtx.fillStyle = "#fff";
+      tijdelijkCtx.textAlign = "center";
+      tijdelijkCtx.textBaseline = "middle";
+      tijdelijkCtx.font = `600 ${fs}px "Playfair Display", Georgia, serif`;
+      tijdelijkCtx.fillText("TaPas", breedte / 2, hoogte * 0.5);
+
+      const pixelData = tijdelijkCtx.getImageData(0, 0, breedte, hoogte).data;
+      const stap = breedte < 520 ? 6 : 5;
+      const doelPunten: { x: number; y: number }[] = [];
+
+      for (let y = 0; y < hoogte; y += stap) {
+        for (let x = 0; x < breedte; x += stap) {
+          const idx = (y * breedte + x) * 4;
+          if (pixelData[idx + 3] > 128) {
+            doelPunten.push({
+              x: x + (Math.random() - 0.5) * stap,
+              y: y + (Math.random() - 0.5) * stap,
+            });
+          }
+        }
+      }
+
+      deeltjes.length = 0;
+      const midX = breedte / 2;
+      const midY = hoogte * 0.5;
+      for (const punt of doelPunten) {
+        const hoek = Math.random() * Math.PI * 2;
+        const afstand =
+          Math.min(breedte, hoogte) * (0.12 + Math.random() * 0.34);
+        const startX = midX + Math.cos(hoek) * afstand;
+        const startY = midY + Math.sin(hoek) * afstand * 0.7;
+        deeltjes.push({
+          x: startX,
+          y: startY,
+          dx: punt.x,
+          dy: punt.y,
+          basisX: startX,
+          basisY: startY,
+          driftFaze: Math.random() * Math.PI * 2,
+          driftAmp: 14 + Math.random() * 26,
+          driftSnel: 0.4 + Math.random() * 0.7,
+          r: 0.8 + Math.random() * 1.5,
+          helder: 0.5 + Math.random() * 0.5,
+          tint: Math.random(),
+        });
+      }
+    }
+
+    herstelAfmeting();
+
+    // Lettertype laden → deeltjes herberekenen
+    if (typeof document !== "undefined" && document.fonts) {
+      document.fonts
+        .load('600 120px "Playfair Display"')
+        .then(() => berekenDeeltjes())
+        .catch(() => {});
+      document.fonts.ready.then(() => berekenDeeltjes()).catch(() => {});
+    }
+
+    window.addEventListener("resize", herstelAfmeting);
+
+    let eersteFrame = 0;
+    let feedbackTimer = 0;
+
+    function frame(tijdstip: number) {
+      if (geannuleerd) return;
+
+      // Wacht op audio voordat animatie start
+      if (!animatieGestartRef.current) {
+        if (!eersteFrame) eersteFrame = tijdstip;
+        const verstreken = tijdstip - eersteFrame;
+        const audioActief =
+          !!audioRef.current &&
+          audioRef.current.ctx.state === "running" &&
+          !!mp3SourceLoadedRef.current;
+
+        if (geluidAan && !audioActief && verstreken < 8000) {
+          const geenAudioCtx =
+            !audioRef.current || audioRef.current.ctx.state !== "running";
+          setWachtOpKlik(geenAudioCtx && verstreken > 700);
+          rafRef.current = requestAnimationFrame(frame);
+          return;
+        }
+
+        setWachtOpKlik(false);
+        animatieGestartRef.current = true;
+        startTijdRef.current = tijdstip;
+        vorigeFrameRef.current = tijdstip;
+      }
+
+      const verstreken = tijdstip - startTijdRef.current;
+      const dt = Math.min(0.05, (tijdstip - vorigeFrameRef.current) / 1000);
+      vorigeFrameRef.current = tijdstip;
+
+      // Bereken animatiewaarden (exact uit origineel)
+      const kier = clamp01((verstreken - Ko.kier) / 700);
+      const open = easeInOutQuad(
+        clamp01((verstreken - Ko.openen) / (Ko.poortVol - Ko.openen))
+      );
+      const mist = easeOutCubic(clamp01((verstreken - Ko.mist) / 1800));
+      const woord = easeInOutCubic(
+        clamp01((verstreken - Ko.condens) / (Ko.woordVol - Ko.condens))
+      );
+      const weg = easeInOutCubic(
+        clamp01((verstreken - Ko.oplossen) / (Ko.einde - Ko.oplossen))
+      );
+
+      setStaat({ open, kier, mist, weg });
+
+      // MP3 starten bij poortopening
+      if (geluidAan && verstreken >= Ko.kier) speelMp3();
+
+      // Einde: afsluiten
+      if (verstreken >= Ko.einde) {
+        if (!afgeslotenRef.current) sluitAf();
+        return;
+      }
+
+      // ── Mist-canvas ──────────────────────────────────────────────────────
+      const mistBreedte = breedte * 0.5 * Math.max(open, kier * 0.06) + 24;
+      const midX = breedte / 2;
+      const mistAlpha = clamp01(mist) * (1 - weg);
+
+      if (ctxMist) {
+        ctxMist.clearRect(0, 0, breedte, hoogte);
+        if (mistAlpha > 0.005) {
+          ctxMist.save();
+          ctxMist.beginPath();
+          ctxMist.rect(midX - mistBreedte, 0, mistBreedte * 2, hoogte);
+          ctxMist.clip();
+
+          const grad = ctxMist.createRadialGradient(
+            midX,
+            hoogte * 0.52,
+            0,
+            midX,
+            hoogte * 0.52,
+            Math.max(breedte, hoogte) * 0.6
+          );
+          grad.addColorStop(0, `rgba(228, 206, 170, ${0.5 * mistAlpha})`);
+          grad.addColorStop(
+            0.22,
+            `rgba(150, 152, 168, ${0.42 * mistAlpha})`
+          );
+          grad.addColorStop(
+            0.55,
+            `rgba(78, 86, 104, ${0.5 * mistAlpha})`
+          );
+          grad.addColorStop(1, `rgba(20, 24, 34, ${0.2 * mistAlpha})`);
+          ctxMist.fillStyle = grad;
+          ctxMist.fillRect(midX - mistBreedte, 0, mistBreedte * 2, hoogte);
+
+          ctxMist.globalCompositeOperation = "screen";
+          for (const bol of mistBollen) {
+            bol.x += bol.vx * dt;
+            bol.faze += dt * 0.15;
+            if (bol.x < -bol.r) bol.x = breedte + bol.r;
+            if (bol.x > breedte + bol.r) bol.x = -bol.r;
+            const bolY = bol.y + Math.sin(bol.faze) * 14;
+            const bolGrad = ctxMist.createRadialGradient(
+              bol.x,
+              bolY,
+              0,
+              bol.x,
+              bolY,
+              bol.r
+            );
+            const w = bol.warm;
+            const r = Math.round(120 + w * 110);
+            const g = Math.round(130 + w * 70);
+            const b = Math.round(150 - w * 40);
+            bolGrad.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${0.16 * mistAlpha})`);
+            bolGrad.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, ${0.07 * mistAlpha})`);
+            bolGrad.addColorStop(1, "rgba(0,0,0,0)");
+            ctxMist.fillStyle = bolGrad;
+            ctxMist.beginPath();
+            ctxMist.arc(bol.x, bolY, bol.r, 0, Math.PI * 2);
+            ctxMist.fill();
+          }
+          ctxMist.restore();
+        }
+      }
+
+      // ── Tekst-canvas (particle "TaPas") ───────────────────────────────────
+      if (ctxTekst) {
+        ctxTekst.clearRect(0, 0, breedte, hoogte);
+        const tekstAlpha = clamp01(mist) * (1 - weg);
+        if (tekstAlpha > 0.005 && deeltjes.length > 0) {
+          const condensFactor = easeInOutCubic(
+            clamp01((woord - 0.55) / 0.45)
+          );
+          if (condensFactor > 0.01) {
+            const fs = lettertypeGrootte;
+            ctxTekst.globalCompositeOperation = "lighter";
+            ctxTekst.textAlign = "center";
+            ctxTekst.textBaseline = "middle";
+
+            for (const d of deeltjes) {
+              d.driftFaze += dt * d.driftSnel;
+              const huidigX =
+                d.basisX +
+                (d.dx - d.basisX) * condensFactor +
+                Math.cos(d.driftFaze) * d.driftAmp * (1 - condensFactor);
+              const huidigY =
+                d.basisY +
+                (d.dy - d.basisY) * condensFactor +
+                Math.sin(d.driftFaze) * d.driftAmp * 0.5 * (1 - condensFactor);
+
+              const alpha = d.helder * condensFactor * tekstAlpha;
+              const tintKleur = d.tint > 0.6
+                ? `rgba(247, 228, 185, ${alpha})`
+                : d.tint > 0.3
+                ? `rgba(210, 195, 165, ${alpha})`
+                : `rgba(180, 175, 185, ${alpha})`;
+
+              ctxTekst.fillStyle = tintKleur;
+              ctxTekst.beginPath();
+              ctxTekst.arc(huidigX, huidigY, d.r, 0, Math.PI * 2);
+              ctxTekst.fill();
+            }
+            ctxTekst.globalCompositeOperation = "source-over";
+          }
+        }
+      }
+
+      rafRef.current = requestAnimationFrame(frame);
+    }
+
+    rafRef.current = requestAnimationFrame(frame);
+
+    return () => {
+      geannuleerd = true;
+      cancelAnimationFrame(rafRef.current);
+      window.removeEventListener("resize", herstelAfmeting);
+    };
+  }, [geluidAan]);
+
+  // Berekende CSS waarden
+  const openGraden = staat.open * 96;
+  const wegAlpha = staat.weg;
+  const kierAlpha = clamp01(staat.kier * (1 - staat.weg));
+
+  return createPortal(
     <div
-      onClick={handleClick}
+      onClick={behandelKlik}
+      role="dialog"
+      aria-label="TaPas-intro"
+      className={`overflow-hidden transition-opacity duration-700 ${
+        weggaand ? "pointer-events-none opacity-0" : "opacity-100"
+      }`}
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 9999,
-        cursor: phase === "idle" ? "pointer" : "default",
-        opacity: overlayOpacity,
-        transition: "opacity 0.6s ease",
-        overflow: "hidden",
-        userSelect: "none",
+        zIndex: 10000,
+        backgroundColor: "#08090c",
       }}
     >
-      {/* Achtergrond: diepe nacht — volledig dekkend, blokkeert alles eronder */}
-      <div
+      <style>{`@keyframes tapasHintPuls { 0%,100% { opacity: 0.35 } 50% { opacity: 0.85 } }`}</style>
+
+      {/* Mist canvas */}
+      <canvas
+        ref={canvasMistRef}
+        aria-hidden="true"
         style={{
           position: "absolute",
           inset: 0,
-          background: "#050a0f",
-          zIndex: 0,
+          display: "block",
+          opacity: 1 - wegAlpha * 0.4,
         }}
       />
 
-      {/* Mistige nevel — koel blauwgrijs */}
-      <div
+      {/* Tekst/particle canvas */}
+      <canvas
+        ref={canvasTekstRef}
+        aria-hidden="true"
         style={{
           position: "absolute",
           inset: 0,
-          zIndex: 2,
-          background:
-            "radial-gradient(ellipse 80% 60% at 50% 55%, hsla(210,30%,68%,0.55) 0%, hsla(210,25%,40%,0.3) 45%, transparent 75%)",
-          opacity: mistOpacity,
-          transition: "opacity 1.2s ease",
+          display: "block",
+          opacity: 1 - wegAlpha,
+        }}
+      />
+
+      {/* Twee poorten */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          inset: 0,
+          perspective: "1700px",
+          perspectiveOrigin: "50% 50%",
           pointerEvents: "none",
+          opacity: 1 - wegAlpha,
+          transition: "opacity 200ms linear",
         }}
-      />
-
-      {/* Twee poorten — links en rechts, scharnieren aan de buitenranden */}
-      {!prefersReducedMotion && (
+      >
+        {/* Linker poort */}
         <div
           style={{
             position: "absolute",
-            inset: 0,
-            zIndex: 3,
-            display: "flex",
-            pointerEvents: "none",
+            top: 0,
+            bottom: 0,
+            left: 0,
+            width: "50%",
+            transformStyle: "preserve-3d",
+            transformOrigin: "left center",
+            transform: `rotateY(${openGraden}deg)`,
+            transition: "transform 60ms linear",
+            backgroundColor: "#0b0a09",
+            backgroundImage: houtNerf("links"),
+            boxShadow:
+              "inset -2px 0 0 rgba(243,205,138,0.10), inset -22px 0 60px rgba(0,0,0,0.65), 6px 0 40px rgba(0,0,0,0.6)",
+            borderRight: "1px solid rgba(0,0,0,0.6)",
           }}
         >
-          {/* Linker poort — scharnier links */}
-          <div
-            style={{
-              flex: 1,
-              transformOrigin: "left center",
-              transform: `perspective(900px) rotateY(${leftDeg}deg)`,
-              transition: "transform 1.6s cubic-bezier(0.25, 0.1, 0.1, 1.0)",
-              background:
-                "linear-gradient(to right, #0e0904 0%, #231608 30%, #2e1f0a 55%, #1a1008 80%, #0e0904 100%)",
-              boxShadow: "inset -8px 0 32px rgba(0,0,0,0.9), -4px 0 20px rgba(0,0,0,0.8)",
-              position: "relative",
-              overflow: "hidden",
-              backfaceVisibility: "hidden",
-            }}
-          >
-            {/* Houtnerf textuur */}
-            <WoodGrain side="left" />
-            {/* Scharnier — boven */}
-            <Hinge position="top" />
-            {/* Scharnier — onder */}
-            <Hinge position="bottom" />
-            {/* Handgreep */}
-            <Handle side="left" />
-          </div>
-
-          {/* Rechter poort — scharnier rechts */}
-          <div
-            style={{
-              flex: 1,
-              transformOrigin: "right center",
-              transform: `perspective(900px) rotateY(${rightDeg}deg)`,
-              transition: "transform 1.6s cubic-bezier(0.25, 0.1, 0.1, 1.0)",
-              background:
-                "linear-gradient(to left, #0e0904 0%, #231608 30%, #2e1f0a 55%, #1a1008 80%, #0e0904 100%)",
-              boxShadow: "inset 8px 0 32px rgba(0,0,0,0.9), 4px 0 20px rgba(0,0,0,0.8)",
-              position: "relative",
-              overflow: "hidden",
-              backfaceVisibility: "hidden",
-            }}
-          >
-            <WoodGrain side="right" />
-            <Hinge position="top" />
-            <Hinge position="bottom" />
-            <Handle side="right" />
-          </div>
-        </div>
-      )}
-
-      {/* Instrucietekst — alleen in idle fase */}
-      {phase === "idle" && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            zIndex: 4,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "1.5rem",
-            pointerEvents: "none",
-          }}
-        >
-          {/* Lichtstreep in het midden van de poorten */}
+          <PoortDetails kant="links" />
+          {/* Lichtstreep in de kier */}
           <div
             style={{
               position: "absolute",
-              left: "50%",
               top: 0,
               bottom: 0,
-              width: "2px",
-              transform: "translateX(-50%)",
+              right: 0,
+              width: 3,
+              opacity: kierAlpha,
               background:
-                "linear-gradient(to bottom, transparent 0%, hsla(38,60%,68%,0.0) 10%, hsla(38,60%,68%,0.7) 40%, hsla(38,60%,68%,0.9) 50%, hsla(38,60%,68%,0.7) 60%, hsla(38,60%,68%,0.0) 90%, transparent 100%)",
-              boxShadow: "0 0 18px 6px hsla(38,60%,68%,0.35)",
-              pointerEvents: "none",
+                "linear-gradient(180deg, rgba(247,222,176,0) 0%, rgba(247,222,176,0.8) 50%, rgba(247,222,176,0) 100%)",
+              boxShadow: "0 0 22px 3px rgba(247,222,176,0.55)",
+              transition: "opacity 140ms linear",
             }}
           />
-
-          <p
-            style={{
-              fontFamily: "'Playfair Display', Georgia, serif",
-              fontStyle: "italic",
-              fontWeight: 400,
-              fontSize: "clamp(1.1rem, 3vw, 1.6rem)",
-              color: "hsl(38, 60%, 72%)",
-              textShadow:
-                "0 0 20px hsla(38,60%,68%,0.6), 0 0 40px hsla(38,60%,68%,0.3)",
-              letterSpacing: "0.04em",
-              margin: 0,
-              animation: "poortenPulse 2.8s ease-in-out infinite",
-            }}
-          >
-            Duw de poorten open
-          </p>
-
-          <p
-            style={{
-              fontFamily: "'Playfair Display', Georgia, serif",
-              fontStyle: "italic",
-              fontSize: "clamp(0.7rem, 1.8vw, 0.9rem)",
-              color: "hsla(38, 40%, 60%, 0.55)",
-              margin: 0,
-              letterSpacing: "0.06em",
-            }}
-          >
-            klik of tik · esc om over te slaan
-          </p>
         </div>
-      )}
 
-      {/* "TaPas" tekst uit de mist */}
+        {/* Rechter poort */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            bottom: 0,
+            right: 0,
+            width: "50%",
+            transformStyle: "preserve-3d",
+            transformOrigin: "right center",
+            transform: `rotateY(${-openGraden}deg)`,
+            transition: "transform 60ms linear",
+            backgroundColor: "#0b0a09",
+            backgroundImage: houtNerf("rechts"),
+            boxShadow:
+              "inset 2px 0 0 rgba(243,205,138,0.10), inset 22px 0 60px rgba(0,0,0,0.65), -6px 0 40px rgba(0,0,0,0.6)",
+            borderLeft: "1px solid rgba(0,0,0,0.6)",
+          }}
+        >
+          <PoortDetails kant="rechts" />
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              left: 0,
+              width: 3,
+              opacity: kierAlpha,
+              background:
+                "linear-gradient(180deg, rgba(247,222,176,0) 0%, rgba(247,222,176,0.8) 50%, rgba(247,222,176,0) 100%)",
+              boxShadow: "0 0 22px 3px rgba(247,222,176,0.55)",
+              transition: "opacity 140ms linear",
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Rand-vignette */}
       <div
+        aria-hidden="true"
         style={{
           position: "absolute",
           inset: 0,
-          zIndex: 5,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
           pointerEvents: "none",
+          background:
+            "radial-gradient(120% 120% at 50% 50%, rgba(0,0,0,0) 52%, rgba(0,0,0,0.55) 100%)",
         }}
-      >
-        <span
-          style={{
-            fontFamily: "'Playfair Display', Georgia, serif",
-            fontStyle: "italic",
-            fontWeight: 700,
-            fontSize: "clamp(4rem, 14vw, 11rem)",
-            color: "hsl(38, 60%, 78%)",
-            textShadow:
-              "0 0 40px hsla(38,60%,68%,0.8), 0 0 80px hsla(38,60%,68%,0.4), 0 0 120px hsla(38,50%,50%,0.2)",
-            letterSpacing: "0.08em",
-            opacity: tapasOpacity,
-            filter: `blur(${tapasBlur}px)`,
-            transition:
-              "opacity 1.1s ease, filter 1.1s ease",
-            userSelect: "none",
-          }}
-        >
-          TaPas
-        </span>
-      </div>
-
-      {/* CSS animaties */}
-      <style>{`
-        @keyframes poortenPulse {
-          0%, 100% { opacity: 0.75; }
-          50% { opacity: 1; }
-        }
-      `}</style>
-    </div>
-  );
-}
-
-// ─── Sub-componenten ─────────────────────────────────────────────────────────
-
-function WoodGrain({ side }: { side: "left" | "right" }) {
-  // SVG houtnerf patroon als data-URI
-  return (
-    <svg
-      style={{
-        position: "absolute",
-        inset: 0,
-        width: "100%",
-        height: "100%",
-        opacity: 0.08,
-        mixBlendMode: "overlay",
-      }}
-      xmlns="http://www.w3.org/2000/svg"
-      preserveAspectRatio="none"
-    >
-      <filter id={`grain-${side}`}>
-        <feTurbulence
-          type="fractalNoise"
-          baseFrequency={side === "left" ? "0.65 0.015" : "0.65 0.012"}
-          numOctaves="4"
-          seed={side === "left" ? 2 : 7}
-          result="noise"
-        />
-        <feColorMatrix type="saturate" values="0" in="noise" />
-      </filter>
-      <rect
-        width="100%"
-        height="100%"
-        filter={`url(#grain-${side})`}
-        fill="hsl(30,40%,60%)"
       />
-    </svg>
-  );
-}
 
-function Hinge({ position }: { position: "top" | "bottom" }) {
-  return (
-    <div
-      style={{
-        position: "absolute",
-        left: "50%",
-        transform: "translateX(-50%)",
-        ...(position === "top" ? { top: "10%" } : { bottom: "10%" }),
-        width: 18,
-        height: 52,
-        background:
-          "linear-gradient(to right, #8a6a2a 0%, #c9a84c 40%, #a07830 70%, #6a4e18 100%)",
-        borderRadius: 4,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,200,80,0.3)",
-      }}
-    />
-  );
-}
+      {/* Geluid knop */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          toggleGeluid();
+        }}
+        aria-label={geluidAan ? "Geluid uitzetten" : "Geluid aanzetten"}
+        className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/70 backdrop-blur-sm transition-colors hover:bg-white/10 hover:text-white/90"
+      >
+        {geluidAan ? (
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="pointer-events-none">
+            <path d="M11 5 6 9H2v6h4l5 4V5z" />
+            <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+            <path d="M18.5 6a9 9 0 0 1 0 12" />
+          </svg>
+        ) : (
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="pointer-events-none">
+            <path d="M11 5 6 9H2v6h4l5 4V5z" />
+            <line x1="22" y1="9" x2="16" y2="15" />
+            <line x1="16" y1="9" x2="22" y2="15" />
+          </svg>
+        )}
+      </button>
 
-function Handle({ side }: { side: "left" | "right" }) {
-  const isLeft = side === "left";
-  return (
-    <div
-      style={{
-        position: "absolute",
-        top: "50%",
-        transform: "translateY(-50%)",
-        ...(isLeft ? { right: "12%" } : { left: "12%" }),
-        width: 12,
-        height: 48,
-        borderRadius: 6,
-        background:
-          "linear-gradient(to bottom, #b8922e 0%, #dbb84a 30%, #c9a030 65%, #8a6a1e 100%)",
-        boxShadow:
-          "0 3px 12px rgba(0,0,0,0.7), inset 0 1px 3px rgba(255,220,100,0.4)",
-      }}
-    />
+      {/* Overslaan knop */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          sluitAf();
+        }}
+        className="absolute bottom-5 right-5 z-10 rounded-full border border-white/12 bg-white/5 px-4 py-1.5 text-xs font-medium uppercase tracking-wider text-white/55 backdrop-blur-sm transition-colors hover:bg-white/10 hover:text-white/85"
+      >
+        Overslaan
+      </button>
+
+      {/* "Tik of klik om te beginnen" hint */}
+      {wachtOpKlik && !weggaand && (
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-[16%] z-10 flex justify-center"
+          style={{ animation: "tapasHintPuls 2.4s ease-in-out infinite" }}
+        >
+          <span className="text-sm font-light tracking-wide text-white/70">
+            Tik of klik om te beginnen
+          </span>
+        </div>
+      )}
+    </div>,
+    document.body
   );
 }
