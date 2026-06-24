@@ -1,6 +1,8 @@
 import "dotenv/config";
 import express, { Response, NextFunction } from 'express';
 import type { Request } from 'express';
+import session from "express-session";
+import MemoryStore from "memorystore";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "node:http";
@@ -23,6 +25,16 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: false }));
+
+// Sessie-middleware (voor admin login)
+const MStore = MemoryStore(session);
+app.use(session({
+  secret: process.env.SESSION_SECRET || "tapas-demo-secret-2026",
+  resave: false,
+  saveUninitialized: false,
+  store: new MStore({ checkPeriod: 86400000 }),
+  cookie: { maxAge: 24 * 60 * 60 * 1000, httpOnly: true, sameSite: "lax" },
+}));
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {

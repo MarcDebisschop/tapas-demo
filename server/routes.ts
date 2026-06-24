@@ -442,6 +442,34 @@ export async function registerRoutes(
     res.json({ afname: updated, contract, dashboardToken });
   });
 
+  // --- Admin: login / sessie (demo-versie) ---
+  // In de demo-versie: e-mail wordt gecheckt tegen de beheerders-tabel.
+  // Wachtwoord wordt niet opgeslagen — elke beheerder kan inloggen met zijn e-mail.
+  app.post("/api/admin/login", async (req, res) => {
+    const { email } = req.body || {};
+    if (!email) return res.status(400).json({ message: "E-mailadres ontbreekt." });
+    const beheerder = await storage.getBeheerderByEmail(email.trim().toLowerCase());
+    if (!beheerder || !beheerder.actief) {
+      return res.status(401).json({ message: "E-mailadres of wachtwoord onjuist." });
+    }
+    // Sla beheerder-id op in sessie (cookie-gebaseerd, in-memory)
+    (req.session as any).adminId = beheerder.id;
+    res.json({ ok: true, naam: beheerder.naam, email: beheerder.email, isPrior: beheerder.isPrior });
+  });
+
+  app.get("/api/admin/me", async (req, res) => {
+    const adminId = (req.session as any)?.adminId;
+    if (!adminId) return res.status(401).json({ message: "Niet ingelogd." });
+    const beheerder = await storage.getBeheerder(adminId);
+    if (!beheerder || !beheerder.actief) return res.status(401).json({ message: "Sessie verlopen." });
+    res.json({ ok: true, naam: beheerder.naam, email: beheerder.email, isPrior: beheerder.isPrior });
+  });
+
+  app.post("/api/admin/logout", (req, res) => {
+    req.session.destroy(() => {});
+    res.json({ ok: true });
+  });
+
   // --- Admin: lijst van afnames ---
   app.get("/api/admin/afnames", async (_req, res) => {
     const list = await storage.listAfnames();
