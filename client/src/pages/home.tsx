@@ -26,6 +26,7 @@ import {
   Sparkles,
   UserCircle,
   Plane,
+  Coffee,
 } from "lucide-react";
 import {
   TALEN,
@@ -150,6 +151,14 @@ export default function Home() {
       href: "/impact",
       cta: "Voorbeeld bekijken",
       testid: "link-inst-impact",
+    },
+    {
+      icon: Coffee,
+      titel: "TaPas Lounge",
+      body: "De gemeenschappelijke ruimte van TaPasCity. Negen kamers: stilte, studie, muziek, café, inspiratie, werkplaats, reflectie, terras en webshop.",
+      href: "/lounge",
+      cta: "De lounge betreden",
+      testid: "link-inst-lounge",
     },
   ];
 

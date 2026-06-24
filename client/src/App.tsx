@@ -30,6 +30,7 @@ import HddHome from "@/pages/hdd-home";
 import HddRapport from "@/pages/hdd-rapport";
 import TwominscanRapport from "@/pages/twominscan-rapport";
 import ImpactHome from "@/pages/impact-home";
+import Lounge from "@/pages/lounge";
 
 function AppRouter() {
   return (
@@ -57,6 +58,7 @@ function AppRouter() {
       <Route path="/hdd/rapport" component={HddRapport} />
       <Route path="/2minscan/rapport" component={TwominscanRapport} />
       <Route path="/impact" component={ImpactHome} />
+      <Route path="/lounge" component={Lounge} />
       <Route component={NotFound} />
     </Switch>
   );
