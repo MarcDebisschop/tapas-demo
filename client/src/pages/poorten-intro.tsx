@@ -833,14 +833,23 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
         Overslaan
       </button>
 
-      {/* "Tik of klik om te beginnen" hint */}
-      {wachtOpKlik && !weggaand && (
+      {/* "Duw de poorten open" hint — always visible in idle state */}
+      {!weggaand && (
         <div
           className="pointer-events-none absolute inset-x-0 bottom-[16%] z-10 flex justify-center"
           style={{ animation: "tapasHintPuls 2.4s ease-in-out infinite" }}
         >
-          <span className="text-sm font-light tracking-wide text-white/70">
-            Tik of klik om te beginnen
+          <span
+            style={{
+              fontFamily: "'Playfair Display', Georgia, serif",
+              fontStyle: "italic",
+              fontSize: "1.35rem",
+              color: "hsl(38 60% 62%)",
+              letterSpacing: "0.04em",
+              textShadow: "0 1px 8px rgba(0,0,0,0.7)",
+            }}
+          >
+            Duw de poorten open
           </span>
         </div>
       )}
@@ -848,4 +857,4 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
     document.body
   );
 }
-// BUILD VERIFICATIE: 2026-06-24 15:53 UTC — commit bevat PoortenIntro + Router-na-intro fix
+// BUILD VERIFICATIE: 2026-06-24 18:20 UTC — hint tekst = 'Duw de poorten open', Playfair italic goud, altijd zichtbaar
