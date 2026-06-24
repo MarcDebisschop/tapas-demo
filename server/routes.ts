@@ -458,11 +458,15 @@ export async function registerRoutes(
   });
 
   app.get("/api/admin/me", async (req, res) => {
-    const adminId = (req.session as any)?.adminId;
-    if (!adminId) return res.status(401).json({ message: "Niet ingelogd." });
-    const beheerder = await storage.getBeheerder(adminId);
-    if (!beheerder || !beheerder.actief) return res.status(401).json({ message: "Sessie verlopen." });
-    res.json({ ok: true, naam: beheerder.naam, email: beheerder.email, isPrior: beheerder.isPrior });
+    try {
+      const adminId = (req as any).session?.adminId;
+      if (!adminId) return res.status(401).json({ message: "Niet ingelogd." });
+      const beheerder = await storage.getBeheerder(Number(adminId));
+      if (!beheerder || !beheerder.actief) return res.status(401).json({ message: "Sessie verlopen." });
+      res.json({ ok: true, naam: beheerder.naam, email: beheerder.email, isPrior: beheerder.isPrior });
+    } catch (err) {
+      res.status(401).json({ message: "Niet ingelogd." });
+    }
   });
 
   app.post("/api/admin/logout", (req, res) => {
