@@ -147,6 +147,13 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
   const [rightDeg, setRightDeg] = useState(0);
   const completedRef = useRef(false);
   const stopAudioRef = useRef<(() => void) | null>(null);
+  // Cooldown: accepteer geen clicks in de eerste 400ms na mount
+  // zodat een navigatie-klik die de pagina laadde niet meteen de animatie start én skip
+  const readyRef = useRef(false);
+  useEffect(() => {
+    const t = setTimeout(() => { readyRef.current = true; }, 400);
+    return () => clearTimeout(t);
+  }, []);
 
   const prefersReducedMotion =
     typeof window !== "undefined" &&
@@ -237,6 +244,7 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
 
   // Klik na start → skip
   const handleClick = useCallback(() => {
+    if (!readyRef.current) return; // negeer clicks direct na mount
     if (phase === "idle") {
       startAnimation();
     } else {
