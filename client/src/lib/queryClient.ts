@@ -18,6 +18,9 @@ export async function apiRequest(
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
+    // KRITIEK: credentials: "include" vereist voor cross-origin cookie-uitwisseling
+    // op pplx.app (S3-frontend → /port/5000 sandbox-backend).
+    credentials: "include",
   });
 
   await throwIfResNotOk(res);
@@ -30,7 +33,10 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(`${API_BASE}${queryKey.join("/")}`);
+    const res = await fetch(`${API_BASE}${queryKey.join("/")}`, {
+      // KRITIEK: credentials: "include" vereist voor cross-origin cookie op pplx.app.
+      credentials: "include",
+    });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       return null;

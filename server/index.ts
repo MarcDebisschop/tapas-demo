@@ -30,15 +30,33 @@ app.use(express.urlencoded({ extended: false }));
 const MStore = MemoryStore(session);
 // Op pplx.app loopt het verkeer via een HTTPS-proxy (X-Forwarded-Proto: https).
 // trust proxy = 1 zodat req.secure correct werkt achter de proxy.
-// cookie.secure = "auto" laat express-session zelf beslissen op basis van req.secure.
+// KRITIEK: pplx.app proxy strip cookies zonder __Host- prefix.
+// KRITIEK: SameSite=None vereist voor cross-origin POST (S3-frontend → sandbox-backend).
+//          SameSite=None vereist Secure=true → alleen in productie (HTTPS).
 app.set("trust proxy", 1);
+// KRITIEK pplx.app cookie-regels:
+// 1. Cookie naam MOET __Host- prefix hebben (pplx.app proxy strip andere cookies).
+// 2. SameSite=None vereist voor cross-origin POST (S3-frontend → /port/5000 sandbox).
+// 3. secure: "auto" = express-session gebruikt req.secure (werkt correct achter
+//    pplx.app HTTPS-proxy via trust proxy: 1 + X-Forwarded-Proto: https).
+// 4. credentials: "include" staat in queryClient.ts zodat de browser de cookie meestuurt.
 app.use(session({
   secret: process.env.SESSION_SECRET || "tapas-demo-secret-2026",
   resave: false,
   saveUninitialized: false,
-  name: "tapas-sid",
+  name: "__Host-tapas-sid",
   store: new MStore({ checkPeriod: 86400000 }),
-  cookie: { maxAge: 24 * 60 * 60 * 1000, httpOnly: true, sameSite: "lax", secure: "auto", path: "/" },
+  cookie: {
+    maxAge: 24 * 60 * 60 * 1000,
+    httpOnly: true,
+    // sameSite: "auto" → op HTTPS (pplx.app): "none" (cross-origin OK)
+    //                  → op HTTP (lokaal dev): "lax" (veilig)
+    // secure: "auto"  → op HTTPS: true → vereist voor __Host- prefix + SameSite=None
+    //                  → op HTTP: false → werkt lokaal
+    sameSite: "auto",
+    secure: "auto",
+    path: "/",
+  },
 }));
 
 export function log(message: string, source = "express") {
