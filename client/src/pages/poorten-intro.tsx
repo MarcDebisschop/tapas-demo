@@ -605,45 +605,62 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
         }
       }
 
-      // ── Tekst-canvas (particle "TaPas") ───────────────────────────────────
+      // ── Tekst-canvas (particle "TaPas" + fillText glow) — exact uit origineel ──
       if (ctxTekst) {
         ctxTekst.clearRect(0, 0, breedte, hoogte);
         const tekstAlpha = clamp01(mist) * (1 - weg);
         if (tekstAlpha > 0.005 && deeltjes.length > 0) {
+          // condensFactor: 0→1 over volledige woord-range (exact origineel: ht = woord)
           const condensFactor = easeInOutCubic(
             clamp01((woord - 0.55) / 0.45)
           );
+
+          // ── fillText met shadowBlur glow — origineel: altijd tekenen als condensFactor > 0.01
           if (condensFactor > 0.01) {
             const fs = lettertypeGrootte;
             ctxTekst.globalCompositeOperation = "lighter";
             ctxTekst.textAlign = "center";
             ctxTekst.textBaseline = "middle";
-
-            for (const d of deeltjes) {
-              d.driftFaze += dt * d.driftSnel;
-              const huidigX =
-                d.basisX +
-                (d.dx - d.basisX) * condensFactor +
-                Math.cos(d.driftFaze) * d.driftAmp * (1 - condensFactor);
-              const huidigY =
-                d.basisY +
-                (d.dy - d.basisY) * condensFactor +
-                Math.sin(d.driftFaze) * d.driftAmp * 0.5 * (1 - condensFactor);
-
-              const alpha = d.helder * condensFactor * tekstAlpha;
-              const tintKleur = d.tint > 0.6
-                ? `rgba(247, 228, 185, ${alpha})`
-                : d.tint > 0.3
-                ? `rgba(210, 195, 165, ${alpha})`
-                : `rgba(180, 175, 185, ${alpha})`;
-
-              ctxTekst.fillStyle = tintKleur;
-              ctxTekst.beginPath();
-              ctxTekst.arc(huidigX, huidigY, d.r, 0, Math.PI * 2);
-              ctxTekst.fill();
-            }
-            ctxTekst.globalCompositeOperation = "source-over";
+            ctxTekst.font = `600 ${fs}px "Playfair Display", Georgia, serif`;
+            // glow shadow (exact origineel)
+            ctxTekst.shadowColor = "rgba(247, 222, 176, 0.85)";
+            ctxTekst.shadowBlur = 26 * condensFactor;
+            const tekstVulAlpha = tekstAlpha * condensFactor * 0.82;
+            ctxTekst.fillStyle = `rgba(236, 214, 176, ${tekstVulAlpha})`;
+            ctxTekst.fillText("TaPas", breedte / 2, hoogte * 0.5);
+            ctxTekst.shadowBlur = 0;
           }
+
+          // ── Particles — exact origineel: positie via woord direct (xt = woord)
+          ctxTekst.globalCompositeOperation = "lighter";
+          const tijdSec = (verstreken) / 1000;
+          for (const d of deeltjes) {
+            // drift vanuit basisX/Y (origineel: yn = cos(driftFaze + t*driftSnel)*driftAmp)
+            const driftX = Math.cos(d.driftFaze + tijdSec * d.driftSnel) * d.driftAmp;
+            const driftY = Math.sin(d.driftFaze * 1.3 + tijdSec * d.driftSnel * 0.8) * d.driftAmp * 0.7;
+            const huidigBaseX = d.basisX + driftX;
+            const huidigBaseY = d.basisY + driftY;
+            // lerp naar doel via woord (xt = woord direct)
+            d.x = huidigBaseX + (d.dx - huidigBaseX) * woord;
+            d.y = huidigBaseY + (d.dy - huidigBaseY) * woord;
+
+            const alpha = tekstAlpha * d.helder * (0.34 + 0.66 * woord);
+            if (alpha < 0.012) continue;
+
+            // kleur (exact origineel: Dn, Tn, Fn, hr)
+            const Dn = clamp01(woord * 1.1) * (0.55 + 0.45 * d.tint);
+            const Tn = Math.round(196 + Dn * 40);
+            const Fn = Math.round(186 + Dn * 24);
+            const hr = Math.round(168 - Dn * 36);
+            // radius schaal (origineel: 1.8 - 0.8*xt)
+            const straal = d.r * (1.8 - 0.8 * woord);
+
+            ctxTekst.beginPath();
+            ctxTekst.fillStyle = `rgba(${Tn}, ${Fn}, ${hr}, ${alpha})`;
+            ctxTekst.arc(d.x, d.y, straal, 0, Math.PI * 2);
+            ctxTekst.fill();
+          }
+          ctxTekst.globalCompositeOperation = "source-over";
         }
       }
 
