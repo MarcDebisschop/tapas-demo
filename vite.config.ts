@@ -19,6 +19,16 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    // Splits grote chunks op zodat Render's free tier (512MB RAM) niet OOM gaat.
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "vendor-react": ["react", "react-dom", "wouter"],
+          "vendor-ui": ["@radix-ui/react-dialog", "@radix-ui/react-select", "@radix-ui/react-tabs", "@radix-ui/react-tooltip", "lucide-react"],
+          "vendor-query": ["@tanstack/react-query"],
+        },
+      },
+    },
   },
   server: {
     fs: {
