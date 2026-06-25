@@ -74,6 +74,7 @@ function AppRouter() {
       <Route path="/studie/instrumenten" component={StudieInstrumentenPagina} />
       <Route path="/studie" component={Studie} />
       <Route path="/voor-deelnemers">{() => <Redirect to="/mijn" />}</Route>
+      <Route path="/voor-begeleiders">{() => <Redirect to="/start" />}</Route>
       <Route component={NotFound} />
     </Switch>
   );
