@@ -220,8 +220,24 @@ function IntroBlok({
           outline: "none",
         }}
       />
-      <div style={{ marginTop: 26 }}>
+      <div style={{ marginTop: 26, display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
         <PrimaireKnop onClick={start}>{tr("ui.afname.start", "Start de 2MINSCAN →")}</PrimaireKnop>
+        <a
+          href={`#/2minscan/rapport?d=${encodeURIComponent(JSON.stringify({ naam: "Nathalie Wouters", taal: "nl", datum: "25/6/2026", score: { blauw: 2, groen: 9, geel: 10, rood: 3 }, ie: { uitkomst: "meer_extravert", label: "uitgesproken extravert", verschil: -3, xStand: "EE" }, egCode: "RgEEO-a", egCodePositief: "RgEEO", minSegment: "-a", profielCode: "RgXO-a", exact: true }))}`}
+          style={{
+            display: "inline-block",
+            padding: "11px 18px",
+            borderRadius: 10,
+            border: `1.5px solid ${KLEUR.petrol}`,
+            background: "transparent",
+            color: KLEUR.petrol,
+            fontWeight: 700,
+            fontSize: 14,
+            textDecoration: "none",
+          }}
+        >
+          {tr("ui.afname.demo", "Bekijk voorbeeldrapport →")}
+        </a>
       </div>
     </div>
   );
