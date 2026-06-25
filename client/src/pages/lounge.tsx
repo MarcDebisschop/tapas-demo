@@ -10,7 +10,7 @@
 //   En=Badge, ht=Card, pt=CardContent, Kg=Separator
 // =============================================================================
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
 import { AppHeader } from "@/components/Brand";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ import {
   Star,
   ArrowLeft,
   ChevronRight,
+  Radio,
   Heart,
   MessageCircle,
   Clock,
@@ -1092,11 +1093,73 @@ function KamerContent({ id }: { id: string }) {
 }
 
 // =============================================================================
+// Lounge radio — HTTPS stream, autoplay bij mount, stop-knop als klein radiootje
+// Stream: Radio Mediterranea Lounge (lounge/chillout/smooth-jazz, 128kbps)
+// Fallback: Jazz FM Yerevan
+// =============================================================================
+const STREAM_URLS = [
+  "https://stream.radiomediterranea.com:8160/lounge.mp3",
+  "https://de.auroramedia.am/jazz.mp3",
+];
+
+function useLoungeMuziek() {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [speelt, setSpeelt] = useState(false);
+  const [geladen, setGeladen] = useState(false);
+  const streamIdx = useRef(0);
+
+  useEffect(() => {
+    const audio = new Audio();
+    audio.preload = "none";
+    audioRef.current = audio;
+
+    function probeerStream(idx: number) {
+      if (idx >= STREAM_URLS.length) return;
+      audio.src = STREAM_URLS[idx];
+      audio.load();
+      const play = audio.play();
+      if (play) {
+        play
+          .then(() => { setSpeelt(true); setGeladen(true); })
+          .catch(() => {
+            // stream mislukt → probeer volgende
+            streamIdx.current = idx + 1;
+            probeerStream(idx + 1);
+          });
+      }
+    }
+
+    probeerStream(0);
+
+    return () => {
+      audio.pause();
+      audio.src = "";
+    };
+  }, []);
+
+  function toggle() {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (speelt) {
+      audio.pause();
+      setSpeelt(false);
+    } else {
+      const play = audio.play();
+      if (play) play.then(() => setSpeelt(true)).catch(() => {});
+      else setSpeelt(true);
+    }
+  }
+
+  return { speelt, geladen, toggle };
+}
+
+// =============================================================================
 // dee — Lounge hoofdpagina (verbatim)
 // =============================================================================
 export default function Lounge() {
   const [actieveKamer, setActieveKamer] = useState<string | null>(null);
   const mainRef = useRef<HTMLDivElement>(null);
+  const { speelt, toggle } = useLoungeMuziek();
 
   function openKamer(id: string) {
     setActieveKamer(id);
@@ -1114,6 +1177,24 @@ export default function Lounge() {
       <AppHeader
         right={
           <div className="flex items-center gap-2">
+            {/* Radio-knop */}
+            <button
+              type="button"
+              onClick={toggle}
+              title={speelt ? "Muziek pauzeren" : "Muziek afspelen"}
+              aria-label={speelt ? "Lounge muziek pauzeren" : "Lounge muziek afspelen"}
+              className={
+                "relative inline-flex h-8 w-8 items-center justify-center rounded-full border transition-all " +
+                (speelt
+                  ? "border-[hsl(var(--gold)/0.6)] bg-[hsl(var(--gold)/0.12)] text-[hsl(var(--gold))] shadow-[0_0_8px_hsl(var(--gold)/0.35)]"
+                  : "border-border bg-card text-muted-foreground hover:border-[hsl(var(--gold)/0.4)] hover:text-[hsl(var(--gold)/0.7)]")
+              }
+            >
+              <Radio className="h-3.5 w-3.5" />
+              {speelt && (
+                <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              )}
+            </button>
             {actieveKamer && (
               <Button variant="ghost" size="sm" onClick={sluitKamer} className="gap-1.5">
                 <ArrowLeft className="h-4 w-4" />
