@@ -273,7 +273,7 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
   // Klik handler
   function behandelKlik() {
     if (!animatieGestartRef.current) {
-      // Nog niet gestart — resume audio als gesuspended
+      // Klik verplicht om animatie te starten — start audio en zet animatie los
       if (geluidAan && !afgeslotenRef.current) {
         if (audioRef.current) {
           audioRef.current.ctx.resume().catch(() => {});
@@ -281,6 +281,8 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
           initAudio();
         }
       }
+      setWachtOpKlik(false);
+      animatieGestartRef.current = true;
       return;
     }
     sluitAf();
@@ -498,16 +500,16 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
           audioRef.current.ctx.state === "running" &&
           !!mp3SourceLoadedRef.current;
 
-        if (geluidAan && !audioActief && verstreken < 8000) {
-          const geenAudioCtx =
-            !audioRef.current || audioRef.current.ctx.state !== "running";
-          setWachtOpKlik(geenAudioCtx && verstreken > 700);
-          rafRef.current = requestAnimationFrame(frame);
-          return;
-        }
+        // Wacht altijd op klik — nooit automatisch starten
+        const geenAudioCtx =
+          !audioRef.current || audioRef.current.ctx.state !== "running";
+        setWachtOpKlik(geenAudioCtx && verstreken > 700);
+        rafRef.current = requestAnimationFrame(frame);
+        return;
+      }
 
-        setWachtOpKlik(false);
-        animatieGestartRef.current = true;
+      // Eerste frame na klik: starttijd initialiseren
+      if (!startTijdRef.current) {
         startTijdRef.current = tijdstip;
         vorigeFrameRef.current = tijdstip;
       }
