@@ -654,6 +654,75 @@ function seedShowcase() {
 seedShowcase();
 
 // ---------------------------------------------------------------------------
+// Demo-data: fictieve organisaties, afnames en credits zodat de admin-beheer
+// pagina gevuld is bij een eerste demo. Volledig idempotent via INSERT OR IGNORE
+// op unieke codes/emails.
+// ---------------------------------------------------------------------------
+(function seedDemoData() {
+  try {
+    // Enkel seeden als er nog geen demo-organisaties zijn
+    const check = sqlite
+      .prepare("SELECT COUNT(*) AS n FROM organisaties WHERE naam = 'Innovatech NV'")
+      .get() as { n: number };
+    if (check.n > 0) return;
+
+    const now = new Date().toISOString();
+    const d2025 = "2025-11-15T09:00:00.000Z";
+    const d2026a = "2026-01-08T10:30:00.000Z";
+    const d2026b = "2026-03-22T14:00:00.000Z";
+    const d2026c = "2026-05-10T08:45:00.000Z";
+
+    // 3 fictieve organisaties
+    const orgIns = sqlite.prepare(
+      `INSERT OR IGNORE INTO organisaties (naam, type, contactpersoon, email, gemeente, land, created_at)
+       VALUES (?, ?, ?, ?, ?, 'België', ?)`
+    );
+    orgIns.run("Innovatech NV",       "bedrijf",    "Sofie Hermans",    "sofie@innovatech.be",    "Gent",      now);
+    orgIns.run("Academie De Horizon", "school",     "Maarten Claes",    "m.claes@dehorizon.be",  "Leuven",    now);
+    orgIns.run("Vantage Consulting",  "bedrijf",    "Elke Van Damme",   "e.vandamme@vantage.be", "Antwerpen", now);
+
+    // IDs ophalen
+    const orgId = (tabel: string) =>
+      (sqlite.prepare(`SELECT id FROM organisaties WHERE naam = ?`).get(tabel) as { id: number } | undefined)?.id;
+    const idInno = orgId("Innovatech NV");
+    const idAcad = orgId("Academie De Horizon");
+    const idVant = orgId("Vantage Consulting");
+
+    // Credits seeden per organisatie
+    const creditIns = sqlite.prepare(
+      `INSERT OR IGNORE INTO credit_saldi (organisatie_id, beschikbaar, gereserveerd, verbruikt, updated_at)
+       VALUES (?, ?, ?, ?, ?)`
+    );
+    if (idInno) creditIns.run(idInno, 42, 3, 15, now);
+    if (idAcad) creditIns.run(idAcad, 18, 1,  6, now);
+    if (idVant) creditIns.run(idVant, 75, 0, 25, now);
+
+    // 6 fictieve afnames in verschillende statussen
+    const afnameIns = sqlite.prepare(
+      `INSERT OR IGNORE INTO afnames
+         (respondent_code, name, company, role, taal, status,
+          organisatie_id, consent_given, rechtsgrond,
+          created_at, completed_at)
+       VALUES (?, ?, ?, ?, 'nl', ?, ?, 1, 'toestemming', ?, ?)`
+    );
+    // voltooid
+    afnameIns.run("IT-2025-001", "Thomas Peeters",   "Innovatech NV",       "Senior Developer",    "voltooid",  idInno ?? null, d2025,  "2025-11-18T16:20:00.000Z");
+    afnameIns.run("IT-2025-002", "Laura Janssen",    "Innovatech NV",       "Product Manager",     "voltooid",  idInno ?? null, d2025,  "2025-11-20T11:05:00.000Z");
+    afnameIns.run("DH-2026-001", "Axel De Smet",     "Academie De Horizon", "Lector Communicatie", "voltooid",  idAcad ?? null, d2026a, "2026-01-12T09:30:00.000Z");
+    // uitgenodigd (link verstuurd, nog niet gestart)
+    afnameIns.run("VC-2026-001", "Nathalie Wouters", "Vantage Consulting",  "HR Manager",          "uitgenodigd", idVant ?? null, d2026b, null);
+    // gestart (consent gegeven, niet voltooid)
+    afnameIns.run("VC-2026-002", "Pieter Vanhout",   "Vantage Consulting",  "Business Analyst",    "gestart",   idVant ?? null, d2026c, null);
+    // consent (enkel aangemaakt, niet uitgenodigd)
+    afnameIns.run("DH-2026-002", "Ines Claeys",      "Academie De Horizon", "Stafmedewerker",      "consent",   idAcad ?? null, now,    null);
+
+    console.log("[tapas] Demo-data geseed: 3 organisaties + 6 afnames + credits.");
+  } catch (e) {
+    console.warn("[tapas] Demo-data seed overgeslagen:", (e as Error)?.message);
+  }
+})();
+
+// ---------------------------------------------------------------------------
 // Creditpakketten als config (geen aparte tabel nodig in C1). De prijzen zijn
 // indicatief en exclusief BTW; bij enkelvoudig gebruik (single-purpose voucher)
 // wordt de BTW bij aankoop aangerekend volgens het tarief van de biller.

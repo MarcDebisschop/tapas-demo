@@ -127,6 +127,7 @@ export function AdminLoginGate({ children }: Props) {
                   value={email}
                   onChange={(ev) => setEmail(ev.target.value)}
                   placeholder="jij@tapascity.com"
+                  readOnly={DEMO_MODE}
                   required
                   data-testid="input-admin-email"
                 />
@@ -140,6 +141,7 @@ export function AdminLoginGate({ children }: Props) {
                   value={wachtwoord}
                   onChange={(ev) => setWachtwoord(ev.target.value)}
                   placeholder="••••••••"
+                  readOnly={DEMO_MODE}
                   required
                   data-testid="input-admin-wachtwoord"
                 />
