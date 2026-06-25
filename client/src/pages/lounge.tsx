@@ -1,77 +1,48 @@
-/**
- * TaPas Lounge — de gemeenschappelijke ontmoetings- en inspiratieruimte
- * van het TaPas-platform. Negen kamers, toegankelijk zonder herladen.
- * Leden kunnen hun dagboek bijhouden, bijdragen aan het café, RSVP'en
- * voor events en projecten starten in de werkplaats.
- *
- * Architectuurkeuzes:
- *  – Geen externe router-navigatie: kamers worden in-page gewisseld (useState)
- *  – Demo-modus: alle content is statisch geseed; geen API-calls vereist
- *  – GDPR: persoonlijk dagboek is bewust LEEG; geen seed-data
- *  – Kleurpalet volgt de bestaande CSS-variabelen (accent, gold, primary)
- */
+// =============================================================================
+// lounge.tsx — EXACT overgenomen uit tapas-lounge-zip bundle (index-C3zZTrQ1.js)
+// Geen interpretaties. Alle data-arrays, classNames, structuur en tekst zijn verbatim.
+//
+// Icon mapping (qe factory → lucide):
+//   Kj=Leaf, Lj=BookOpen, qj=Music2, Wj=ShoppingBag, Pj=Coffee
+//   tv=Lightbulb, Xj=Wrench, Vj=PenLine, yQ=Sunset, wo=Star
+//   ug=ArrowLeft, Jh=ChevronRight, Oj=Heart, nv=MessageCircle
+//   Zw=Clock, iQ=GraduationCap, oQ=Headphones, _u=Users, xs=Sparkles
+//   En=Badge, ht=Card, pt=CardContent, Kg=Separator
+// =============================================================================
 
 import { useState, useRef } from "react";
 import { Link } from "wouter";
 import { AppHeader } from "@/components/Brand";
-import { DEMO_MODE, useDemoToast } from "@/lib/demoMode";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import {
+  Leaf,
   BookOpen,
-  Coffee,
   Music2,
+  ShoppingBag,
+  Coffee,
   Lightbulb,
   Wrench,
-  Leaf,
-  ShoppingBag,
-  GraduationCap,
+  PenLine,
   Sunset,
+  Star,
   ArrowLeft,
-  ExternalLink,
-  Play,
+  ChevronRight,
   Heart,
   MessageCircle,
-  Calendar,
-  Users,
-  PenLine,
-  Headphones,
-  Globe,
-  Star,
   Clock,
-  ChevronRight,
-  Flame,
+  GraduationCap,
+  Headphones,
+  Users,
+  Sparkles,
 } from "lucide-react";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type KamerId =
-  | "onthaal"
-  | "stilte"
-  | "studie"
-  | "muziek"
-  | "webshop"
-  | "cafe"
-  | "inspiratie"
-  | "werkplaats"
-  | "reflectie"
-  | "terras";
-
-interface Kamer {
-  id: KamerId;
-  naam: string;
-  ondertitel: string;
-  icon: React.ElementType;
-  kleur: string;
-  beschrijving: string;
-  badge?: string;
-}
-
-// ─── Kamer-configuratie ────────────────────────────────────────────────────────
-
-const KAMERS: Kamer[] = [
+// =============================================================================
+// p1 — kamers data array (verbatim)
+// =============================================================================
+const kamers = [
   {
     id: "stilte",
     naam: "Stilte Kamer",
@@ -158,9 +129,10 @@ const KAMERS: Kamer[] = [
   },
 ];
 
-// ─── Demo-data ─────────────────────────────────────────────────────────────────
-
-const CAFE_BIJDRAGEN = [
+// =============================================================================
+// XZ — cafe bijdragen data (verbatim)
+// =============================================================================
+const cafeBijdragen = [
   {
     auteur: "Hanne V.",
     avatar: "HV",
@@ -193,16 +165,19 @@ const CAFE_BIJDRAGEN = [
   },
 ];
 
-const INSPIRATIE_ITEMS = [
+// =============================================================================
+// JZ — inspiratiewand items (verbatim)
+// =============================================================================
+const inspiratieItems = [
   {
-    type: "quote" as const,
+    type: "quote",
     inhoud: "Talent zonder richting is als een kompas in een zak.",
     bron: "Marc Debisschop",
     context: "TaPas Manifest",
     kleur: "border-l-amber-400",
   },
   {
-    type: "inzicht" as const,
+    type: "inzicht",
     inhoud:
       "Mensen presteren niet beter door te weten wat ze slecht doen. Ze groeien door te weten waar hun energie vandaan komt.",
     bron: "Uit de TaPas-methodologie",
@@ -210,14 +185,14 @@ const INSPIRATIE_ITEMS = [
     kleur: "border-l-emerald-400",
   },
   {
-    type: "quote" as const,
+    type: "quote",
     inhoud: "Je talenten zijn geen toeval. Ze zijn de architectuur van wie je bent.",
     bron: "TaPasCity",
     context: "Profielintroductie",
     kleur: "border-l-purple-400",
   },
   {
-    type: "tip" as const,
+    type: "tip",
     inhoud:
       "Tip voor coaches: begin een gesprek niet met 'wat wil je bereiken?' maar met 'wanneer vloog je vorige week?'",
     bron: "Coaches Gids TaPas",
@@ -226,14 +201,18 @@ const INSPIRATIE_ITEMS = [
   },
 ];
 
-const WERKPLAATS_PROJECTEN = [
+// =============================================================================
+// YZ — werkplaats projecten (verbatim)
+// =============================================================================
+const werkplaatsProjecten = [
   {
     titel: "Talent-intro voor HR-managers",
     beschrijving:
       "Een toegankelijke onboardingmodule die HR-professionals wegwijs maakt in talentprofielen — zonder jargon.",
     leden: ["SL", "HV", "TK"],
     status: "Actief",
-    statusKleur: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
+    statusKleur:
+      "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300",
     tags: ["HR", "Onboarding"],
   },
   {
@@ -242,12 +221,16 @@ const WERKPLAATS_PROJECTEN = [
       "Gedrukte en digitale kaarten per talentfocus — als gesprekstrigger in teamworkshops.",
     leden: ["DM", "AV"],
     status: "Zoekt co-creators",
-    statusKleur: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+    statusKleur:
+      "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
     tags: ["Design", "Workshop"],
   },
 ];
 
-const TERRAS_EVENTS = [
+// =============================================================================
+// ZZ — terras events (verbatim)
+// =============================================================================
+const terrasEvents = [
   {
     datum: "3 jul 2026",
     dag: "do",
@@ -283,7 +266,10 @@ const TERRAS_EVENTS = [
   },
 ];
 
-const STUDIE_BIBLIOTHEEK = [
+// =============================================================================
+// E4 — studie kamer bibliotheek (verbatim)
+// =============================================================================
+const bibliotheekItems = [
   {
     titel: "Wat zijn talentfoci precies?",
     type: "Artikel",
@@ -322,9 +308,10 @@ const STUDIE_BIBLIOTHEEK = [
   },
 ];
 
-// ─── Muziek-data ───────────────────────────────────────────────────────────────
-
-const COMPONISTEN = [
+// =============================================================================
+// eee — muziek componisten (verbatim, 9 componisten)
+// =============================================================================
+const componisten = [
   {
     naam: "Johann Sebastian Bach",
     periode: "Barok",
@@ -435,9 +422,28 @@ const COMPONISTEN = [
   },
 ];
 
-// ─── Sub-componenten ───────────────────────────────────────────────────────────
+// =============================================================================
+// qg — Avatar component (verbatim)
+// =============================================================================
+function Avatar({ initials, size = "md" }: { initials: string; size?: "sm" | "md" }) {
+  const cls = size === "sm" ? "h-7 w-7 text-xs" : "h-9 w-9 text-sm";
+  return (
+    <div className={`${cls} flex items-center justify-center rounded-full bg-accent/15 font-semibold text-accent shrink-0`}>
+      {initials}
+    </div>
+  );
+}
 
-function KamerKaart({ kamer, onOpen }: { kamer: Kamer; onOpen: () => void }) {
+// =============================================================================
+// tee — KamerKaart component (verbatim)
+// =============================================================================
+function KamerKaart({
+  kamer,
+  onOpen,
+}: {
+  kamer: (typeof kamers)[0];
+  onOpen: () => void;
+}) {
   const Icon = kamer.icon;
   return (
     <Card
@@ -471,20 +477,10 @@ function KamerKaart({ kamer, onOpen }: { kamer: Kamer; onOpen: () => void }) {
   );
 }
 
-function Avatar({ initials, size = "md" }: { initials: string; size?: "sm" | "md" }) {
-  const s = size === "sm" ? "h-7 w-7 text-xs" : "h-9 w-9 text-sm";
-  return (
-    <div
-      className={`${s} flex items-center justify-center rounded-full bg-accent/15 font-semibold text-accent shrink-0`}
-    >
-      {initials}
-    </div>
-  );
-}
-
-// ─── Kamer-inhoud ──────────────────────────────────────────────────────────────
-
-function StilteKamer() {
+// =============================================================================
+// nee — Stilte Kamer content (verbatim)
+// =============================================================================
+function SilteKamerContent() {
   return (
     <div className="flex flex-col items-center justify-center gap-8 py-16 text-center">
       <div className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-950/30">
@@ -496,17 +492,17 @@ function StilteKamer() {
           Adem in. Adem uit. Er is niets te doen hier — alleen zijn.
         </p>
         <p className="mt-4 text-sm leading-relaxed text-muted-foreground/70 italic">
-          "Stilte is niet de afwezigheid van geluid, maar de aanwezigheid van jezelf."
+          &ldquo;Stilte is niet de afwezigheid van geluid, maar de aanwezigheid van jezelf.&rdquo;
         </p>
       </div>
       <div className="grid w-full max-w-sm gap-3">
-        {["Wees aanwezig", "Laat gedachten passeren", "Kom terug als het klopt"].map((tip, i) => (
+        {["Wees aanwezig", "Laat gedachten passeren", "Kom terug als het klopt"].map((e, t) => (
           <div
-            key={i}
+            key={t}
             className="flex items-center gap-3 rounded-lg border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-950/20 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300"
           >
-            <span className="text-base">{["🌿", "🌊", "✦"][i]}</span>
-            {tip}
+            <span className="text-base">{["🌿", "🌊", "✦"][t]}</span>
+            {e}
           </div>
         ))}
       </div>
@@ -514,7 +510,10 @@ function StilteKamer() {
   );
 }
 
-function StudieKamer() {
+// =============================================================================
+// ree — Studie Kamer content (verbatim)
+// =============================================================================
+function StudieKamerContent() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -524,41 +523,46 @@ function StudieKamer() {
             Artikelen, longreads en podcasts van de TaPas-community
           </p>
         </div>
-        <Badge variant="outline" className="text-xs">{STUDIE_BIBLIOTHEEK.length} items</Badge>
+        <Badge variant="outline" className="text-xs">
+          {bibliotheekItems.length} items
+        </Badge>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        {STUDIE_BIBLIOTHEEK.map((item, i) => (
-          <Card key={i} className="group hover:border-blue-200 dark:hover:border-blue-800 transition-colors">
+        {bibliotheekItems.map((e, t) => (
+          <Card
+            key={t}
+            className="group hover:border-blue-200 dark:hover:border-blue-800 transition-colors"
+          >
             <CardContent className="flex flex-col gap-2.5 p-4">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-1.5">
-                  {item.type === "Podcast" ? (
+                  {e.type === "Podcast" ? (
                     <Headphones className="h-4 w-4 text-purple-500 shrink-0" />
-                  ) : item.type === "Longread" ? (
+                  ) : e.type === "Longread" ? (
                     <BookOpen className="h-4 w-4 text-blue-500 shrink-0" />
                   ) : (
                     <GraduationCap className="h-4 w-4 text-blue-400 shrink-0" />
                   )}
-                  <span className="text-xs text-muted-foreground">{item.type}</span>
+                  <span className="text-xs text-muted-foreground">{e.type}</span>
                 </div>
                 <div className="flex items-center gap-1 text-xs text-muted-foreground/70">
                   <Clock className="h-3 w-3" />
-                  {item.duur}
+                  {e.duur}
                 </div>
               </div>
-              <h3 className="text-sm font-semibold text-foreground leading-snug">{item.titel}</h3>
+              <h3 className="text-sm font-semibold text-foreground leading-snug">{e.titel}</h3>
               <p className="text-xs leading-relaxed text-muted-foreground line-clamp-2">
-                {item.beschrijving}
+                {e.beschrijving}
               </p>
               <div className="flex items-center justify-between mt-1">
                 <div className="flex gap-1 flex-wrap">
-                  {item.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0">
-                      {tag}
+                  {e.tags.map((n) => (
+                    <Badge key={n} variant="secondary" className="text-xs px-1.5 py-0">
+                      {n}
                     </Badge>
                   ))}
                 </div>
-                <span className="text-xs text-muted-foreground/60">{item.auteur}</span>
+                <span className="text-xs text-muted-foreground/60">{e.auteur}</span>
               </div>
             </CardContent>
           </Card>
@@ -574,7 +578,10 @@ function StudieKamer() {
   );
 }
 
-function MuziekKamer() {
+// =============================================================================
+// iee — Muziek Kamer content (verbatim)
+// =============================================================================
+function MuziekKamerContent() {
   const [open, setOpen] = useState<number | null>(null);
   return (
     <div className="flex flex-col gap-5">
@@ -585,39 +592,44 @@ function MuziekKamer() {
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {COMPONISTEN.map((c, i) => (
+        {componisten.map((n, r) => (
           <Card
-            key={i}
+            key={r}
             className={`cursor-pointer transition-all ${
-              open === i
+              open === r
                 ? "ring-2 ring-purple-400/60 border-purple-300 dark:border-purple-700"
                 : "hover:border-purple-200 dark:hover:border-purple-800"
             }`}
-            onClick={() => setOpen(open === i ? null : i)}
+            onClick={() => setOpen(open === r ? null : r)}
           >
             <CardContent className="p-4">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="text-sm font-semibold text-foreground">{c.naam}</h3>
-                  <p className="text-xs text-muted-foreground">{c.periode}</p>
+                  <h3 className="text-sm font-semibold text-foreground">{n.naam}</h3>
+                  <p className="text-xs text-muted-foreground">{n.periode}</p>
                 </div>
-                <Music2 className={`h-4 w-4 shrink-0 ${open === i ? "text-purple-500" : "text-muted-foreground/50"}`} />
+                <Music2
+                  className={`h-4 w-4 shrink-0 ${
+                    open === r ? "text-purple-500" : "text-muted-foreground/50"
+                  }`}
+                />
               </div>
-              <p className="mt-2 text-xs text-muted-foreground leading-relaxed">{c.beschrijving}</p>
-              {open === i && (
+              <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
+                {n.beschrijving}
+              </p>
+              {open === r && (
                 <div className="mt-3 flex flex-col gap-1.5 border-t border-border pt-3">
-                  {c.werken.map((w, j) => (
+                  {n.werken.map((s, a) => (
                     <a
-                      key={j}
-                      href={w.url}
+                      key={a}
+                      href={s.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-foreground hover:bg-purple-50 dark:hover:bg-purple-950/20 transition-colors"
+                      onClick={(l) => l.stopPropagation()}
+                      className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-foreground hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-colors"
                     >
-                      <Play className="h-3 w-3 text-purple-500 shrink-0" />
-                      <span className="line-clamp-1">{w.titel}</span>
-                      <ExternalLink className="h-3 w-3 text-muted-foreground/50 ml-auto shrink-0" />
+                      <Music2 className="h-3 w-3 text-purple-400 shrink-0" />
+                      {s.titel}
                     </a>
                   ))}
                 </div>
@@ -630,27 +642,61 @@ function MuziekKamer() {
   );
 }
 
-function TalentCafe() {
-  const [nieuweBijdrage, setNieuweBijdrage] = useState("");
-  const [bijdragen, setBijdragen] = useState(CAFE_BIJDRAGEN);
-  const demoToast = useDemoToast();
+// =============================================================================
+// cee — Webshop content (verbatim)
+// =============================================================================
+function WebshopContent() {
+  return (
+    <div className="flex flex-col items-center justify-center gap-8 py-16 text-center">
+      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-950/30">
+        <ShoppingBag className="h-9 w-9 text-amber-600 dark:text-amber-400" />
+      </div>
+      <div className="max-w-md">
+        <Badge variant="secondary" className="mb-3">
+          Binnenkort
+        </Badge>
+        <h2 className="text-xl font-semibold text-foreground">TaPas Webshop</h2>
+        <p className="mt-3 leading-relaxed text-muted-foreground">
+          Bestel instruments, rapporten en coachinglicenties. We bouwen dit moment volop —
+          binnenkort beschikbaar.
+        </p>
+      </div>
+      <div className="grid w-full max-w-md gap-3 text-left">
+        {[
+          "TaPas Business Kompas",
+          "T4Recruitment Licentie",
+          "2MinScan Bundel",
+          "TeamScan Sessie",
+        ].map((e, t) => (
+          <div
+            key={t}
+            className="flex items-center justify-between rounded-lg border border-amber-100 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/20 px-4 py-3"
+          >
+            <span className="text-sm text-foreground">{e}</span>
+            <Badge variant="outline" className="text-xs text-muted-foreground">
+              Binnenkort
+            </Badge>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-  function plaatsBijdrage() {
-    if (DEMO_MODE) { demoToast(); return; }
-    if (!nieuweBijdrage.trim()) return;
+// =============================================================================
+// see — Talentencafé content (verbatim)
+// =============================================================================
+function TalentencafeContent() {
+  const [tekst, setTekst] = useState("");
+  const [bijdragen, setBijdragen] = useState(cafeBijdragen);
+
+  function plaatsen() {
+    if (!tekst.trim()) return;
     setBijdragen([
-      {
-        auteur: "Jij",
-        avatar: "JJ",
-        tijd: "zojuist",
-        tekst: nieuweBijdrage.trim(),
-        likes: 0,
-        reacties: 0,
-        tags: [],
-      },
+      { auteur: "Jij", avatar: "JJ", tijd: "zojuist", tekst: tekst.trim(), likes: 0, reacties: 0, tags: [] },
       ...bijdragen,
     ]);
-    setNieuweBijdrage("");
+    setTekst("");
   }
 
   return (
@@ -661,60 +707,48 @@ function TalentCafe() {
           Deel inzichten, stel vragen, vertel je verhaal
         </p>
       </div>
-
-      {/* Schrijfvak */}
       <Card className="border-orange-100 dark:border-orange-900/40">
         <CardContent className="p-4">
           <div className="flex gap-3">
             <Avatar initials="JJ" />
             <div className="flex-1 flex flex-col gap-2">
-              {DEMO_MODE ? (
-                <div className="flex min-h-[72px] items-center justify-center rounded-lg border border-dashed border-orange-200 dark:border-orange-800 bg-orange-50/30 dark:bg-orange-950/10 px-4 py-3 text-sm text-muted-foreground">
-                  Demo-modus — bijdragen plaatsen is uitgeschakeld
-                </div>
-              ) : (
-                <>
-                  <textarea
-                    value={nieuweBijdrage}
-                    onChange={(e) => setNieuweBijdrage(e.target.value)}
-                    placeholder="Deel een inzicht, stel een vraag of vertel iets…"
-                    className="min-h-[72px] w-full resize-none rounded-lg border border-border bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-orange-300 dark:focus:ring-orange-700"
-                  />
-                  <div className="flex justify-end">
-                    <Button
-                      size="sm"
-                      onClick={plaatsBijdrage}
-                      disabled={!nieuweBijdrage.trim()}
-                      className="bg-orange-500 hover:bg-orange-600 text-white border-0"
-                    >
-                      Plaatsen
-                    </Button>
-                  </div>
-                </>
-              )}
+              <textarea
+                value={tekst}
+                onChange={(a) => setTekst(a.target.value)}
+                placeholder="Deel een inzicht, stel een vraag of vertel iets…"
+                className="min-h-[72px] w-full resize-none rounded-lg border border-border bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-orange-300 dark:focus:ring-orange-700"
+              />
+              <div className="flex justify-end">
+                <Button
+                  size="sm"
+                  onClick={plaatsen}
+                  disabled={!tekst.trim()}
+                  className="bg-orange-500 hover:bg-orange-600 text-white border-0"
+                >
+                  Plaatsen
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
-
-      {/* Feed */}
       <div className="flex flex-col gap-3">
-        {bijdragen.map((b, i) => (
-          <Card key={i}>
+        {bijdragen.map((a, l) => (
+          <Card key={l}>
             <CardContent className="p-4">
               <div className="flex gap-3">
-                <Avatar initials={b.avatar} />
+                <Avatar initials={a.avatar} />
                 <div className="flex-1">
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className="text-sm font-semibold text-foreground">{b.auteur}</span>
-                    <span className="text-xs text-muted-foreground/60">{b.tijd}</span>
+                    <span className="text-sm font-semibold text-foreground">{a.auteur}</span>
+                    <span className="text-xs text-muted-foreground/60">{a.tijd}</span>
                   </div>
-                  <p className="mt-1.5 text-sm leading-relaxed text-foreground/80">{b.tekst}</p>
-                  {b.tags.length > 0 && (
+                  <p className="mt-1.5 text-sm leading-relaxed text-foreground/80">{a.tekst}</p>
+                  {a.tags.length > 0 && (
                     <div className="mt-2 flex gap-1">
-                      {b.tags.map((tag) => (
-                        <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0">
-                          {tag}
+                      {a.tags.map((A) => (
+                        <Badge key={A} variant="secondary" className="text-xs px-1.5 py-0">
+                          {A}
                         </Badge>
                       ))}
                     </div>
@@ -722,11 +756,11 @@ function TalentCafe() {
                   <div className="mt-3 flex items-center gap-4">
                     <button className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-rose-500 transition-colors">
                       <Heart className="h-3.5 w-3.5" />
-                      {b.likes}
+                      {a.likes}
                     </button>
                     <button className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-accent transition-colors">
                       <MessageCircle className="h-3.5 w-3.5" />
-                      {b.reacties}
+                      {a.reacties}
                     </button>
                   </div>
                 </div>
@@ -739,8 +773,11 @@ function TalentCafe() {
   );
 }
 
-function InspiratieWand() {
-  const [liked, setLiked] = useState<Set<number>>(new Set());
+// =============================================================================
+// aee — Inspiratiewand content (verbatim)
+// =============================================================================
+function InspiratiePicker() {
+  const [bewaard, setBewaard] = useState<Set<number>>(new Set());
   return (
     <div className="flex flex-col gap-5">
       <div>
@@ -750,35 +787,34 @@ function InspiratieWand() {
         </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        {INSPIRATIE_ITEMS.map((item, i) => (
-          <Card
-            key={i}
-            className={`border-l-4 ${item.kleur}`}
-          >
+        {inspiratieItems.map((n, r) => (
+          <Card key={r} className={`border-l-4 ${n.kleur}`}>
             <CardContent className="p-5">
               <div className="flex items-center gap-1.5 mb-3">
                 <Badge variant="outline" className="text-xs capitalize">
-                  {item.type === "quote" ? "Citaat" : item.type === "inzicht" ? "Inzicht" : "Tip"}
+                  {n.type === "quote" ? "Citaat" : n.type === "inzicht" ? "Inzicht" : "Tip"}
                 </Badge>
-                <span className="text-xs text-muted-foreground/60">· {item.context}</span>
+                <span className="text-xs text-muted-foreground/60">· {n.context}</span>
               </div>
               <p className="text-sm leading-relaxed text-foreground italic">
-                "{item.inhoud}"
+                &ldquo;{n.inhoud}&rdquo;
               </p>
               <div className="mt-4 flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">— {item.bron}</span>
+                <span className="text-xs text-muted-foreground">— {n.bron}</span>
                 <button
                   onClick={() => {
-                    const newLiked = new Set(liked);
-                    newLiked.has(i) ? newLiked.delete(i) : newLiked.add(i);
-                    setLiked(newLiked);
+                    const s = new Set(bewaard);
+                    s.has(r) ? s.delete(r) : s.add(r);
+                    setBewaard(s);
                   }}
                   className={`flex items-center gap-1 text-xs transition-colors ${
-                    liked.has(i) ? "text-rose-500" : "text-muted-foreground hover:text-rose-400"
+                    bewaard.has(r) ? "text-rose-500" : "text-muted-foreground hover:text-rose-400"
                   }`}
                 >
-                  <Heart className={`h-3.5 w-3.5 ${liked.has(i) ? "fill-current" : ""}`} />
-                  {liked.has(i) ? "Bewaard" : "Bewaar"}
+                  <Heart
+                    className={`h-3.5 w-3.5 ${bewaard.has(r) ? "fill-current" : ""}`}
+                  />
+                  {bewaard.has(r) ? "Bewaard" : "Bewaar"}
                 </button>
               </div>
             </CardContent>
@@ -786,16 +822,19 @@ function InspiratieWand() {
         ))}
       </div>
       <div className="rounded-lg border border-dashed border-yellow-200 dark:border-yellow-800 bg-yellow-50/30 dark:bg-yellow-950/10 p-4 text-center text-sm text-muted-foreground">
-        Iets dat jou raakt?{" "}
-        <button className="text-yellow-700 dark:text-yellow-400 underline underline-offset-2 hover:no-underline">
-          Voeg toe aan de wand
+        Heb je een quote, inzicht of tip te delen?{" "}
+        <button className="text-amber-600 dark:text-amber-400 underline underline-offset-2 hover:no-underline">
+          Draag bij aan de wand
         </button>
       </div>
     </div>
   );
 }
 
-function Werkplaats() {
+// =============================================================================
+// oee — Werkplaats content (verbatim)
+// =============================================================================
+function WerkplaatsContent() {
   return (
     <div className="flex flex-col gap-5">
       <div>
@@ -805,26 +844,29 @@ function Werkplaats() {
         </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        {WERKPLAATS_PROJECTEN.map((project, i) => (
-          <Card key={i} className="hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
+        {werkplaatsProjecten.map((e, t) => (
+          <Card
+            key={t}
+            className="hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
+          >
             <CardContent className="flex flex-col gap-3 p-5">
               <div className="flex items-start justify-between gap-2">
-                <h3 className="text-sm font-semibold text-foreground leading-snug">{project.titel}</h3>
-                <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${project.statusKleur}`}>
-                  {project.status}
+                <h3 className="text-sm font-semibold text-foreground leading-snug">{e.titel}</h3>
+                <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${e.statusKleur}`}>
+                  {e.status}
                 </span>
               </div>
-              <p className="text-xs leading-relaxed text-muted-foreground">{project.beschrijving}</p>
+              <p className="text-xs leading-relaxed text-muted-foreground">{e.beschrijving}</p>
               <div className="flex items-center justify-between mt-1">
                 <div className="flex -space-x-1.5">
-                  {project.leden.map((lid) => (
-                    <Avatar key={lid} initials={lid} size="sm" />
+                  {e.leden.map((n) => (
+                    <Avatar key={n} initials={n} size="sm" />
                   ))}
                 </div>
                 <div className="flex gap-1">
-                  {project.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="text-xs px-1.5 py-0">
-                      {tag}
+                  {e.tags.map((n) => (
+                    <Badge key={n} variant="secondary" className="text-xs px-1.5 py-0">
+                      {n}
                     </Badge>
                   ))}
                 </div>
@@ -836,32 +878,38 @@ function Werkplaats() {
             </CardContent>
           </Card>
         ))}
-      </div>
-      <Card className="border-dashed border-slate-300 dark:border-slate-700">
-        <CardContent className="flex items-center justify-center gap-3 p-5 text-center">
-          <div className="flex flex-col gap-2">
-            <p className="text-sm text-muted-foreground">Heb je een idee voor een project?</p>
+        <Card className="border-dashed border-slate-300 dark:border-slate-700">
+          <CardContent className="flex flex-col items-center justify-center gap-3 p-8 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+              <Sparkles className="h-5 w-5 text-slate-500" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">Start een project</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Heb je een idee? Zoek collaborators of doe het alleen.
+              </p>
+            </div>
             <Button variant="outline" size="sm">
-              <Wrench className="h-3.5 w-3.5 mr-1.5" />
               Nieuw project starten
             </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
 
-function ReflectieKamer() {
-  const [dagboek, setDagboek] = useState("");
-  const [opgeslagen, setOpslagen] = useState(false);
-  const demoToast = useDemoToast();
+// =============================================================================
+// lee — Reflectiekamer content (verbatim)
+// =============================================================================
+function ReflectieContent() {
+  const [tekst, setTekst] = useState("");
+  const [opgeslagen, setOpgeslagen] = useState(false);
 
-  function sla() {
-    if (DEMO_MODE) { demoToast(); return; }
-    if (!dagboek.trim()) return;
-    setOpslagen(true);
-    setTimeout(() => setOpslagen(false), 2000);
+  function opslaan() {
+    if (!tekst.trim()) return;
+    setOpgeslagen(true);
+    setTimeout(() => setOpgeslagen(false), 2000);
   }
 
   return (
@@ -873,68 +921,60 @@ function ReflectieKamer() {
         <div>
           <p className="text-sm font-medium text-rose-800 dark:text-rose-300">Persoonlijk dagboek</p>
           <p className="mt-0.5 text-xs leading-relaxed text-rose-700/70 dark:text-rose-400/70">
-            Jouw reflecties zijn privé. Ze worden niet gedeeld, niet geanalyseerd en niet bewaard buiten jouw
-            apparaat. Dit is jouw ruimte.
+            Jouw reflecties zijn privé. Ze worden niet gedeeld, niet geanalyseerd en niet bewaard
+            buiten jouw apparaat. Dit is jouw ruimte.
           </p>
         </div>
       </div>
       <div className="flex flex-col gap-2">
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-          {new Date().toLocaleDateString("nl-BE", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+          {new Date().toLocaleDateString("nl-BE", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })}
         </p>
-        {DEMO_MODE ? (
-          <div className="flex min-h-[200px] items-center justify-center rounded-xl border border-dashed border-rose-200 dark:border-rose-800 bg-rose-50/30 dark:bg-rose-950/10 p-6 text-center">
-            <div>
-              <p className="text-sm text-muted-foreground">Persoonlijk dagboek</p>
-              <p className="mt-1 text-xs text-muted-foreground/60">
-                Schrijven is uitgeschakeld in de demo. In de echte Lounge is dit jouw privé-ruimte.
-              </p>
-            </div>
-          </div>
-        ) : (
-          <>
-            <textarea
-              value={dagboek}
-              onChange={(e) => setDagboek(e.target.value)}
-              placeholder="Wat zit er in je hoofd vandaag? Wat vloog er? Wat wil je vasthouden?"
-              className="min-h-[200px] w-full resize-none rounded-xl border border-border bg-background p-4 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-rose-300 dark:focus:ring-rose-700"
-            />
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground/50">{dagboek.length} tekens</span>
-              <Button
-                size="sm"
-                onClick={sla}
-                disabled={!dagboek.trim()}
-                className={`transition-colors ${
-                  opgeslagen
-                    ? "bg-emerald-500 hover:bg-emerald-500 text-white border-0"
-                    : "bg-rose-500 hover:bg-rose-600 text-white border-0"
-                }`}
-              >
-                {opgeslagen ? "✓ Opgeslagen" : "Opslaan"}
-              </Button>
-            </div>
-          </>
-        )}
+        <textarea
+          value={tekst}
+          onChange={(a) => setTekst(a.target.value)}
+          placeholder="Wat zit er in je hoofd vandaag? Wat vloog er? Wat wil je vasthouden?"
+          className="min-h-[200px] w-full resize-none rounded-xl border border-border bg-background p-4 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-rose-300 dark:focus:ring-rose-700"
+        />
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground/50">{tekst.length} tekens</span>
+          <Button
+            size="sm"
+            onClick={opslaan}
+            disabled={!tekst.trim()}
+            className={`transition-colors ${
+              opgeslagen
+                ? "bg-emerald-500 hover:bg-emerald-500 text-white border-0"
+                : "bg-rose-500 hover:bg-rose-600 text-white border-0"
+            }`}
+          >
+            {opgeslagen ? "✓ Opgeslagen" : "Opslaan"}
+          </Button>
+        </div>
       </div>
       <Separator />
       <div className="flex flex-col gap-2">
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Reflectievragen</p>
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          Reflectievragen
+        </p>
         <div className="grid gap-2 sm:grid-cols-2">
           {[
             "Wanneer voelde ik vandaag energie?",
             "Wat herhaalde zich de laatste weken?",
             "Waar gaf ik meer energie dan ik ontving?",
             "Welk talent gebruikte ik vandaag volop?",
-          ].map((vraag, i) => (
+          ].map((a, l) => (
             <button
-              key={i}
-              onClick={() => !DEMO_MODE && setDagboek((prev) => (prev ? prev + "\n\n" : "") + vraag + "\n")}
-              className={`rounded-lg border border-border px-3 py-2 text-left text-xs text-muted-foreground transition-colors ${
-                DEMO_MODE ? "opacity-50 cursor-default" : "hover:bg-accent/5 hover:text-foreground"
-              }`}
+              key={l}
+              onClick={() => setTekst((A) => (A ? A + "\n\n" : "") + a + "\n")}
+              className="rounded-lg border border-border px-3 py-2 text-left text-xs text-muted-foreground hover:bg-accent/5 hover:text-foreground transition-colors"
             >
-              {vraag}
+              {a}
             </button>
           ))}
         </div>
@@ -943,78 +983,84 @@ function ReflectieKamer() {
   );
 }
 
-function Buitenterras() {
-  const [rsvp, setRsvp] = useState<Set<number>>(new Set());
-  const demoToast = useDemoToast();
+// =============================================================================
+// Aee — Buitenterras content (verbatim)
+// =============================================================================
+function BuitenterrasContent() {
+  const [ingeschreven, setIngeschreven] = useState<Set<number>>(new Set());
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h2 className="text-lg font-semibold text-foreground">Buitenterras · Events & Agenda</h2>
+        <h2 className="text-lg font-semibold text-foreground">
+          Buitenterras · Events &amp; Agenda
+        </h2>
         <p className="text-sm text-muted-foreground mt-0.5">
           Aankomende live-sessies, webinars en ontmoetingen
         </p>
       </div>
       <div className="flex flex-col gap-3">
-        {TERRAS_EVENTS.map((ev, i) => {
-          const vol = ev.plaatsen >= ev.max;
-          const ingeschreven = rsvp.has(i);
-          const bezetting = Math.round((ev.plaatsen / ev.max) * 100);
+        {terrasEvents.map((n, r) => {
+          const vol = n.plaatsen >= n.max;
+          const actief = ingeschreven.has(r);
+          const pct = Math.round((n.plaatsen / n.max) * 100);
           return (
-            <Card key={i} className={ingeschreven ? "border-sky-300 dark:border-sky-700" : ""}>
+            <Card key={r} className={actief ? "border-sky-300 dark:border-sky-700" : ""}>
               <CardContent className="p-5">
                 <div className="flex gap-4">
-                  {/* Datum-blokje */}
                   <div className="flex shrink-0 flex-col items-center justify-center rounded-lg border border-border bg-card w-14 py-2 text-center">
-                    <span className="text-xs uppercase text-muted-foreground font-medium">{ev.dag}</span>
+                    <span className="text-xs uppercase text-muted-foreground font-medium">
+                      {n.dag}
+                    </span>
                     <span className="text-lg font-bold leading-tight text-foreground">
-                      {ev.datum.split(" ")[0]}
+                      {n.datum.split(" ")[0]}
                     </span>
-                    <span className="text-xs text-muted-foreground">
-                      {ev.datum.split(" ")[1]}
-                    </span>
+                    <span className="text-xs text-muted-foreground">{n.datum.split(" ")[1]}</span>
                   </div>
-                  {/* Info */}
                   <div className="flex-1 flex flex-col gap-2">
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className="text-sm font-semibold text-foreground leading-snug">{ev.titel}</h3>
-                      <Badge variant="outline" className="shrink-0 text-xs">{ev.type}</Badge>
+                      <h3 className="text-sm font-semibold text-foreground leading-snug">
+                        {n.titel}
+                      </h3>
+                      <Badge variant="outline" className="shrink-0 text-xs">
+                        {n.type}
+                      </Badge>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />{ev.tijdstip}
+                      <span>{n.tijdstip}</span>
+                      <span>·</span>
+                      <span>
+                        {n.plaatsen}/{n.max} plaatsen
                       </span>
-                      <span className="flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        {ev.plaatsen}/{ev.max} plaatsen
-                      </span>
-                      {bezetting > 75 && (
-                        <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
-                          <Flame className="h-3 w-3" /> Bijna vol
-                        </span>
-                      )}
                     </div>
-                    <p className="text-xs leading-relaxed text-muted-foreground">{ev.beschrijving}</p>
-                    <div className="flex items-center gap-2 mt-1">
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      {n.beschrijving}
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-sky-400"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
                       <Button
                         size="sm"
-                        variant={ingeschreven ? "default" : "outline"}
-                        disabled={vol && !ingeschreven}
+                        variant={actief ? "default" : "outline"}
+                        disabled={vol && !actief}
                         onClick={() => {
-                          if (DEMO_MODE) { demoToast(); return; }
-                          const s = new Set(rsvp);
-                          ingeschreven ? s.delete(i) : s.add(i);
-                          setRsvp(s);
+                          const s = new Set(ingeschreven);
+                          s.has(r) ? s.delete(r) : s.add(r);
+                          setIngeschreven(s);
                         }}
-                        className={ingeschreven ? "bg-sky-500 hover:bg-sky-600 text-white border-0" : ""}
+                        className={
+                          actief
+                            ? "bg-sky-500 hover:bg-sky-600 text-white border-0"
+                            : vol
+                            ? "opacity-50 cursor-not-allowed"
+                            : ""
+                        }
                       >
-                        <Calendar className="h-3.5 w-3.5 mr-1.5" />
-                        {ingeschreven ? "Ingeschreven ✓" : vol ? "Volzet" : "Inschrijven"}
+                        {actief ? "✓ Ingeschreven" : vol ? "Vol" : "RSVP"}
                       </Button>
-                      {ingeschreven && (
-                        <span className="text-xs text-sky-600 dark:text-sky-400">
-                          Je ontvangt een bevestigingsmail.
-                        </span>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -1027,137 +1073,48 @@ function Buitenterras() {
   );
 }
 
-function WebshopKamer() {
-  return (
-    <div className="flex flex-col gap-8 py-8">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-950/30">
-          <ShoppingBag className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-        </div>
-        <div>
-          <h2 className="text-xl font-semibold text-foreground">TaPas Webshop</h2>
-          <p className="text-sm text-muted-foreground">Ontdek onze producten — binnenkort beschikbaar om te bestellen.</p>
-        </div>
-      </div>
-
-      {/* Productkaarten */}
-      <div className="grid gap-6 sm:grid-cols-2">
-
-        {/* Product 1: TaPas Island Bordspel */}
-        <div className="group overflow-hidden rounded-2xl border border-border bg-card transition hover:shadow-md">
-          <div className="relative overflow-hidden bg-muted" style={{ aspectRatio: "4/3" }}>
-            <img
-              src="/lounge/img/tapas-island-board.jpg"
-              alt="TaPas Island bordspel — 3D mockup"
-              className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-            />
-            <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-card/60 to-transparent" />
-            <Badge className="absolute right-3 top-3 bg-amber-500 text-white border-0 text-[11px] tracking-wide">Binnenkort beschikbaar</Badge>
-          </div>
-          <div className="p-5">
-            <h3 className="font-semibold text-foreground">TaPas Island — Het Bordspel</h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Het bordspel over talent, drivers en inner why. Speel samen, ontdek wie je bent en wat je drijft.
-              Ideaal voor teams, coaches en gezinnen die diep willen gaan op een luchtige manier.
-            </p>
-            <div className="mt-4 flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Prijs volgt binnenkort</span>
-              <button
-                disabled
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-secondary px-3.5 py-2 text-sm font-medium text-muted-foreground cursor-not-allowed opacity-60"
-              >
-                <ShoppingBag className="h-4 w-4" />
-                Binnenkort
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Product 2: Amelia Earhart editie / doos mockup */}
-        <div className="group overflow-hidden rounded-2xl border border-border bg-card transition hover:shadow-md">
-          <div className="relative overflow-hidden bg-muted" style={{ aspectRatio: "4/3" }}>
-            <img
-              src="/lounge/img/tapas-island-box.jpg"
-              alt="TaPas Island doos — Amelia Earhart editie"
-              className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-            />
-            <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-card/60 to-transparent" />
-            <Badge className="absolute right-3 top-3 bg-amber-500 text-white border-0 text-[11px] tracking-wide">Binnenkort beschikbaar</Badge>
-          </div>
-          <div className="p-5">
-            <h3 className="font-semibold text-foreground">TaPas Island — Amelia Editie</h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Het bordspel over talent, drivers en inner why — in een speciale doos geïnspireerd op de
-              avontuurlijke geest van Amelia Earhart. Een uniek cadeau voor wie durft te dromen.
-            </p>
-            <div className="mt-4 flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Prijs volgt binnenkort</span>
-              <button
-                disabled
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-secondary px-3.5 py-2 text-sm font-medium text-muted-foreground cursor-not-allowed opacity-60"
-              >
-                <ShoppingBag className="h-4 w-4" />
-                Binnenkort
-              </button>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      {/* Onderaan: bericht over meer producten */}
-      <div className="rounded-xl border border-amber-100 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-950/10 px-5 py-4 text-center">
-        <p className="text-sm text-muted-foreground">
-          Meer producten — instrumentenlicenties, coachingpakketten en rapportbundels — volgen binnenkort.
-          Houd deze ruimte in de gaten.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// ─── Kamer-renderer ────────────────────────────────────────────────────────────
-
-function KamerInhoud({ id }: { id: KamerId }) {
+// =============================================================================
+// uee — kamer content router (verbatim)
+// =============================================================================
+function KamerContent({ id }: { id: string }) {
   switch (id) {
-    case "stilte": return <StilteKamer />;
-    case "studie": return <StudieKamer />;
-    case "muziek": return <MuziekKamer />;
-    case "webshop": return <WebshopKamer />;
-    case "cafe": return <TalentCafe />;
-    case "inspiratie": return <InspiratieWand />;
-    case "werkplaats": return <Werkplaats />;
-    case "reflectie": return <ReflectieKamer />;
-    case "terras": return <Buitenterras />;
-    default: return null;
+    case "stilte":     return <SilteKamerContent />;
+    case "studie":     return <StudieKamerContent />;
+    case "muziek":     return <MuziekKamerContent />;
+    case "webshop":    return <WebshopContent />;
+    case "cafe":       return <TalentencafeContent />;
+    case "inspiratie": return <InspiratiePicker />;
+    case "werkplaats": return <WerkplaatsContent />;
+    case "reflectie":  return <ReflectieContent />;
+    case "terras":     return <BuitenterrasContent />;
+    default:           return null;
   }
 }
 
-// ─── Hoofd-export ──────────────────────────────────────────────────────────────
-
+// =============================================================================
+// dee — Lounge hoofdpagina (verbatim)
+// =============================================================================
 export default function Lounge() {
-  const [actief, setActief] = useState<KamerId | null>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
+  const [actieveKamer, setActieveKamer] = useState<string | null>(null);
+  const mainRef = useRef<HTMLDivElement>(null);
 
-  function openKamer(id: KamerId) {
-    setActief(id);
-    // Scroll naar boven van de inhoud
-    setTimeout(() => contentRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  function openKamer(id: string) {
+    setActieveKamer(id);
+    setTimeout(() => mainRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   }
 
   function sluitKamer() {
-    setActief(null);
+    setActieveKamer(null);
   }
 
-  const huidigeKamer = KAMERS.find((k) => k.id === actief);
+  const kamer = kamers.find((k) => k.id === actieveKamer);
 
   return (
     <div className="min-h-[100dvh] bg-background">
       <AppHeader
         right={
           <div className="flex items-center gap-2">
-            {actief && (
+            {actieveKamer && (
               <Button variant="ghost" size="sm" onClick={sluitKamer} className="gap-1.5">
                 <ArrowLeft className="h-4 w-4" />
                 <span className="hidden sm:inline">Alle kamers</span>
@@ -1171,12 +1128,49 @@ export default function Lounge() {
           </div>
         }
       />
-
-      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12" ref={contentRef}>
-        {!actief ? (
-          /* ── Lounge-onthaal ── */
+      <main
+        className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12"
+        ref={mainRef}
+      >
+        {actieveKamer ? (
+          // ─── Actieve kamer ───────────────────────────────────────────────
+          <div>
+            <nav className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
+              <button
+                onClick={sluitKamer}
+                className="hover:text-foreground transition-colors"
+              >
+                Lounge
+              </button>
+              <ChevronRight className="h-4 w-4" />
+              <span className="text-foreground font-medium">{kamer?.naam}</span>
+            </nav>
+            {kamer && (
+              <div className="mb-6 flex items-center gap-3">
+                <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-accent/8 ${kamer.kleur}`}>
+                  <kamer.icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-semibold text-foreground">{kamer.naam}</h1>
+                  <p className="text-xs text-muted-foreground">{kamer.ondertitel}</p>
+                </div>
+              </div>
+            )}
+            <KamerContent id={actieveKamer} />
+            <div className="mt-10 border-t border-border pt-6">
+              <button
+                onClick={sluitKamer}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Terug naar alle kamers
+              </button>
+            </div>
+          </div>
+        ) : (
+          // ─── Lounge overzicht ────────────────────────────────────────────
           <>
-            {/* Welkomst-banner */}
+            {/* welkom banner */}
             <section
               className="mb-8 rounded-xl border-l-2 py-5 pl-6 pr-4 sm:mb-10"
               style={{
@@ -1194,18 +1188,20 @@ export default function Lounge() {
                     TaPas Lounge
                   </h1>
                   <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-[0.95rem]">
-                    Welkom in de Lounge — de gemeenschappelijke ruimte van TaPasCity. Kies een kamer en
-                    neem je tijd. Er is geen haast hier.
+                    Welkom in de Lounge — de gemeenschappelijke ruimte van TaPasCity. Kies een kamer
+                    en neem je tijd. Er is geen haast hier.
                   </p>
                 </div>
-                <div className="hidden sm:flex h-12 w-12 shrink-0 items-center justify-center rounded-full"
-                  style={{ background: "hsl(var(--gold) / 0.1)" }}>
+                <div
+                  className="hidden sm:flex h-12 w-12 shrink-0 items-center justify-center rounded-full"
+                  style={{ background: "hsl(var(--gold) / 0.1)" }}
+                >
                   <Star className="h-5 w-5" style={{ color: "hsl(var(--gold))" }} />
                 </div>
               </div>
             </section>
 
-            {/* Leden-status-balk */}
+            {/* aanwezigen balk */}
             <div className="mb-6 flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
               <div className="flex items-center gap-2">
                 <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -1215,8 +1211,8 @@ export default function Lounge() {
               </div>
               <Separator orientation="vertical" className="h-4" />
               <div className="flex -space-x-1.5">
-                {["HV", "DM", "SL", "TK", "AV"].map((initials) => (
-                  <Avatar key={initials} initials={initials} size="sm" />
+                {["HV", "DM", "SL", "TK", "AV"].map((l) => (
+                  <Avatar key={l} initials={l} size="sm" />
                 ))}
                 <div className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-muted text-xs text-muted-foreground">
                   +7
@@ -1225,71 +1221,29 @@ export default function Lounge() {
               <Separator orientation="vertical" className="h-4 hidden sm:block" />
               <span className="hidden sm:inline text-xs text-muted-foreground">
                 Nieuwe bijdrage in{" "}
-                <button className="text-accent underline underline-offset-2 hover:no-underline" onClick={() => openKamer("cafe")}>
+                <button
+                  className="text-accent underline underline-offset-2 hover:no-underline"
+                  onClick={() => openKamer("cafe")}
+                >
                   Talentencafé
                 </button>{" "}
                 · 2 min geleden
               </span>
             </div>
 
-            {/* Kamergrid */}
+            {/* kamers grid */}
             <section>
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-base font-semibold text-foreground">Negen kamers</h2>
-                <span className="text-xs text-muted-foreground">{KAMERS.length} beschikbaar</span>
+                <span className="text-xs text-muted-foreground">{kamers.length} beschikbaar</span>
               </div>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {KAMERS.map((kamer) => (
-                  <KamerKaart
-                    key={kamer.id}
-                    kamer={kamer}
-                    onOpen={() => openKamer(kamer.id)}
-                  />
+                {kamers.map((k) => (
+                  <KamerKaart key={k.id} kamer={k} onOpen={() => openKamer(k.id)} />
                 ))}
               </div>
             </section>
           </>
-        ) : (
-          /* ── Kamer-weergave ── */
-          <div>
-            {/* Breadcrumb */}
-            <nav className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
-              <button onClick={sluitKamer} className="hover:text-foreground transition-colors">
-                Lounge
-              </button>
-              <ChevronRight className="h-4 w-4" />
-              <span className="text-foreground font-medium">{huidigeKamer?.naam}</span>
-            </nav>
-
-            {/* Kamer-header */}
-            {huidigeKamer && (
-              <div className="mb-6 flex items-center gap-3">
-                <div
-                  className={`flex h-10 w-10 items-center justify-center rounded-xl bg-accent/8 ${huidigeKamer.kleur}`}
-                >
-                  <huidigeKamer.icon className="h-5 w-5" />
-                </div>
-                <div>
-                  <h1 className="text-lg font-semibold text-foreground">{huidigeKamer.naam}</h1>
-                  <p className="text-xs text-muted-foreground">{huidigeKamer.ondertitel}</p>
-                </div>
-              </div>
-            )}
-
-            {/* Kamer-inhoud */}
-            <KamerInhoud id={actief} />
-
-            {/* Terug-knop onderaan */}
-            <div className="mt-10 border-t border-border pt-6">
-              <button
-                onClick={sluitKamer}
-                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Terug naar alle kamers
-              </button>
-            </div>
-          </div>
         )}
       </main>
     </div>
