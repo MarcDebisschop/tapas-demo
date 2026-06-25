@@ -376,8 +376,8 @@ export default function Home() {
         </footer>
       </main>
 
-      {/* Rondleiding — nooit automatisch starten, enkel via knop "De vlucht" */}
-      <Rondleiding taal={uiTaal} autoStart={false} />
+      {/* Rondleiding — welkom-uitnodiging bij eerste bezoek, vlucht pas na klik */}
+      <Rondleiding taal={uiTaal} autoStart={true} />
     </div>
   );
 }
