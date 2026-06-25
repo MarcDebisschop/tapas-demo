@@ -28,7 +28,7 @@ const Ko = {
   condens: 5200,
   woordVol: 8200,
   oplossen: 10200,
-  einde: 9999999, // klik verplicht — animatie stopt nooit automatisch
+  einde: 11600,
 };
 
 // ─── Easing functies (exact uit origineel) ───────────────────────────────────
@@ -121,7 +121,6 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
   const canvasTekstRef = useRef<HTMLCanvasElement>(null);
   const [weggaand, setWeggaand] = useState(false);
   const [wachtOpKlik, setWachtOpKlik] = useState(false);
-  const [wachtOpTweedeKlik, setWachtOpTweedeKlik] = useState(false);
   const [geluidAan, setGeluidAan] = useState(true);
 
   const afgeslotenRef = useRef(false);
@@ -129,7 +128,6 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
   const mp3BufferRef = useRef<ArrayBuffer | null>(null);
   const mp3GespeeldRef = useRef(false);
   const animatieGestartRef = useRef(false);
-  const wachtOpTweedeKlikRef = useRef(false);
   const startTijdRef = useRef(0);
   const vorigeFrameRef = useRef(0);
   const rafRef = useRef(0);
@@ -285,12 +283,6 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
       }
       setWachtOpKlik(false);
       animatieGestartRef.current = true;
-      return;
-    }
-    if (wachtOpTweedeKlik) {
-      // Klik 2: woord volledig zichtbaar — nu pas sluiten
-      setWachtOpTweedeKlik(false);
-      sluitAf();
       return;
     }
     sluitAf();
@@ -525,15 +517,6 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
       let verstreken = tijdstip - startTijdRef.current;
       const dt = Math.min(0.05, (tijdstip - vorigeFrameRef.current) / 1000);
       vorigeFrameRef.current = tijdstip;
-
-      // Bevries animatie op woordVol wanneer woord volledig zichtbaar is
-      if (verstreken >= Ko.woordVol && !afgeslotenRef.current) {
-        if (!wachtOpTweedeKlikRef.current) {
-          wachtOpTweedeKlikRef.current = true;
-          setWachtOpTweedeKlik(true);
-        }
-        verstreken = Ko.woordVol; // bevries op dit moment
-      }
 
       // Bereken animatiewaarden (exact uit origineel)
       const kier = clamp01((verstreken - Ko.kier) / 700);
@@ -894,7 +877,7 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
               textShadow: "0 1px 8px rgba(0,0,0,0.7)",
             }}
           >
-            {wachtOpTweedeKlik ? "Klik om verder te gaan" : "Duw de poorten open"}
+            Duw de poorten open
           </span>
         </div>
       )}

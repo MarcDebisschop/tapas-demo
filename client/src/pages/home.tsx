@@ -376,8 +376,8 @@ export default function Home() {
         </footer>
       </main>
 
-      {/* Rondleiding — autoStart uitgeschakeld in demo-modus */}
-      <Rondleiding taal={uiTaal} autoStart={!DEMO_MODE} />
+      {/* Rondleiding — nooit automatisch starten, enkel via knop "De vlucht" */}
+      <Rondleiding taal={uiTaal} autoStart={false} />
     </div>
   );
 }
