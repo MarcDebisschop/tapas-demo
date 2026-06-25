@@ -462,18 +462,26 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
       }
     }
 
-    herstelAfmeting();
+    // Lettertype laden → dan pas deeltjes berekenen (font moet klaar zijn voor pixel-sampling)
+    const fontPromise = typeof document !== "undefined" && document.fonts
+      ? Promise.all([
+          document.fonts.load('600 140px "Playfair Display"').catch(() => {}),
+          document.fonts.load('600 120px "Playfair Display"').catch(() => {}),
+          document.fonts.ready.catch(() => {}),
+        ])
+      : Promise.resolve();
 
-    // Lettertype laden → deeltjes herberekenen
-    if (typeof document !== "undefined" && document.fonts) {
-      document.fonts
-        .load('600 120px "Playfair Display"')
-        .then(() => berekenDeeltjes())
-        .catch(() => {});
-      document.fonts.ready.then(() => berekenDeeltjes()).catch(() => {});
-    }
+    fontPromise.then(() => {
+      herstelAfmeting();
+    });
+
+    // Fallback: als font na 600ms nog niet klaar is, laad toch
+    const fontTimeout = setTimeout(() => {
+      if (deeltjes.length === 0) herstelAfmeting();
+    }, 600);
 
     window.addEventListener("resize", herstelAfmeting);
+    // fontTimeout cleanup happens in return() below
 
     let eersteFrame = 0;
     let feedbackTimer = 0;
@@ -647,6 +655,7 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
     return () => {
       geannuleerd = true;
       cancelAnimationFrame(rafRef.current);
+      clearTimeout(fontTimeout);
       window.removeEventListener("resize", herstelAfmeting);
     };
   }, [geluidAan]);

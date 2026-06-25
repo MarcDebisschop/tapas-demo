@@ -254,38 +254,27 @@ export function StudiePagina() {
 export function StudieScholenPagina() {
   const [, navigate] = useLocation();
 
+  // Exact uit tapas-fase1-preview screenshot (Marc, 25/06/2026)
+  // Layout: full-width hero (geen sidebar), 3 genummerde kaarten, sectie-eyebrow
+
   const stappen = [
     {
-      icon: School,
+      nr: "1",
+      // clipboard icon in preview
       titel: "Richt je school in",
       body: "Maak je schoolomgeving aan en bepaal wie begeleidt. Eén veilige, meertalige beheeromgeving voor je hele team.",
     },
     {
-      icon: UserCircle,
+      nr: "2",
+      // send/plane icon in preview
       titel: "Nodig leerlingen uit",
       body: "Per leerling of per klas, met een persoonlijke link. Iedere jongere geeft eerst zelf toestemming — consent vooraf.",
     },
     {
-      icon: BookOpen,
+      nr: "3",
+      // chart/analytics icon in preview
       titel: "Volg en lees mee",
       body: "Volg de voortgang en lees elk studiekompas — individueel en per klas — zodra het klaar is.",
-    },
-  ];
-
-  const instrumenten = [
-    {
-      icon: UserCircle,
-      eyebrow: "Leerlingen & studenten",
-      titel: "Het studiekompas",
-      body: "T4Students en T4Teens begeleiden jongeren naar een studiekeuze die bij hun talent past — als rustige verkenning, niet als test.",
-      chips: ["T4Students", "T4Teens"],
-    },
-    {
-      icon: School,
-      eyebrow: "Lerarenteams & vakgroepen",
-      titel: "Sterkere teams",
-      body: "Laat een vakgroep of lerarenteam zichzelf in kaart brengen. Hoe werken we samen, wat versterkt ons en wat wrijft?",
-      chips: ["Teamscan"],
     },
   ];
 
@@ -294,14 +283,16 @@ export function StudieScholenPagina() {
       <AppHeader right={<LanguagelessTerug href="/studie" label="Terug naar de studie-wereld" />} />
 
       <main className="relative mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
+        {/* Achtergrond-decoratie — zelfde als fase1-preview */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 h-[400px] opacity-20"
+          className="pointer-events-none absolute inset-x-0 top-0 h-[520px] opacity-20"
           style={{
-            background: `radial-gradient(ellipse 80% 60% at 60% 0%, hsl(var(${KLEUR_VAR})/0.4) 0%, transparent 70%)`,
+            background: `radial-gradient(ellipse 80% 60% at 60% 0%, hsl(var(${KLEUR_VAR})/0.45) 0%, transparent 70%)`,
           }}
         />
 
+        {/* Badge — exact uit screenshot: "STUDIE — VOOR SCHOLEN & BEGELEIDERS" */}
         <span
           className="inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-[0.12em]"
           style={{
@@ -314,15 +305,19 @@ export function StudieScholenPagina() {
           Studie — voor scholen &amp; begeleiders
         </span>
 
-        <h1 className="mt-4 font-serif text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+        {/* H1 — exact uit screenshot */}
+        <h1 className="mt-4 font-serif text-3xl font-semibold tracking-tight text-foreground sm:text-[2.75rem] sm:leading-[1.1]">
           Begeleid, verstuur &amp; volg
         </h1>
-        <p className="mt-3 max-w-2xl text-base leading-relaxed text-muted-foreground">
+
+        {/* Lead — exact uit screenshot */}
+        <p className="mt-4 max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg">
           Nodig leerlingen en studenten uit, volg hun verkenning en lees hun studiekompas —
           individueel en per klas. En waar nodig breng je ook je eigen team en leiding in kaart.
           Alles in één veilige, meertalige beheeromgeving.
         </p>
 
+        {/* CTA-knoppen — exact uit screenshot */}
         <div className="mt-6 flex flex-wrap gap-3">
           <Link href="/admin">
             <Button
@@ -342,84 +337,43 @@ export function StudieScholenPagina() {
           </Button>
         </div>
 
-        {/* 3 stappen */}
-        <section className="mt-14">
-          <div className="mx-auto max-w-xl text-center">
-            <p className="font-mono text-xs uppercase tracking-[0.16em]" style={{ color: cs }}>
-              In drie stappen
+        {/* ---------------------------------------------------------------- */}
+        {/* "ZO RICHT JE HET IN" + "Van inrichten tot inzicht"               */}
+        {/* 3 genummerde kaarten — exact layout uit screenshot               */}
+        {/* ---------------------------------------------------------------- */}
+        <section className="mt-16 sm:mt-20">
+          <div className="text-center">
+            <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              Zo richt je het in
             </p>
-            <h2 className="mt-2 font-serif text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-              Van uitnodiging tot studiekompas
+            <h2 className="mt-3 font-serif text-2xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
+              Van inrichten tot inzicht
             </h2>
           </div>
-          <div className="mt-8 grid gap-5 sm:grid-cols-3">
-            {stappen.map((s, i) => {
-              const Icon = s.icon;
+
+          {/* 3 kaarten met nummer-badge + icon + titel + body */}
+          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+            {stappen.map((stap, i) => {
+              const icons = [BookOpen, ArrowRight, BookOpen]; // placeholders — echte icons zijn clipboard/send/chart
               return (
-                <div key={i} className="rounded-xl border border-border bg-card p-6">
-                  <div
-                    className="flex h-10 w-10 items-center justify-center rounded-lg"
-                    style={{ background: `hsl(var(${KLEUR_VAR})/0.15)` }}
-                  >
-                    <Icon className="h-5 w-5" style={{ color: cs }} />
+                <div
+                  key={i}
+                  className="rounded-2xl border border-border bg-card p-6"
+                >
+                  {/* Nummer-badge + icon naast elkaar — exact uit screenshot */}
+                  <div className="flex items-center gap-3">
+                    <span
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-bold"
+                      style={{ background: `hsl(var(${KLEUR_VAR})/0.2)`, color: cs }}
+                    >
+                      {stap.nr}
+                    </span>
                   </div>
-                  <h3 className="mt-3 font-semibold text-foreground">{s.titel}</h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{s.body}</p>
+                  <h3 className="mt-4 font-semibold text-foreground">{stap.titel}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{stap.body}</p>
                 </div>
               );
             })}
-          </div>
-        </section>
-
-        {/* Instrumenten */}
-        <section className="mt-14">
-          <div className="grid gap-5 sm:grid-cols-2">
-            {instrumenten.map((inst, i) => {
-              const Icon = inst.icon;
-              return (
-                <div key={i} className="rounded-xl border border-border bg-card p-6">
-                  <div
-                    className="flex h-10 w-10 items-center justify-center rounded-lg"
-                    style={{ background: `hsl(var(${KLEUR_VAR})/0.15)` }}
-                  >
-                    <Icon className="h-5 w-5" style={{ color: cs }} />
-                  </div>
-                  <p className="mt-3 font-mono text-xs uppercase tracking-[0.16em]" style={{ color: cs }}>
-                    {inst.eyebrow}
-                  </p>
-                  <h3 className="mt-1 font-semibold text-foreground">{inst.titel}</h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{inst.body}</p>
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {inst.chips.map((c) => (
-                      <span
-                        key={c}
-                        className="rounded-full border px-2.5 py-0.5 text-xs font-medium"
-                        style={{ borderColor: `hsl(var(${KLEUR_VAR})/0.4)`, color: cs }}
-                      >
-                        {c}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Privacy */}
-        <section className="mt-14">
-          <div className="rounded-2xl border border-border bg-card p-8">
-            <p className="font-mono text-xs uppercase tracking-[0.16em]" style={{ color: cs }}>
-              Privacy &amp; veiligheid
-            </p>
-            <h2 className="mt-2 font-serif text-2xl font-semibold tracking-tight text-foreground">
-              Veilig, meertalig en GDPR-conform
-            </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Elke jongere geeft vooraf toestemming, alle scoring gebeurt op de server en je
-              gegevens blijven binnen je eigen schoolomgeving. Meertalig, GDPR-conform en met
-              respect voor wat elke leerling uniek maakt.
-            </p>
           </div>
         </section>
 
@@ -427,13 +381,13 @@ export function StudieScholenPagina() {
           type="button"
           onClick={() => navigate("/studie")}
           data-testid="link-terug-studie"
-          className="mt-12 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+          className="mt-14 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
         >
           <ChevronLeft className="h-4 w-4" />
           Terug naar de studie-wereld
         </button>
 
-        <footer className="mt-12 border-t border-border pt-6">
+        <footer className="mt-10 border-t border-border pt-6">
           <p className="flex items-center justify-center gap-2 text-center text-xs leading-relaxed text-muted-foreground">
             <Compass className="h-3.5 w-3.5" style={{ color: cs }} aria-hidden="true" />
             TaPas-platform · Studie voor scholen &amp; begeleiders · dezelfde routes, dezelfde zorg
@@ -443,6 +397,7 @@ export function StudieScholenPagina() {
     </div>
   );
 }
+
 
 // ===========================================================================
 // Pagina 3: /studie/leerlingen
