@@ -808,7 +808,122 @@ seedShowcase();
       "Licentie T4Recruitment \u2014 10 profielen @ \u20ac95/profiel", d2026c
     );
 
-    console.log("[tapas] Demo-data geseed: 3 org + 6 afnames + credits + transacties + facturen + licenties.");
+    // -----------------------------------------------------------------------
+    // T4Recruitment demo-sessies (t4r_sessions tabel — eigen prefix)
+    // -----------------------------------------------------------------------
+    sqlite.exec(
+      `CREATE TABLE IF NOT EXISTS t4r_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        function_title TEXT NOT NULL,
+        org_label TEXT NOT NULL,
+        role_type TEXT NOT NULL,
+        role_level TEXT NOT NULL,
+        fill_mode TEXT NOT NULL,
+        end_moment TEXT NOT NULL,
+        context_version TEXT NOT NULL DEFAULT 'v1',
+        status TEXT NOT NULL DEFAULT 'draft',
+        closed_ring INTEGER NOT NULL DEFAULT 0,
+        platform_sessie_id INTEGER,
+        chat_gebruikt INTEGER NOT NULL DEFAULT 0,
+        chat_tegoed INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL
+      )`
+    );
+    const t4rLeeg = (
+      sqlite.prepare("SELECT COUNT(*) AS n FROM t4r_sessions").get() as { n: number }
+    ).n === 0;
+    if (t4rLeeg) {
+      const msAgo = (dagen: number) => Date.now() - dagen * 86400000;
+      const t4rIns = sqlite.prepare(
+        `INSERT INTO t4r_sessions
+           (function_title, org_label, role_type, role_level, fill_mode,
+            end_moment, status, closed_ring, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      );
+      t4rIns.run("HR Business Partner",      "Vantage Consulting",  "staf",       "expert", "individueel", "2026-04-30T23:59:00.000Z", "stakeholders-bevestigd", 1, msAgo(30));
+      t4rIns.run("Digital Marketing Manager","Innovatech NV",       "management", "senior", "individueel", "2026-07-15T23:59:00.000Z", "individuele-input",      1, msAgo(5));
+      t4rIns.run("Data Scientist",           "Academie De Horizon", "specialist", "medior", "individueel", "2026-08-01T23:59:00.000Z", "draft",                  0, msAgo(2));
+
+      sqlite.exec(
+        `CREATE TABLE IF NOT EXISTS t4r_stakeholders (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          session_id INTEGER NOT NULL,
+          name TEXT NOT NULL,
+          stakeholder_role TEXT NOT NULL,
+          system_role TEXT NOT NULL DEFAULT 'stakeholder',
+          voting INTEGER NOT NULL DEFAULT 1
+        )`
+      );
+      const s1Id = (
+        sqlite.prepare("SELECT id FROM t4r_sessions ORDER BY id ASC LIMIT 1").get() as { id: number }
+      ).id;
+      const stIns = sqlite.prepare(
+        `INSERT INTO t4r_stakeholders (session_id, name, stakeholder_role, system_role, voting) VALUES (?, ?, ?, ?, ?)`
+      );
+      stIns.run(s1Id, "Elke Van Damme",  "HR Director",         "stakeholder", 1);
+      stIns.run(s1Id, "Nathalie Wouters","Business Unit Lead",  "stakeholder", 1);
+      stIns.run(s1Id, "Pieter Vanhout",  "Finance Manager",     "stakeholder", 1);
+      stIns.run(s1Id, "Marc Debisschop", "Coach / Facilitator", "facilitator", 0);
+      console.log("[tapas] T4Recruitment demo-sessies geseed.");
+    }
+
+    // -----------------------------------------------------------------------
+    // TaPas Teamscan demo-sessies (teamscan_sessies tabel)
+    // -----------------------------------------------------------------------
+    sqlite.exec(
+      `CREATE TABLE IF NOT EXISTS teamscan_sessies (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        team_naam TEXT NOT NULL,
+        org_label TEXT NOT NULL DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'open',
+        platform_sessie_id INTEGER,
+        created_at INTEGER NOT NULL
+      )`
+    );
+    sqlite.exec(
+      `CREATE TABLE IF NOT EXISTS teamscan_deelnemers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        sessie_id INTEGER NOT NULL,
+        token TEXT NOT NULL UNIQUE,
+        label TEXT NOT NULL DEFAULT '',
+        afgerond INTEGER NOT NULL DEFAULT 0,
+        afgerond_at INTEGER,
+        created_at INTEGER NOT NULL
+      )`
+    );
+    const tsLeeg = (
+      sqlite.prepare("SELECT COUNT(*) AS n FROM teamscan_sessies").get() as { n: number }
+    ).n === 0;
+    if (tsLeeg) {
+      const msAgo2 = (dagen: number) => Date.now() - dagen * 86400000;
+      const tsIns = sqlite.prepare(
+        `INSERT INTO teamscan_sessies (team_naam, org_label, status, created_at) VALUES (?, ?, ?, ?)`
+      );
+      tsIns.run("Leadership Team",       "Innovatech NV",       "open",     msAgo2(7));
+      tsIns.run("Kernteam Communicatie", "Academie De Horizon", "gesloten", msAgo2(45));
+
+      const ts1Id = (
+        sqlite.prepare("SELECT id FROM teamscan_sessies ORDER BY id ASC LIMIT 1").get() as { id: number }
+      ).id;
+      const ts2Id = (
+        sqlite.prepare("SELECT id FROM teamscan_sessies ORDER BY id DESC LIMIT 1").get() as { id: number }
+      ).id;
+      const tdNow = Date.now();
+      const tdIns = sqlite.prepare(
+        `INSERT OR IGNORE INTO teamscan_deelnemers (sessie_id, token, label, afgerond, created_at) VALUES (?, ?, ?, ?, ?)`
+      );
+      tdIns.run(ts1Id, "TSDEMO-SOFIE-001",    "Sofie Hermans",   1, tdNow);
+      tdIns.run(ts1Id, "TSDEMO-THOMAS-001",   "Thomas Peeters",  1, tdNow);
+      tdIns.run(ts1Id, "TSDEMO-LAURA-001",    "Laura Janssen",   1, tdNow);
+      tdIns.run(ts1Id, "TSDEMO-AXEL-001",     "Axel De Smet",    0, tdNow);
+      tdIns.run(ts1Id, "TSDEMO-INES-001",     "Ines Claeys",     0, tdNow);
+      tdIns.run(ts2Id, "TSDEMO2-MAARTEN-01",  "Maarten Claes",   1, tdNow);
+      tdIns.run(ts2Id, "TSDEMO2-NATHALIE-01", "Nathalie Wouters",1, tdNow);
+      tdIns.run(ts2Id, "TSDEMO2-PIETER-01",   "Pieter Vanhout",  1, tdNow);
+      console.log("[tapas] Teamscan demo-sessies geseed.");
+    }
+
+    console.log("[tapas] Demo-data volledig: org + afnames + credits + transacties + facturen + licenties + T4R + Teamscan.");
   } catch (e) {
     console.warn("[tapas] Demo-data seed overgeslagen:", (e as Error)?.message);
   }
