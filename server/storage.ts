@@ -716,7 +716,99 @@ seedShowcase();
     // consent (enkel aangemaakt, niet uitgenodigd)
     afnameIns.run("DH-2026-002", "Ines Claeys",      "Academie De Horizon", "Stafmedewerker",      "consent",   idAcad ?? null, now,    null);
 
-    console.log("[tapas] Demo-data geseed: 3 organisaties + 6 afnames + credits.");
+    // -----------------------------------------------------------------------
+    // Credit-transacties (grootboek)
+    // -----------------------------------------------------------------------
+    const txIns = sqlite.prepare(
+      `INSERT OR IGNORE INTO credit_transacties
+         (organisatie_id, type, aantal, omschrijving, created_at)
+       VALUES (?, ?, ?, ?, ?)`
+    );
+    if (idInno) {
+      txIns.run(idInno, "aankoop",   50, "Starter-pakket 50 credits \u2014 Innovatech NV",       "2025-10-01T10:00:00.000Z");
+      txIns.run(idInno, "verbruik",  -1, "Afname IT-2025-001 Thomas Peeters voltooid",           "2025-11-18T16:20:00.000Z");
+      txIns.run(idInno, "verbruik",  -1, "Afname IT-2025-002 Laura Janssen voltooid",            "2025-11-20T11:05:00.000Z");
+      txIns.run(idInno, "aankoop",   10, "Bijkopen 10 credits \u2014 Innovatech NV",              "2026-01-15T09:30:00.000Z");
+    }
+    if (idAcad) {
+      txIns.run(idAcad, "aankoop",   25, "Starter-pakket 25 credits \u2014 Academie De Horizon", "2025-12-05T11:00:00.000Z");
+      txIns.run(idAcad, "verbruik",  -1, "Afname DH-2026-001 Axel De Smet voltooid",             "2026-01-12T09:30:00.000Z");
+    }
+    if (idVant) {
+      txIns.run(idVant, "aankoop",  100, "Team-pakket 100 credits \u2014 Vantage Consulting",    "2025-09-15T08:00:00.000Z");
+      txIns.run(idVant, "verbruik",  -1, "Afname gearchiveerd VC-2025",                           "2025-10-10T14:00:00.000Z");
+      txIns.run(idVant, "overdracht", -5, "Overdracht naar Academie De Horizon",                  "2026-02-01T10:00:00.000Z");
+    }
+
+    // -----------------------------------------------------------------------
+    // Facturen (bevroren snapshots, volledig conform schema)
+    // -----------------------------------------------------------------------
+    const billerRow = sqlite
+      .prepare("SELECT * FROM biller_entiteiten WHERE actief = 1 LIMIT 1")
+      .get() as Record<string, unknown> | undefined;
+    const billerSnap = billerRow
+      ? JSON.stringify(billerRow)
+      : JSON.stringify({ naam: "2BQ CONSULT", btwNummer: "BE0810.464.001" });
+    const billerId = billerRow ? Number((billerRow as any).id) : 1;
+
+    const factuurIns = sqlite.prepare(
+      `INSERT OR IGNORE INTO facturen
+         (factuurnummer, biller_entiteit_id, organisatie_id,
+          biller_snapshot, klant_snapshot, regels,
+          bedrag_excl_btw_cent, btw_bedrag_cent, bedrag_incl_btw_cent,
+          munt, kanaal, peppol_status, factuurdatum, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'EUR', 'pdf', 'n.v.t.', ?, ?)`
+    );
+    const mkKlant = (naam: string, gemeente: string, email: string) =>
+      JSON.stringify({ naam, gemeente, email });
+    const mkRegel = (oms: string, n: number, totaalExcl: number) =>
+      JSON.stringify([{ omschrijving: oms, aantal: n,
+        eenheidsprijsExclCent: Math.round(totaalExcl / n), btwTarief: 21, totaalExclCent: totaalExcl }]);
+
+    if (idInno) {
+      factuurIns.run("2BQ-2025-0001", billerId, idInno,
+        billerSnap, mkKlant("Innovatech NV", "Gent", "sofie@innovatech.be"),
+        mkRegel("TaPas credits \u2014 Starter 50", 50, 25000),
+        25000, 5250, 30250, "2025-10-01", "2025-10-01T10:05:00.000Z");
+      factuurIns.run("2BQ-2026-0002", billerId, idInno,
+        billerSnap, mkKlant("Innovatech NV", "Gent", "sofie@innovatech.be"),
+        mkRegel("TaPas credits \u2014 bijkoop 10", 10, 5000),
+        5000, 1050, 6050, "2026-01-15", "2026-01-15T09:35:00.000Z");
+    }
+    if (idAcad) {
+      factuurIns.run("2BQ-2025-0003", billerId, idAcad,
+        billerSnap, mkKlant("Academie De Horizon", "Leuven", "m.claes@dehorizon.be"),
+        mkRegel("TaPas credits \u2014 Starter 25", 25, 12500),
+        12500, 2625, 15125, "2025-12-05", "2025-12-05T11:05:00.000Z");
+    }
+    if (idVant) {
+      factuurIns.run("2BQ-2025-0004", billerId, idVant,
+        billerSnap, mkKlant("Vantage Consulting", "Antwerpen", "e.vandamme@vantage.be"),
+        mkRegel("TaPas credits \u2014 Team 100", 100, 50000),
+        50000, 10500, 60500, "2025-09-15", "2025-09-15T08:05:00.000Z");
+    }
+
+    // -----------------------------------------------------------------------
+    // Licenties (T4Recruitment losse verkoop)
+    // -----------------------------------------------------------------------
+    const licIns = sqlite.prepare(
+      `INSERT OR IGNORE INTO licenties
+         (sleutel, klantnaam, klant_email, max_profielen, prijs_per_profiel_cent,
+          gebruikte_profielen, geldig_van, geldig_tot, status, notities, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'actief', ?, ?)`
+    );
+    licIns.run(
+      "T4R-LIC-DEMO-001", "Vantage Consulting", "e.vandamme@vantage.be",
+      20, 8900, 7, d2026b, "2027-03-22",
+      "Jaarlicentie T4Recruitment \u2014 20 profielen @ \u20ac89/profiel", d2026b
+    );
+    licIns.run(
+      "T4R-LIC-DEMO-002", "Innovatech NV", "sofie@innovatech.be",
+      10, 9500, 2, d2026c, "2027-05-10",
+      "Licentie T4Recruitment \u2014 10 profielen @ \u20ac95/profiel", d2026c
+    );
+
+    console.log("[tapas] Demo-data geseed: 3 org + 6 afnames + credits + transacties + facturen + licenties.");
   } catch (e) {
     console.warn("[tapas] Demo-data seed overgeslagen:", (e as Error)?.message);
   }
