@@ -34,7 +34,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Afname, OrganisatieMetSaldo } from "@/lib/types";
-import { Copy, Check, Send, UserPlus, Bell, Languages, Settings2 } from "lucide-react";
+import { Copy, Check, Send, UserPlus, Bell, Languages, Settings2, ChartColumn, GraduationCap, Mail, KeyRound } from "lucide-react";
 import { LegeStaat } from "@/components/LegeStaat";
 import {
   TALEN,
@@ -134,13 +134,60 @@ export default function Admin() {
   const [invCompany, setInvCompany] = useState("");
   const [invRole, setInvRole] = useState("");
   const [invOrg, setInvOrg] = useState("geen");
+  const [invNiveau, setInvNiveau] = useState("");
+  const [invInstrument, setInvInstrument] = useState("");
   // Afnametaal = vaste eigenschap, vastgelegd bij aanmaken van de uitnodiging.
   const [invTaal, setInvTaal] = useState<Taal>(STANDAARD_TAAL);
   const [submitting, setSubmitting] = useState(false);
   const [createdLink, setCreatedLink] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  // Wachtwoord-wijzigen dialog
+  const [pwDialogOpen, setPwDialogOpen] = useState(false);
+  const [pwHuidig, setPwHuidig] = useState("");
+  const [pwNieuw, setPwNieuw] = useState("");
+  const [pwBevestig, setPwBevestig] = useState("");
+  const [pwBezig, setPwBezig] = useState(false);
+
+  // Instruments query
+  const { data: instruments } = useQuery<{ id: number; naam: string; flowType: string }[]>({ queryKey: ["/api/instruments"] });
+  const individueleInstruments = (instruments ?? []).filter((i) => i.flowType === "individual");
+
+  const NIVEAU_OPTIES = ["cxo", "kader", "expert", "medewerker", "admin"];
+  const NIVEAU_LABELS: Record<string, Record<string, string>> = {
+    nl: { cxo: "CXO / Directie", kader: "Kader / Management", expert: "Expert / Specialist", medewerker: "Medewerker", admin: "Administratief" },
+    fr: { cxo: "DG / Direction", kader: "Cadre / Management", expert: "Expert / Sp\u00e9cialiste", medewerker: "Employ\u00e9", admin: "Administratif" },
+    en: { cxo: "CXO / Director", kader: "Manager", expert: "Expert / Specialist", medewerker: "Employee", admin: "Administrative" },
+    es: { cxo: "DG / Direcci\u00f3n", kader: "Mando / Gesti\u00f3n", expert: "Experto / Especialista", medewerker: "Empleado", admin: "Administrativo" },
+    ru: { cxo: "\u0414\u0438\u0440\u0435\u043a\u0442\u043e\u0440", kader: "\u041c\u0435\u043d\u0435\u0434\u0436\u0435\u0440", expert: "\u042d\u043a\u0441\u043f\u0435\u0440\u0442", medewerker: "\u0421\u043e\u0442\u0440\u0443\u0434\u043d\u0438\u043a", admin: "\u0410\u0434\u043c\u0438\u043d\u0438\u0441\u0442\u0440\u0430\u0442\u0438\u0432\u043d\u044b\u0439" },
+  };
+
   const gekozenOrg = organisaties?.find((o) => String(o.id) === invOrg);
+
+  function resetPwDialog() {
+    setPwHuidig("");
+    setPwNieuw("");
+    setPwBevestig("");
+  }
+
+  async function wijzigWachtwoord() {
+    if (pwNieuw !== pwBevestig) {
+      toast({ title: t("admin_pw_titel"), description: t("admin_pw_mismatch"), variant: "destructive" });
+      return;
+    }
+    setPwBezig(true);
+    try {
+      await apiRequest("POST", "/api/admin/wachtwoord-wijzigen", { huidigWachtwoord: pwHuidig, nieuwWachtwoord: pwNieuw });
+      toast({ title: t("admin_pw_titel"), description: t("admin_pw_succes") });
+      setPwDialogOpen(false);
+      resetPwDialog();
+    } catch (e: any) {
+      const msg = e?.message ? String(e.message) : String(e);
+      toast({ title: t("admin_pw_titel"), description: msg, variant: "destructive" });
+    } finally {
+      setPwBezig(false);
+    }
+  }
 
   async function copyToClipboard(text: string, id: string) {
     try {
@@ -160,8 +207,10 @@ export default function Admin() {
         name: invName.trim() || undefined,
         company: invCompany.trim() || undefined,
         role: invRole.trim() || undefined,
+        roleLevel: invNiveau || undefined,
         organisatieId: invOrg !== "geen" ? Number(invOrg) : undefined,
         taal: invTaal,
+        instrumentId: invInstrument || undefined,
       });
       const inv: Afname = await res.json();
       const link = deelnemerLink(inv.inviteToken!);
@@ -195,6 +244,8 @@ export default function Admin() {
     setInvCompany("");
     setInvRole("");
     setInvOrg("geen");
+    setInvNiveau("");
+    setInvInstrument("");
     setInvTaal(STANDAARD_TAAL);
     setCreatedLink(null);
   }
@@ -228,6 +279,27 @@ export default function Admin() {
             <Link href="/admin/toegang">
               <Button size="sm" variant="outline" data-testid="link-toegang">{t("tg_nav")}</Button>
             </Link>
+            <Link href="/admin/coaches">
+              <Button size="sm" variant="outline" data-testid="link-coaches">{t("admin_nav_coaches")}</Button>
+            </Link>
+            <Link href="/admin/inzichten">
+              <Button size="sm" variant="outline" data-testid="link-inzichten">
+                <ChartColumn className="mr-1.5 h-4 w-4" />{t("iz_nav")}
+              </Button>
+            </Link>
+            <Link href="/admin/academy">
+              <Button size="sm" variant="outline" data-testid="link-academy-beheer">
+                <GraduationCap className="mr-1.5 h-4 w-4" />{t("acad_admin_nav")}
+              </Button>
+            </Link>
+            <Link href="/admin/mailbeheer">
+              <Button size="sm" variant="outline" data-testid="link-mailbeheer">
+                <Mail className="mr-1.5 h-4 w-4" />{t("mailbeheer_nav")}
+              </Button>
+            </Link>
+            <Link href="/coach">
+              <Button size="sm" variant="outline" data-testid="link-coach-omgeving">{t("admin_nav_coach_omgeving")}</Button>
+            </Link>
             {isPrior && (
               <Link href="/admin/vraagbeheer">
                 <Button size="sm" variant="outline" data-testid="link-vraagbeheer">
@@ -246,6 +318,14 @@ export default function Admin() {
             <Link href="/start">
               <Button size="sm" data-testid="link-new-afname">{t("admin_nieuwe_afname")}</Button>
             </Link>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => { resetPwDialog(); setPwDialogOpen(true); }}
+              data-testid="button-open-wachtwoord"
+            >
+              <KeyRound className="mr-1.5 h-4 w-4" /> {t("admin_pw_nav")}
+            </Button>
           </div>
         }
       />
@@ -375,6 +455,32 @@ export default function Admin() {
                   <Input id="inv-role" value={invRole} onChange={(e) => setInvRole(e.target.value)} data-testid="input-invite-role" />
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label>{t("veld_niveau_opt")}</Label>
+                <Select value={invNiveau || "geen"} onValueChange={(v) => setInvNiveau(v === "geen" ? "" : v)}>
+                  <SelectTrigger data-testid="select-invite-role-level"><SelectValue placeholder={t("veld_kies_placeholder")} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="geen">&mdash;</SelectItem>
+                    {NIVEAU_OPTIES.map((n) => (
+                      <SelectItem key={n} value={n}>{NIVEAU_LABELS[uiTaal]?.[n] ?? n}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {individueleInstruments.length > 1 && (
+                <div className="space-y-2">
+                  <Label>{t("admin_veld_instrument")}</Label>
+                  <Select value={invInstrument || "standaard"} onValueChange={(v) => setInvInstrument(v === "standaard" ? "" : v)}>
+                    <SelectTrigger data-testid="select-invite-instrument"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="standaard">Standaard</SelectItem>
+                      {individueleInstruments.map((i) => (
+                        <SelectItem key={i.id} value={String(i.id)}>{i.naam}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               {/* Afnametaal: vaste eigenschap die meegaat in de uitnodiging */}
               <div className="space-y-2">
                 <Label>{t("admin_veld_taal")}</Label>
@@ -447,6 +553,35 @@ export default function Admin() {
                 </Button>
               </div>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Wachtwoord-wijzigen dialog */}
+      <Dialog open={pwDialogOpen} onOpenChange={(o) => { setPwDialogOpen(o); if (!o) resetPwDialog(); }}>
+        <DialogContent data-testid="dialog-wachtwoord">
+          <DialogHeader>
+            <DialogTitle>{t("admin_pw_titel")}</DialogTitle>
+            <DialogDescription>{t("admin_pw_uitleg")}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-1">
+            <div className="space-y-2">
+              <Label htmlFor="pw-huidig">{t("admin_pw_huidig")}</Label>
+              <Input id="pw-huidig" type="password" autoComplete="current-password" value={pwHuidig} onChange={(e) => setPwHuidig(e.target.value)} data-testid="input-pw-huidig" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pw-nieuw">{t("admin_pw_nieuw")}</Label>
+              <Input id="pw-nieuw" type="password" autoComplete="new-password" value={pwNieuw} onChange={(e) => setPwNieuw(e.target.value)} data-testid="input-pw-nieuw" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pw-bevestig">{t("admin_pw_bevestig")}</Label>
+              <Input id="pw-bevestig" type="password" autoComplete="new-password" value={pwBevestig} onChange={(e) => setPwBevestig(e.target.value)} data-testid="input-pw-bevestig" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={wijzigWachtwoord} disabled={pwBezig || !pwHuidig || !pwNieuw || !pwBevestig} data-testid="button-pw-wijzigen">
+              {pwBezig ? t("admin_knop_bezig") : t("admin_pw_titel")}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

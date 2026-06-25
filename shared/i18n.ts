@@ -370,6 +370,25 @@ export const STRINGS = {
   admin_knop_bezig: { nl: "Bezig…", fr: "En cours…", en: "Working…", es: "Procesando…", ru: "Выполняется…" },
   admin_knop_nog_een: { nl: "Nog een aanmaken", fr: "En créer un autre", en: "Create another", es: "Crear otro", ru: "Создать ещё" },
   admin_knop_klaar: { nl: "Klaar", fr: "Terminé", en: "Done", es: "Listo", ru: "Готово" },
+  // --- Admin nav (extra links uit bundle) ---
+  admin_nav_coaches: { nl: "Coaches", fr: "Coachs", en: "Coaches", es: "Coaches", ru: "Коучи" },
+  admin_nav_coach_omgeving: { nl: "Coach-omgeving", fr: "Espace coach", en: "Coach area", es: "Espacio coach", ru: "Кабинет коуча" },
+  iz_nav: { nl: "Inzichtcentrum", fr: "Centre d'analyse", en: "Insight Center", es: "Centro de análisis", ru: "Центр аналитики" },
+  acad_admin_nav: { nl: "TaPasAcademy-beheer", fr: "Gestion TaPasAcademy", en: "TaPasAcademy management", es: "Gestión TaPasAcademy", ru: "Управление TaPasAcademy" },
+  mailbeheer_nav: { nl: "Mailbeheer", fr: "Gestion des e-mails", en: "Mail management", es: "Gestión de correos", ru: "Управление письмами" },
+  // --- Admin wachtwoord ---
+  admin_pw_nav: { nl: "Wachtwoord", fr: "Mot de passe", en: "Password", es: "Contraseña", ru: "Пароль" },
+  admin_pw_titel: { nl: "Wachtwoord wijzigen", fr: "Modifier le mot de passe", en: "Change password", es: "Cambiar contraseña", ru: "Изменить пароль" },
+  admin_pw_uitleg: { nl: "Wijzig het wachtwoord van je beheerderaccount. Het nieuwe wachtwoord geldt onmiddellijk.", fr: "Modifiez le mot de passe de votre compte administrateur. Le nouveau mot de passe s'applique immédiatement.", en: "Change your admin account password. The new password takes effect immediately.", es: "Cambia la contraseña de tu cuenta de administrador. La nueva contraseña es efectiva de inmediato.", ru: "Измените пароль администратора. Новый пароль вступает в силу немедленно." },
+  admin_pw_mismatch: { nl: "Het nieuwe wachtwoord en de bevestiging komen niet overeen.", fr: "Le nouveau mot de passe et la confirmation ne correspondent pas.", en: "The new password and the confirmation do not match.", es: "La nueva contraseña y la confirmación no coinciden.", ru: "Новый пароль и подтверждение не совпадают." },
+  admin_pw_succes: { nl: "Wachtwoord gewijzigd.", fr: "Mot de passe modifié.", en: "Password changed.", es: "Contraseña cambiada.", ru: "Пароль изменён." },
+  admin_pw_huidig: { nl: "Huidig wachtwoord", fr: "Mot de passe actuel", en: "Current password", es: "Contraseña actual", ru: "Текущий пароль" },
+  admin_pw_nieuw: { nl: "Nieuw wachtwoord", fr: "Nouveau mot de passe", en: "New password", es: "Nueva contraseña", ru: "Новый пароль" },
+  admin_pw_bevestig: { nl: "Bevestig nieuw wachtwoord", fr: "Confirmer le nouveau mot de passe", en: "Confirm new password", es: "Confirmar nueva contraseña", ru: "Подтвердите новый пароль" },
+  // --- Uitnodiging extra velden ---
+  veld_niveau_opt: { nl: "Niveau (optioneel)", fr: "Niveau (facultatif)", en: "Level (optional)", es: "Nivel (opcional)", ru: "Уровень (необязательно)" },
+  veld_kies_placeholder: { nl: "Kies…", fr: "Choisir…", en: "Choose…", es: "Elegir…", ru: "Выбрать…" },
+  admin_veld_instrument: { nl: "Instrument", fr: "Instrument", en: "Instrument", es: "Instrumento", ru: "Инструмент" },
   admin_toast_gekopieerd_titel: { nl: "Gekopieerd", fr: "Copié", en: "Copied", es: "Copiado", ru: "Скопировано" },
   admin_toast_gekopieerd: { nl: "De link staat op je klembord.", fr: "Le lien est dans votre presse-papiers.", en: "The link is on your clipboard.", es: "El enlace está en tu portapapeles.", ru: "Ссылка скопирована в буфер обмена." },
   // ----- Landingspagina (home) -----

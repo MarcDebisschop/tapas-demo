@@ -1,6 +1,7 @@
 // AdminLoginGate — beschermt alle admin-pagina's.
-// Server checkt alleen e-mailadres (sessie-gebaseerd, geen wachtwoord in DB).
-// Demo-modus: email vooringevuld zodat bezoekers meteen kunnen inloggen.
+// Server checkt e-mailadres (sessie-gebaseerd). Wachtwoord wordt meegestuurd
+// voor de UX maar niet geverifieerd in de DB — demo-versie.
+// Demo-modus: email + wachtwoord automatisch ingevuld (marc@tapascity.com / Tintinenco01).
 
 import { useState, createContext, useContext } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -54,8 +55,9 @@ export function AdminLoginGate({ children }: Props) {
     retry: false,
   });
 
-  // Demo: email vooringevuld. Server verwacht enkel email (geen wachtwoord).
+  // Demo: credentials automatisch ingevuld.
   const [email, setEmail] = useState(DEMO_MODE ? "marc@tapascity.com" : "");
+  const [wachtwoord, setWachtwoord] = useState(DEMO_MODE ? "Tintinenco01" : "");
   const [bezig, setBezig] = useState(false);
 
   async function inloggen(e: React.FormEvent) {
@@ -63,13 +65,14 @@ export function AdminLoginGate({ children }: Props) {
     if (!email.trim()) return;
     setBezig(true);
     try {
-      await apiRequest("POST", "/api/admin/login", { email: email.trim() });
+      // Wachtwoord wordt meegestuurd voor de UX; server checkt enkel e-mail.
+      await apiRequest("POST", "/api/admin/login", { email: email.trim(), wachtwoord });
       // Ververs sessie-check
       await qc.invalidateQueries({ queryKey: ["/api/admin/me"] });
     } catch {
       toast({
         title: "Inloggen mislukt",
-        description: "Dit e-mailadres is niet gekend als beheerder.",
+        description: "E-mailadres of wachtwoord klopt niet.",
         variant: "destructive",
       });
     } finally {
@@ -105,11 +108,11 @@ export function AdminLoginGate({ children }: Props) {
               </div>
               <h1 className="text-lg font-semibold text-foreground">Beheeromgeving</h1>
               <p className="text-sm text-muted-foreground">
-                Log in met je beheerderse-mailadres om verder te gaan.
+                Log in met je beheerdersaccount om verder te gaan.
               </p>
               {DEMO_MODE && (
                 <p className="rounded-md bg-accent/10 px-3 py-1.5 text-xs text-accent">
-                  Demo: klik direct op Inloggen
+                  Demo: credentials zijn automatisch ingevuld
                 </p>
               )}
             </div>
@@ -126,6 +129,19 @@ export function AdminLoginGate({ children }: Props) {
                   placeholder="jij@tapascity.com"
                   required
                   data-testid="input-admin-email"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="admin-wachtwoord">Wachtwoord</Label>
+                <Input
+                  id="admin-wachtwoord"
+                  type="password"
+                  autoComplete="current-password"
+                  value={wachtwoord}
+                  onChange={(ev) => setWachtwoord(ev.target.value)}
+                  placeholder="••••••••"
+                  required
+                  data-testid="input-admin-wachtwoord"
                 />
               </div>
               <Button
