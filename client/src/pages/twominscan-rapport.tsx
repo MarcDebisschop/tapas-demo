@@ -1,5 +1,4 @@
-import { useMemo } from "react";
-import { useSearch } from "wouter";
+import { useMemo, useState, useEffect } from "react";
 import { PROFIELEN } from "@/twominscan/profielen";
 import { bouwRapportData } from "@/twominscan/content";
 import { ontleedEGCode } from "@/twominscan/egcode";
@@ -10,9 +9,24 @@ import { normaliseerTaal } from "@shared/talen";
 // 2MINSCAN rapport — T4P Business Kompas-stijl, Energetic Flow-inhoud.
 // 14 hoofdstukken. Web-weergave + print (PDF via venster-print).
 
-function parseData(search: string) {
-  const params = new URLSearchParams(search);
-  const raw = params.get("d");
+// Lees ?d= uit location.search ÓÓOOK uit het ?-deel van location.hash
+// (hash-routing plaatst ?d= soms in het hash-fragment zelf: #/pad?d=...)
+function leesQueryParam(naam: string): string | null {
+  // 1. Probeer gewone location.search
+  const fromSearch = new URLSearchParams(window.location.search).get(naam);
+  if (fromSearch) return fromSearch;
+  // 2. Probeer het ?-deel van location.hash: "#/2minscan/rapport?d=..."
+  const hashPart = window.location.hash; // bv. "#/2minscan/rapport?d=..."
+  const qIdx = hashPart.indexOf("?");
+  if (qIdx !== -1) {
+    const fromHash = new URLSearchParams(hashPart.slice(qIdx)).get(naam);
+    if (fromHash) return fromHash;
+  }
+  return null;
+}
+
+function parseData() {
+  const raw = leesQueryParam("d");
   if (!raw) return null;
   try {
     return JSON.parse(decodeURIComponent(raw));
@@ -22,8 +36,13 @@ function parseData(search: string) {
 }
 
 export default function TwominscanRapport() {
-  const search = useSearch();
-  const payload = useMemo(() => parseData(search), [search]);
+  // Re-parse bij elke hash-change (navigatie binnen de SPA)
+  const [payload, setPayload] = useState(() => parseData());
+  useEffect(() => {
+    const handler = () => setPayload(parseData());
+    window.addEventListener("hashchange", handler);
+    return () => window.removeEventListener("hashchange", handler);
+  }, []);
   const taal: Taal = normaliseerTaal(payload?.taal ?? "nl");
   const tr = useMemo(() => maakT(taal), [taal]);
 
