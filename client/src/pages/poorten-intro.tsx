@@ -862,7 +862,7 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
       </button>
 
       {/* Hint — twee toestanden: voor animatie / na woord zichtbaar */}
-      {!weggaand && (
+      {!weggaand && staat.open === 0 && (
         <div
           className="pointer-events-none absolute inset-x-0 bottom-[16%] z-10 flex justify-center"
           style={{ animation: "tapasHintPuls 2.4s ease-in-out infinite" }}
