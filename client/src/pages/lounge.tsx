@@ -1029,27 +1029,89 @@ function Buitenterras() {
 
 function WebshopKamer() {
   return (
-    <div className="flex flex-col items-center justify-center gap-8 py-16 text-center">
-      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-950/30">
-        <ShoppingBag className="h-9 w-9 text-amber-600 dark:text-amber-400" />
+    <div className="flex flex-col gap-8 py-8">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-950/30">
+          <ShoppingBag className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold text-foreground">TaPas Webshop</h2>
+          <p className="text-sm text-muted-foreground">Ontdek onze producten — binnenkort beschikbaar om te bestellen.</p>
+        </div>
       </div>
-      <div className="max-w-md">
-        <Badge variant="secondary" className="mb-3">Binnenkort</Badge>
-        <h2 className="text-xl font-semibold text-foreground">TaPas Webshop</h2>
-        <p className="mt-3 leading-relaxed text-muted-foreground">
-          Bestel instruments, rapporten en coachinglicenties. We bouwen dit moment volop — binnenkort beschikbaar.
-        </p>
-      </div>
-      <div className="grid w-full max-w-md gap-3 text-left">
-        {["TaPas Business Kompas", "T4Recruitment Licentie", "2MinScan Bundel", "TeamScan Sessie"].map((item, i) => (
-          <div
-            key={i}
-            className="flex items-center justify-between rounded-lg border border-amber-100 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/20 px-4 py-3"
-          >
-            <span className="text-sm text-foreground">{item}</span>
-            <Badge variant="outline" className="text-xs text-muted-foreground">Binnenkort</Badge>
+
+      {/* Productkaarten */}
+      <div className="grid gap-6 sm:grid-cols-2">
+
+        {/* Product 1: TaPas Island Bordspel */}
+        <div className="group overflow-hidden rounded-2xl border border-border bg-card transition hover:shadow-md">
+          <div className="relative overflow-hidden bg-muted" style={{ aspectRatio: "4/3" }}>
+            <img
+              src="/lounge/img/tapas-island-board.jpg"
+              alt="TaPas Island bordspel — 3D mockup"
+              className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+            />
+            <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-card/60 to-transparent" />
+            <Badge className="absolute right-3 top-3 bg-amber-500 text-white border-0 text-[11px] tracking-wide">Binnenkort beschikbaar</Badge>
           </div>
-        ))}
+          <div className="p-5">
+            <h3 className="font-semibold text-foreground">TaPas Island — Het Bordspel</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Het bordspel over talent, drivers en inner why. Speel samen, ontdek wie je bent en wat je drijft.
+              Ideaal voor teams, coaches en gezinnen die diep willen gaan op een luchtige manier.
+            </p>
+            <div className="mt-4 flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Prijs volgt binnenkort</span>
+              <button
+                disabled
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-secondary px-3.5 py-2 text-sm font-medium text-muted-foreground cursor-not-allowed opacity-60"
+              >
+                <ShoppingBag className="h-4 w-4" />
+                Binnenkort
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Product 2: Amelia Earhart editie / doos mockup */}
+        <div className="group overflow-hidden rounded-2xl border border-border bg-card transition hover:shadow-md">
+          <div className="relative overflow-hidden bg-muted" style={{ aspectRatio: "4/3" }}>
+            <img
+              src="/lounge/img/tapas-island-box.jpg"
+              alt="TaPas Island doos — Amelia Earhart editie"
+              className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+            />
+            <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-card/60 to-transparent" />
+            <Badge className="absolute right-3 top-3 bg-amber-500 text-white border-0 text-[11px] tracking-wide">Binnenkort beschikbaar</Badge>
+          </div>
+          <div className="p-5">
+            <h3 className="font-semibold text-foreground">TaPas Island — Amelia Editie</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Het bordspel over talent, drivers en inner why — in een speciale doos geïnspireerd op de
+              avontuurlijke geest van Amelia Earhart. Een uniek cadeau voor wie durft te dromen.
+            </p>
+            <div className="mt-4 flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Prijs volgt binnenkort</span>
+              <button
+                disabled
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-secondary px-3.5 py-2 text-sm font-medium text-muted-foreground cursor-not-allowed opacity-60"
+              >
+                <ShoppingBag className="h-4 w-4" />
+                Binnenkort
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Onderaan: bericht over meer producten */}
+      <div className="rounded-xl border border-amber-100 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-950/10 px-5 py-4 text-center">
+        <p className="text-sm text-muted-foreground">
+          Meer producten — instrumentenlicenties, coachingpakketten en rapportbundels — volgen binnenkort.
+          Houd deze ruimte in de gaten.
+        </p>
       </div>
     </div>
   );

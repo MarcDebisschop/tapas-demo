@@ -34,7 +34,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Afname, OrganisatieMetSaldo } from "@/lib/types";
-import { Copy, Check, Send, UserPlus, Bell, Languages } from "lucide-react";
+import { Copy, Check, Send, UserPlus, Bell, Languages, Settings2 } from "lucide-react";
 import { LegeStaat } from "@/components/LegeStaat";
 import {
   TALEN,
@@ -126,6 +126,8 @@ export default function Admin() {
 
   const { data, isLoading } = useQuery<Afname[]>({ queryKey: ["/api/admin/afnames"] });
   const { data: organisaties } = useQuery<OrganisatieMetSaldo[]>({ queryKey: ["/api/organisaties"] });
+  const { data: mijnProfiel } = useQuery<{ isPrior: boolean }>({ queryKey: ["/api/admin/me"] });
+  const isPrior = mijnProfiel?.isPrior === true;
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [invName, setInvName] = useState("");
@@ -226,6 +228,13 @@ export default function Admin() {
             <Link href="/admin/toegang">
               <Button size="sm" variant="outline" data-testid="link-toegang">{t("tg_nav")}</Button>
             </Link>
+            {isPrior && (
+              <Link href="/admin/vraagbeheer">
+                <Button size="sm" variant="outline" data-testid="link-vraagbeheer">
+                  <Settings2 className="mr-1.5 h-4 w-4" /> Vraagbeheer
+                </Button>
+              </Link>
+            )}
             <Button
               size="sm"
               variant="outline"

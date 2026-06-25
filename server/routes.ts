@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer } from "node:http";
 import type { Server } from "node:http";
 import { storage, CreditError, CREDITPAKKETTEN } from "./storage";
+import { buildQuestionManagerRoutes } from "./question-manager";
 import { clientInstrument } from "./instrument";
 import { instrumentSamenvattingen, clientInstrumentVoor } from "./registry";
 import { buildGeneratorContract } from "./scoring";
@@ -1751,6 +1752,12 @@ export async function registerRoutes(
   // om T4P Business-profielen aan te maken. Zie server/toegang/routes.ts.
   // -------------------------------------------------------------------------
   registerToegangRoutes(app);
+
+  // -------------------------------------------------------------------------
+  // Question Manager — prior-beheerder beheert stellingen van alle instrumenten
+  // Enkel toegankelijk voor is_prior=true beheerders.
+  // -------------------------------------------------------------------------
+  buildQuestionManagerRoutes(app);
 
   return httpServer;
 }

@@ -19,6 +19,7 @@ import {
   Users,
   Sparkles,
   Coffee,
+  ShieldCheck,
 } from "lucide-react";
 import {
   TALEN,
@@ -176,6 +177,17 @@ export default function Home() {
                 : "De vlucht"}
               </span>
             </button>
+            <Link href="/admin">
+              <button
+                type="button"
+                data-testid="button-admin-home"
+                className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border px-2.5 text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                aria-label="Admin"
+              >
+                <ShieldCheck className="h-4 w-4" />
+                <span className="hidden sm:inline">Admin</span>
+              </button>
+            </Link>
           </div>
         }
       />

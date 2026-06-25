@@ -33,6 +33,7 @@ import HddRapport from "@/pages/hdd-rapport";
 import TwominscanRapport from "@/pages/twominscan-rapport";
 import ImpactHome from "@/pages/impact-home";
 import Lounge from "@/pages/lounge";
+import AdminVraagbeheer from "@/pages/admin-vraagbeheer";
 
 function AppRouter() {
   return (
@@ -61,6 +62,7 @@ function AppRouter() {
       <Route path="/2minscan/rapport" component={TwominscanRapport} />
       <Route path="/impact" component={ImpactHome} />
       <Route path="/lounge" component={Lounge} />
+      <Route path="/admin/vraagbeheer" component={AdminVraagbeheer} />
       <Route component={NotFound} />
     </Switch>
   );

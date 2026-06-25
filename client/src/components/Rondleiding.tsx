@@ -15,8 +15,9 @@
 // =============================================================================
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useLocation } from "wouter";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { Plane, ArrowRight, ArrowLeft, X, Compass, Volume2, VolumeX } from "lucide-react";
+import { Plane, ArrowRight, ArrowLeft, X, Compass, Volume2, VolumeX, MapPin } from "lucide-react";
 import { type Taal } from "@shared/i18n";
 import { vlucht, geluidUit, zetGeluidUit } from "@/lib/flightSound";
 
@@ -141,6 +142,19 @@ const SLOT = {
     ru: "Теперь платформа ваша. Начните профиль или загляните в админ-зону — сделано с талантом и страстью, до мелочей.",
   } as ML,
   sluit: { nl: "Aan de slag", fr: "C'est parti", en: "Get started", es: "Empezar", ru: "Начать" } as ML,
+  lounge: { nl: "Bezoek TaPas Lounge", fr: "Visiter TaPas Lounge", en: "Visit TaPas Lounge", es: "Visitar TaPas Lounge", ru: "Посетить TaPas Lounge" } as ML,
+};
+
+// Amelia Earhart welkomstbericht — verschijnt na landing, voor de Lounge-knop
+const AMELIA = {
+  bericht: {
+    nl: "Ik heb je naar hier gebracht, welkom op het Tapas Island. Enjoy your journey.",
+    fr: "Je t'ai emmené ici, bienvenue sur Tapas Island. Enjoy your journey.",
+    en: "I have brought you here, welcome to Tapas Island. Enjoy your journey.",
+    es: "Te he traído hasta aquí, bienvenido a Tapas Island. Enjoy your journey.",
+    ru: "Я привела тебя сюда, добро пожаловать на Tapas Island. Enjoy your journey.",
+  } as ML,
+  ondertekening: "Regards, Amelia Earhart",
 };
 
 const ALG = {
@@ -165,7 +179,7 @@ interface Props {
   autoStart?: boolean;
 }
 
-type Fase = "dicht" | "welkom" | "etappe" | "slot";
+type Fase = "dicht" | "welkom" | "etappe" | "slot" | "amelia";
 
 export function Rondleiding({ taal, autoStart = true }: Props) {
   const reduce = useReducedMotion();
@@ -175,6 +189,7 @@ export function Rondleiding({ taal, autoStart = true }: Props) {
   const vorigRectRef = useRef<Rect | null>(null);
   // Geluid: discreet motorgeluid, met gebruikers-mute (onthouden in localStorage).
   const [gedempt, setGedempt] = useState<boolean>(() => geluidUit());
+  const [, navigate] = useLocation();
 
   // --- Doel-element opmeten ---
   const meet = useCallback((anchor: string): Rect | null => {
@@ -263,6 +278,17 @@ export function Rondleiding({ taal, autoStart = true }: Props) {
     });
   }, []);
 
+  // Naar de Amelia-fase: toon kaart + bericht vóór de Lounge
+  const naarAmelia = useCallback(() => {
+    setFase("amelia");
+  }, []);
+
+  // Lounge bezoeken na de Amelia-modal
+  const naarLounge = useCallback(() => {
+    sluit(true);
+    navigate("/lounge");
+  }, [sluit, navigate]);
+
   const terug = useCallback(() => setIdx((i) => Math.max(0, i - 1)), []);
 
   // --- Eerste-bezoek autostart ---
@@ -316,11 +342,12 @@ export function Rondleiding({ taal, autoStart = true }: Props) {
         if (ev.key === "ArrowRight" || ev.key === "Enter") verder();
         else if (ev.key === "ArrowLeft") terug();
       } else if (fase === "welkom" && ev.key === "Enter") startVlucht();
-      else if (fase === "slot" && ev.key === "Enter") sluit();
+      else if (fase === "slot" && ev.key === "Enter") naarAmelia();
+      else if (fase === "amelia" && ev.key === "Enter") naarLounge();
     };
     window.addEventListener("keydown", h);
     return () => window.removeEventListener("keydown", h);
-  }, [fase, sluit, verder, terug, startVlucht]);
+  }, [fase, sluit, verder, terug, startVlucht, naarAmelia, naarLounge]);
 
   if (fase === "dicht") return null;
 
@@ -421,13 +448,22 @@ export function Rondleiding({ taal, autoStart = true }: Props) {
                       </button>
                     </>
                   ) : (
-                    <button
-                      onClick={() => sluit()}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground transition hover:opacity-90"
-                    >
-                      {k(SLOT.sluit, taal)}
-                      <ArrowRight className="h-4 w-4" />
-                    </button>
+                    <div className="flex flex-col gap-2 w-full">
+                      <button
+                        onClick={naarAmelia}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground transition hover:opacity-90"
+                      >
+                        <MapPin className="h-4 w-4" />
+                        {k(SLOT.lounge, taal)}
+                        <ArrowRight className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => sluit()}
+                        className="rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground transition hover:text-foreground"
+                      >
+                        {k(SLOT.sluit, taal)}
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -580,7 +616,7 @@ export function Rondleiding({ taal, autoStart = true }: Props) {
                       onClick={verder}
                       className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3.5 py-2 text-sm font-semibold text-accent-foreground transition hover:opacity-90"
                     >
-                      {idx >= totaal - 1 ? k(SLOT.sluit, taal) : k(ALG.verder, taal)}
+                      {idx >= totaal - 1 ? k({ nl: "Landen", fr: "Atterrir", en: "Land", es: "Aterrizar", ru: "Сесть" } as ML, taal) : k(ALG.verder, taal)}
                       <ArrowRight className="h-4 w-4" />
                     </button>
                   </div>
@@ -588,6 +624,71 @@ export function Rondleiding({ taal, autoStart = true }: Props) {
               </div>
             </motion.div>
           </AnimatePresence>
+        </>
+      )}
+
+      {/* ---- AMELIA: eilandkaart + welkomstbericht ---- */}
+      {fase === "amelia" && (
+        <>
+          <motion.div
+            className="absolute inset-0 bg-background/85 backdrop-blur-[4px]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          />
+          <div className="absolute inset-0 flex items-center justify-center p-4">
+            <motion.div
+              initial={reduce ? { opacity: 0 } : { opacity: 0, y: 20, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ type: "spring", stiffness: 200, damping: 22 }}
+              className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-card-border bg-card shadow-2xl"
+            >
+              {/* gouden haarlijn bovenaan */}
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[hsl(var(--gold))] to-transparent" />
+
+              {/* Eilandkaart */}
+              <div className="relative w-full overflow-hidden" style={{ maxHeight: 280 }}>
+                <img
+                  src="/island/tapas-island-kaart.jpg"
+                  alt="Tapas Island kaart"
+                  className="w-full object-cover object-top"
+                  style={{ maxHeight: 280 }}
+                />
+                {/* zachte vervaag-overgang naar de kaartinhoud */}
+                <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-card to-transparent" />
+              </div>
+
+              {/* Bericht van Amelia */}
+              <div className="relative px-7 pb-7 pt-4">
+                <div className="flex items-center gap-2 text-[hsl(var(--gold))]">
+                  <Plane className="h-4 w-4" />
+                  <span className="text-xs font-semibold uppercase tracking-[0.2em]">Tapas Island</span>
+                </div>
+                <blockquote className="mt-3 text-base leading-relaxed text-foreground italic">
+                  „{k(AMELIA.bericht, taal)}”
+                </blockquote>
+                <p className="mt-2 text-sm font-semibold text-[hsl(var(--gold))]">
+                  {AMELIA.ondertekening}
+                </p>
+                <div className="mt-6 flex gap-3">
+                  <button
+                    onClick={naarLounge}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-accent-foreground transition hover:opacity-90"
+                  >
+                    <MapPin className="h-4 w-4" />
+                    {k(SLOT.lounge, taal)}
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => sluit()}
+                    className="rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+                  >
+                    {k(SLOT.sluit, taal)}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         </>
       )}
     </div>
