@@ -89,12 +89,17 @@ export default function TwominscanAfname() {
     navigate(`/2minscan/rapport?d=${payload}`);
   }
 
+  function toonVoorbeeldrapport() {
+    const d = encodeURIComponent(JSON.stringify({ naam: "Nathalie Wouters", taal: "nl", datum: "25/6/2026", score: { blauw: 2, groen: 9, geel: 10, rood: 3 }, ie: { uitkomst: "meer_extravert", label: "uitgesproken extravert", verschil: -3, xStand: "EE" }, egCode: "RgEEO-a", egCodePositief: "RgEEO", minSegment: "-a", profielCode: "RgXO-a", exact: true }));
+    navigate(`/2minscan/rapport?d=${d}`);
+  }
+
   return (
     <div style={{ minHeight: "100vh", background: KLEUR.zacht, color: KLEUR.inkt }}>
       <TopBalk taal={taal} setTaal={setTaal} tr={tr} />
       <div style={{ maxWidth: 980, margin: "0 auto", padding: "28px 20px 64px" }}>
         {stap === "intro" && (
-          <IntroBlok naam={naam} setNaam={setNaam} start={() => setStap("ronde1")} tr={tr} />
+          <IntroBlok naam={naam} setNaam={setNaam} start={() => setStap("ronde1")} toonDemo={toonVoorbeeldrapport} tr={tr} />
         )}
 
         {stap === "ronde1" && (
@@ -187,8 +192,8 @@ function TopBalk({ taal, setTaal, tr }: { taal: Taal; setTaal: (t: Taal) => void
 }
 
 function IntroBlok({
-  naam, setNaam, start, tr,
-}: { naam: string; setNaam: (v: string) => void; start: () => void; tr: Vertaler }) {
+  naam, setNaam, start, toonDemo, tr,
+}: { naam: string; setNaam: (v: string) => void; start: () => void; toonDemo: () => void; tr: Vertaler }) {
   return (
     <div style={{ maxWidth: 720, margin: "0 auto" }}>
       <div style={{ color: KLEUR.goud, fontWeight: 800, letterSpacing: 2, fontSize: 12 }}>
@@ -223,10 +228,7 @@ function IntroBlok({
       <div style={{ marginTop: 26, display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
         <PrimaireKnop onClick={start}>{tr("ui.afname.start", "Start de 2MINSCAN →")}</PrimaireKnop>
         <button
-          onClick={() => {
-            const d = encodeURIComponent(JSON.stringify({ naam: "Nathalie Wouters", taal: "nl", datum: "25/6/2026", score: { blauw: 2, groen: 9, geel: 10, rood: 3 }, ie: { uitkomst: "meer_extravert", label: "uitgesproken extravert", verschil: -3, xStand: "EE" }, egCode: "RgEEO-a", egCodePositief: "RgEEO", minSegment: "-a", profielCode: "RgXO-a", exact: true }));
-            window.location.href = `?d=${d}#/2minscan/rapport`;
-          }}
+          onClick={toonDemo}
           style={{
             display: "inline-block",
             padding: "11px 18px",
