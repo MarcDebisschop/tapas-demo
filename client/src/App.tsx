@@ -35,6 +35,7 @@ import ImpactHome from "@/pages/impact-home";
 import Lounge from "@/pages/lounge";
 import AdminVraagbeheer from "@/pages/admin-vraagbeheer";
 import { AdminLoginGate } from "@/components/AdminLoginGate";
+import { Redirect } from "wouter";
 
 function AppRouter() {
   return (
@@ -64,6 +65,10 @@ function AppRouter() {
       <Route path="/2minscan/rapport" component={TwominscanRapport} />
       <Route path="/impact" component={ImpactHome} />
       <Route path="/lounge" component={Lounge} />
+      {/* Wereld-shortcuts: redirect naar meest relevante bestaande pagina */}
+      <Route path="/werk">{() => <Redirect to="/start" />}</Route>
+      <Route path="/studie">{() => <Redirect to="/start" />}</Route>
+      <Route path="/voor-deelnemers">{() => <Redirect to="/mijn" />}</Route>
       <Route component={NotFound} />
     </Switch>
   );
