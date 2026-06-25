@@ -20,6 +20,8 @@ import {
   Sparkles,
   Coffee,
   ShieldCheck,
+  Zap,
+  GitBranch,
 } from "lucide-react";
 import {
   TALEN,
@@ -120,6 +122,22 @@ export default function Home() {
       href: "/impact",
       cta: "Voorbeeld bekijken",
       testid: "link-inst-impact",
+    },
+    {
+      icon: Zap,
+      titel: "2MINSCAN",
+      body: "Energetisch gedragsprofiel in drie stappen. Breng in beeld hoe je energie geeft en krijgt in samenwerking. Bekijk een uitgewerkt voorbeeldrapport.",
+      href: "/2minscan",
+      cta: "Bekijk voorbeeldrapport",
+      testid: "link-inst-2minscan",
+    },
+    {
+      icon: GitBranch,
+      titel: "Human Due Diligence",
+      body: "Vlaggenschip-instrument. Gefaseerde boarddiagnose via TaPas Teamscan, 2MINSCAN en T4P Business Kompas — met Go/No-Go-scharnier en twee afzonderlijke eindrapporten.",
+      href: "/hdd",
+      cta: "Traject bekijken",
+      testid: "link-inst-hdd",
     },
     {
       icon: Coffee,
