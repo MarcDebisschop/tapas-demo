@@ -923,7 +923,136 @@ seedShowcase();
       console.log("[tapas] Teamscan demo-sessies geseed.");
     }
 
-    console.log("[tapas] Demo-data volledig: org + afnames + credits + transacties + facturen + licenties + T4R + Teamscan.");
+    // -----------------------------------------------------------------------
+    // Human Due Diligence (HDD) demo-traject
+    // Vlaggenschip-instrument: 1 volledig afgerond M&A-traject voor
+    // "Loop Founder-Management Team" (Loop Earplugs — fictief).
+    // 5 boardleden, fase 1 klaar, gate = Go, fase 2 klaar, status = afgerond.
+    // Idempotent via COUNT hdd_trajecten = 0.
+    // -----------------------------------------------------------------------
+    sqlite.exec(
+      `CREATE TABLE IF NOT EXISTS hdd_trajecten (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        board_naam TEXT NOT NULL,
+        org_label TEXT NOT NULL DEFAULT '',
+        context TEXT NOT NULL DEFAULT 'self-screening',
+        vereist_stratum INTEGER,
+        status TEXT NOT NULL DEFAULT 'fase1_open',
+        gate_resultaat TEXT,
+        platform_sessie_id INTEGER,
+        created_at INTEGER NOT NULL
+      )`
+    );
+    sqlite.exec(
+      `CREATE TABLE IF NOT EXISTS hdd_board_leden (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        traject_id INTEGER NOT NULL,
+        naam TEXT NOT NULL DEFAULT '',
+        email TEXT NOT NULL DEFAULT '',
+        instrument_tokens TEXT NOT NULL DEFAULT '{}',
+        created_at INTEGER NOT NULL
+      )`
+    );
+    const hddLeeg = (
+      sqlite.prepare("SELECT COUNT(*) AS n FROM hdd_trajecten").get() as { n: number }
+    ).n === 0;
+    if (hddLeeg) {
+      const msAgo3 = (dagen: number) => Date.now() - dagen * 86400000;
+
+      // Traject: Loop Founder-Management Team (M&A, vereist stratum 5, afgerond)
+      const hddTrIns = sqlite.prepare(
+        `INSERT INTO hdd_trajecten
+           (board_naam, org_label, context, vereist_stratum, status, gate_resultaat, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
+      );
+      const gateResultaat = JSON.stringify({
+        advies: "go",
+        signalen: [
+          {
+            indicator: "waardenfit",
+            ernst: "midden",
+            toelichting: "Twee leden tonen een lichte waardendivergentie op langetermijn-oriëntatie; follow-up in fase 2 aanbevolen."
+          }
+        ],
+        samenvatting: "Het board toont solide teamsamenwerking (gemiddeld vertrouwen 4.1/5) en een gezonde energiebalans. De enige rode vlag is een matig waardenverschil bij twee leden — onvoldoende zwaar om de diepteanalyse te blokkeren. Advies: GO voor fase 2.",
+        consultantBesluit: "go",
+        consultantMotivatie: "Bevestigd na bespreking met investerende partij. Waardenverschil is bespreekbaar en manageable in integratiefase."
+      });
+      hddTrIns.run(
+        "Loop Founder-Management Team",
+        "Loop Earplugs",
+        "ma",
+        5,
+        "afgerond",
+        gateResultaat,
+        msAgo3(60)
+      );
+
+      const hddTrId = (
+        sqlite.prepare("SELECT id FROM hdd_trajecten ORDER BY id ASC LIMIT 1").get() as { id: number }
+      ).id;
+
+      // Boardleden: 5 fictieve personen met instrument-tokens
+      const hddLidIns = sqlite.prepare(
+        `INSERT INTO hdd_board_leden
+           (traject_id, naam, email, instrument_tokens, created_at)
+         VALUES (?, ?, ?, ?, ?)`
+      );
+      const boardLeden = [
+        {
+          naam: "Dimitri Oosterlinck",
+          email: "dimitri@loop-earplugs.com",
+          tokens: {
+            "tapas-teamscan": "TSDEMO-DIMITRI-HDD01",
+            "twominscan": "2MS-DIMITRI-HDD01",
+            "t4p-business-kompas": "T4P-DIMITRI-HDD01"
+          }
+        },
+        {
+          naam: "Maarten Bodewes",
+          email: "maarten@loop-earplugs.com",
+          tokens: {
+            "tapas-teamscan": "TSDEMO-MAARTEN-HDD01",
+            "twominscan": "2MS-MAARTEN-HDD01",
+            "t4p-business-kompas": "T4P-MAARTEN-HDD01"
+          }
+        },
+        {
+          naam: "Marloes Mantel",
+          email: "marloes@loop-earplugs.com",
+          tokens: {
+            "tapas-teamscan": "TSDEMO-MARLOES-HDD01",
+            "twominscan": "2MS-MARLOES-HDD01",
+            "t4p-business-kompas": "T4P-MARLOES-HDD01"
+          }
+        },
+        {
+          naam: "Cedric Schepers",
+          email: "cedric@loop-earplugs.com",
+          tokens: {
+            "tapas-teamscan": "TSDEMO-CEDRIC-HDD01",
+            "twominscan": "2MS-CEDRIC-HDD01",
+            "t4p-business-kompas": "T4P-CEDRIC-HDD01"
+          }
+        },
+        {
+          naam: "Rob Weston",
+          email: "rob@loop-earplugs.com",
+          tokens: {
+            "tapas-teamscan": "TSDEMO-ROB-HDD01",
+            "twominscan": "2MS-ROB-HDD01",
+            "t4p-business-kompas": "T4P-ROB-HDD01"
+          }
+        }
+      ];
+      const hddNow = Date.now();
+      for (const lid of boardLeden) {
+        hddLidIns.run(hddTrId, lid.naam, lid.email, JSON.stringify(lid.tokens), hddNow);
+      }
+      console.log("[tapas] HDD demo-traject geseed: Loop Founder-Management Team (M&A, afgerond, 5 boardleden).");
+    }
+
+    console.log("[tapas] Demo-data volledig: org + afnames + credits + transacties + facturen + licenties + T4R + Teamscan + HDD.");
   } catch (e) {
     console.warn("[tapas] Demo-data seed overgeslagen:", (e as Error)?.message);
   }
