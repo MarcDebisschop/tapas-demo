@@ -38,6 +38,7 @@ import { AdminLoginGate } from "@/components/AdminLoginGate";
 import { Redirect } from "wouter";
 import Studie, { StudieScholenPagina, StudieLeerlingenPagina, StudieInstrumentenPagina } from "@/pages/studie";
 import Werk from "@/pages/werk";
+import VoorBegeleiders from "@/pages/voor-begeleiders";
 
 function AppRouter() {
   return (
@@ -74,7 +75,7 @@ function AppRouter() {
       <Route path="/studie/instrumenten" component={StudieInstrumentenPagina} />
       <Route path="/studie" component={Studie} />
       <Route path="/voor-deelnemers">{() => <Redirect to="/mijn" />}</Route>
-      <Route path="/voor-begeleiders">{() => <Redirect to="/start" />}</Route>
+      <Route path="/voor-begeleiders" component={VoorBegeleiders} />
       <Route component={NotFound} />
     </Switch>
   );
