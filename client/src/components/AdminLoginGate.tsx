@@ -1,7 +1,6 @@
 // AdminLoginGate — beschermt alle admin-pagina's.
-// Als de sessie niet actief is (GET /api/admin/me → 401), toont de component
-// een loginformulier. Na succesvolle login wordt de admin-inhoud gerenderd.
-// Demo-modus: email en wachtwoord zijn automatisch ingevuld.
+// Server checkt alleen e-mailadres (sessie-gebaseerd, geen wachtwoord in DB).
+// Demo-modus: email vooringevuld zodat bezoekers meteen kunnen inloggen.
 
 import { useState, createContext, useContext } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -52,27 +51,25 @@ export function AdminLoginGate({ children }: Props) {
     queryKey: ["/api/admin/me"],
     queryFn: getQueryFn<BeheerderProfiel | null>({ on401: "returnNull" }),
     staleTime: 1000 * 60 * 5,
+    retry: false,
   });
 
-  // Demo: credentials vooringevuld.
+  // Demo: email vooringevuld. Server verwacht enkel email (geen wachtwoord).
   const [email, setEmail] = useState(DEMO_MODE ? "marc@tapascity.com" : "");
-  const [wachtwoord, setWachtwoord] = useState(DEMO_MODE ? "Tintinenco01" : "");
   const [bezig, setBezig] = useState(false);
 
   async function inloggen(e: React.FormEvent) {
     e.preventDefault();
+    if (!email.trim()) return;
     setBezig(true);
     try {
-      await apiRequest("POST", "/api/admin/login", {
-        email: email.trim(),
-        wachtwoord,
-      });
-      // Ververs /api/admin/me zodat de Gate de nieuwe sessie oppikt.
+      await apiRequest("POST", "/api/admin/login", { email: email.trim() });
+      // Ververs sessie-check
       await qc.invalidateQueries({ queryKey: ["/api/admin/me"] });
     } catch {
       toast({
         title: "Inloggen mislukt",
-        description: "E-mailadres of wachtwoord klopt niet.",
+        description: "Dit e-mailadres is niet gekend als beheerder.",
         variant: "destructive",
       });
     } finally {
@@ -81,9 +78,7 @@ export function AdminLoginGate({ children }: Props) {
   }
 
   async function afmelden() {
-    try {
-      await apiRequest("POST", "/api/admin/logout", {});
-    } catch { /* negeer */ }
+    try { await apiRequest("POST", "/api/admin/logout", {}); } catch { /* negeer */ }
     await qc.invalidateQueries({ queryKey: ["/api/admin/me"] });
   }
 
@@ -110,8 +105,13 @@ export function AdminLoginGate({ children }: Props) {
               </div>
               <h1 className="text-lg font-semibold text-foreground">Beheeromgeving</h1>
               <p className="text-sm text-muted-foreground">
-                Log in met je beheerdersaccount om verder te gaan.
+                Log in met je beheerderse-mailadres om verder te gaan.
               </p>
+              {DEMO_MODE && (
+                <p className="rounded-md bg-accent/10 px-3 py-1.5 text-xs text-accent">
+                  Demo: klik direct op Inloggen
+                </p>
+              )}
             </div>
 
             <form onSubmit={inloggen} className="flex flex-col gap-4">
@@ -122,26 +122,18 @@ export function AdminLoginGate({ children }: Props) {
                   type="email"
                   autoComplete="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(ev) => setEmail(ev.target.value)}
                   placeholder="jij@tapascity.com"
                   required
                   data-testid="input-admin-email"
                 />
               </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="admin-wachtwoord">Wachtwoord</Label>
-                <Input
-                  id="admin-wachtwoord"
-                  type="password"
-                  autoComplete="current-password"
-                  value={wachtwoord}
-                  onChange={(e) => setWachtwoord(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  data-testid="input-admin-wachtwoord"
-                />
-              </div>
-              <Button type="submit" disabled={bezig} className="mt-2 w-full" data-testid="button-admin-login">
+              <Button
+                type="submit"
+                disabled={bezig}
+                className="mt-2 w-full"
+                data-testid="button-admin-login"
+              >
                 {bezig ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
