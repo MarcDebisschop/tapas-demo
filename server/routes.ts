@@ -455,7 +455,11 @@ export async function registerRoutes(
     }
     // Sla beheerder-id op in sessie (cookie-gebaseerd, in-memory)
     (req.session as any).adminId = beheerder.id;
-    res.json({ ok: true, naam: beheerder.naam, email: beheerder.email, isPrior: beheerder.isPrior });
+    // Expliciet opslaan zodat de Set-Cookie header zeker in de response zit.
+    req.session.save((err) => {
+      if (err) return res.status(500).json({ message: "Sessie opslaan mislukt." });
+      res.json({ ok: true, naam: beheerder.naam, email: beheerder.email, isPrior: beheerder.isPrior });
+    });
   });
 
   app.get("/api/admin/me", async (req, res) => {

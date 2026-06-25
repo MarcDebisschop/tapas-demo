@@ -40,6 +40,21 @@ import Studie, { StudieScholenPagina, StudieLeerlingenPagina, StudieInstrumenten
 import Werk from "@/pages/werk";
 import VoorBegeleiders from "@/pages/voor-begeleiders";
 
+function AdminStub({ titel, omschrijving }: { titel: string; omschrijving: string }) {
+  return (
+    <div className="min-h-[100dvh] bg-background">
+      <div className="mx-auto max-w-2xl px-4 py-24 text-center">
+        <div className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-muted mb-6">
+          <span className="text-2xl">🚧</span>
+        </div>
+        <h1 className="text-xl font-semibold text-foreground mb-3">{titel}</h1>
+        <p className="text-sm text-muted-foreground mb-6">{omschrijving}</p>
+        <a href="#/admin" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">← Terug naar beheer</a>
+      </div>
+    </div>
+  );
+}
+
 function AppRouter() {
   return (
     <Switch>
@@ -55,6 +70,10 @@ function AppRouter() {
       <Route path="/admin/credits">{() => <AdminLoginGate><AdminCredits /></AdminLoginGate>}</Route>
       <Route path="/admin/toegang">{() => <AdminLoginGate><AdminToegang /></AdminLoginGate>}</Route>
       <Route path="/admin/vraagbeheer">{() => <AdminLoginGate><AdminVraagbeheer /></AdminLoginGate>}</Route>
+      <Route path="/admin/coaches">{() => <AdminLoginGate><AdminStub titel="Coaches" omschrijving="Het coachoverzicht is beschikbaar in de volledige versie van het platform." /></AdminLoginGate>}</Route>
+      <Route path="/admin/inzichten">{() => <AdminLoginGate><AdminStub titel="Inzichten" omschrijving="Rapportagedashboard is beschikbaar in de volledige versie van het platform." /></AdminLoginGate>}</Route>
+      <Route path="/admin/academy">{() => <AdminLoginGate><AdminStub titel="Academy beheer" omschrijving="Academy-beheer is beschikbaar in de volledige versie van het platform." /></AdminLoginGate>}</Route>
+      <Route path="/admin/mailbeheer">{() => <AdminLoginGate><AdminStub titel="Mailbeheer" omschrijving="Mailsjablonen zijn beschikbaar in de volledige versie van het platform." /></AdminLoginGate>}</Route>
       <Route path="/admin/:id">{() => <AdminLoginGate><AdminDetail /></AdminLoginGate>}</Route>
       <Route path="/t4r" component={T4RHome} />
       <Route path="/t4r/sessie/:id" component={T4RSession} />
@@ -81,8 +100,18 @@ function AppRouter() {
   );
 }
 
+// Admin-routes slaan de poorten-intro over (beheerder navigeert rechtstreeks).
+function isAdminRoute(): boolean {
+  try {
+    const hash = window.location.hash.replace(/^#\/?/, "");
+    return hash.startsWith("admin") || hash.startsWith("coach");
+  } catch {
+    return false;
+  }
+}
+
 function App() {
-  const [introDone, setIntroDone] = useState(false);
+  const [introDone, setIntroDone] = useState(() => isAdminRoute());
 
   return (
     <ErrorBoundary>

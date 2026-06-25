@@ -28,12 +28,17 @@ app.use(express.urlencoded({ extended: false }));
 
 // Sessie-middleware (voor admin login)
 const MStore = MemoryStore(session);
+// Op pplx.app loopt het verkeer via een HTTPS-proxy (X-Forwarded-Proto: https).
+// trust proxy = 1 zodat req.secure correct werkt achter de proxy.
+// cookie.secure = "auto" laat express-session zelf beslissen op basis van req.secure.
+app.set("trust proxy", 1);
 app.use(session({
   secret: process.env.SESSION_SECRET || "tapas-demo-secret-2026",
   resave: false,
   saveUninitialized: false,
+  name: "tapas-sid",
   store: new MStore({ checkPeriod: 86400000 }),
-  cookie: { maxAge: 24 * 60 * 60 * 1000, httpOnly: true, sameSite: "lax" },
+  cookie: { maxAge: 24 * 60 * 60 * 1000, httpOnly: true, sameSite: "lax", secure: "auto", path: "/" },
 }));
 
 export function log(message: string, source = "express") {
