@@ -37,6 +37,7 @@ import AdminVraagbeheer from "@/pages/admin-vraagbeheer";
 import { AdminLoginGate } from "@/components/AdminLoginGate";
 import { Redirect } from "wouter";
 import Studie, { StudieScholenPagina, StudieLeerlingenPagina, StudieInstrumentenPagina } from "@/pages/studie";
+import Werk from "@/pages/werk";
 
 function AppRouter() {
   return (
@@ -67,7 +68,7 @@ function AppRouter() {
       <Route path="/impact" component={ImpactHome} />
       <Route path="/lounge" component={Lounge} />
       {/* Wereld-shortcuts: redirect naar meest relevante bestaande pagina */}
-      <Route path="/werk">{() => <Redirect to="/start" />}</Route>
+      <Route path="/werk" component={Werk} />
       <Route path="/studie/scholen" component={StudieScholenPagina} />
       <Route path="/studie/leerlingen" component={StudieLeerlingenPagina} />
       <Route path="/studie/instrumenten" component={StudieInstrumentenPagina} />
