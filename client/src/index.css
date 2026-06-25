@@ -402,3 +402,12 @@ body::after {
     inset: -1px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * Poort (Cijferslot) — watermerk-suppressor
+ * De .poort-pagina heeft zijn eigen sfeervolle achtergrond; het Earhart-
+ * watermerk (body::after) mag daar niet op doorschemeren.
+ * Exact overgenomen uit de originele Cijferslot-bundle (18 jun 2026).
+ * ------------------------------------------------------------------------- */
+.poort-pagina { background: var(--poort-bg) !important }
+body:has(.poort-pagina)::after { display: none !important }

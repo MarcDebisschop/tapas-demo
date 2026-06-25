@@ -39,6 +39,7 @@ import { AdminLoginGate } from "@/components/AdminLoginGate";
 import { Redirect } from "wouter";
 import Studie, { StudieScholenPagina, StudieLeerlingenPagina, StudieInstrumentenPagina } from "@/pages/studie";
 import Werk from "@/pages/werk";
+import Poort from "@/pages/poort";
 import VoorBegeleiders from "@/pages/voor-begeleiders";
 
 function AdminStub({ titel, omschrijving }: { titel: string; omschrijving: string }) {
@@ -98,8 +99,9 @@ function AppRouter() {
       <Route path="/studie" component={Studie} />
       <Route path="/voor-deelnemers">{() => <Redirect to="/mijn" />}</Route>
       <Route path="/voor-begeleiders" component={VoorBegeleiders} />
-      {/* /poort/teens = redirect naar home (poorten-intro start automatisch) */}
-      <Route path="/poort/teens">{() => <Redirect to="/" />}</Route>
+      {/* Cijferslot — toegangsschil voor het persoonlijk dashboard (drie skins) */}
+      <Route path="/poort" component={Poort} />
+      <Route path="/poort/:skin" component={Poort} />
       <Route component={NotFound} />
     </Switch>
   );
