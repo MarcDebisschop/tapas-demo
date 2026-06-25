@@ -28,7 +28,7 @@ const Ko = {
   condens: 5200,
   woordVol: 8200,
   oplossen: 10200,
-  einde: 11600,
+  einde: 9999999, // klik verplicht — animatie stopt nooit automatisch
 };
 
 // ─── Easing functies (exact uit origineel) ───────────────────────────────────
