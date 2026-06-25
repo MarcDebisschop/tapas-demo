@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer } from "node:http";
 import type { Server } from "node:http";
-import { storage, CreditError, CREDITPAKKETTEN } from "./storage";
+import { storage, db, CreditError, CREDITPAKKETTEN } from "./storage";
 import { buildQuestionManagerRoutes } from "./question-manager";
 import { clientInstrument } from "./instrument";
 import { instrumentSamenvattingen, clientInstrumentVoor } from "./registry";
@@ -1758,6 +1758,68 @@ export async function registerRoutes(
   // Enkel toegankelijk voor is_prior=true beheerders.
   // -------------------------------------------------------------------------
   buildQuestionManagerRoutes(app);
+
+  // -------------------------------------------------------------------------
+  // Webshop — interesse-registratie
+  // Publiek endpoint: iedereen (ook demo-bezoekers) kan interesse registreren.
+  // Opgeslagen in SQLite-tabel `interesse_registraties`.
+  // Beheerders kunnen ophalen via GET /api/admin/interesse.
+  // -------------------------------------------------------------------------
+  app.post("/api/interesse", async (req, res) => {
+    const { naam, email, product, bericht } = req.body ?? {};
+    if (!naam?.trim() || !email?.trim() || !product?.trim()) {
+      return res.status(400).json({ error: "naam, email en product zijn verplicht." });
+    }
+    // Simpele e-mailvalidatie
+    if (!/^[^@]+@[^@]+\.[^@]+$/.test(email.trim())) {
+      return res.status(400).json({ error: "Ongeldig e-mailadres." });
+    }
+    try {
+      const sqlite = (db as any)._db ?? (storage as any).sqlite ?? null;
+      if (sqlite) {
+        sqlite.exec(`
+          CREATE TABLE IF NOT EXISTS interesse_registraties (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            naam TEXT NOT NULL,
+            email TEXT NOT NULL,
+            product TEXT NOT NULL,
+            bericht TEXT,
+            geregistreerd_op TEXT NOT NULL
+          )
+        `);
+        sqlite.prepare(
+          "INSERT INTO interesse_registraties (naam, email, product, bericht, geregistreerd_op) VALUES (?, ?, ?, ?, ?)"
+        ).run(
+          naam.trim(),
+          email.trim().toLowerCase(),
+          product.trim(),
+          (bericht ?? "").trim() || null,
+          new Date().toISOString()
+        );
+      }
+      console.log(`[Webshop] Interesse: ${naam.trim()} <${email.trim()}> → ${product.trim()}`);
+      return res.json({ ok: true });
+    } catch (e) {
+      console.error("[Webshop] Interesse opslaan mislukt:", e);
+      return res.status(500).json({ error: "Opslaan mislukt — probeer later opnieuw." });
+    }
+  });
+
+  // Beheerder-overzicht: alle interesse-registraties
+  app.get("/api/admin/interesse", async (req, res) => {
+    const adminId = (req.session as any)?.adminId;
+    if (!adminId) return res.status(401).json({ error: "Niet ingelogd." });
+    try {
+      const sqlite = (db as any)._db ?? (storage as any).sqlite ?? null;
+      if (!sqlite) return res.json([]);
+      const rows = sqlite.prepare(
+        "SELECT id, naam, email, product, bericht, geregistreerd_op FROM interesse_registraties ORDER BY geregistreerd_op DESC"
+      ).all();
+      return res.json(rows);
+    } catch {
+      return res.status(500).json({ error: "Ophalen mislukt." });
+    }
+  });
 
   return httpServer;
 }

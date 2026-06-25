@@ -11,9 +11,15 @@
  * Vaktermregels (geborgd in de vertaalbron): "Drivers" en de Engelse
  * labels "Need/Nice/Not needed" blijven onvertaald. De cluster-namen
  * en sourceRefs zitten niet in de itembank, dus geen risico hier.
+ *
+ * Question Manager integratie (v2):
+ * Na vertaling wordt elke itemtekst doorgegeven aan getVraagTekst().
+ * Zo winnen admin-overrides van zowel de NL-brontekst als de vertaling.
+ * Item-ID-conventie: "ts-{blokKey}-{item.id}" — identiek aan laadTeamscanItems().
  */
 import itembankJson from "./itembank.json";
 import vertalingenJson from "./itembank-vertalingen.json";
+import { getVraagTekst } from "../question-manager";
 
 export type TeamscanTaal = "nl" | "fr" | "en" | "es" | "ru";
 const DOELTALEN: TeamscanTaal[] = ["fr", "en", "es", "ru"];
@@ -35,7 +41,6 @@ export function vertaalItembank(taalIn: string): any {
   const taal = (DOELTALEN as string[]).includes(taalIn) ? (taalIn as TeamscanTaal) : "nl";
   // diepe kopie zodat we de bron niet muteren
   const ib: any = JSON.parse(JSON.stringify(itembankJson));
-  if (taal === "nl") return ib;
 
   // --- schaal.labels ---
   for (const n of ["1", "2", "3", "4", "5"]) {
@@ -47,7 +52,9 @@ export function vertaalItembank(taalIn: string): any {
   A.naam = v(taal, "A.naam", A.naam);
   A.instructie = v(taal, "A.instructie", A.instructie);
   for (const it of A.items) {
-    it.tekst = v(taal, it.id, it.tekst); // F1..F8
+    const vertaald = v(taal, it.id, it.tekst); // F1..F8
+    // QM-integratie: override wint boven vertaling
+    it.tekst = getVraagTekst("tapas-teamscan", `ts-A_fundament-${it.id}`, taal, vertaald);
   }
 
   // --- Blok B — Lencioni ---
@@ -55,7 +62,9 @@ export function vertaalItembank(taalIn: string): any {
   B.naam = v(taal, "B.naam", B.naam);
   B.instructie = v(taal, "B.instructie", B.instructie);
   for (const it of B.items) {
-    it.tekst = v(taal, `L${it.id}`, it.tekst); // L1..L38
+    const vertaald = v(taal, `L${it.id}`, it.tekst); // L1..L38
+    // QM-integratie: override wint boven vertaling
+    it.tekst = getVraagTekst("tapas-teamscan", `ts-B_lencioni-${it.id}`, taal, vertaald);
   }
 
   // --- Blok C — Vertrouwensanatomie ---

@@ -646,39 +646,285 @@ function MuziekKamerContent() {
 // =============================================================================
 // cee — Webshop content (verbatim)
 // =============================================================================
+// =============================================================================
+// WebshopContent — interesse-registratie + Amelia Earhart editie
+// =============================================================================
+
+const WEBSHOP_PRODUCTEN = [
+  {
+    id: "tapas-business-kompas",
+    naam: "TaPas Business Kompas",
+    subtitel: "Standaardeditie",
+    beschrijving: "Volledig psychometrisch profiel op basis van drivers, talentfoci en versnellers.",
+    prijs: "Op aanvraag",
+    features: [
+      "Geforceerde keuzevragenlijst (136 stellingen)",
+      "Energieprofiel per construct",
+      "Persoonlijk PDF-rapport",
+      "5 talen (NL/FR/EN/ES/RU)",
+    ],
+    badge: "Bestseller",
+    kleur: "border-amber-400/40 bg-amber-50/10 dark:bg-amber-950/20",
+    badgeKleur: "bg-amber-500/20 text-amber-700 dark:text-amber-300",
+  },
+  {
+    id: "amelia-earhart",
+    naam: "Amelia Earhart Editie",
+    subtitel: "TaPas Business Kompas — Premiumeditie",
+    beschrijving: "Alle kracht van het Business Kompas, aangevuld met een diepgaande coachatlas, T4Recruitment-koppeling en een persoonlijke debriefing door een gecertificeerde TaPas-coach.",
+    prijs: "€ 349 per afname",
+    features: [
+      "Volledig TaPas Business Kompas",
+      "Persoonlijke TaPas Coachatlas (PDF)",
+      "T4Recruitment-koppeling (rolprofiel)",
+      "2MinScan energierapport inbegrepen",
+      "1 uur debriefing met gecertificeerde coach",
+      "Prioritaire verwerking (< 48u)",
+      "Meertalig rapport (5 talen)",
+      "1 jaar toegang tot profiel in TaPasCity Lounge",
+    ],
+    badge: "Premium",
+    kleur: "border-yellow-400/60 bg-yellow-50/10 dark:bg-yellow-950/20 ring-1 ring-yellow-400/20",
+    badgeKleur: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300",
+  },
+  {
+    id: "t4recruitment",
+    naam: "T4Recruitment Licentie",
+    subtitel: "Rekruteringseditie",
+    beschrijving: "Gestructureerde stakeholder-sessie voor het opbouwen van een virtueel functieprofiel.",
+    prijs: "Op aanvraag",
+    features: [
+      "5 rekruteringsmodules",
+      "Contextdrempelcheck",
+      "Profielvergelijkingsrapport",
+      "Coachbegeleiding inbegrepen",
+    ],
+    badge: null,
+    kleur: "border-border",
+    badgeKleur: "",
+  },
+  {
+    id: "teamscan",
+    naam: "TeamScan Sessie",
+    subtitel: "Teamontwikkelingseditie",
+    beschrijving: "Anoniem teamreflectierapport op basis van Lencioni + waarden- en normenfit.",
+    prijs: "Op aanvraag",
+    features: [
+      "Anonieme individuele invulling",
+      "Geaggregeerd teamrapport",
+      "Pijleranalyse (Lencioni + fundament)",
+      "Groepsdebriefing inclusief",
+    ],
+    badge: null,
+    kleur: "border-border",
+    badgeKleur: "",
+  },
+];
+
 function WebshopContent() {
+  const [naam, setNaam] = useState("");
+  const [email, setEmail] = useState("");
+  const [interesse, setInteresse] = useState("");
+  const [bericht, setBericht] = useState("");
+  const [verstuurd, setVerstuurd] = useState(false);
+  const [bezig, setBezig] = useState(false);
+  const [fout, setFout] = useState("");
+  const [uitvouwen, setUitvouwen] = useState<string | null>(null);
+
+  async function verstuurInteresse(ev: React.FormEvent) {
+    ev.preventDefault();
+    if (!naam.trim() || !email.trim() || !interesse) {
+      setFout("Vul naam, e-mail en interesse in.");
+      return;
+    }
+    setBezig(true);
+    setFout("");
+    try {
+      const r = await fetch("/api/interesse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          naam: naam.trim(),
+          email: email.trim(),
+          product: interesse,
+          bericht: bericht.trim(),
+        }),
+      });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        throw new Error((d as any).error ?? "Verzenden mislukt.");
+      }
+      setVerstuurd(true);
+    } catch (err: any) {
+      setFout(err.message ?? "Netwerkfout — probeer later opnieuw.");
+    } finally {
+      setBezig(false);
+    }
+  }
+
   return (
-    <div className="flex flex-col items-center justify-center gap-8 py-16 text-center">
-      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-950/30">
-        <ShoppingBag className="h-9 w-9 text-amber-600 dark:text-amber-400" />
+    <div className="flex flex-col gap-8 py-4">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 dark:bg-amber-950/30 flex-shrink-0">
+          <ShoppingBag className="h-7 w-7 text-amber-600 dark:text-amber-400" />
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">TaPas Webshop</h2>
+          <p className="text-sm text-muted-foreground">Instruments, licenties en coachingpakketten</p>
+        </div>
       </div>
-      <div className="max-w-md">
-        <Badge variant="secondary" className="mb-3">
-          Binnenkort
-        </Badge>
-        <h2 className="text-xl font-semibold text-foreground">TaPas Webshop</h2>
-        <p className="mt-3 leading-relaxed text-muted-foreground">
-          Bestel instruments, rapporten en coachinglicenties. We bouwen dit moment volop —
-          binnenkort beschikbaar.
-        </p>
-      </div>
-      <div className="grid w-full max-w-md gap-3 text-left">
-        {[
-          "TaPas Business Kompas",
-          "T4Recruitment Licentie",
-          "2MinScan Bundel",
-          "TeamScan Sessie",
-        ].map((e, t) => (
+
+      {/* Producten */}
+      <div className="flex flex-col gap-4">
+        {WEBSHOP_PRODUCTEN.map((p) => (
           <div
-            key={t}
-            className="flex items-center justify-between rounded-lg border border-amber-100 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/20 px-4 py-3"
+            key={p.id}
+            className={`rounded-xl border p-5 transition-colors ${p.kleur}`}
           >
-            <span className="text-sm text-foreground">{e}</span>
-            <Badge variant="outline" className="text-xs text-muted-foreground">
-              Binnenkort
-            </Badge>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <span className="text-sm font-semibold text-foreground">{p.naam}</span>
+                  {p.badge && (
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${p.badgeKleur}`}>
+                      {p.badge}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">{p.subtitel}</p>
+                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{p.beschrijving}</p>
+              </div>
+              <span className="text-sm font-semibold text-foreground whitespace-nowrap">{p.prijs}</span>
+            </div>
+
+            {/* Feature-lijst (uitvouwbaar) */}
+            <button
+              type="button"
+              onClick={() => setUitvouwen(uitvouwen === p.id ? null : p.id)}
+              className="mt-3 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ChevronRight
+                className={`h-3.5 w-3.5 transition-transform ${uitvouwen === p.id ? "rotate-90" : ""}`}
+              />
+              {uitvouwen === p.id ? "Minder details" : "Alles inbegrepen"}
+            </button>
+
+            {uitvouwen === p.id && (
+              <ul className="mt-3 space-y-1.5">
+                {p.features.map((f, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-foreground/80">
+                    <Star className="h-3.5 w-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {/* Interesse-knop */}
+            <div className="mt-4">
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs gap-1.5"
+                onClick={() => setInteresse(p.id)}
+              >
+                <Heart className="h-3.5 w-3.5" />
+                Interesse registreren
+              </Button>
+            </div>
           </div>
         ))}
+      </div>
+
+      {/* Interesse-registratie formulier */}
+      <div className="rounded-xl border border-amber-200/40 dark:border-amber-800/30 bg-amber-50/20 dark:bg-amber-950/10 p-6">
+        <h3 className="text-base font-semibold text-foreground mb-1">Interesse registreren</h3>
+        <p className="text-sm text-muted-foreground mb-5">
+          Vul je gegevens in en we nemen contact op zodra het product beschikbaar is — of om een offerte op maat te bespreken.
+        </p>
+
+        {verstuurd ? (
+          <div className="flex flex-col items-center gap-3 py-8 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+              <Star className="h-6 w-6 text-green-600 dark:text-green-400" />
+            </div>
+            <p className="text-sm font-semibold text-foreground">Bedankt!</p>
+            <p className="text-sm text-muted-foreground">
+              We hebben je interesse geregistreerd en nemen binnenkort contact op.
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={verstuurInteresse} className="flex flex-col gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Naam *</label>
+                <input
+                  type="text"
+                  value={naam}
+                  onChange={(e) => setNaam(e.target.value)}
+                  placeholder="Jouw naam"
+                  className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-amber-400/60"
+                  required
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-muted-foreground">E-mail *</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="jouw@email.be"
+                  className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-amber-400/60"
+                  required
+                />
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Interesse in *</label>
+              <select
+                value={interesse}
+                onChange={(e) => setInteresse(e.target.value)}
+                className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-amber-400/60"
+                required
+              >
+                <option value="">Kies een product…</option>
+                {WEBSHOP_PRODUCTEN.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.naam}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Bericht (optioneel)</label>
+              <textarea
+                value={bericht}
+                onChange={(e) => setBericht(e.target.value)}
+                placeholder="Context, vragen, specifieke behoeften…"
+                rows={3}
+                className="resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-amber-400/60"
+              />
+            </div>
+            {fout && (
+              <p className="text-xs text-destructive">{fout}</p>
+            )}
+            <div className="flex justify-end">
+              <Button
+                type="submit"
+                disabled={bezig}
+                className="gap-1.5 bg-amber-600 hover:bg-amber-700 text-white border-0"
+              >
+                {bezig ? (
+                  <span className="h-3.5 w-3.5 animate-spin border-2 border-current border-t-transparent rounded-full" />
+                ) : (
+                  <Heart className="h-3.5 w-3.5" />
+                )}
+                {bezig ? "Bezig…" : "Verstuur interesse"}
+              </Button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

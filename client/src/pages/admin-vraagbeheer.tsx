@@ -32,6 +32,7 @@ import {
   Clock,
   Languages,
   FileEdit,
+  Download,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -67,6 +68,9 @@ const TAAL_LABELS: Record<Taal, string> = {
 const INSTRUMENTEN = [
   { id: "tapas-t4p", naam: "T4P Business Kompas", beschrijving: "136 stellingen + verbindingsvragen" },
   { id: "tapas-teamscan", naam: "TaPas Teamscan", beschrijving: "Lencioni-gebaseerde teamvragen" },
+  { id: "tapas-t4recruitment", naam: "T4Recruitment", beschrijving: "Rekruterings-profileringsmodules" },
+  { id: "tapas-2minscan", naam: "2MinScan", beschrijving: "Energetisch gedragsprofiel (EG-code)" },
+  { id: "tapas-t4students", naam: "T4Students / Studiekompas", beschrijving: "Studiekeuze-oriëntatie voor jongeren" },
 ];
 
 // ─── Item-kaart ───────────────────────────────────────────────────────────────
@@ -389,6 +393,14 @@ export default function AdminVraagbeheer() {
             <Search className="h-4 w-4" />
             Zoeken
           </Button>
+          <a
+            href={`/api/admin/vraagbeheer/export/csv?instrument=${instrument}`}
+            download
+            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-accent/60 transition-colors"
+          >
+            <Download className="h-4 w-4" />
+            CSV export
+          </a>
           <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
             <input
               type="checkbox"

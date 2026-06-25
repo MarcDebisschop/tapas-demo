@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { TALEN, STANDAARD_TAAL, type Taal } from "../shared/talen";
+import { getVraagTekst } from "./question-manager";
 
 // Laadt de bevroren instrumentdefinitie (A1) als server-side configuratie.
 // De definitie is de enige bron voor blokken, items, families en deel-2 vragen.
@@ -128,13 +129,29 @@ export function clientInstrumentVan(inst: Instrument, taal: Taal = STANDAARD_TAA
       stateKey: b.stateKey,
       family: b.family,
       energyMode: b.energyMode,
-      items: b.items.map((it) => ({ pos: it.pos, text: kies(it.text, t) })),
+      items: b.items.map((it) => ({
+        pos: it.pos,
+        // Integratie Question Manager: override wint boven originele tekst.
+        // item-ID is het geregistreerde instrument-ID (bijv. "1.1").
+        text: getVraagTekst(
+          "tapas-t4p",
+          it.id,
+          t,
+          kies(it.text, t)
+        ),
+      })),
     })),
     connectionQuestions: inst.connectionQuestions.map((q) => ({
       id: q.id,
       scale: q.scale,
       label: kies(q.label, t),
-      text: kies(q.text, t),
+      // Integratie Question Manager: override voor verbindingsvragen.
+      text: getVraagTekst(
+        "tapas-t4p",
+        `deel2-${q.id}`,
+        t,
+        kies(q.text, t)
+      ),
     })),
     totalBlocks: inst.blocks.length,
   };
