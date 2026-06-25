@@ -34,6 +34,7 @@ import TwominscanRapport from "@/pages/twominscan-rapport";
 import ImpactHome from "@/pages/impact-home";
 import Lounge from "@/pages/lounge";
 import AdminVraagbeheer from "@/pages/admin-vraagbeheer";
+import { AdminLoginGate } from "@/components/AdminLoginGate";
 
 function AppRouter() {
   return (
@@ -46,10 +47,11 @@ function AppRouter() {
       <Route path="/afname/:id/deel1" component={Deel1} />
       <Route path="/afname/:id/deel2" component={Deel2} />
       <Route path="/afname/:id/klaar" component={Klaar} />
-      <Route path="/admin" component={Admin} />
-      <Route path="/admin/credits" component={AdminCredits} />
-      <Route path="/admin/toegang" component={AdminToegang} />
-      <Route path="/admin/:id" component={AdminDetail} />
+      <Route path="/admin">{() => <AdminLoginGate><Admin /></AdminLoginGate>}</Route>
+      <Route path="/admin/credits">{() => <AdminLoginGate><AdminCredits /></AdminLoginGate>}</Route>
+      <Route path="/admin/toegang">{() => <AdminLoginGate><AdminToegang /></AdminLoginGate>}</Route>
+      <Route path="/admin/vraagbeheer">{() => <AdminLoginGate><AdminVraagbeheer /></AdminLoginGate>}</Route>
+      <Route path="/admin/:id">{() => <AdminLoginGate><AdminDetail /></AdminLoginGate>}</Route>
       <Route path="/t4r" component={T4RHome} />
       <Route path="/t4r/sessie/:id" component={T4RSession} />
       <Route path="/r/:token" component={T4RDeelnemer} />
@@ -62,7 +64,6 @@ function AppRouter() {
       <Route path="/2minscan/rapport" component={TwominscanRapport} />
       <Route path="/impact" component={ImpactHome} />
       <Route path="/lounge" component={Lounge} />
-      <Route path="/admin/vraagbeheer" component={AdminVraagbeheer} />
       <Route component={NotFound} />
     </Switch>
   );
