@@ -1,6 +1,7 @@
 import { Switch, Route, Router } from "wouter";
 import { useHashLocation } from "wouter/use-hash-location";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { ShieldCheck } from "lucide-react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -74,6 +75,8 @@ function AppRouter() {
       <Route path="/admin/inzichten">{() => <AdminLoginGate><AdminStub titel="Inzichten" omschrijving="Rapportagedashboard is beschikbaar in de volledige versie van het platform." /></AdminLoginGate>}</Route>
       <Route path="/admin/academy">{() => <AdminLoginGate><AdminStub titel="Academy beheer" omschrijving="Academy-beheer is beschikbaar in de volledige versie van het platform." /></AdminLoginGate>}</Route>
       <Route path="/admin/mailbeheer">{() => <AdminLoginGate><AdminStub titel="Mailbeheer" omschrijving="Mailsjablonen zijn beschikbaar in de volledige versie van het platform." /></AdminLoginGate>}</Route>
+      {/* /coach = coach-omgeving: nog niet beschikbaar in demo, stub met terugknop */}
+      <Route path="/coach">{() => <AdminStub titel="Coach omgeving" omschrijving="De coach-omgeving is beschikbaar in de volledige versie van het platform." />}</Route>
       <Route path="/admin/:id">{() => <AdminLoginGate><AdminDetail /></AdminLoginGate>}</Route>
       <Route path="/t4r" component={T4RHome} />
       <Route path="/t4r/sessie/:id" component={T4RSession} />
@@ -95,12 +98,14 @@ function AppRouter() {
       <Route path="/studie" component={Studie} />
       <Route path="/voor-deelnemers">{() => <Redirect to="/mijn" />}</Route>
       <Route path="/voor-begeleiders" component={VoorBegeleiders} />
+      {/* /poort/teens = redirect naar home (poorten-intro start automatisch) */}
+      <Route path="/poort/teens">{() => <Redirect to="/" />}</Route>
       <Route component={NotFound} />
     </Switch>
   );
 }
 
-// Admin-routes slaan de poorten-intro over (beheerder navigeert rechtstreeks).
+// Admin-routes en coach-routes slaan de poorten-intro over (beheerder navigeert rechtstreeks).
 function isAdminRoute(): boolean {
   try {
     const hash = window.location.hash.replace(/^#\/?/, "");
@@ -113,6 +118,18 @@ function isAdminRoute(): boolean {
 function App() {
   const [introDone, setIntroDone] = useState(() => isAdminRoute());
 
+  // Als de gebruiker tijdens de poorten-intro naar een admin/coach-route navigeert
+  // (bijv. via de Admin-knop op de home-pagina), slaan we de intro direct over.
+  // Zonder dit luistert niemand naar hash-wijzigingen en blijft de Router ongemount.
+  useEffect(() => {
+    if (introDone) return; // Intro al voorbij, niets te doen.
+    function onHashChange() {
+      if (isAdminRoute()) setIntroDone(true);
+    }
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, [introDone]);
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
@@ -120,7 +137,22 @@ function App() {
           <TooltipProvider>
             <Toaster />
             {!introDone && (
-              <PoortenIntro onComplete={() => setIntroDone(true)} />
+              <>
+                <PoortenIntro onComplete={() => setIntroDone(true)} />
+                {/* Admin-bypass overlay: zweeft OVER de poorten-intro.
+                    Klikt de beheerder op dit linkje, dan wijzigt de hash
+                    naar #/admin — de hashchange-listener in useEffect pikt
+                    dat op en zet introDone=true zodat de Router mounts. */}
+                <a
+                  href="#/admin"
+                  data-testid="button-admin-intro-bypass"
+                  className="fixed bottom-5 left-5 z-[9999] inline-flex items-center gap-1.5 rounded-full border border-white/12 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/55 backdrop-blur-sm transition-colors hover:bg-white/10 hover:text-white/85"
+                  aria-label="Admin beheeromgeving"
+                >
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  Beheer
+                </a>
+              </>
             )}
             {/* Router én alle pages mounten pas NA de poorten-intro.
                 Dit voorkomt dat Rondleiding autoStart of andere
