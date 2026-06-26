@@ -590,9 +590,26 @@ function syncShowcaseInhoud(afnameId: number, deelnemerId?: number) {
 function seedShowcase() {
   try {
     const TOKEN = "MarcDebisschopShowcaseT4P01";
-    const reeds = sqlite
+    const SHOWCASE_EMAIL = "marc.debisschop@hatch-coaching.be";
+    let reeds = sqlite
       .prepare("SELECT id FROM deelnemers WHERE dashboard_token = ?")
       .get(TOKEN) as { id: number } | undefined;
+    if (!reeds) {
+      // Controleer of er al een deelnemer bestaat met hetzelfde e-mailadres maar
+      // een ander token (bv. xPLdpvGr9fpav4SDH17vHAjzlz0QAA op Render).
+      // Zo ja: corrigeer het token naar de showcase-waarde zodat de login
+      // altijd naar het showcase-profiel leidt.
+      const perEmail = sqlite
+        .prepare("SELECT id FROM deelnemers WHERE email = ?")
+        .get(SHOWCASE_EMAIL) as { id: number } | undefined;
+      if (perEmail) {
+        sqlite
+          .prepare("UPDATE deelnemers SET dashboard_token = ? WHERE id = ?")
+          .run(TOKEN, perEmail.id);
+        console.log("[tapas] Showcase-token gecorrigeerd voor bestaand e-mailrecord.");
+        reeds = perEmail;
+      }
+    }
     if (reeds) {
       verversShowcase(reeds.id); // bestaat al — chat/quota schoonmaken
       // En de profielinhoud opnieuw uit het seed-bestand zetten, zodat
