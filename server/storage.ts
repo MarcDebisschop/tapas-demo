@@ -590,7 +590,7 @@ function syncShowcaseInhoud(afnameId: number, deelnemerId?: number) {
 function seedShowcase() {
   try {
     const TOKEN = "MarcDebisschopShowcaseT4P01";
-    const SHOWCASE_EMAIL = "marc.debisschop@hatch-coaching.be";
+    const SHOWCASE_EMAIL = "marc@tapascity.com";
     let reeds = sqlite
       .prepare("SELECT id FROM deelnemers WHERE dashboard_token = ?")
       .get(TOKEN) as { id: number } | undefined;
