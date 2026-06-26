@@ -744,7 +744,11 @@ function seedLuca() {
     const afnBestaand = new Set(
       (sqlite.prepare("PRAGMA table_info(afnames)").all() as Array<{ name: string }>).map((c) => c.name),
     );
-    const afnRij = seed.luca_afname as Record<string, unknown>;
+    const afnRijRaw = seed.luca_afname as Record<string, unknown>;
+    const afnRij: Record<string, unknown> = {
+      ...afnRijRaw,
+      created_at: afnRijRaw.created_at ?? new Date().toISOString(),
+    };
     const afnKols = Object.keys(afnRij).filter((k) => afnBestaand.has(k));
     sqlite
       .prepare(`INSERT INTO afnames (${afnKols.map((k) => `"${k}"`).join(", ")}) VALUES (${afnKols.map(() => "?").join(", ")})`)
@@ -762,7 +766,14 @@ function seedLuca() {
       (sqlite.prepare("PRAGMA table_info(rapporten)").all() as Array<{ name: string }>).map((c) => c.name),
     );
     for (const r of (seed.luca_rapporten ?? [])) {
-      const rapRij = r as Record<string, unknown>;
+      const rapRijRaw = r as Record<string, unknown>;
+      const rapRij: Record<string, unknown> = {
+        ...rapRijRaw,
+        inhoud: rapRijRaw.inhoud ?? JSON.stringify({ variant: rapRijRaw.variant, taal: "nl" }),
+        html: rapRijRaw.html ?? "",
+        contract_versie: rapRijRaw.contract_versie ?? "1.0.0",
+        created_at: rapRijRaw.created_at ?? new Date().toISOString(),
+      };
       const rapKols = Object.keys(rapRij).filter((k) => rapBestaand.has(k));
       sqlite
         .prepare(`INSERT INTO rapporten (${rapKols.map((k) => `"${k}"`).join(", ")}) VALUES (${rapKols.map(() => "?").join(", ")})`)
@@ -781,6 +792,92 @@ function seedLuca() {
   }
 }
 seedLuca();
+
+// ---------------------------------------------------------------------------
+// Demo-deelnemer Jana (T4Teens demo, 15 jaar) — wis+herbouw strategie.
+// Volledig los van Luca. Token: JanaDemoTeensT4P01, e-mail: jana.demo@tapascity.com
+// ---------------------------------------------------------------------------
+function seedTeens() {
+  try {
+    const TOKEN = "JanaDemoTeensT4P01";
+    const JANA_EMAIL = "jana.demo@tapascity.com";
+    const RESPONDENT_CODE = "JA-2026-001";
+
+    const seed = laadShowcaseSeed() as any;
+    if (!seed?.teens_deelnemer) return;
+
+    // Stap 1: wis alle bestaande records voor Jana (deelnemer + afname + rapporten).
+    sqlite.prepare("DELETE FROM deelnemers WHERE dashboard_token = ?").run(TOKEN);
+    sqlite.prepare("DELETE FROM deelnemers WHERE email = ?").run(JANA_EMAIL);
+    sqlite.prepare("DELETE FROM rapporten WHERE afname_id IN (SELECT id FROM afnames WHERE respondent_code = ?)").run(RESPONDENT_CODE);
+    sqlite.prepare("DELETE FROM afnames WHERE respondent_code = ?").run(RESPONDENT_CODE);
+
+    // Stap 2: herseed deelnemer.
+    const dnBestaand = new Set(
+      (sqlite.prepare("PRAGMA table_info(deelnemers)").all() as Array<{ name: string }>).map((c) => c.name),
+    );
+    const dnRij = seed.teens_deelnemer as Record<string, unknown>;
+    const dnKols = Object.keys(dnRij).filter((k) => dnBestaand.has(k));
+    sqlite
+      .prepare(`INSERT INTO deelnemers (${dnKols.map((k) => `"${k}"`).join(", ")}) VALUES (${dnKols.map(() => "?").join(", ")})`)
+      .run(...dnKols.map((k) => {
+        const v = dnRij[k];
+        if (v === null || v === undefined) return null;
+        if (typeof v === "boolean") return v ? 1 : 0;
+        if (typeof v === "object") return JSON.stringify(v);
+        return v as string | number;
+      }));
+
+    // Stap 3: afname — altijd volledig herbouwen (al gewist in stap 1).
+    const afnBestaand = new Set(
+      (sqlite.prepare("PRAGMA table_info(afnames)").all() as Array<{ name: string }>).map((c) => c.name),
+    );
+    const afnRijRaw = seed.teens_afname as Record<string, unknown>;
+    const afnRij: Record<string, unknown> = {
+      ...afnRijRaw,
+      created_at: afnRijRaw.created_at ?? new Date().toISOString(),
+    };
+    const afnKols = Object.keys(afnRij).filter((k) => afnBestaand.has(k));
+    sqlite
+      .prepare(`INSERT INTO afnames (${afnKols.map((k) => `"${k}"`).join(", ")}) VALUES (${afnKols.map(() => "?").join(", ")})`)
+      .run(...afnKols.map((k) => {
+        const v = afnRij[k];
+        if (v === null || v === undefined) return null;
+        if (typeof v === "boolean") return v ? 1 : 0;
+        if (typeof v === "object") return JSON.stringify(v);
+        return v as string | number;
+      }));
+
+    // Stap 4: rapporten — herbouw.
+    const rapBestaand = new Set(
+      (sqlite.prepare("PRAGMA table_info(rapporten)").all() as Array<{ name: string }>).map((c) => c.name),
+    );
+    for (const r of (seed.teens_rapporten ?? [])) {
+      const rapRijRaw = r as Record<string, unknown>;
+      const rapRij: Record<string, unknown> = {
+        ...rapRijRaw,
+        inhoud: rapRijRaw.inhoud ?? JSON.stringify({ variant: rapRijRaw.variant, taal: "nl" }),
+        html: rapRijRaw.html ?? "",
+        created_at: rapRijRaw.created_at ?? new Date().toISOString(),
+      };
+      const rapKols = Object.keys(rapRij).filter((k) => rapBestaand.has(k));
+      sqlite
+        .prepare(`INSERT INTO rapporten (${rapKols.map((k) => `"${k}"`).join(", ")}) VALUES (${rapKols.map(() => "?").join(", ")})`)
+        .run(...rapKols.map((k) => {
+          const v = rapRij[k];
+          if (v === null || v === undefined) return null;
+          if (typeof v === "boolean") return v ? 1 : 0;
+          if (typeof v === "object") return JSON.stringify(v);
+          return v as string | number;
+        }));
+    }
+
+    console.log("[tapas] Demo-deelnemer Jana (T4Teens) volledig herbouwd.");
+  } catch (e) {
+    console.error("[tapas] Jana/Teens seeden mislukt:", e);
+  }
+}
+seedTeens();
 
 
 // ---------------------------------------------------------------------------
