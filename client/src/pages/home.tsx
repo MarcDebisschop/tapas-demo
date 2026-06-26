@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { AppHeader } from "@/components/Brand";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,15 +13,9 @@ import {
   ArrowRight,
   Languages,
   Plane,
-  UserCircle,
-  Compass,
-  Target,
-  Users,
-  Sparkles,
-  Coffee,
   ShieldCheck,
-  Zap,
-  GitBranch,
+  GraduationCap,
+  Sofa,
 } from "lucide-react";
 import {
   TALEN,
@@ -33,7 +27,6 @@ import {
   type Taal,
 } from "@shared/i18n";
 import { Rondleiding, startRondleiding } from "@/components/Rondleiding";
-import { DEMO_MODE } from "@/lib/demoMode";
 
 // ---------------------------------------------------------------------------
 // HeroKompas — exact gereproduceerd vanuit de originele bundle (upe component)
@@ -76,78 +69,139 @@ function HeroKompas() {
 }
 
 // ---------------------------------------------------------------------------
-// Hoofdpagina — exact gereconstrueerd vanuit de originele TaPas-7-2 bundle
+// LoungeWidget — exact overgenomen uit Kme() in ZIP-8 bundle (index-CxFhBwUz.js)
+// Toont uitnodiging voor TaPas Lounge onder de twee wereld-kaarten
+// ---------------------------------------------------------------------------
+function LoungeWidget() {
+  const [open, setOpen] = useState(false);
+  const [, navigate] = useLocation();
+  const r = "hsl(var(--lounge))";
+  return (
+    <div className="mt-5">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        data-testid="button-entry-lounge"
+        aria-expanded={open}
+        className="group relative block w-full overflow-hidden rounded-2xl border border-dashed p-6 text-left transition hover:-translate-y-0.5"
+        style={{
+          borderColor: "hsl(var(--lounge)/0.55)",
+          background: "radial-gradient(120% 140% at 50% 0%, hsl(var(--lounge)/0.14) 0%, hsl(var(--card)) 70%)",
+        }}
+      >
+        <div className="flex flex-wrap items-center justify-center gap-3 text-center">
+          <span
+            className="grid h-10 w-10 place-items-center rounded-xl"
+            style={{ background: "hsl(var(--lounge)/0.16)", color: r }}
+          >
+            <Sofa className="h-5 w-5" />
+          </span>
+          <span>
+            <span
+              className="font-mono text-[11px] uppercase tracking-[0.2em]"
+              style={{ color: r }}
+            >
+              Entry
+            </span>
+            <span className="block font-serif text-xl font-semibold text-foreground sm:text-2xl">
+              TAPAS Lounge
+            </span>
+          </span>
+        </div>
+        <p className="mx-auto mt-2 max-w-md text-center text-xs italic text-muted-foreground">
+          Een ontmoetingsplek voor alle deelnemers van dit platform.
+        </p>
+      </button>
+      {open && (
+        <div
+          className="mt-3 rounded-2xl border p-5 text-center"
+          style={{
+            borderColor: "hsl(var(--lounge)/0.4)",
+            background: "hsl(var(--lounge)/0.06)",
+          }}
+          data-testid="lounge-melding"
+        >
+          <p className="mx-auto max-w-lg text-sm leading-relaxed text-muted-foreground">
+            Achter de twee werelden zitten bezielde mensen. De Lounge is de plek waar ze elkaar
+            ontmoeten — om te verstillen, te leren en samen te groeien. De deuren openen binnenkort
+            voor wie een TIP-card draagt.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate("/lounge")}
+            data-testid="button-naar-lounge"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-semibold transition"
+            style={{
+              color: r,
+              borderColor: "hsl(var(--lounge)/0.5)",
+              background: "hsl(var(--lounge)/0.10)",
+            }}
+          >
+            Werp alvast een blik naar binnen
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// AcademyLink — uitnodiging naar TaPasAcademy, zichtbaar voor iedereen
+// ---------------------------------------------------------------------------
+function AcademyLink() {
+  const goud = "hsl(var(--gold))";
+  return (
+    <div className="mt-4">
+      <Link href="/academy">
+        <a
+          data-testid="link-naar-academy"
+          className="group flex items-center justify-between rounded-2xl border border-dashed p-5 transition hover:-translate-y-0.5"
+          style={{
+            borderColor: "hsl(var(--gold)/0.45)",
+            background: "radial-gradient(120% 140% at 8% 0%, hsl(var(--gold)/0.10) 0%, hsl(var(--card)) 70%)",
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <span
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl"
+              style={{ background: "hsl(var(--gold)/0.16)", color: goud }}
+            >
+              <GraduationCap className="h-5 w-5" />
+            </span>
+            <div>
+              <span
+                className="font-mono text-[11px] uppercase tracking-[0.2em]"
+                style={{ color: goud }}
+              >
+                Open voor iedereen
+              </span>
+              <span className="block font-serif text-xl font-semibold text-foreground sm:text-2xl">
+                TaPasAcademy
+              </span>
+              <p className="mt-1 max-w-md text-xs italic text-muted-foreground">
+                Opleidingen, accreditaties en het register van geaccrediteerde coaches.
+              </p>
+            </div>
+          </div>
+          <ArrowRight
+            className="h-5 w-5 shrink-0 transition group-hover:translate-x-0.5"
+            style={{ color: goud }}
+          />
+        </a>
+      </Link>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Hoofdpagina — ZIP-8 referentie: Gme() in index-CxFhBwUz.js
+// Instrumenten-suite NIET op home — enkel na wereld-keuze (werk/studie)
+// Na kies-sectie: LoungeWidget (Kme uit ZIP-8) + AcademyLink
 // ---------------------------------------------------------------------------
 export default function Home() {
   const [uiTaal, setUiTaal] = useState<Taal>(STANDAARD_TAAL);
   const t = maakVertaler(uiTaal);
-
-  const instrumenten = [
-    {
-      icon: UserCircle,
-      titel: "Mijn profiel",
-      body: "Bekijk een uitgewerkt voorbeeld van een persoonlijk dashboard: je beeld in het kort, een gesproken uitleg van je profiel en een profielassistent waaraan je vragen kunt stellen.",
-      href: "/dashboard/MarcDebisschopShowcaseT4P01",
-      cta: "Voorbeeld bekijken",
-      testid: "link-inst-profiel",
-    },
-    {
-      icon: Compass,
-      titel: t("home_inst_kompas_titel"),
-      body: t("home_inst_kompas_body"),
-      href: "/start",
-      cta: t("home_cta_start"),
-      testid: "link-inst-kompas",
-    },
-    {
-      icon: Target,
-      titel: t("home_inst_t4r_titel"),
-      body: t("home_inst_t4r_body"),
-      href: "/t4r",
-      cta: t("home_cta_t4r"),
-      testid: "link-inst-t4r",
-    },
-    {
-      icon: Users,
-      titel: t("home_inst_teamscan_titel"),
-      body: t("home_inst_teamscan_body"),
-      href: "/teamscan",
-      cta: t("home_cta_teamscan"),
-      testid: "link-inst-teamscan",
-    },
-    {
-      icon: Sparkles,
-      titel: "Impact-roos",
-      body: "Collaboratief reflectie-instrument dat zelfperceptie naast die van collega's legt langs de assen Ruimte en Verbinding. Bekijk een uitgewerkt voorbeeld.",
-      href: "/impact",
-      cta: "Voorbeeld bekijken",
-      testid: "link-inst-impact",
-    },
-    {
-      icon: Zap,
-      titel: "2MINSCAN",
-      body: "Energetisch gedragsprofiel in drie stappen. Breng in beeld hoe je energie geeft en krijgt in samenwerking. Bekijk een uitgewerkt voorbeeldrapport.",
-      href: "/2minscan",
-      cta: "Bekijk voorbeeldrapport",
-      testid: "link-inst-2minscan",
-    },
-    {
-      icon: GitBranch,
-      titel: "Human Due Diligence",
-      body: "Vlaggenschip-instrument. Gefaseerde boarddiagnose via TaPas Teamscan, 2MINSCAN en T4P Business Kompas — met Go/No-Go-scharnier en twee afzonderlijke eindrapporten.",
-      href: "/hdd",
-      cta: "Traject bekijken",
-      testid: "link-inst-hdd",
-    },
-    {
-      icon: Coffee,
-      titel: "TaPas Lounge",
-      body: "De gemeenschappelijke ruimte van TaPasCity. Negen kamers: stilte, studie, muziek, café, inspiratie, werkplaats, reflectie, terras en webshop.",
-      href: "/lounge",
-      cta: "De lounge betreden",
-      testid: "link-inst-lounge",
-    },
-  ];
 
   return (
     <div className="min-h-[100dvh] bg-background">
@@ -344,46 +398,12 @@ export default function Home() {
           <p className="mt-6 text-center text-sm italic text-muted-foreground">
             Eén blik volstaat om te zien: dit is TaPas.
           </p>
-        </section>
 
-        {/* ---------------------------------------------------------------- */}
-        {/* INSTRUMENTEN-SUITE (voor deelnemers die direct willen doorklikken) */}
-        {/* ---------------------------------------------------------------- */}
-        <section id="instrumenten-suite" className="mt-16 scroll-mt-20 sm:mt-24" data-tour="suite">
-          <h2 className="font-serif text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
-            {t("home_suite_titel")}
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            {t("home_suite_intro")}
-          </p>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {instrumenten.map((inst, i) => {
-              const Icon = inst.icon;
-              return (
-                <div
-                  key={i}
-                  className="flex flex-col rounded-xl border border-border bg-card p-5"
-                  data-testid={`card-instrument-${i}`}
-                >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
-                    <Icon className="h-5 w-5 text-accent" />
-                  </div>
-                  <h3 className="mt-4 text-base font-semibold text-foreground">{inst.titel}</h3>
-                  <p className="mt-1.5 flex-1 text-sm leading-relaxed text-muted-foreground">
-                    {inst.body}
-                  </p>
-                  <div className="mt-4">
-                    <Link href={inst.href}>
-                      <Button variant="outline" size="sm" data-testid={inst.testid}>
-                        {inst.cta}
-                        <ArrowRight className="ml-1.5 h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          {/* Lounge-uitnodiging — exact Kme() uit ZIP-8 bundle */}
+          <LoungeWidget />
+
+          {/* Academy-link — zichtbaar voor iedereen */}
+          <AcademyLink />
         </section>
 
         {/* FOOTER */}
