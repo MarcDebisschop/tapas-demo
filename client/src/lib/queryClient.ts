@@ -1,10 +1,13 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
-// __PORT_5000__ wordt door deploy_website vervangen door "port/5000" (zonder leading slash).
-// Op lokale dev blijft de sentinel staan → startsWith("__") = true → lege string (relatief).
-// Op pplx.app wordt het "port/5000" → startsWith("__") = false → we voegen / toe.
-const _sentinel = "__PORT_5000__";
-const API_BASE = _sentinel.startsWith("__") ? "" : "/" + _sentinel;
+// Runtime hostname check (identiek aan ZIP-8 bronbundel):
+// Op pplx.app sandbox loopt het verkeer via /port/5000 proxy.
+// Op Render (en lokale dev) is de API op dezelfde origin → lege string.
+const API_BASE =
+  typeof window !== "undefined" &&
+  window.location.hostname.endsWith(".pplx.app")
+    ? "/port/5000"
+    : "";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
