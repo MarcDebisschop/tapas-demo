@@ -85,7 +85,12 @@ export function registerCoachesAcademyMailRoutes(app: Express, db: any, storage:
         accreditatieNiveau INTEGER,
         format TEXT NOT NULL DEFAULT 'online',
         locatie TEXT NOT NULL DEFAULT '',
+        duurDagen INTEGER NOT NULL DEFAULT 0,
+        prijs REAL NOT NULL DEFAULT 0,
+        valuta TEXT NOT NULL DEFAULT 'EUR',
+        status TEXT NOT NULL DEFAULT 'beschikbaar',
         actief INTEGER NOT NULL DEFAULT 1,
+        demo INTEGER NOT NULL DEFAULT 0,
         aangemaakt_op TEXT NOT NULL DEFAULT (datetime('now')),
         bijgewerkt_op TEXT NOT NULL DEFAULT (datetime('now'))
       )
