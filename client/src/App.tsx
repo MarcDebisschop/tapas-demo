@@ -41,6 +41,10 @@ import Studie, { StudieScholenPagina, StudieLeerlingenPagina, StudieInstrumenten
 import Werk from "@/pages/werk";
 import Poort from "@/pages/poort";
 import VoorBegeleiders from "@/pages/voor-begeleiders";
+import AdminCoaches from "@/pages/admin-coaches";
+import AdminInzichten from "@/pages/admin-inzichten";
+import AdminAcademy from "@/pages/admin-academy";
+import AdminMailbeheer from "@/pages/admin-mailbeheer";
 
 function AdminStub({ titel, omschrijving }: { titel: string; omschrijving: string }) {
   return (
@@ -72,10 +76,10 @@ function AppRouter() {
       <Route path="/admin/credits">{() => <AdminLoginGate><AdminCredits /></AdminLoginGate>}</Route>
       <Route path="/admin/toegang">{() => <AdminLoginGate><AdminToegang /></AdminLoginGate>}</Route>
       <Route path="/admin/vraagbeheer">{() => <AdminLoginGate><AdminVraagbeheer /></AdminLoginGate>}</Route>
-      <Route path="/admin/coaches">{() => <AdminLoginGate><AdminStub titel="Coaches" omschrijving="Het coachoverzicht is beschikbaar in de volledige versie van het platform." /></AdminLoginGate>}</Route>
-      <Route path="/admin/inzichten">{() => <AdminLoginGate><AdminStub titel="Inzichten" omschrijving="Rapportagedashboard is beschikbaar in de volledige versie van het platform." /></AdminLoginGate>}</Route>
-      <Route path="/admin/academy">{() => <AdminLoginGate><AdminStub titel="Academy beheer" omschrijving="Academy-beheer is beschikbaar in de volledige versie van het platform." /></AdminLoginGate>}</Route>
-      <Route path="/admin/mailbeheer">{() => <AdminLoginGate><AdminStub titel="Mailbeheer" omschrijving="Mailsjablonen zijn beschikbaar in de volledige versie van het platform." /></AdminLoginGate>}</Route>
+      <Route path="/admin/coaches">{() => <AdminLoginGate><AdminCoaches /></AdminLoginGate>}</Route>
+      <Route path="/admin/inzichten">{() => <AdminLoginGate><AdminInzichten /></AdminLoginGate>}</Route>
+      <Route path="/admin/academy">{() => <AdminLoginGate><AdminAcademy /></AdminLoginGate>}</Route>
+      <Route path="/admin/mailbeheer">{() => <AdminLoginGate><AdminMailbeheer /></AdminLoginGate>}</Route>
       {/* /coach = coach-omgeving: nog niet beschikbaar in demo, stub met terugknop */}
       <Route path="/coach">{() => <AdminStub titel="Coach omgeving" omschrijving="De coach-omgeving is beschikbaar in de volledige versie van het platform." />}</Route>
       <Route path="/admin/:id">{() => <AdminLoginGate><AdminDetail /></AdminLoginGate>}</Route>
