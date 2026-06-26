@@ -719,9 +719,10 @@ function seedLuca() {
     const seed = laadShowcaseSeed() as any;
     if (!seed?.luca_deelnemer) return;
 
-    // Stap 1: wis alle bestaande records voor Luca.
+    // Stap 1: wis alle bestaande records voor Luca (deelnemer + afname).
     sqlite.prepare("DELETE FROM deelnemers WHERE dashboard_token = ?").run(TOKEN);
     sqlite.prepare("DELETE FROM deelnemers WHERE email = ?").run(LUCA_EMAIL);
+    sqlite.prepare("DELETE FROM afnames WHERE respondent_code = ?").run(RESPONDENT_CODE);
 
     // Stap 2: herseed deelnemer.
     const dnBestaand = new Set(
@@ -739,33 +740,24 @@ function seedLuca() {
         return v as string | number;
       }));
 
-    // Stap 3: afname — herseed indien nodig, altijd deelnemer_email + generator_contract forceren.
-    const bestaandeAfname = sqlite
-      .prepare("SELECT id FROM afnames WHERE respondent_code = ? LIMIT 1")
-      .get(RESPONDENT_CODE) as { id: number } | undefined;
-    if (!bestaandeAfname) {
-      const afnBestaand = new Set(
-        (sqlite.prepare("PRAGMA table_info(afnames)").all() as Array<{ name: string }>).map((c) => c.name),
-      );
-      const afnRij = seed.luca_afname as Record<string, unknown>;
-      const afnKols = Object.keys(afnRij).filter((k) => afnBestaand.has(k));
-      sqlite
-        .prepare(`INSERT OR IGNORE INTO afnames (${afnKols.map((k) => `"${k}"`).join(", ")}) VALUES (${afnKols.map(() => "?").join(", ")})`)
-        .run(...afnKols.map((k) => {
-          const v = afnRij[k];
-          if (v === null || v === undefined) return null;
-          if (typeof v === "boolean") return v ? 1 : 0;
-          if (typeof v === "object") return JSON.stringify(v);
-          return v as string | number;
-        }));
-    }
-    // Altijd email + generator_contract + status forceren vanuit seed.
-    const gc = (seed.luca_afname as any).generator_contract;
+    // Stap 3: afname — altijd volledig herbouwen (al gewist in stap 1).
+    const afnBestaand = new Set(
+      (sqlite.prepare("PRAGMA table_info(afnames)").all() as Array<{ name: string }>).map((c) => c.name),
+    );
+    const afnRij = seed.luca_afname as Record<string, unknown>;
+    const afnKols = Object.keys(afnRij).filter((k) => afnBestaand.has(k));
     sqlite
-      .prepare("UPDATE afnames SET deelnemer_email = ?, generator_contract = ?, status = ? WHERE respondent_code = ?")
-      .run(LUCA_EMAIL, gc, "voltooid", RESPONDENT_CODE);
+      .prepare(`INSERT INTO afnames (${afnKols.map((k) => `"${k}"`).join(", ")}) VALUES (${afnKols.map(() => "?").join(", ")})`)
+      .run(...afnKols.map((k) => {
+        const v = afnRij[k];
+        if (v === null || v === undefined) return null;
+        if (typeof v === "boolean") return v ? 1 : 0;
+        if (typeof v === "object") return JSON.stringify(v);
+        return v as string | number;
+      }));
 
-    // Stap 4: rapporten.
+    // Stap 4: rapporten — wis eerst, dan herbouw.
+    sqlite.prepare("DELETE FROM rapporten WHERE afname_id = (SELECT id FROM afnames WHERE respondent_code = ?)").run(RESPONDENT_CODE);
     const rapBestaand = new Set(
       (sqlite.prepare("PRAGMA table_info(rapporten)").all() as Array<{ name: string }>).map((c) => c.name),
     );
@@ -773,7 +765,7 @@ function seedLuca() {
       const rapRij = r as Record<string, unknown>;
       const rapKols = Object.keys(rapRij).filter((k) => rapBestaand.has(k));
       sqlite
-        .prepare(`INSERT OR IGNORE INTO rapporten (${rapKols.map((k) => `"${k}"`).join(", ")}) VALUES (${rapKols.map(() => "?").join(", ")})`)
+        .prepare(`INSERT INTO rapporten (${rapKols.map((k) => `"${k}"`).join(", ")}) VALUES (${rapKols.map(() => "?").join(", ")})`)
         .run(...rapKols.map((k) => {
           const v = rapRij[k];
           if (v === null || v === undefined) return null;
