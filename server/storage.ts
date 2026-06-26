@@ -707,6 +707,84 @@ function seedShowcase() {
   }
 }
 seedShowcase();
+// ---------------------------------------------------------------------------
+// Demo-deelnemer Luca (teens-poort demo) — idempotent via token check.
+// ---------------------------------------------------------------------------
+function seedLuca() {
+  try {
+    const TOKEN = "LucaDemoTeensT4P01";
+    const LUCA_EMAIL = "luca.demo@tapascity.com";
+    const RESPONDENT_CODE = "LU-2026-001";
+
+    const seed = laadShowcaseSeed() as any;
+    if (!seed?.luca_deelnemer) return;
+
+    // Wis en herbouw — zelfde strategie als Marc.
+    sqlite.prepare("DELETE FROM deelnemers WHERE dashboard_token = ?").run(TOKEN);
+    sqlite.prepare("DELETE FROM deelnemers WHERE email = ?").run(LUCA_EMAIL);
+
+    const dnBestaand = new Set(
+      (sqlite.prepare("PRAGMA table_info(deelnemers)").all() as Array<{ name: string }>).map((c) => c.name),
+    );
+    const dnRij = seed.luca_deelnemer as Record<string, unknown>;
+    const dnKols = Object.keys(dnRij).filter((k) => dnBestaand.has(k));
+    sqlite
+      .prepare(`INSERT INTO deelnemers (${dnKols.map((k) => `"${k}"`).join(", ")}) VALUES (${dnKols.map(() => "?").join(", ")})`)
+      .run(...dnKols.map((k) => {
+        const v = dnRij[k];
+        if (v === null || v === undefined) return null;
+        if (typeof v === "boolean") return v ? 1 : 0;
+        if (typeof v === "object") return JSON.stringify(v);
+        return v as string | number;
+      }));
+
+    // Afname: herseed indien nodig, altijd email corrigeren.
+    const bestaandeAfname = sqlite
+      .prepare("SELECT id FROM afnames WHERE respondent_code = ? LIMIT 1")
+      .get(RESPONDENT_CODE) as { id: number } | undefined;
+    if (!bestaandeAfname) {
+      const afnBestaand = new Set(
+        (sqlite.prepare("PRAGMA table_info(afnames)").all() as Array<{ name: string }>).map((c) => c.name),
+      );
+      const afnRij = seed.luca_afname as Record<string, unknown>;
+      const afnKols = Object.keys(afnRij).filter((k) => afnBestaand.has(k));
+      sqlite
+        .prepare(`INSERT OR IGNORE INTO afnames (${afnKols.map((k) => `"${k}"`).join(", ")}) VALUES (${afnKols.map(() => "?").join(", ")})`)
+        .run(...afnKols.map((k) => {
+          const v = afnRij[k];
+          if (v === null || v === undefined) return null;
+          if (typeof v === "boolean") return v ? 1 : 0;
+          if (typeof v === "object") return JSON.stringify(v);
+          return v as string | number;
+        }));
+    }
+    sqlite.prepare("UPDATE afnames SET deelnemer_email = ? WHERE respondent_code = ?").run(LUCA_EMAIL, RESPONDENT_CODE);
+
+    // Rapporten.
+    const rapBestaand = new Set(
+      (sqlite.prepare("PRAGMA table_info(rapporten)").all() as Array<{ name: string }>).map((c) => c.name),
+    );
+    for (const r of (seed.luca_rapporten ?? [])) {
+      const rapRij = r as Record<string, unknown>;
+      const rapKols = Object.keys(rapRij).filter((k) => rapBestaand.has(k));
+      sqlite
+        .prepare(`INSERT OR IGNORE INTO rapporten (${rapKols.map((k) => `"${k}"`).join(", ")}) VALUES (${rapKols.map(() => "?").join(", ")})`)
+        .run(...rapKols.map((k) => {
+          const v = rapRij[k];
+          if (v === null || v === undefined) return null;
+          if (typeof v === "boolean") return v ? 1 : 0;
+          if (typeof v === "object") return JSON.stringify(v);
+          return v as string | number;
+        }));
+    }
+
+    console.log("[tapas] Demo-deelnemer Luca geseed (teens).");
+  } catch (e) {
+    console.error("[tapas] Luca seeden mislukt:", e);
+  }
+}
+seedLuca();
+
 
 // ---------------------------------------------------------------------------
 // Demo-data: fictieve organisaties, afnames en credits zodat de admin-beheer
