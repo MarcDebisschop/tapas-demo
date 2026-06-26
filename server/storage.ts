@@ -612,6 +612,20 @@ function seedShowcase() {
     }
     if (reeds) {
       verversShowcase(reeds.id); // bestaat al — chat/quota schoonmaken
+      // Koppel alle afnames die nog aan een oud e-mailadres hangen aan het
+      // correcte showcase-adres, zodat listAfnamesVoorDeelnemer ze vindt.
+      const OUD_EMAILS = ["marc.debisschop@hatch-coaching.be"];
+      for (const oudEmail of OUD_EMAILS) {
+        const gelinkt = sqlite
+          .prepare("SELECT COUNT(*) as n FROM afnames WHERE email = ?")
+          .get(oudEmail) as { n: number };
+        if (gelinkt.n > 0) {
+          sqlite
+            .prepare("UPDATE afnames SET email = ? WHERE email = ?")
+            .run(SHOWCASE_EMAIL, oudEmail);
+          console.log(`[tapas] Afnames van ${oudEmail} hergekoppeld aan ${SHOWCASE_EMAIL}.`);
+        }
+      }
       // En de profielinhoud opnieuw uit het seed-bestand zetten, zodat
       // gecorrigeerde waarden ook na een publish-snapshot live komen.
       const afnameId =
