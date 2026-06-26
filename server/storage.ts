@@ -708,7 +708,7 @@ function seedShowcase() {
 }
 seedShowcase();
 // ---------------------------------------------------------------------------
-// Demo-deelnemer Luca (teens-poort demo) — idempotent via token check.
+// Demo-deelnemer Luca (teens-poort demo) — zelfde wis+herbouw strategie als Marc.
 // ---------------------------------------------------------------------------
 function seedLuca() {
   try {
@@ -719,10 +719,11 @@ function seedLuca() {
     const seed = laadShowcaseSeed() as any;
     if (!seed?.luca_deelnemer) return;
 
-    // Wis en herbouw — zelfde strategie als Marc.
+    // Stap 1: wis alle bestaande records voor Luca.
     sqlite.prepare("DELETE FROM deelnemers WHERE dashboard_token = ?").run(TOKEN);
     sqlite.prepare("DELETE FROM deelnemers WHERE email = ?").run(LUCA_EMAIL);
 
+    // Stap 2: herseed deelnemer.
     const dnBestaand = new Set(
       (sqlite.prepare("PRAGMA table_info(deelnemers)").all() as Array<{ name: string }>).map((c) => c.name),
     );
@@ -738,7 +739,7 @@ function seedLuca() {
         return v as string | number;
       }));
 
-    // Afname: herseed indien nodig, altijd email corrigeren.
+    // Stap 3: afname — herseed indien nodig, altijd deelnemer_email + generator_contract forceren.
     const bestaandeAfname = sqlite
       .prepare("SELECT id FROM afnames WHERE respondent_code = ? LIMIT 1")
       .get(RESPONDENT_CODE) as { id: number } | undefined;
@@ -758,9 +759,13 @@ function seedLuca() {
           return v as string | number;
         }));
     }
-    sqlite.prepare("UPDATE afnames SET deelnemer_email = ? WHERE respondent_code = ?").run(LUCA_EMAIL, RESPONDENT_CODE);
+    // Altijd email + generator_contract + status forceren vanuit seed.
+    const gc = (seed.luca_afname as any).generator_contract;
+    sqlite
+      .prepare("UPDATE afnames SET deelnemer_email = ?, generator_contract = ?, status = ? WHERE respondent_code = ?")
+      .run(LUCA_EMAIL, gc, "voltooid", RESPONDENT_CODE);
 
-    // Rapporten.
+    // Stap 4: rapporten.
     const rapBestaand = new Set(
       (sqlite.prepare("PRAGMA table_info(rapporten)").all() as Array<{ name: string }>).map((c) => c.name),
     );
@@ -778,7 +783,7 @@ function seedLuca() {
         }));
     }
 
-    console.log("[tapas] Demo-deelnemer Luca geseed (teens).");
+    console.log("[tapas] Demo-deelnemer Luca volledig herbouwd (teens).");
   } catch (e) {
     console.error("[tapas] Luca seeden mislukt:", e);
   }
