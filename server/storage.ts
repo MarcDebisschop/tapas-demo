@@ -881,6 +881,95 @@ seedTeens();
 
 
 // ---------------------------------------------------------------------------
+// Demo-deelnemer Lana (T4Teens demo, 16 jaar) — wis+herbouw strategie.
+// Token: LanaDemoTeensT4P01, e-mail: lana.demo@tapascity.com
+// Profiel: Coaching (1e) · Constructief onderscheidend (2e) · Facilitatie (3e)
+// Driver: Please Others op rem (contextBrake=true), Be Perfect als gaspedaal
+// ---------------------------------------------------------------------------
+function seedLana() {
+  try {
+    const TOKEN = "LanaDemoTeensT4P01";
+    const LANA_EMAIL = "lana.demo@tapascity.com";
+    const RESPONDENT_CODE = "LA-2026-001";
+
+    const seed = laadShowcaseSeed() as any;
+    if (!seed?.lana_deelnemer) return;
+
+    // Stap 1: wis alle bestaande records voor Lana (deelnemer + afname + rapporten).
+    sqlite.prepare("DELETE FROM deelnemers WHERE dashboard_token = ?").run(TOKEN);
+    sqlite.prepare("DELETE FROM deelnemers WHERE email = ?").run(LANA_EMAIL);
+    sqlite.prepare("DELETE FROM rapporten WHERE afname_id IN (SELECT id FROM afnames WHERE respondent_code = ?)").run(RESPONDENT_CODE);
+    sqlite.prepare("DELETE FROM afnames WHERE respondent_code = ?").run(RESPONDENT_CODE);
+
+    // Stap 2: herseed deelnemer.
+    const dnBestaand = new Set(
+      (sqlite.prepare("PRAGMA table_info(deelnemers)").all() as Array<{ name: string }>).map((c) => c.name),
+    );
+    const dnRij = seed.lana_deelnemer as Record<string, unknown>;
+    const dnKols = Object.keys(dnRij).filter((k) => dnBestaand.has(k));
+    sqlite
+      .prepare(`INSERT INTO deelnemers (${dnKols.map((k) => `"${k}"`).join(", ")}) VALUES (${dnKols.map(() => "?").join(", ")})`)
+      .run(...dnKols.map((k) => {
+        const v = dnRij[k];
+        if (v === null || v === undefined) return null;
+        if (typeof v === "boolean") return v ? 1 : 0;
+        if (typeof v === "object") return JSON.stringify(v);
+        return v as string | number;
+      }));
+
+    // Stap 3: afname — altijd volledig herbouwen (al gewist in stap 1).
+    const afnBestaand = new Set(
+      (sqlite.prepare("PRAGMA table_info(afnames)").all() as Array<{ name: string }>).map((c) => c.name),
+    );
+    const afnRijRaw = seed.lana_afname as Record<string, unknown>;
+    const afnRij: Record<string, unknown> = {
+      ...afnRijRaw,
+      created_at: afnRijRaw.created_at ?? new Date().toISOString(),
+    };
+    const afnKols = Object.keys(afnRij).filter((k) => afnBestaand.has(k));
+    sqlite
+      .prepare(`INSERT INTO afnames (${afnKols.map((k) => `"${k}"`).join(", ")}) VALUES (${afnKols.map(() => "?").join(", ")})`)
+      .run(...afnKols.map((k) => {
+        const v = afnRij[k];
+        if (v === null || v === undefined) return null;
+        if (typeof v === "boolean") return v ? 1 : 0;
+        if (typeof v === "object") return JSON.stringify(v);
+        return v as string | number;
+      }));
+
+    // Stap 4: rapporten — herbouw.
+    const rapBestaand = new Set(
+      (sqlite.prepare("PRAGMA table_info(rapporten)").all() as Array<{ name: string }>).map((c) => c.name),
+    );
+    for (const r of (seed.lana_rapporten ?? [])) {
+      const rapRijRaw = r as Record<string, unknown>;
+      const rapRij: Record<string, unknown> = {
+        ...rapRijRaw,
+        inhoud: rapRijRaw.inhoud ?? JSON.stringify({ variant: rapRijRaw.variant, taal: "nl" }),
+        html: rapRijRaw.html ?? "",
+        created_at: rapRijRaw.created_at ?? new Date().toISOString(),
+      };
+      const rapKols = Object.keys(rapRij).filter((k) => rapBestaand.has(k));
+      sqlite
+        .prepare(`INSERT INTO rapporten (${rapKols.map((k) => `"${k}"`).join(", ")}) VALUES (${rapKols.map(() => "?").join(", ")})`)
+        .run(...rapKols.map((k) => {
+          const v = rapRij[k];
+          if (v === null || v === undefined) return null;
+          if (typeof v === "boolean") return v ? 1 : 0;
+          if (typeof v === "object") return JSON.stringify(v);
+          return v as string | number;
+        }));
+    }
+
+    console.log("[tapas] Demo-deelnemer Lana (T4Teens) volledig herbouwd.");
+  } catch (e) {
+    console.error("[tapas] Lana seeden mislukt:", e);
+  }
+}
+seedLana();
+
+
+// ---------------------------------------------------------------------------
 // Demo-data: fictieve organisaties, afnames en credits zodat de admin-beheer
 // pagina gevuld is bij een eerste demo. Volledig idempotent via INSERT OR IGNORE
 // op unieke codes/emails.
