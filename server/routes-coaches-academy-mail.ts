@@ -13,10 +13,12 @@
 
 import type { Express } from "express";
 import type { Request, Response } from "express";
+import { sqlite as sqliteInstance } from "./storage";
 
-// Helperfunctie: haal de sqlite-instantie op uit de db-object
+// Helperfunctie: haal de sqlite-instantie op
+// Gebruikt eerst de directe export, daarna fallback op db/storage parameters
 function getSqlite(db: any, storage: any): any {
-  return db?._db ?? storage?.sqlite ?? null;
+  return sqliteInstance ?? db?._db ?? storage?.sqlite ?? null;
 }
 
 // Controleer admin-sessie

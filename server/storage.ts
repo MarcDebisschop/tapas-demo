@@ -93,6 +93,7 @@ const sqlite = new Database(DB_PAD);
 sqlite.pragma("journal_mode = WAL");
 
 export const db = drizzle(sqlite);
+export { sqlite }; // Directe export voor modules die raw SQLite nodig hebben
 
 // Genereert een korte, onraadbare, URL-veilige tekenreeks voor toegangstokens.
 function cryptoRandom(len: number): string {
