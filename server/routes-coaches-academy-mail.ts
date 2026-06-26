@@ -235,6 +235,11 @@ export function registerCoachesAcademyMailRoutes(app: Express, db: any, storage:
         { naam: "Tony Ramboer", plaats: "Gent", regio: "Oost-Vlaanderen", land: "BE", expertise: ["Organisatieontwikkeling", "Coaching"], email: "", foto: "/academy/alumni/tony-ramboer.jpg", opl: "TaPas Accreditatie – Niveau 2", behaald: "2024", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
         { naam: "Vanessa Luyten", plaats: "Hasselt", regio: "Limburg", land: "BE", expertise: ["Loopbaanbegeleiding", "Veerkracht"], email: "", foto: "/academy/alumni/vanessa-luyten.jpg", opl: "TaPas Accreditatie – Niveau 1", behaald: "2024", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
         { naam: "Veerle Van de Paer", plaats: "Aalst", regio: "Oost-Vlaanderen", land: "BE", expertise: ["Coaching", "Energie & veerkracht", "HR-management"], email: "", foto: "/academy/alumni/veerle-van-de-paer.jpg", opl: "TaPas Accreditatie – Niveau 2", behaald: "2023", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
+        // ── PMV-medewerkers (niveau 1) — geen foto beschikbaar ──
+        { naam: "Jason-Louise Graham", plaats: "", regio: "Vlaanderen", land: "BE", expertise: ["Coaching", "Talentontwikkeling"], email: "", foto: "", opl: "TaPas Accreditatie – Niveau 1", behaald: "2024", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
+        { naam: "Anne-Sofie Bogaerts", plaats: "", regio: "Vlaanderen", land: "BE", expertise: ["Coaching", "Talentontwikkeling"], email: "", foto: "", opl: "TaPas Accreditatie – Niveau 1", behaald: "2024", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
+        { naam: "Karen Thiers", plaats: "", regio: "Vlaanderen", land: "BE", expertise: ["Coaching", "Talentontwikkeling"], email: "", foto: "", opl: "TaPas Accreditatie – Niveau 1", behaald: "2024", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
+        { naam: "Anthony Van Aerdebrugge", plaats: "", regio: "Vlaanderen", land: "BE", expertise: ["Coaching", "Talentontwikkeling"], email: "", foto: "", opl: "TaPas Accreditatie – Niveau 1", behaald: "2024", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
       ];
       for (const c of demoCoaches) {
         insertCoach.run(c.naam, c.plaats, c.regio, c.land, JSON.stringify(c.expertise), c.email, c.foto, c.opl, c.behaald, c.toestemming, c.zichtbaar, c.actief, c.demo);
