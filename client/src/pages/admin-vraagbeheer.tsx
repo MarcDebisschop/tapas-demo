@@ -71,6 +71,7 @@ const INSTRUMENTEN = [
   { id: "tapas-t4recruitment", naam: "T4Recruitment", beschrijving: "Rekruterings-profileringsmodules" },
   { id: "tapas-2minscan", naam: "2MinScan", beschrijving: "Energetisch gedragsprofiel (EG-code)" },
   { id: "tapas-t4students", naam: "T4Students / Studiekompas", beschrijving: "Studiekeuze-oriëntatie voor jongeren" },
+  { id: "tapas-t4teens", naam: "T4Teens", beschrijving: "Vonk-instrument (25 items: energie, drivers, versnellers, foci, interesse, betekenis)" },
 ];
 
 // ─── Item-kaart ───────────────────────────────────────────────────────────────
