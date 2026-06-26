@@ -468,9 +468,9 @@ export function registerCoachesAcademyMailRoutes(app: Express, db: any, storage:
 
       // Evolutie per maand (laatste 12 maanden)
       const evolutie = sq.prepare(`
-        SELECT strftime('%Y-%m', aangemaakt_op) AS maand, COUNT(*) AS aantal
+        SELECT strftime('%Y-%m', created_at) AS maand, COUNT(*) AS aantal
         FROM afnames
-        WHERE aangemaakt_op >= date('now', '-12 months')
+        WHERE created_at >= date('now', '-12 months')
         GROUP BY maand
         ORDER BY maand ASC
       `).all() as any[];
