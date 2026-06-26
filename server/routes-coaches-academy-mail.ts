@@ -207,6 +207,21 @@ export function registerCoachesAcademyMailRoutes(app: Express, db: any, storage:
       console.log("[tapas] Demo-docenten geseed.");
     }
 
+    // Seed demo-opleidingen als de tabel leeg is
+    const opleidingCount = (sqlite.prepare("SELECT COUNT(*) AS n FROM academy_opleidingen").get() as any).n;
+    if (opleidingCount === 0) {
+      const ins = sqlite.prepare(`
+        INSERT INTO academy_opleidingen (slug, titel, korteOmschrijving, volledigeOmschrijving, accreditatieNiveau, format, locatie, duurDagen, prijs, valuta, status, demo)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      ins.run("t4p-basisopleiding", "T4P Business Kompas — Basisopleiding", "Introductie tot het TaPas-model, talentfoci en energiebeheer voor coaches en HR-professionals.", "Verdiepende tweedaagse opleiding met theorie en praktijksimulaties. Inclusief oefensessies met het T4P Business Kompas profiel.", 1, "live", "Gent", 2, 795, "EUR", "beschikbaar", 1);
+      ins.run("t4p-verdieping", "T4P Business Kompas — Verdieping", "Diepgaande analyse van talentversnellers, drivers en coachingsinterventies op organisatieniveau.", "Driedaagse verdiepingsopleiding voor gecertificeerde TaPas-coaches. Focus op organisatiediagnose en teamdynamieken.", 2, "live", "Brussel", 3, 1095, "EUR", "beschikbaar", 1);
+      ins.run("t4r-selectieprofessional", "T4Recruitment — Selectieprofessional", "Gebruik van T4Recruitment in wervings- en selectietrajecten. Interviewtechnieken en rapportinterpretatie.", "Eendaagse praktijktraining voor HR-professionals en recruiters.", 1, "live", "Antwerpen", 1, 495, "EUR", "beschikbaar", 1);
+      ins.run("teamscan-teamanalyse", "TeamScan — Teamanalyse & Facilitation", "Teamdynamieken analyseren en faciliteren met de TasScan. Rol van de coach bij teamontwikkeling.", "Tweedaagse opleiding met live teamsimulaties.", 2, "live", "Gent", 2, 895, "EUR", "binnenkort", 1);
+      ins.run("2minscan-energetisch", "2MinScan — Energetisch gedragsprofiel", "Snelle energiescans integreren in coaching- en HR-trajecten. Interpretatie en rapportage.", "Halfdagse opleiding voor gecertificeerde coaches.", 1, "online", "", 0, 295, "EUR", "binnenkort", 1);
+      console.log("[tapas] Demo-opleidingen geseed.");
+    }
+
     console.log("[tapas] Coaches/Academy/Mail routes + tabellen geregistreerd.");
   }
 
