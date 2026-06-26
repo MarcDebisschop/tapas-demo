@@ -1,16 +1,18 @@
-/**
- * Admin Mailbeheer — overzicht van mailsjablonen
- *
- * Demo-versie: toont de vaste mailsjablonen die het platform verstuurt.
- * Read-only — geen bewerking mogelijk in de demo.
- */
+// ---------------------------------------------------------------------------
+// AdminMailbeheer — gereconstrueerd uit originele bundle (index-CxFhBwUz.js)
+// Functienaam in bundle: u8e()
+// Sub-componenten: d8e (template rij), f8e (huisstijl tab), h8e (whitelabel tab)
+// API: /api/admin/mailteksten, /api/admin/mailhuisstijl, /api/organisaties
+// ---------------------------------------------------------------------------
 
 import { useState } from "react";
-import { Link } from "wouter";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AppHeader } from "@/components/Brand";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -18,7 +20,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Mail, Languages, Send, Bell, CheckCircle2, FileText } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import {
   TALEN,
   TAAL_NAMEN,
@@ -28,232 +32,292 @@ import {
   type Taal,
 } from "@shared/i18n";
 
-// Vaste mailsjablonen — beschrijving van wat het platform verstuurt
-const SJABLONEN = [
-  {
-    id: "uitnodiging",
-    icon: Send,
-    trigger: { nl: "Bij aanmaken uitnodiging", fr: "Lors de la création d'une invitation", en: "On invitation creation" },
-    titel: { nl: "Uitnodiging voor deelname", fr: "Invitation à participer", en: "Invitation to participate" },
-    ontvanger: { nl: "Deelnemer", fr: "Participant", en: "Participant" },
-    omschrijving: {
-      nl: "Verstuurd naar de deelnemer met hun persoonlijke deelname-link. Bevat naam, instrument en taal.",
-      fr: "Envoyé au participant avec son lien personnel. Contient le nom, l'instrument et la langue.",
-      en: "Sent to the participant with their personal participation link. Contains name, instrument and language.",
-    },
-    talen: ["nl", "fr", "en", "es", "ru"],
-    status: "actief",
-  },
-  {
-    id: "herinnering",
-    icon: Bell,
-    trigger: { nl: "Bij klik op 'Herinner'", fr: "Au clic sur 'Rappeler'", en: "On click 'Remind'" },
-    titel: { nl: "Herinnering deelname", fr: "Rappel de participation", en: "Participation reminder" },
-    ontvanger: { nl: "Deelnemer", fr: "Participant", en: "Participant" },
-    omschrijving: {
-      nl: "Herinneringsmail voor deelnemers die nog niet gestart zijn. Bevat opnieuw de deelname-link.",
-      fr: "E-mail de rappel pour les participants qui n'ont pas encore commencé.",
-      en: "Reminder email for participants who have not yet started. Contains the participation link again.",
-    },
-    talen: ["nl", "fr", "en", "es", "ru"],
-    status: "actief",
-  },
-  {
-    id: "voltooid",
-    icon: CheckCircle2,
-    trigger: { nl: "Bij voltooiing vragenlijst", fr: "À la fin du questionnaire", en: "On questionnaire completion" },
-    titel: { nl: "Bevestiging voltooiing", fr: "Confirmation de completion", en: "Completion confirmation" },
-    ontvanger: { nl: "Deelnemer + beheerder", fr: "Participant + gestionnaire", en: "Participant + admin" },
-    omschrijving: {
-      nl: "Automatische bevestiging na voltooiing. De deelnemer ontvangt een dankbetuiging; de beheerder een melding.",
-      fr: "Confirmation automatique après la complétion. Le participant reçoit un remerciement; le gestionnaire une notification.",
-      en: "Automatic confirmation after completion. The participant receives a thank-you; the admin a notification.",
-    },
-    talen: ["nl", "fr", "en", "es", "ru"],
-    status: "actief",
-  },
-  {
-    id: "rapport",
-    icon: FileText,
-    trigger: { nl: "Bij genereren rapport", fr: "Lors de la génération du rapport", en: "On report generation" },
-    titel: { nl: "Rapport beschikbaar", fr: "Rapport disponible", en: "Report available" },
-    ontvanger: { nl: "Deelnemer", fr: "Participant", en: "Participant" },
-    omschrijving: {
-      nl: "Verstuurd zodra het TaPas Kompas of Coachatlas beschikbaar is. Bevat link naar het persoonlijk dashboard.",
-      fr: "Envoyé dès que le TaPas Kompas ou le Coachatlas est disponible. Contient le lien vers le tableau de bord.",
-      en: "Sent as soon as the TaPas Kompas or Coach Atlas is available. Contains link to the personal dashboard.",
-    },
-    talen: ["nl", "fr", "en", "es", "ru"],
-    status: "actief",
-  },
-  {
-    id: "consent",
-    icon: Mail,
-    trigger: { nl: "Bij toestemmingsstap", fr: "À l'étape de consentement", en: "At consent step" },
-    titel: { nl: "Toestemmingsbevestiging", fr: "Confirmation de consentement", en: "Consent confirmation" },
-    ontvanger: { nl: "Deelnemer", fr: "Participant", en: "Participant" },
-    omschrijving: {
-      nl: "GDPR-conforme bevestiging van toestemming voor dataverwerking. Bevat overzicht van verwerkte gegevens.",
-      fr: "Confirmation conforme RGPD du consentement au traitement des données.",
-      en: "GDPR-compliant confirmation of consent for data processing.",
-    },
-    talen: ["nl", "fr", "en", "es", "ru"],
-    status: "actief",
-  },
-  {
-    id: "factuur",
-    icon: FileText,
-    trigger: { nl: "Bij betaling creditpakket", fr: "Lors du paiement d'un pack de crédits", en: "On credit package payment" },
-    titel: { nl: "Factuur creditpakket", fr: "Facture pack de crédits", en: "Credit package invoice" },
-    ontvanger: { nl: "Beheerder / organisatie", fr: "Gestionnaire / organisation", en: "Admin / organisation" },
-    omschrijving: {
-      nl: "Factuurbevestiging na aankoop van credits. Bevat factuurdetails en transactiereferentie.",
-      fr: "Confirmation de facture après achat de crédits.",
-      en: "Invoice confirmation after purchasing credits. Contains invoice details and transaction reference.",
-    },
-    talen: ["nl"],
-    status: "actief",
-  },
-];
 
+// -----------------------------------------------------------------------
+// Template rij (d8e uit bundle)
+// -----------------------------------------------------------------------
+function MailTemplateRij({ template, werktaal, labels }: {
+  template: any;
+  werktaal: string;
+  labels: { herstel: string; standaard: string; bewaar: string; bewaard: string };
+}) {
+  const { toast } = useToast();
+  const bestaande = template.teksten?.[werktaal] ?? { onderwerp: "", body: "" };
+  const [onderwerp, setOnderwerp] = useState(bestaande.onderwerp ?? "");
+  const [body, setBody] = useState(bestaande.body ?? "");
+
+  const saveMut = useMutation({
+    mutationFn: () =>
+      apiRequest("PUT", `/api/admin/mailteksten/${template.templateKey}/${werktaal}`, { onderwerp, body }),
+    onSuccess: () => toast({ description: labels.bewaard }),
+    onError: (e: any) => toast({ description: String(e?.message ?? e), variant: "destructive" }),
+  });
+
+  return (
+    <Card data-testid={`card-template-${template.templateKey}`}>
+      <CardContent className="space-y-3 p-5">
+        <div className="flex items-center justify-between gap-3">
+          <p className="font-medium text-foreground capitalize">{template.templateKey}</p>
+          {template.isStandaard && (
+            <span className="text-xs text-muted-foreground">{labels.standaard}</span>
+          )}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor={`onderwerp-${template.templateKey}`}>Onderwerp</Label>
+          <Input
+            id={`onderwerp-${template.templateKey}`}
+            value={onderwerp}
+            onChange={(e) => setOnderwerp(e.target.value)}
+            data-testid={`input-onderwerp-${template.templateKey}`}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor={`body-${template.templateKey}`}>Berichttekst</Label>
+          <Textarea
+            id={`body-${template.templateKey}`}
+            rows={4}
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            data-testid={`input-body-${template.templateKey}`}
+          />
+        </div>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            onClick={() => saveMut.mutate()}
+            disabled={saveMut.isPending}
+            data-testid={`button-bewaar-${template.templateKey}`}
+          >
+            {labels.bewaar}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setOnderwerp(bestaande.onderwerp ?? "");
+              setBody(bestaande.body ?? "");
+            }}
+            data-testid={`button-herstel-${template.templateKey}`}
+          >
+            {labels.herstel}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// -----------------------------------------------------------------------
+// Tab: Huisstijl (f8e uit bundle)
+// -----------------------------------------------------------------------
+function TabHuisstijl({ huisstijl, labels, onToast }: {
+  huisstijl: any;
+  labels: { logo: string; accent: string; afzender: string; bewaar: string; uitleg: string };
+  onToast: () => void;
+}) {
+  const [logo, setLogo] = useState(huisstijl?.logo ?? "");
+  const [accent, setAccent] = useState(huisstijl?.accentKleur ?? "#e87c20");
+  const [afzender, setAfzender] = useState(huisstijl?.afzender ?? "");
+
+  const saveMut = useMutation({
+    mutationFn: () =>
+      apiRequest("PUT", "/api/admin/mailhuisstijl", { logo, accentKleur: accent, afzender }),
+    onSuccess: onToast,
+  });
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">{labels.uitleg}</p>
+      <div className="space-y-2">
+        <Label>{labels.logo}</Label>
+        <Input value={logo} onChange={(e) => setLogo(e.target.value)} placeholder="https://…/logo.png" data-testid="input-logo" />
+      </div>
+      <div className="space-y-2">
+        <Label>{labels.accent}</Label>
+        <div className="flex items-center gap-2">
+          <Input type="color" value={accent} onChange={(e) => setAccent(e.target.value)} className="h-9 w-14 p-1" data-testid="input-accent" />
+          <Input value={accent} onChange={(e) => setAccent(e.target.value)} className="w-32 font-mono text-sm" />
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label>{labels.afzender}</Label>
+        <Input value={afzender} onChange={(e) => setAfzender(e.target.value)} placeholder="TaPasCity <noreply@tapascity.com>" data-testid="input-afzender" />
+      </div>
+      <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending} data-testid="button-bewaar-huisstijl">
+        {labels.bewaar}
+      </Button>
+    </div>
+  );
+}
+
+// -----------------------------------------------------------------------
+// Tab: Whitelabel (h8e uit bundle)
+// -----------------------------------------------------------------------
+function TabWhitelabel({ organisaties, labels, onToast }: {
+  organisaties: any[];
+  labels: { kies: string; logo: string; accent: string; afzender: string; bewaar: string; uitleg: string };
+  onToast: () => void;
+}) {
+  const [orgId, setOrgId] = useState("");
+  const [logo, setLogo] = useState("");
+  const [accent, setAccent] = useState("#e87c20");
+  const [afzender, setAfzender] = useState("");
+
+  const saveMut = useMutation({
+    mutationFn: () =>
+      apiRequest("PUT", `/api/admin/mailhuisstijl/org/${orgId}`, { logo, accentKleur: accent, afzender }),
+    onSuccess: onToast,
+  });
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">{labels.uitleg}</p>
+      <div className="space-y-2">
+        <Label>{labels.kies}</Label>
+        <Select value={orgId} onValueChange={setOrgId}>
+          <SelectTrigger data-testid="select-whitelabel-org">
+            <SelectValue placeholder={labels.kies} />
+          </SelectTrigger>
+          <SelectContent>
+            {organisaties.map((o: any) => (
+              <SelectItem key={o.id} value={String(o.id)}>{o.naam}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      {orgId && (
+        <>
+          <div className="space-y-2">
+            <Label>{labels.logo}</Label>
+            <Input value={logo} onChange={(e) => setLogo(e.target.value)} placeholder="https://…/logo.png" />
+          </div>
+          <div className="space-y-2">
+            <Label>{labels.accent}</Label>
+            <div className="flex items-center gap-2">
+              <Input type="color" value={accent} onChange={(e) => setAccent(e.target.value)} className="h-9 w-14 p-1" />
+              <Input value={accent} onChange={(e) => setAccent(e.target.value)} className="w-32 font-mono text-sm" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>{labels.afzender}</Label>
+            <Input value={afzender} onChange={(e) => setAfzender(e.target.value)} />
+          </div>
+          <Button onClick={() => saveMut.mutate()} disabled={saveMut.isPending || !orgId}>
+            {labels.bewaar}
+          </Button>
+        </>
+      )}
+    </div>
+  );
+}
+
+// -----------------------------------------------------------------------
+// Hoofdcomponent — gereconstrueerd uit u8e() in bundle
+// -----------------------------------------------------------------------
 export default function AdminMailbeheer() {
-  const [uiTaal, setUiTaal] = useState<Taal>(STANDAARD_TAAL);
-  const t = maakVertaler(uiTaal);
+  const [taal, setTaal] = useState<Taal>(STANDAARD_TAAL);
+  const n = maakVertaler(taal);
+  const { toast } = useToast();
+  const [werktaal, setWerktaal] = useState("nl");
 
-  const naam = (o: Record<string, string>) => o[uiTaal] ?? o.nl;
+  const { data: mailteksten } = useQuery<any>({ queryKey: ["/api/admin/mailteksten"] });
+  const { data: mailhuisstijl } = useQuery<any>({ queryKey: ["/api/admin/mailhuisstijl"] });
+  const { data: organisaties } = useQuery<any[]>({ queryKey: ["/api/organisaties"] });
 
   return (
     <div className="min-h-[100dvh] bg-background">
       <AppHeader
         right={
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5">
-              <Languages className="h-4 w-4 text-muted-foreground" aria-hidden />
-              <Select value={uiTaal} onValueChange={(v) => setUiTaal(normaliseerTaal(v))}>
-                <SelectTrigger className="h-8 w-[112px]">
+            <Select value={taal} onValueChange={(v) => setTaal(normaliseerTaal(v))}>
+              <SelectTrigger className="h-9 w-auto px-2.5" data-testid="select-ui-taal">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(["nl", "fr", "en", "es", "ru"] as Taal[]).map((l) => (
+                  <SelectItem key={l} value={l}>{l.toUpperCase()}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+          </div>
+        }
+      />
+      <main className="mx-auto max-w-5xl px-4 py-8">
+        <h1 className="mb-1 text-2xl font-semibold text-foreground">{n("mailbeheer_titel")}</h1>
+        <p className="mb-6 text-sm text-muted-foreground">{n("mailbeheer_uitleg")}</p>
+
+        <Tabs defaultValue="teksten">
+          <TabsList>
+            <TabsTrigger value="teksten" data-testid="tab-teksten">{n("mailbeheer_tab_teksten")}</TabsTrigger>
+            <TabsTrigger value="huisstijl" data-testid="tab-huisstijl">{n("mailbeheer_tab_huisstijl")}</TabsTrigger>
+            <TabsTrigger value="whitelabel" data-testid="tab-whitelabel">{n("mailbeheer_tab_whitelabel")}</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="teksten" className="mt-4">
+            {/* Werktaal kiezer */}
+            <div className="mb-4 flex items-center gap-3">
+              <Label className="text-sm">{n("mailbeheer_werktaal")}</Label>
+              <Select value={werktaal} onValueChange={(v) => setWerktaal(normaliseerTaal(v))}>
+                <SelectTrigger className="h-9 w-32" data-testid="select-werktaal">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {TALEN.map((code) => (
-                    <SelectItem key={code} value={code}>{TAAL_NAMEN[code]}</SelectItem>
+                  {(mailteksten?.talen ?? ["nl","fr","en","es","ru"]).map((l: string) => (
+                    <SelectItem key={l} value={l}>{l.toUpperCase()}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <Link href="/admin">
-              <Button size="sm" variant="outline">{t("admin_titel")}</Button>
-            </Link>
-          </div>
-        }
-      />
+            <div className="space-y-6">
+              {(mailteksten?.templates ?? []).map((tmpl: any) => (
+                <MailTemplateRij
+                  key={tmpl.templateKey}
+                  template={tmpl}
+                  werktaal={werktaal}
+                  labels={{
+                    herstel: n("mailbeheer_herstel"),
+                    standaard: n("mailbeheer_standaard"),
+                    bewaar: n("mailbeheer_bewaar"),
+                    bewaard: n("mailbeheer_bewaard"),
+                  }}
+                />
+              ))}
+              {(!mailteksten?.templates || mailteksten.templates.length === 0) && (
+                <p className="text-sm text-muted-foreground">Nog geen mailtemplates beschikbaar.</p>
+              )}
+            </div>
+          </TabsContent>
 
-      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
-        <div className="flex items-center gap-2">
-          <Mail className="h-5 w-5 text-accent" aria-hidden />
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">
-            {t("mailbeheer_nav")}
-          </h1>
-        </div>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {uiTaal === "nl"
-            ? "Overzicht van alle automatische mailsjablonen die het platform verstuurt."
-            : uiTaal === "fr"
-            ? "Aperçu de tous les modèles d'e-mails automatiques envoyés par la plateforme."
-            : "Overview of all automatic email templates sent by the platform."}
-        </p>
+          <TabsContent value="huisstijl" className="mt-4">
+            <TabHuisstijl
+              huisstijl={mailhuisstijl}
+              labels={{
+                logo: n("mailbeheer_logo"),
+                accent: n("mailbeheer_accent"),
+                afzender: n("mailbeheer_afzender"),
+                bewaar: n("mailbeheer_bewaar"),
+                uitleg: n("mailbeheer_huisstijl_uitleg"),
+              }}
+              onToast={() => toast({ description: n("mailbeheer_bewaard") })}
+            />
+          </TabsContent>
 
-        {/* Info banner */}
-        <div className="mt-5 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary">
-          {uiTaal === "nl"
-            ? "Mailsjablonen zijn beschikbaar in alle platformtalen (NL, FR, EN, ES, RU). Bewerken is beschikbaar in de volledige versie."
-            : uiTaal === "fr"
-            ? "Les modèles sont disponibles dans toutes les langues (NL, FR, EN, ES, RU). La modification est disponible dans la version complète."
-            : "Templates are available in all platform languages (NL, FR, EN, ES, RU). Editing is available in the full version."}
-        </div>
-
-        {/* KPI */}
-        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-          <Card>
-            <CardContent className="flex items-center gap-3 p-4">
-              <Mail className="h-8 w-8 text-accent opacity-80" />
-              <div>
-                <p className="text-2xl font-bold text-foreground">{SJABLONEN.length}</p>
-                <p className="text-xs text-muted-foreground">
-                  {uiTaal === "nl" ? "Sjablonen" : uiTaal === "fr" ? "Modèles" : "Templates"}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="flex items-center gap-3 p-4">
-              <CheckCircle2 className="h-8 w-8 text-emerald-500 opacity-80" />
-              <div>
-                <p className="text-2xl font-bold text-foreground">
-                  {SJABLONEN.filter((s) => s.status === "actief").length}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {uiTaal === "nl" ? "Actief" : uiTaal === "fr" ? "Actifs" : "Active"}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="flex items-center gap-3 p-4">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/15 text-xs font-bold text-accent">5</div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">5</p>
-                <p className="text-xs text-muted-foreground">
-                  {uiTaal === "nl" ? "Talen" : uiTaal === "fr" ? "Langues" : "Languages"}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Sjablonen lijst */}
-        <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          {uiTaal === "nl" ? "Mailsjablonen" : uiTaal === "fr" ? "Modèles d'e-mails" : "Email templates"}
-        </h2>
-        <div className="mt-4 space-y-3">
-          {SJABLONEN.map((s) => {
-            const Icon = s.icon;
-            return (
-              <Card key={s.id}>
-                <CardContent className="p-5">
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-accent/10">
-                      <Icon className="h-5 w-5 text-accent" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-semibold text-foreground">{naam(s.titel)}</span>
-                        <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs">
-                          {uiTaal === "nl" ? "Actief" : uiTaal === "fr" ? "Actif" : "Active"}
-                        </Badge>
-                      </div>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        <span className="font-medium">
-                          {uiTaal === "nl" ? "Trigger" : "Trigger"}:
-                        </span>{" "}{naam(s.trigger)}
-                      </p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        <span className="font-medium">
-                          {uiTaal === "nl" ? "Ontvanger" : uiTaal === "fr" ? "Destinataire" : "Recipient"}:
-                        </span>{" "}{naam(s.ontvanger)}
-                      </p>
-                      <p className="mt-2 text-sm text-muted-foreground">{naam(s.omschrijving)}</p>
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {s.talen.map((l) => (
-                          <Badge key={l} variant="outline" className="text-xs uppercase">{l}</Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+          <TabsContent value="whitelabel" className="mt-4">
+            <TabWhitelabel
+              organisaties={organisaties ?? []}
+              labels={{
+                kies: n("mailbeheer_kies_org"),
+                logo: n("mailbeheer_logo"),
+                accent: n("mailbeheer_accent"),
+                afzender: n("mailbeheer_afzender"),
+                bewaar: n("mailbeheer_bewaar"),
+                uitleg: n("mailbeheer_whitelabel_uitleg"),
+              }}
+              onToast={() => toast({ description: n("mailbeheer_bewaard") })}
+            />
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );

@@ -45,6 +45,9 @@ import AdminCoaches from "@/pages/admin-coaches";
 import AdminInzichten from "@/pages/admin-inzichten";
 import AdminAcademy from "@/pages/admin-academy";
 import AdminMailbeheer from "@/pages/admin-mailbeheer";
+import Coaches from "@/pages/coaches";
+import Academy from "@/pages/academy";
+import AcademyJester from "@/pages/academy-jester";
 
 function AdminStub({ titel, omschrijving }: { titel: string; omschrijving: string }) {
   return (
@@ -80,6 +83,9 @@ function AppRouter() {
       <Route path="/admin/inzichten">{() => <AdminLoginGate><AdminInzichten /></AdminLoginGate>}</Route>
       <Route path="/admin/academy">{() => <AdminLoginGate><AdminAcademy /></AdminLoginGate>}</Route>
       <Route path="/admin/mailbeheer">{() => <AdminLoginGate><AdminMailbeheer /></AdminLoginGate>}</Route>
+      <Route path="/coaches" component={Coaches} />
+      <Route path="/academy/jester" component={AcademyJester} />
+      <Route path="/academy" component={Academy} />
       {/* /coach = coach-omgeving: nog niet beschikbaar in demo, stub met terugknop */}
       <Route path="/coach">{() => <AdminStub titel="Coach omgeving" omschrijving="De coach-omgeving is beschikbaar in de volledige versie van het platform." />}</Route>
       <Route path="/admin/:id">{() => <AdminLoginGate><AdminDetail /></AdminLoginGate>}</Route>

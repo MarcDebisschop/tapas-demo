@@ -3,6 +3,7 @@ import { createServer } from "node:http";
 import type { Server } from "node:http";
 import { storage, db, CreditError, CREDITPAKKETTEN } from "./storage";
 import { buildQuestionManagerRoutes } from "./question-manager";
+import { registerCoachesAcademyMailRoutes } from "./routes-coaches-academy-mail";
 import { clientInstrument } from "./instrument";
 import { instrumentSamenvattingen, clientInstrumentVoor } from "./registry";
 import { buildGeneratorContract } from "./scoring";
@@ -1824,6 +1825,9 @@ export async function registerRoutes(
       return res.status(500).json({ error: "Ophalen mislukt." });
     }
   });
+
+  // Extra routes: coaches, academy, mailbeheer, inzichtcentrum
+  registerCoachesAcademyMailRoutes(app, db, storage);
 
   return httpServer;
 }

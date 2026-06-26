@@ -411,3 +411,27 @@ body::after {
  * ------------------------------------------------------------------------- */
 .poort-pagina { background: var(--poort-bg) !important }
 body:has(.poort-pagina)::after { display: none !important }
+.academy-observatorium{--acad-bg: 210 45% 8%;--acad-bg-2: 209 42% 11%;--acad-kaart: 209 38% 14%;--acad-rand: 205 30% 26%;--acad-tekst: 210 30% 92%;--acad-kop: 0 0% 100%;--acad-meta: 205 18% 70%;--acad-goud: 38 60% 62%;--acad-teal: 165 38% 55%;background-color:hsl(var(--acad-bg));color:hsl(var(--acad-tekst))}
+.academy-kaart-kop{color:hsl(var(--acad-kop))}
+.academy-tekst{color:hsl(var(--acad-tekst))}
+.academy-meta{color:hsl(var(--acad-meta))}
+.academy-hero-bg{filter:saturate(1.05)}
+.academy-hero-overlay{background:linear-gradient(180deg,hsl(var(--acad-bg) / .35),hsl(var(--acad-bg) / .55) 45%,hsl(var(--acad-bg) / .92))}
+.academy-titel{color:hsl(var(--acad-kop));text-shadow:0 2px 18px hsl(210 60% 4% / .7)}
+.academy-hero-sub{color:hsl(var(--acad-tekst));text-shadow:0 1px 10px hsl(210 60% 4% / .6)}
+.academy-kaart{background-color:hsl(var(--acad-kaart) / .75);border-color:hsl(var(--acad-rand));-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.academy-icoon{background-color:hsl(var(--acad-teal) / .16);color:hsl(var(--acad-teal))}
+.academy-avatar{background:linear-gradient(135deg,hsl(var(--acad-teal) / .22),hsl(var(--acad-goud) / .18));color:hsl(var(--acad-kop));border:1px solid hsl(var(--acad-rand));font-weight:600;letter-spacing:.04em}
+.academy-badge-icoon{color:hsl(var(--acad-goud))}
+.academy-ethiek{border-left-color:hsl(var(--acad-goud));background:linear-gradient(90deg,hsl(var(--acad-goud) / .1) 0%,hsl(var(--acad-goud) / .03) 60%,transparent 100%)}
+.academy-jester-kaart{position:relative;border-color:hsl(var(--acad-goud) / .55);background:radial-gradient(120% 140% at 12% 0%,hsl(var(--acad-goud) / .14) 0%,transparent 55%),linear-gradient(135deg,hsl(var(--acad-bg-2) / .92),hsl(var(--acad-kaart) / .88));box-shadow:0 0 0 1px hsl(var(--acad-goud) / .12);transition:border-color .18s cubic-bezier(.16,1,.3,1),box-shadow .18s cubic-bezier(.16,1,.3,1),transform .18s cubic-bezier(.16,1,.3,1)}
+.academy-jester-zegel{filter:drop-shadow(0 4px 14px hsl(var(--acad-goud) / .35))}
+.academy-jester-label{color:hsl(var(--acad-goud))}
+.academy-jester-titel{color:hsl(var(--acad-kop))}
+.academy-jester-body{color:hsl(var(--acad-tekst))}
+.academy-jester-cta{color:hsl(var(--acad-goud))}
+.academy-binnenkort{background-color:hsl(var(--acad-bg-2) / .6);border-style:dashed}
+.academy-cta-primary{background-color:hsl(var(--acad-goud));color:#0d1a26;border:1px solid transparent}
+.academy-cta-secondary{background-color:transparent;border-color:hsl(var(--acad-goud) / .55);color:hsl(var(--acad-goud))}
+.academy-footer{border-top-color:hsl(var(--acad-rand))}
+.academy-footer-link{color:hsl(var(--acad-goud))}
