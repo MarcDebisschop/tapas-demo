@@ -127,10 +127,18 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || "5000", 10);
+  // pplx.app proxy architectuur:
+  //   169.254.0.21:5000 (sandbox IP) = inkomende proxy
+  //   → stuurt door naar 127.0.0.1:PORT (loopback)
+  // 0.0.0.0:5000 is bezet door de proxy zelf → EADDRINUSE bij opstarten.
+  // Oplossing: binden op 127.0.0.1 (loopback) zodat de proxy ons bereikt
+  // én 0.0.0.0 niet geblokkeerd wordt.
+  // Lokaal dev: 127.0.0.1 werkt ook — curl http://localhost:PORT werkt gewoon.
+  const host = "127.0.0.1";
   httpServer.listen(
     {
       port,
-      host: "0.0.0.0",
+      host,
       reusePort: true,
     },
     () => {
