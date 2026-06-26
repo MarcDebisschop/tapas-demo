@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
  */
 
 // API base: works locally (relative) and after deploy (proxy path injected by deploy_website).
-const API_BASE = "__PORT_5000__".startsWith("__") ? "" : "__PORT_5000__";
+const API_BASE = (() => { const _s = "__PORT_5000__"; return _s.startsWith("__") ? "" : "/" + _s; })();
 
 const INK = "#16384a";
 const SUB = "#5b6b73";

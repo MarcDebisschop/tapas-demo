@@ -60,7 +60,7 @@ import {
 type ML = Record<Taal, string>;
 const k = (m: ML, t: Taal) => m[t] ?? m.nl;
 
-const API_BASE = "__PORT_5000__".startsWith("__") ? "" : "__PORT_5000__";
+const API_BASE = (() => { const _s = "__PORT_5000__"; return _s.startsWith("__") ? "" : "/" + _s; })();
 
 interface DashboardData {
   labels: {

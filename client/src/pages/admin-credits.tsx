@@ -550,7 +550,7 @@ function GrootboekTab() {
 // ---------------------------------------------------------------------------
 // Facturen
 // ---------------------------------------------------------------------------
-const FACTUUR_API_BASE = "__PORT_5000__".startsWith("__") ? "" : "__PORT_5000__";
+const FACTUUR_API_BASE = (() => { const _s = "__PORT_5000__"; return _s.startsWith("__") ? "" : "/" + _s; })();
 
 function FacturenTab() {
   const { toast } = useToast();

@@ -23,7 +23,7 @@ import { isTapasBeeld } from "@shared/talent-constructs";
 import type { AdminAfnameDetail, RapportSamenvatting } from "@/lib/types";
 import { ChevronLeft, Copy, Check, ShieldCheck, FileText, ExternalLink } from "lucide-react";
 
-const API_BASE = "__PORT_5000__".startsWith("__") ? "" : "__PORT_5000__";
+const API_BASE = (() => { const _s = "__PORT_5000__"; return _s.startsWith("__") ? "" : "/" + _s; })();
 
 // TaPas-Beeld zit administratief in de familie "Talent-foci", maar is inhoudelijk
 // GEEN talent-focus (het is een zelfbeeld-/kalibratielens). In deze diagnostische

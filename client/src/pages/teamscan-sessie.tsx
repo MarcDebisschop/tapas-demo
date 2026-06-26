@@ -96,7 +96,7 @@ export default function TeamscanSessie() {
   }
 
   const kanTeamrapport = sessie.aantalAfgerond >= sessie.minVoorTeamrapport;
-  const API_BASE = "__PORT_5000__".startsWith("__") ? "" : "__PORT_5000__";
+  const API_BASE = (() => { const _s = "__PORT_5000__"; return _s.startsWith("__") ? "" : "/" + _s; })();
   const teamrapportUrl = `${API_BASE}/api/teamscan/sessies/${sessie.id}/teamrapport?formaat=html`;
 
   return (
