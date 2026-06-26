@@ -462,6 +462,36 @@ export default function Dashboard() {
   return (
     <div className="min-h-[100dvh] bg-background">
       <AppHeader />
+      {/* ── Deelnemer navigatiebalk ── discreet, uitnodigend ── */}
+      <nav
+        className="border-b border-border/40 bg-muted/30 backdrop-blur-sm"
+        data-testid="deelnemer-nav"
+      >
+        <div className="mx-auto flex max-w-5xl items-center gap-1 px-4 py-1.5 sm:px-6">
+          <a
+            href="#/lounge"
+            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            data-testid="nav-naar-lounge"
+          >
+            <span>☕</span> TaPas Lounge
+          </a>
+          <a
+            href="#/academy"
+            className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            data-testid="nav-naar-academy"
+          >
+            <span>🎓</span> TaPas Academy
+          </a>
+          <span className="flex-1" />
+          <a
+            href="#/"
+            className="inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-xs text-muted-foreground/60 transition-colors hover:text-muted-foreground"
+            data-testid="nav-naar-home"
+          >
+            ← Terug naar start
+          </a>
+        </div>
+      </nav>
       <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
         {/* HERO */}
         <section

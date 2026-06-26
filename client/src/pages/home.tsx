@@ -293,7 +293,7 @@ export default function Home() {
                 Kies je wereld
                 <ArrowRight className="ml-1.5 h-4 w-4" />
               </Button>
-              <Link href="/voor-deelnemers">
+              <Link href="/poort">
                 <Button variant="outline" data-testid="button-ik-ben-deelnemer">
                   Ik ben deelnemer
                 </Button>
