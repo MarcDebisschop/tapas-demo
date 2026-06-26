@@ -37,11 +37,21 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(`${API_BASE}${queryKey.join("/")}`, {
-      // KRITIEK: credentials: "include" vereist voor cross-origin cookie op pplx.app.
-      credentials: "include",
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${API_BASE}${queryKey.join("/")}`, {
+        // KRITIEK: credentials: "include" vereist voor cross-origin cookie op pplx.app.
+        credentials: "include",
+      });
+    } catch {
+      // Netwerk-fout (b.v. sandbox nog niet gestart, cold-start timeout).
+      // Behandel hetzelfde als 401 zodat de login-gate nooit crasht.
+      if (unauthorizedBehavior === "returnNull") return null;
+      throw new Error("Netwerk niet bereikbaar. Probeer opnieuw.");
+    }
 
+    // pplx.app proxy geeft ook 401 met {error:'auth_required'} voor niet-auth gebruikers.
+    // Behandel alle 401-responses als "niet ingelogd" bij returnNull.
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       return null;
     }
