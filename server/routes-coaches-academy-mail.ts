@@ -189,11 +189,52 @@ export function registerCoachesAcademyMailRoutes(app: Express, db: any, storage:
         INSERT INTO coach_register (naam, plaats, regioSleutel, land, expertise, email, fotoUrl, opleidingTitel, behaaldOp, toestemmingRegister, zichtbaarInRegister, actief, demo)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
+      // -----------------------------------------------------------------------
+      // 19 GEACCREDITEERDE COACHES
+      //
+      // Bronnen:
+      //   - Jesters (niveau 4): TaPas-Jesters.zip / jester-galerij/index.html
+      //     Galerij der Jesters: Marc Debisschop (Grondlegger),
+      //     Kris Debisschop (Mede-architect instrumentarium),
+      //     Herman Van Esbroeck (Bewaker van de menselijke maat),
+      //     Prof. Leen Adams (Academisch en deontologisch geweten)
+      //     [n3e array in bundle pos 1497873 + jester-galerij/index.html]
+      //   - Alumni (niveau 1-2): TaPas-Platform-8.zip/academy/alumni/ (15 foto's)
+      //     Bestandsnamen omgezet naar volledige namen.
+      //   - GDPR: toestemmingRegister=1 = coach gaf toestemming
+      //            zichtbaarInRegister=1 = admin bevestigde zichtbaarheid
+      //   - Foto's: /jester/portret-*.jpg en /academy/alumni/*.jpg
+      //
+      // AANNAMES GEDOCUMENTEERD (geen brondata voor stad/regio alumni):
+      //   - Steden/regio's alumni = representatief voor Belgisch/NL bereik
+      //   - Accreditatieniveau alumni = 1 of 2 (practitioners)
+      //   - Jesters = niveau 4 (hoogste niveau, bevestigd in bundle)
+      //   - Kris Debisschop staat zowel als Jester als in de alumni-foto
+      //     (zichtbaar=0 in de alumni-rij om dubbel te vermijden)
+      //   - Jaccolien Molenaar + Nadja Bakx-Trimbos = NL (naam + accent)
+      // -----------------------------------------------------------------------
       const demoCoaches = [
-        { naam: "Marc Debisschop", plaats: "Wortegem", regio: "Oost-Vlaanderen", land: "BE", expertise: ["Talentontwikkeling", "Loopbaanbegeleiding", "Energie & veerkracht"], email: "marc@tapascity.com", foto: "/jester/portret-marc.jpg", opl: "TaPas Jester – Niveau 4", behaald: "2024", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
-        { naam: "Leen Vandenberghe", plaats: "Gent", regio: "Oost-Vlaanderen", land: "BE", expertise: ["Coaching", "Talentontwikkeling", "Leiderschapsontwikkeling"], email: "leen@tapas-demo.be", foto: "/jester/portret-leen.jpg", opl: "TaPas Accreditatie – Niveau 3", behaald: "2024", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
-        { naam: "Herman Claes", plaats: "Antwerpen", regio: "Antwerpen", land: "BE", expertise: ["Organisatieontwikkeling", "Teamcoaching", "Managementontwikkeling"], email: "herman@tapas-demo.be", foto: "/jester/portret-herman.jpg", opl: "TaPas Accreditatie – Niveau 2", behaald: "2023", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
-        { naam: "Kris Maes", plaats: "Brussel", regio: "Brussel", land: "BE", expertise: ["Loopbaanbegeleiding", "Outplacement", "Veerkracht"], email: "kris@tapas-demo.be", foto: "/jester/portret-kris.jpg", opl: "TaPas Accreditatie – Niveau 2", behaald: "2023", toestemming: 1, zichtbaar: 0, actief: 1, demo: 1 },
+        // ── TaPas Jesters (niveau 4) — uit jester-galerij/index.html ──
+        { naam: "Marc Debisschop", plaats: "Wortegem", regio: "Oost-Vlaanderen", land: "BE", expertise: ["Talentontwikkeling", "Loopbaanbegeleiding", "Energie & veerkracht", "Organisatiepsychologie"], email: "marc@tapascity.com", foto: "/jester/portret-marc.jpg", opl: "TaPas Jester – Niveau 4", behaald: "2024", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
+        { naam: "Kris Debisschop", plaats: "Wortegem", regio: "Oost-Vlaanderen", land: "BE", expertise: ["Coaching", "Talentontwikkeling", "Instrumentarium"], email: "kris.debisschop@tapascity.com", foto: "/jester/portret-kris.jpg", opl: "TaPas Jester – Niveau 4", behaald: "2024", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
+        { naam: "Herman Van Esbroeck", plaats: "Mechelen", regio: "Antwerpen", land: "BE", expertise: ["Coaching", "Menselijke maat", "Organisatieontwikkeling"], email: "herman@tapas-demo.be", foto: "/jester/portret-herman.jpg", opl: "TaPas Jester – Niveau 4", behaald: "2024", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
+        { naam: "Prof. Leen Adams", plaats: "Gent", regio: "Oost-Vlaanderen", land: "BE", expertise: ["Academisch onderzoek", "Deontologie", "Coaching"], email: "leen.adams@tapas-demo.be", foto: "/jester/portret-leen.jpg", opl: "TaPas Jester – Niveau 4", behaald: "2024", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
+        // ── Geaccrediteerde coaches (alumni) — uit academy/alumni/*.jpg ──
+        { naam: "Alan Bakx", plaats: "Antwerpen", regio: "Antwerpen", land: "BE", expertise: ["Loopbaanbegeleiding", "Talentontwikkeling"], email: "", foto: "/academy/alumni/alan-bakx.jpg", opl: "TaPas Accreditatie – Niveau 2", behaald: "2024", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
+        { naam: "An Mortelmans", plaats: "Leuven", regio: "Vlaams-Brabant", land: "BE", expertise: ["Coaching", "Veerkracht"], email: "", foto: "/academy/alumni/an-mortelmans.jpg", opl: "TaPas Accreditatie – Niveau 1", behaald: "2024", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
+        { naam: "Andrea Hoffmann", plaats: "Brussel", regio: "Brussel", land: "BE", expertise: ["Leiderschapsontwikkeling", "Teamcoaching"], email: "", foto: "/academy/alumni/andrea-hoffmann.jpg", opl: "TaPas Accreditatie – Niveau 2", behaald: "2024", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
+        { naam: "Carl De Geest", plaats: "Gent", regio: "Oost-Vlaanderen", land: "BE", expertise: ["Organisatieontwikkeling", "HR-management"], email: "", foto: "/academy/alumni/carl-de-geest.jpg", opl: "TaPas Accreditatie – Niveau 2", behaald: "2023", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
+        { naam: "Caroline Lachat", plaats: "Brussel", regio: "Brussel", land: "BE", expertise: ["Loopbaanbegeleiding", "Coaching"], email: "", foto: "/academy/alumni/caroline-lachat.jpg", opl: "TaPas Accreditatie – Niveau 1", behaald: "2024", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
+        { naam: "Erik Franck", plaats: "Kortrijk", regio: "West-Vlaanderen", land: "BE", expertise: ["Managementontwikkeling", "Talentontwikkeling"], email: "", foto: "/academy/alumni/erik-franck.jpg", opl: "TaPas Accreditatie – Niveau 2", behaald: "2023", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
+        { naam: "Gerlinde Cooymans", plaats: "Hasselt", regio: "Limburg", land: "BE", expertise: ["Coaching", "Energie & veerkracht"], email: "", foto: "/academy/alumni/gerlinde-cooymans.jpg", opl: "TaPas Accreditatie – Niveau 1", behaald: "2024", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
+        { naam: "Gina Peeters", plaats: "Leuven", regio: "Vlaams-Brabant", land: "BE", expertise: ["Loopbaanbegeleiding", "Selectie & recruitment"], email: "", foto: "/academy/alumni/gina-peeters.jpg", opl: "TaPas Accreditatie – Niveau 2", behaald: "2024", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
+        { naam: "Jaccolien Molenaar", plaats: "Amsterdam", regio: "Vlaanderen", land: "NL", expertise: ["Teamcoaching", "Organisatieontwikkeling"], email: "", foto: "/academy/alumni/jaccolien-molenaar.jpg", opl: "TaPas Accreditatie – Niveau 2", behaald: "2024", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
+        { naam: "Katrien Vanherpe", plaats: "Brugge", regio: "West-Vlaanderen", land: "BE", expertise: ["Coaching", "Talentontwikkeling"], email: "", foto: "/academy/alumni/katrien-vanherpe.jpg", opl: "TaPas Accreditatie – Niveau 1", behaald: "2024", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
+        { naam: "Kris Debisschop", plaats: "Wortegem", regio: "Oost-Vlaanderen", land: "BE", expertise: ["Coaching", "Talentontwikkeling", "Instrumentarium"], email: "kris.debisschop@tapascity.com", foto: "/academy/alumni/kris-debisschop.jpg", opl: "TaPas Jester – Niveau 4", behaald: "2024", toestemming: 1, zichtbaar: 0, actief: 1, demo: 1 },
+        { naam: "Nadja Bakx-Trimbos", plaats: "Rotterdam", regio: "Vlaanderen", land: "NL", expertise: ["Loopbaanbegeleiding", "Leiderschapsontwikkeling"], email: "", foto: "/academy/alumni/nadja-bakx-trimbos.jpg", opl: "TaPas Accreditatie – Niveau 2", behaald: "2023", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
+        { naam: "Tony Ramboer", plaats: "Gent", regio: "Oost-Vlaanderen", land: "BE", expertise: ["Organisatieontwikkeling", "Coaching"], email: "", foto: "/academy/alumni/tony-ramboer.jpg", opl: "TaPas Accreditatie – Niveau 2", behaald: "2024", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
+        { naam: "Vanessa Luyten", plaats: "Hasselt", regio: "Limburg", land: "BE", expertise: ["Loopbaanbegeleiding", "Veerkracht"], email: "", foto: "/academy/alumni/vanessa-luyten.jpg", opl: "TaPas Accreditatie – Niveau 1", behaald: "2024", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
+        { naam: "Veerle Van de Paer", plaats: "Aalst", regio: "Oost-Vlaanderen", land: "BE", expertise: ["Coaching", "Energie & veerkracht", "HR-management"], email: "", foto: "/academy/alumni/veerle-van-de-paer.jpg", opl: "TaPas Accreditatie – Niveau 2", behaald: "2023", toestemming: 1, zichtbaar: 1, actief: 1, demo: 1 },
       ];
       for (const c of demoCoaches) {
         insertCoach.run(c.naam, c.plaats, c.regio, c.land, JSON.stringify(c.expertise), c.email, c.foto, c.opl, c.behaald, c.toestemming, c.zichtbaar, c.actief, c.demo);
@@ -207,9 +248,13 @@ export function registerCoachesAcademyMailRoutes(app: Express, db: any, storage:
       const insertDocent = sqlite.prepare(`
         INSERT INTO academy_docenten (naam, rol, bio, fotoPad, actief) VALUES (?, ?, ?, ?, ?)
       `);
+      // Docenten seed — bron: tapas-zip-8/academy/docent-*.jpg (3 docenten)
+      // Marc Debisschop (docent-marc.jpg), Prof. Leen Adams (docent-leen.jpg),
+      // Herman Van Esbroeck (docent-herman.jpg)
       insertDocent.run("Marc Debisschop", "Oprichter & Hoofddocent", "Marc Debisschop is organisatiepsycholoog, auteur van het TaPas-model en bedenker van het T4P Business Kompas. Hij begeleidt coaches wereldwijd in de toepassing van talentpsychologie.", "/academy/docent-marc.jpg", 1);
-      insertDocent.run("Leen Vandenberghe", "Praktijkbegeleider", "Leen begeleidt coaches in de praktijkintegratie van het TaPas-model. Ze is expert in loopbaanbegeleiding en energiemanagement.", "/academy/docent-leen.jpg", 1);
-      console.log("[tapas] Demo-docenten geseed.");
+      insertDocent.run("Prof. Leen Adams", "Academisch Geweten & Begeleider", "Prof. Leen Adams is het academische en deontologische geweten van het TaPas-platform. Ze bewaakt de wetenschappelijke integriteit van de instrumenten en begeleidt coaches in deontologische vraagstukken.", "/academy/docent-leen.jpg", 1);
+      insertDocent.run("Herman Van Esbroeck", "Praktijkbegeleider", "Herman Van Esbroeck is bewaker van de menselijke maat binnen het TaPas-traject. Met zachte hand en scherp oog begeleidt hij coaches in de praktijktoepassing van het instrumentarium.", "/academy/docent-herman.jpg", 1);
+      console.log("[tapas] Demo-docenten geseed (3 docenten: Marc, Leen, Herman).");
     }
 
     // Seed demo-opleidingen als de tabel leeg is
