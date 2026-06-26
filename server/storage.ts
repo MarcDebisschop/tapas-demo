@@ -543,21 +543,16 @@ function syncShowcaseInhoud(afnameId: number, deelnemerId?: number) {
         .prepare("UPDATE afnames SET generator_contract = ? WHERE id = ?")
         .run(contract, afnameId);
     }
-    // Profielfoto + naam van de showcase-deelnemer uit het seed-bestand zetten,
-    // zodat ook na een publish-snapshot de juiste foto verschijnt. We schrijven
-    // de foto alleen wanneer er in de DB nog geen (eigen) foto staat, zodat een
-    // door de deelnemer zelf geüploade foto nooit wordt overschreven.
+    // Profielfoto van de showcase-deelnemer altijd vanuit het seed-bestand zetten,
+    // zodat een bijgewerkte foto ook na een publish-snapshot of cold-start zichtbaar is.
     if (deelnemerId != null) {
       const seedFoto = (seed.deelnemer as any)?.foto_url;
       if (typeof seedFoto === "string" && seedFoto.length > 0) {
-        const huidig = sqlite
-          .prepare("SELECT foto_url FROM deelnemers WHERE id = ?")
-          .get(deelnemerId) as { foto_url: string | null } | undefined;
-        if (!huidig?.foto_url) {
-          sqlite
-            .prepare("UPDATE deelnemers SET foto_url = ? WHERE id = ?")
-            .run(seedFoto, deelnemerId);
-        }
+        // Foto altijd overschrijven vanuit seed, zodat een bijgewerkte profielfoto
+        // ook na een publish-snapshot of cold-start zichtbaar is.
+        sqlite
+          .prepare("UPDATE deelnemers SET foto_url = ? WHERE id = ?")
+          .run(seedFoto, deelnemerId);
       }
     }
     // Detecteer of de rapporten-tabel het optionele pdf_base64-veld heeft, zodat
