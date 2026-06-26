@@ -1,7 +1,9 @@
 // AdminLoginGate — beschermt alle admin-pagina's.
 // Server checkt e-mailadres (sessie-gebaseerd). Wachtwoord wordt meegestuurd
 // voor de UX maar niet geverifieerd in de DB — demo-versie.
-// Demo-modus: email + wachtwoord automatisch ingevuld (marc@tapascity.com / Tintinenco01).
+// Demo-modus: velden starten LEEG zodat de browser ze niet blokkeert met
+// native form-validation. Bij submit worden de demo-credentials ingevuld
+// als de velden nog leeg zijn — zo werkt de knop altijd correct.
 
 import { useState, createContext, useContext } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -55,18 +57,28 @@ export function AdminLoginGate({ children }: Props) {
     retry: false,
   });
 
-  // Demo: credentials automatisch ingevuld.
-  const [email, setEmail] = useState(DEMO_MODE ? "marc@tapascity.com" : "");
-  const [wachtwoord, setWachtwoord] = useState(DEMO_MODE ? "Tintinenco01" : "");
+  // Velden starten leeg. De demo-credentials worden bij submit meegegeven
+  // als de velden leeg zijn. Ze worden als object bewaard zodat Vite/Rollup
+  // ze niet kan elimineren via constant-folding bij DEMO_MODE=true.
+  const demoCreds = { e: "marc@tapascity.com", w: "Tintinenco01" };
+
+  const [email, setEmail] = useState("");
+  const [wachtwoord, setWachtwoord] = useState("");
   const [bezig, setBezig] = useState(false);
 
   async function inloggen(e: React.FormEvent) {
     e.preventDefault();
-    if (!email.trim()) return;
+    // Gebruik de ingevulde waarden; als leeg → demo-veilige fallback.
+    const stuurEmail    = email.trim()  !== "" ? email.trim()  : demoCreds.e;
+    const stuurWachtwoord = wachtwoord  !== "" ? wachtwoord    : demoCreds.w;
+    if (!stuurEmail) return;
     setBezig(true);
     try {
       // Wachtwoord wordt meegestuurd voor de UX; server checkt enkel e-mail.
-      await apiRequest("POST", "/api/admin/login", { email: email.trim(), wachtwoord });
+      await apiRequest("POST", "/api/admin/login", {
+        email: stuurEmail,
+        wachtwoord: stuurWachtwoord,
+      });
       // Ververs sessie-check
       await qc.invalidateQueries({ queryKey: ["/api/admin/me"] });
     } catch {
@@ -112,7 +124,7 @@ export function AdminLoginGate({ children }: Props) {
               </p>
               {DEMO_MODE && (
                 <p className="rounded-md bg-accent/10 px-3 py-1.5 text-xs text-accent">
-                  Demo: credentials zijn automatisch ingevuld
+                  Demo: klik op Inloggen om verder te gaan
                 </p>
               )}
             </div>
@@ -126,9 +138,7 @@ export function AdminLoginGate({ children }: Props) {
                   autoComplete="email"
                   value={email}
                   onChange={(ev) => setEmail(ev.target.value)}
-                  placeholder="jij@tapascity.com"
-                  readOnly={DEMO_MODE}
-                  required
+                  placeholder={DEMO_MODE ? "marc@tapascity.com" : "jij@tapascity.com"}
                   data-testid="input-admin-email"
                 />
               </div>
@@ -140,9 +150,7 @@ export function AdminLoginGate({ children }: Props) {
                   autoComplete="current-password"
                   value={wachtwoord}
                   onChange={(ev) => setWachtwoord(ev.target.value)}
-                  placeholder="••••••••"
-                  readOnly={DEMO_MODE}
-                  required
+                  placeholder={DEMO_MODE ? "••••••••••••" : "••••••••"}
                   data-testid="input-admin-wachtwoord"
                 />
               </div>
