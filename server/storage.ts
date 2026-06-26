@@ -614,18 +614,24 @@ function seedShowcase() {
       verversShowcase(reeds.id); // bestaat al — chat/quota schoonmaken
       // Koppel alle afnames die nog aan een oud e-mailadres hangen aan het
       // correcte showcase-adres, zodat listAfnamesVoorDeelnemer ze vindt.
+      // Koppel afnames die nog aan een oud adres hangen via de juiste kolom
+      // deelnemer_email (niet 'email' — die kolom bestaat niet in afnames).
       const OUD_EMAILS = ["marc.debisschop@hatch-coaching.be"];
       for (const oudEmail of OUD_EMAILS) {
         const gelinkt = sqlite
-          .prepare("SELECT COUNT(*) as n FROM afnames WHERE email = ?")
+          .prepare("SELECT COUNT(*) as n FROM afnames WHERE deelnemer_email = ?")
           .get(oudEmail) as { n: number };
         if (gelinkt.n > 0) {
           sqlite
-            .prepare("UPDATE afnames SET email = ? WHERE email = ?")
+            .prepare("UPDATE afnames SET deelnemer_email = ? WHERE deelnemer_email = ?")
             .run(SHOWCASE_EMAIL, oudEmail);
           console.log(`[tapas] Afnames van ${oudEmail} hergekoppeld aan ${SHOWCASE_EMAIL}.`);
         }
       }
+      // Koppel ook afnames zonder deelnemer_email maar met respondent_code MD-2026-001.
+      sqlite
+        .prepare("UPDATE afnames SET deelnemer_email = ? WHERE respondent_code = ? AND (deelnemer_email IS NULL OR deelnemer_email = '')")
+        .run(SHOWCASE_EMAIL, "MD-2026-001");
       // En de profielinhoud opnieuw uit het seed-bestand zetten, zodat
       // gecorrigeerde waarden ook na een publish-snapshot live komen.
       const afnameId =
