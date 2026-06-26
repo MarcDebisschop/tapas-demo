@@ -588,59 +588,16 @@ function syncShowcaseInhoud(afnameId: number, deelnemerId?: number) {
 }
 
 function seedShowcase() {
+  // ---------------------------------------------------------------------------
+  // STRATEGIE: wis bij elke serverstart ALLE deelnemer-records voor het
+  // showcase-emailadres en herseed alles vanuit de seed. Zo kunnen nooit
+  // foute records uit eerdere sessies blijven hangen.
+  // ---------------------------------------------------------------------------
   try {
     const TOKEN = "MarcDebisschopShowcaseT4P01";
     const SHOWCASE_EMAIL = "marc@tapascity.com";
-    let reeds = sqlite
-      .prepare("SELECT id FROM deelnemers WHERE dashboard_token = ?")
-      .get(TOKEN) as { id: number } | undefined;
-    if (!reeds) {
-      // Controleer of er al een deelnemer bestaat met hetzelfde e-mailadres maar
-      // een ander token (bv. xPLdpvGr9fpav4SDH17vHAjzlz0QAA op Render).
-      // Zo ja: corrigeer het token naar de showcase-waarde zodat de login
-      // altijd naar het showcase-profiel leidt.
-      const perEmail = sqlite
-        .prepare("SELECT id FROM deelnemers WHERE email = ?")
-        .get(SHOWCASE_EMAIL) as { id: number } | undefined;
-      if (perEmail) {
-        sqlite
-          .prepare("UPDATE deelnemers SET dashboard_token = ? WHERE id = ?")
-          .run(TOKEN, perEmail.id);
-        console.log("[tapas] Showcase-token gecorrigeerd voor bestaand e-mailrecord.");
-        reeds = perEmail;
-      }
-    }
-    if (reeds) {
-      verversShowcase(reeds.id); // bestaat al — chat/quota schoonmaken
-      // Koppel alle afnames die nog aan een oud e-mailadres hangen aan het
-      // correcte showcase-adres, zodat listAfnamesVoorDeelnemer ze vindt.
-      // Koppel afnames die nog aan een oud adres hangen via de juiste kolom
-      // deelnemer_email (niet 'email' — die kolom bestaat niet in afnames).
-      const OUD_EMAILS = ["marc.debisschop@hatch-coaching.be"];
-      for (const oudEmail of OUD_EMAILS) {
-        const gelinkt = sqlite
-          .prepare("SELECT COUNT(*) as n FROM afnames WHERE deelnemer_email = ?")
-          .get(oudEmail) as { n: number };
-        if (gelinkt.n > 0) {
-          sqlite
-            .prepare("UPDATE afnames SET deelnemer_email = ? WHERE deelnemer_email = ?")
-            .run(SHOWCASE_EMAIL, oudEmail);
-          console.log(`[tapas] Afnames van ${oudEmail} hergekoppeld aan ${SHOWCASE_EMAIL}.`);
-        }
-      }
-      // Koppel ook afnames zonder deelnemer_email maar met respondent_code MD-2026-001.
-      sqlite
-        .prepare("UPDATE afnames SET deelnemer_email = ? WHERE respondent_code = ? AND (deelnemer_email IS NULL OR deelnemer_email = '')")
-        .run(SHOWCASE_EMAIL, "MD-2026-001");
-      // En de profielinhoud opnieuw uit het seed-bestand zetten, zodat
-      // gecorrigeerde waarden ook na een publish-snapshot live komen.
-      const afnameId =
-        (sqlite
-          .prepare("SELECT id FROM afnames WHERE respondent_code = ? LIMIT 1")
-          .get("MD-2026-001") as { id: number } | undefined)?.id ?? null;
-      if (afnameId != null) syncShowcaseInhoud(afnameId, reeds.id);
-      return;
-    }
+    const RESPONDENT_CODE = "MD-2026-001";
+    const OUD_EMAILS = ["marc.debisschop@hatch-coaching.be"];
 
     const seed = laadShowcaseSeed();
     if (!seed) {
@@ -648,38 +605,103 @@ function seedShowcase() {
       return;
     }
 
-    const insertRow = (tabel: string, row: Record<string, unknown>) => {
-      // Alleen kolommen invoegen die ook echt in de doeltabel bestaan, zodat de
-      // seed bestand blijft tegen kleine schemaverschillen tussen omgevingen.
-      const bestaande = new Set(
-        (sqlite.prepare(`PRAGMA table_info(${tabel})`).all() as Array<{ name: string }>).map(
-          (c) => c.name,
-        ),
-      );
-      const kolommen = Object.keys(row).filter((k) => bestaande.has(k));
-      if (kolommen.length === 0) return;
-      const placeholders = kolommen.map(() => "?").join(", ");
-      const sql = `INSERT OR IGNORE INTO ${tabel} (${kolommen
-        .map((k) => `"${k}"`)
-        .join(", ")}) VALUES (${placeholders})`;
-      const waarden = kolommen.map((k) => {
-        const v = row[k];
-        if (v === null || v === undefined) return null;
-        if (typeof v === "boolean") return v ? 1 : 0;
-        if (typeof v === "object") return JSON.stringify(v);
-        return v as string | number;
-      });
-      sqlite.prepare(sql).run(...waarden);
-    };
+    // Stap 1: wis alle deelnemer-records voor showcase-email, oud email en token.
+    for (const oudEmail of OUD_EMAILS) {
+      sqlite.prepare("DELETE FROM deelnemers WHERE email = ?").run(oudEmail);
+    }
+    sqlite.prepare("DELETE FROM deelnemers WHERE dashboard_token = ?").run(TOKEN);
+    sqlite.prepare("DELETE FROM deelnemers WHERE email = ?").run(SHOWCASE_EMAIL);
 
-    const tx = sqlite.transaction(() => {
-      if (seed.organisatie) insertRow("organisaties", seed.organisatie);
-      insertRow("deelnemers", seed.deelnemer);
-      insertRow("afnames", seed.afname);
-      for (const r of seed.rapporten) insertRow("rapporten", r);
-    });
-    tx();
-    console.log("[tapas] Showcase-profiel (Marc Debisschop) geseed.");
+    // Stap 2: herseed deelnemer vanuit seed (correct email + token + foto).
+    const dnBestaand = new Set(
+      (sqlite.prepare("PRAGMA table_info(deelnemers)").all() as Array<{ name: string }>).map((c) => c.name),
+    );
+    const dnRij = seed.deelnemer as Record<string, unknown>;
+    const dnKols = Object.keys(dnRij).filter((k) => dnBestaand.has(k));
+    sqlite
+      .prepare(
+        `INSERT INTO deelnemers (${dnKols.map((k) => `"${k}"`).join(", ")}) VALUES (${dnKols.map(() => "?").join(", ")})`,
+      )
+      .run(
+        ...dnKols.map((k) => {
+          const v = dnRij[k];
+          if (v === null || v === undefined) return null;
+          if (typeof v === "boolean") return v ? 1 : 0;
+          if (typeof v === "object") return JSON.stringify(v);
+          return v as string | number;
+        }),
+      );
+    const deelnemerId = (
+      sqlite.prepare("SELECT id FROM deelnemers WHERE dashboard_token = ?").get(TOKEN) as { id: number }
+    ).id;
+    console.log(`[tapas] Showcase-deelnemer aangemaakt: id=${deelnemerId}, email=${SHOWCASE_EMAIL}`);
+
+    // Stap 3: koppel afname via respondent_code aan het juiste emailadres.
+    // Herseed de afname als die nog niet bestaat.
+    const bestaandeAfname = sqlite
+      .prepare("SELECT id FROM afnames WHERE respondent_code = ? LIMIT 1")
+      .get(RESPONDENT_CODE) as { id: number } | undefined;
+    if (!bestaandeAfname) {
+      const afnBestaand = new Set(
+        (sqlite.prepare("PRAGMA table_info(afnames)").all() as Array<{ name: string }>).map((c) => c.name),
+      );
+      const afnRij = seed.afname as Record<string, unknown>;
+      const afnKols = Object.keys(afnRij).filter((k) => afnBestaand.has(k));
+      sqlite
+        .prepare(
+          `INSERT OR IGNORE INTO afnames (${afnKols.map((k) => `"${k}"`).join(", ")}) VALUES (${afnKols.map(() => "?").join(", ")})`,
+        )
+        .run(
+          ...afnKols.map((k) => {
+            const v = afnRij[k];
+            if (v === null || v === undefined) return null;
+            if (typeof v === "boolean") return v ? 1 : 0;
+            if (typeof v === "object") return JSON.stringify(v);
+            return v as string | number;
+          }),
+        );
+    }
+    // Altijd deelnemer_email corrigeren — ook als afname al bestond.
+    sqlite
+      .prepare("UPDATE afnames SET deelnemer_email = ? WHERE respondent_code = ?")
+      .run(SHOWCASE_EMAIL, RESPONDENT_CODE);
+    for (const oudEmail of OUD_EMAILS) {
+      sqlite
+        .prepare("UPDATE afnames SET deelnemer_email = ? WHERE deelnemer_email = ?")
+        .run(SHOWCASE_EMAIL, oudEmail);
+    }
+
+    // Stap 4: herseed rapporten (INSERT OR IGNORE).
+    const rapBestaand = new Set(
+      (sqlite.prepare("PRAGMA table_info(rapporten)").all() as Array<{ name: string }>).map((c) => c.name),
+    );
+    for (const r of seed.rapporten) {
+      const rapRij = r as Record<string, unknown>;
+      const rapKols = Object.keys(rapRij).filter((k) => rapBestaand.has(k));
+      sqlite
+        .prepare(
+          `INSERT OR IGNORE INTO rapporten (${rapKols.map((k) => `"${k}"`).join(", ")}) VALUES (${rapKols.map(() => "?").join(", ")})`,
+        )
+        .run(
+          ...rapKols.map((k) => {
+            const v = rapRij[k];
+            if (v === null || v === undefined) return null;
+            if (typeof v === "boolean") return v ? 1 : 0;
+            if (typeof v === "object") return JSON.stringify(v);
+            return v as string | number;
+          }),
+        );
+    }
+
+    // Stap 5: sync generator_contract, foto en rapporten altijd vanuit seed.
+    const afnameId =
+      (sqlite
+        .prepare("SELECT id FROM afnames WHERE respondent_code = ? LIMIT 1")
+        .get(RESPONDENT_CODE) as { id: number } | undefined)?.id ?? null;
+    if (afnameId != null) syncShowcaseInhoud(afnameId, deelnemerId);
+
+    verversShowcase(deelnemerId);
+    console.log("[tapas] Showcase volledig herbouwd vanuit seed.");
   } catch (e) {
     console.error("[tapas] Showcase seeden mislukt:", e);
   }
