@@ -1,10 +1,11 @@
 // =============================================================================
 // UitlegPaneel — gesproken uitleg van het profiel (6 blokken).
-// Audio via de browser (Web Speech API) in de demo; backend levert het script
-// (al in de juiste taal) + de limiet-status. Twee tonen: "deelnemer" (warm) en
-// "coach" (zakelijk). Elke toon heeft een eigen 10-gratis-dan-betalen limiet.
+// Audio via server-side TTS (Sulafat, Vlaamse stem, Gemini 2.5 Pro TTS).
+// Backend levert script (al in de juiste taal) + limiet-status.
+// Twee tonen: "deelnemer" (warm) en "coach" (zakelijk).
+// Elke toon heeft een eigen 10-gratis-dan-betalen limiet.
 // =============================================================================
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent } from "@/components/ui/card";
@@ -61,15 +62,6 @@ interface UitlegResponse {
   limiet: Limiet;
 }
 
-// Taal -> stem-locale voor de Web Speech API.
-const VOICE_LOCALE: Record<Taal, string> = {
-  nl: "nl-NL",
-  fr: "fr-FR",
-  en: "en-US",
-  es: "es-ES",
-  ru: "ru-RU",
-};
-
 const STR = {
   titelDeelnemer: {
     nl: "Laat je profiel uitleggen",
@@ -113,6 +105,13 @@ const STR = {
     es: "Preparando la explicacion...",
     ru: "Подготовка объяснения...",
   } as ML,
+  stemLaden: {
+    nl: "Stem laden...",
+    fr: "Chargement de la voix...",
+    en: "Loading voice...",
+    es: "Cargando voz...",
+    ru: "Загрузка голоса...",
+  } as ML,
   blok: {
     nl: "Blok",
     fr: "Bloc",
@@ -139,7 +138,7 @@ const STR = {
     fr: "Suivant",
     en: "Next",
     es: "Siguiente",
-    ru: "Далее",
+    ru: "Dalej",
   } as ML,
   speel: {
     nl: "Afspelen",
@@ -168,13 +167,6 @@ const STR = {
     en: "free explanations left",
     es: "explicaciones gratuitas restantes",
     ru: "бесплатных объяснений осталось",
-  } as ML,
-  geenAudio: {
-    nl: "Je browser ondersteunt gesproken audio niet. De tekst staat hieronder.",
-    fr: "Ton navigateur ne prend pas en charge l'audio. Le texte est ci-dessous.",
-    en: "Your browser does not support spoken audio. The text is shown below.",
-    es: "Tu navegador no admite audio hablado. El texto aparece abajo.",
-    ru: "Ваш браузер не поддерживает озвучивание. Текст показан ниже.",
   } as ML,
   fout: {
     nl: "Er ging iets mis. Probeer het opnieuw.",
@@ -236,19 +228,17 @@ const STR = {
 };
 
 function UitlegPaneel({ token, taal, toon = "deelnemer" }: { token: string; taal: Taal; toon?: Toon }) {
-  const [actief, setActief] = useState(false); // uitleg gestart (script geladen + zichtbaar)
+  const [actief, setActief] = useState(false);
   const [index, setIndex] = useState(0);
   const [spreekt, setSpreekt] = useState(false);
   const [gepauzeerd, setGepauzeerd] = useState(false);
+  const [ttsLaden, setTtsLaden] = useState(false);
   const [fout, setFout] = useState<string | null>(null);
   const [paywallOpen, setPaywallOpen] = useState(false);
 
-  const synthRef = useRef<SpeechSynthesis | null>(
-    typeof window !== "undefined" && "speechSynthesis" in window ? window.speechSynthesis : null,
-  );
-  const audioOndersteund = synthRef.current !== null;
+  // Server-side audio (Sulafat — Vlaamse stem, altijd dezelfde ongeacht browser/taal)
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Limiet-status (zonder te starten): GET geeft script + limiet, maar verhoogt niet.
   const status = useQuery<UitlegResponse>({
     queryKey: ["/api/dashboard", token, "uitleg", toon],
     queryFn: async () => {
@@ -259,7 +249,6 @@ function UitlegPaneel({ token, taal, toon = "deelnemer" }: { token: string; taal
 
   const [script, setScript] = useState<UitlegScript | null>(null);
 
-  // Start = POST (verhoogt teller, kan 402 -> paywall geven).
   const start = useMutation({
     mutationFn: async () => {
       const res = await apiRequest("POST", `/api/dashboard/${token}/uitleg`, { toon });
@@ -294,60 +283,78 @@ function UitlegPaneel({ token, taal, toon = "deelnemer" }: { token: string; taal
   const blokken = script?.blokken ?? [];
   const huidig = blokken[index];
 
-  // --- Web Speech helpers -----------------------------------------------------
+  // --- Sulafat TTS helpers (server-side, Vlaamse stem — altijd dezelfde ongeacht browser) ---
   function stopSpraak() {
-    const s = synthRef.current;
-    if (s) s.cancel();
+    const a = audioRef.current;
+    if (a) {
+      a.pause();
+      a.src = "";
+    }
+    audioRef.current = null;
     setSpreekt(false);
     setGepauzeerd(false);
+    setTtsLaden(false);
   }
 
-  function spreek(tekst: string) {
-    const s = synthRef.current;
-    if (!s) return;
-    s.cancel();
-    const u = new SpeechSynthesisUtterance(tekst);
-    u.lang = VOICE_LOCALE[taal] ?? "nl-NL";
-    u.rate = 0.98;
-    u.pitch = 1;
-    const stem = s.getVoices().find((v) => v.lang === u.lang) || s.getVoices().find((v) => v.lang.startsWith(taal));
-    if (stem) u.voice = stem;
-    u.onend = () => {
+  async function spreek(tekst: string) {
+    stopSpraak();
+    setTtsLaden(true);
+    try {
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tekst }),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("TTS mislukt");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.onended = () => {
+        setSpreekt(false);
+        setGepauzeerd(false);
+        URL.revokeObjectURL(url);
+      };
+      audio.onerror = () => {
+        setSpreekt(false);
+        setGepauzeerd(false);
+      };
+      setTtsLaden(false);
+      setSpreekt(true);
+      audio.play();
+    } catch {
+      setTtsLaden(false);
       setSpreekt(false);
-      setGepauzeerd(false);
-    };
-    u.onerror = () => {
-      setSpreekt(false);
-      setGepauzeerd(false);
-    };
-    s.speak(u);
-    setSpreekt(true);
-    setGepauzeerd(false);
+      setFout(k(STR.fout, taal));
+    }
   }
 
   function speelHuidig() {
     if (huidig) spreek(huidig.tekst);
   }
+
   function pauzeOfHervat() {
-    const s = synthRef.current;
-    if (!s) return;
+    const a = audioRef.current;
+    if (!a) return;
     if (gepauzeerd) {
-      s.resume();
+      a.play();
       setGepauzeerd(false);
     } else {
-      s.pause();
+      a.pause();
       setGepauzeerd(true);
     }
   }
+
   function ga(naar: number) {
     const n = Math.max(0, Math.min(blokken.length - 1, naar));
     setIndex(n);
     stopSpraak();
     const b = blokken[n];
-    if (b && audioOndersteund) spreek(b.tekst);
+    if (b) spreek(b.tekst);
   }
 
-  // Stop spraak bij unmount / blokwissel-cleanup.
+  // Stop audio bij unmount.
   useEffect(() => () => stopSpraak(), []);
 
   const limiet = status.data?.limiet;
@@ -374,12 +381,6 @@ function UitlegPaneel({ token, taal, toon = "deelnemer" }: { token: string; taal
             </Badge>
           )}
         </div>
-
-        {!audioOndersteund && (
-          <p className="mt-4 rounded-lg bg-muted px-4 py-3 text-sm text-muted-foreground">
-            {k(STR.geenAudio, taal)}
-          </p>
-        )}
 
         {fout && <p className="mt-4 text-sm text-destructive">{fout}</p>}
 
@@ -423,23 +424,25 @@ function UitlegPaneel({ token, taal, toon = "deelnemer" }: { token: string; taal
             )}
 
             {/* Audio-bediening */}
-            {audioOndersteund && (
-              <div className="flex flex-wrap items-center gap-2">
-                {!spreekt ? (
-                  <Button size="sm" onClick={speelHuidig} data-testid={`button-uitleg-speel-${toon}`}>
-                    <Play className="mr-2 h-4 w-4" /> {k(STR.speel, taal)}
-                  </Button>
-                ) : (
-                  <Button size="sm" variant="secondary" onClick={pauzeOfHervat} data-testid={`button-uitleg-pauze-${toon}`}>
-                    {gepauzeerd ? <Play className="mr-2 h-4 w-4" /> : <Pause className="mr-2 h-4 w-4" />}
-                    {gepauzeerd ? k(STR.speel, taal) : k(STR.pauze, taal)}
-                  </Button>
-                )}
-                <Button size="sm" variant="ghost" onClick={stopSpraak} data-testid={`button-uitleg-stop-${toon}`}>
-                  <Square className="mr-2 h-4 w-4" /> {k(STR.stop, taal)}
+            <div className="flex flex-wrap items-center gap-2">
+              {ttsLaden ? (
+                <Button size="sm" disabled data-testid={`button-uitleg-laden-${toon}`}>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {k(STR.stemLaden, taal)}
                 </Button>
-              </div>
-            )}
+              ) : !spreekt ? (
+                <Button size="sm" onClick={speelHuidig} data-testid={`button-uitleg-speel-${toon}`}>
+                  <Play className="mr-2 h-4 w-4" /> {k(STR.speel, taal)}
+                </Button>
+              ) : (
+                <Button size="sm" variant="secondary" onClick={pauzeOfHervat} data-testid={`button-uitleg-pauze-${toon}`}>
+                  {gepauzeerd ? <Play className="mr-2 h-4 w-4" /> : <Pause className="mr-2 h-4 w-4" />}
+                  {gepauzeerd ? k(STR.speel, taal) : k(STR.pauze, taal)}
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" onClick={stopSpraak} data-testid={`button-uitleg-stop-${toon}`}>
+                <Square className="mr-2 h-4 w-4" /> {k(STR.stop, taal)}
+              </Button>
+            </div>
 
             {/* Bloknavigatie */}
             <div className="flex items-center justify-between gap-2">

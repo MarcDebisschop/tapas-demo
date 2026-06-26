@@ -103,6 +103,10 @@ async function buildAll() {
     logLevel: "info",
   });
 
+  // 5. Kopieer server/tts.py naar dist/ (wordt aangeroepen via spawn vanuit index.cjs)
+  await cp(path.join(root, "server", "tts.py"), path.join(root, "dist", "tts.py"), { force: true });
+  console.log("tts.py gekopieerd naar dist/.");
+
   console.log("build complete.");
 }
 

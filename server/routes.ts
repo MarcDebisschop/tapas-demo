@@ -1,6 +1,8 @@
 import type { Express } from "express";
 import { createServer } from "node:http";
 import type { Server } from "node:http";
+import { spawn } from "node:child_process";
+import { join } from "node:path";
 import { storage, db, CreditError, CREDITPAKKETTEN } from "./storage";
 import { buildQuestionManagerRoutes } from "./question-manager";
 import { registerCoachesAcademyMailRoutes } from "./routes-coaches-academy-mail";
@@ -36,7 +38,7 @@ import { parseProfiel, beantwoord as beantwoordProfielvraag, detecteerVraagTaal 
 import { bepaalRegio, kiesCoach, COACH_ROL, type RegioSleutel } from "./coach-register";
 import { bouwGalerij, galerijLabels } from "./galerij";
 import { bouwModule, MODULE_IDS } from "./modules";
-import { bouwUitlegScript, type Toon } from "./uitleg";
+import { bouwUitlegScript, VLAAMSE_STEM_PROMPT, type Toon } from "./uitleg";
 import { registerT4RRoutes } from "./t4r/routes";
 import { registerTeamscanRoutes } from "./teamscan/routes";
 import { registerHddRoutes } from "./hdd/routes";
@@ -1517,6 +1519,40 @@ export async function registerRoutes(
     });
   });
 
+
+  // =========================================================================
+  // SULAFAT TTS — Vlaamse stem (Gemini 2.5 Pro TTS, voice=sulafat)
+  // POST /api/tts  { tekst: string }
+  // Geeft mp3-audio terug. Altijd Vlaamse tongval via VLAAMSE_STEM_PROMPT.
+  // Geen token vereist (tekst komt van de client, niet uit de DB).
+  // =========================================================================
+  app.post("/api/tts", (req, res) => {
+    const tekst: string = (req.body?.tekst ?? "").trim();
+    if (!tekst) return res.status(400).json({ error: "tekst vereist" });
+    if (tekst.length > 4000) return res.status(400).json({ error: "tekst te lang (max 4000 tekens)" });
+
+    const volledigeTekst = VLAAMSE_STEM_PROMPT + "\n\n" + tekst;
+    // tts.py staat naast index.cjs in dist/ (gekopieerd door build.mjs)
+    const ttsScript = join(process.cwd(), "dist", "tts.py");
+
+    const py = spawn("python3", [ttsScript, volledigeTekst]);
+    const chunks: Buffer[] = [];
+
+    py.stdout.on("data", (chunk: Buffer) => chunks.push(chunk));
+    py.stderr.on("data", (d: Buffer) => console.error("[tts]", d.toString()));
+
+    py.on("close", (code) => {
+      if (code !== 0 || chunks.length === 0) {
+        if (!res.headersSent) res.status(500).json({ error: "TTS mislukt" });
+        return;
+      }
+      const audio = Buffer.concat(chunks);
+      res.setHeader("Content-Type", "audio/mpeg");
+      res.setHeader("Content-Length", audio.length);
+      res.setHeader("Cache-Control", "no-store");
+      res.end(audio);
+    });
+  });
 
   // =========================================================================
   // T4Recruitment — Fase 2: collaboratief instrument (sessies, kring, links).

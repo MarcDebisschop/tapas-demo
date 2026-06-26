@@ -16,6 +16,17 @@ import type { Taal } from "@shared/talen";
 import { filterTalentFoci } from "@shared/talent-constructs";
 
 // ---------------------------------------------------------------------------
+// VLAAMSE STEM — definitieve prompt voor Sulafat TTS
+// Bron: audio_scripts/*.txt uit T4Teens bronbestanden (Lana-keten)
+// Stem: Gemini 2.5 Pro TTS, voice="sulafat"
+// Gebruik: prefix ALTIJD voor de te spreken tekst bij TTS-generatie
+// ---------------------------------------------------------------------------
+export const VLAAMSE_STEM_PROMPT =
+  "Lees onderstaande voor in vlot Belgisch-Nederlands met een zachte Vlaamse tongval " +
+  "(Oost-Vlaanderen): zachte g, geen scherpe Hollandse klanken, geen Randstad-intonatie. " +
+  "Klink warm, kalm en uitnodigend.";
+
+// ---------------------------------------------------------------------------
 // Basis-typen + helpers (private kopieën — bewust niet geïmporteerd)
 // ---------------------------------------------------------------------------
 

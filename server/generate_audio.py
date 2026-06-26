@@ -29,7 +29,7 @@ TTS_OUTPUT_FORMAT = "mp3_44100_128"
 async def generate_audio(
     text: str,
     *,
-    voice: str = "kore",
+    voice: str = "sulafat",
     model: str = "gemini_2_5_pro_tts",
 ) -> bytes:
     client = LLMAPIClient()
