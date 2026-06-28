@@ -881,6 +881,34 @@ export function registerStmRoutes(app: Express, storage: any): void {
   const alertSentFlags = new Map<number, { trap1?: boolean; trap2?: boolean; trap3?: boolean }>();
   const mailLog: Array<{ beheerderId: number; trap: number; verstuurdAt: string; email: string; naam: string }> = [];
 
+  // ── Extra practitioners: geaccrediteerde coaches (niet-beheerder) ───────────
+  // ID-reeks 1001+ om nooit te botsen met echte beheerder-ID's.
+  // Bron: routes-coaches-academy-mail.ts (actief: 1, opl: TaPas Jester Niveau 4
+  //        of TaPas Accreditatie Niveau 1/2). Roald Borré zit al in beheerders.
+  const EXTRA_PRACTITIONERS: Array<{ id: number; naam: string; email: string }> = [
+    { id: 1001, naam: "Kris Debisschop",    email: "kris.debisschop@tapascity.com" },
+    { id: 1002, naam: "Herman Van Esbroeck", email: "herman@tapas-demo.be" },
+    { id: 1003, naam: "Prof. Leen Adams",    email: "leen.adams@tapas-demo.be" },
+    { id: 1004, naam: "Alan Bakx",           email: "alan.bakx@tapas-demo.be" },
+    { id: 1005, naam: "An Mortelmans",       email: "an.mortelmans@tapas-demo.be" },
+    { id: 1006, naam: "Andrea Hoffmann",     email: "andrea.hoffmann@tapas-demo.be" },
+    { id: 1007, naam: "Carl De Geest",       email: "carl.degeest@tapas-demo.be" },
+    { id: 1008, naam: "Caroline Lachat",     email: "caroline.lachat@tapas-demo.be" },
+    { id: 1009, naam: "Erik Franck",         email: "erik.franck@tapas-demo.be" },
+    { id: 1010, naam: "Gerlinde Cooymans",   email: "gerlinde.cooymans@tapas-demo.be" },
+    { id: 1011, naam: "Gina Peeters",        email: "gina.peeters@tapas-demo.be" },
+    { id: 1012, naam: "Jaccolien Molenaar",  email: "jaccolien.molenaar@tapas-demo.nl" },
+    { id: 1013, naam: "Katrien Vanherpe",    email: "katrien.vanherpe@tapas-demo.be" },
+    { id: 1014, naam: "Nadja Bakx-Trimbos", email: "nadja.bakx@tapas-demo.nl" },
+    { id: 1015, naam: "Tony Ramboer",        email: "tony.ramboer@tapas-demo.be" },
+    { id: 1016, naam: "Vanessa Luyten",      email: "vanessa.luyten@tapas-demo.be" },
+    { id: 1017, naam: "Veerle Van de Paer",  email: "veerle.vandepaer@tapas-demo.be" },
+    { id: 1018, naam: "Jason-Louise Graham", email: "jl.graham@tapas-demo.be" },
+    { id: 1019, naam: "Anne-Sofie Bogaerts", email: "as.bogaerts@tapas-demo.be" },
+    { id: 1020, naam: "Karen Thiers",        email: "karen.thiers@tapas-demo.be" },
+    { id: 1021, naam: "Anthony Van Aerdebrugge", email: "anthony.vanaerdebrugge@tapas-demo.be" },
+  ];
+
   function berekenKwaliteitsStatus(beheerderId: number): {
     afnames_count: number; norm: number; verwacht: number;
     progressie_pct: number; status_berekend: string; voorspelling_einde_jaar: number;
@@ -927,7 +955,11 @@ export function registerStmRoutes(app: Express, storage: any): void {
     if (!s?.adminId) return res.status(401).json({ error: "Enkel toegankelijk voor admins." });
     try {
       const alleBeheerders = await storage.listBeheerders();
-      const practitioners = alleBeheerders.map((b: any) => {
+      const allePractitioners = [
+        ...alleBeheerders.map((b: any) => ({ id: b.id, naam: b.naam, email: b.email })),
+        ...EXTRA_PRACTITIONERS,
+      ];
+      const practitioners = allePractitioners.map((b) => {
         const stats = berekenKwaliteitsStatus(b.id);
         const alerts = alertSentFlags.get(b.id) || {};
         return {
@@ -1014,7 +1046,11 @@ export function registerStmRoutes(app: Express, storage: any): void {
     if (!s?.adminId) return res.status(401).json({ error: "Geen toegang." });
     try {
       const alleBeheerders = await storage.listBeheerders();
-      const practitioners = alleBeheerders.map((b: any) => {
+      const allePractitionersKwartaal = [
+        ...alleBeheerders.map((b: any) => ({ id: b.id, naam: b.naam, email: b.email })),
+        ...EXTRA_PRACTITIONERS,
+      ];
+      const practitioners = allePractitionersKwartaal.map((b) => {
         const stats = berekenKwaliteitsStatus(b.id);
         return { beheerder_id: b.id, naam: b.naam, email: b.email, ...stats };
       });
