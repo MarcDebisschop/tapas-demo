@@ -5,7 +5,8 @@ Gebruik: python3 server/tts.py "<volledige tekst inclusief Vlaamse prompt>"
 Output: mp3-bytes naar stdout
 
 Twee modi (automatisch gekozen):
-  1. GEMINI_API_KEY aanwezig → google-genai REST API (Render-compatibel)
+  1. GEMINI_API_KEY aanwezig → Gemini generateContent REST API (Render-compatibel)
+     Gebruikt alleen stdlib (urllib, json, struct, subprocess) — geen pip nodig.
      Model: gemini-2.5-flash-preview-tts  |  Stem: Sulafat (Warm, Vlaamse tongval)
   2. Geen GEMINI_API_KEY → pplx interne SDK (sandbox-only fallback)
 
@@ -14,50 +15,74 @@ De Vlaamse prompt-prefix wordt toegevoegd door de aanroeper (routes.ts via VLAAM
 
 import asyncio
 import base64
+import json
 import os
 import struct
 import subprocess
 import sys
+import urllib.request
 
 
 TTS_VOICE = "Sulafat"
-# gemini-2.5-flash-preview-tts is goedkoper en snel genoeg voor profieluitleg
-TTS_MODEL_GENAI = "gemini-2.5-flash-preview-tts"
+TTS_MODEL_REST  = "gemini-2.5-flash-preview-tts"
 TTS_MODEL_PPLX  = "gemini_2_5_pro_tts"
 
+GEMINI_API_URL = (
+    "https://generativelanguage.googleapis.com/v1beta/models/"
+    "{model}:generateContent?key={key}"
+)
+
 
 # ---------------------------------------------------------------------------
-# Pad 1 — google-genai REST API (werkt op Render met GEMINI_API_KEY)
+# Pad 1 — Gemini REST API via stdlib urllib (geen pip-afhankelijkheid)
 # ---------------------------------------------------------------------------
 
-def genereer_via_genai(tekst: str) -> bytes:
-    """Genereer audio via google-genai library (GEMINI_API_KEY vereist)."""
-    from google import genai
-    from google.genai import types
+def genereer_via_rest(tekst: str, api_key: str) -> bytes:
+    """Genereer audio via Gemini generateContent REST API."""
+    url = GEMINI_API_URL.format(model=TTS_MODEL_REST, key=api_key)
 
-    api_key = os.environ["GEMINI_API_KEY"]
-    client = genai.Client(api_key=api_key)
+    payload = {
+        "contents": [{"parts": [{"text": tekst}]}],
+        "generationConfig": {
+            "responseModalities": ["AUDIO"],
+            "speechConfig": {
+                "voiceConfig": {
+                    "prebuiltVoiceConfig": {"voiceName": TTS_VOICE}
+                }
+            }
+        }
+    }
 
-    response = client.models.generate_content(
-        model=TTS_MODEL_GENAI,
-        contents=tekst,
-        config=types.GenerateContentConfig(
-            response_modalities=["AUDIO"],
-            speech_config=types.SpeechConfig(
-                voice_config=types.VoiceConfig(
-                    prebuilt_voice_config=types.PrebuiltVoiceConfig(
-                        voice_name=TTS_VOICE,
-                    )
-                )
-            ),
-        ),
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(
+        url,
+        data=data,
+        headers={"Content-Type": "application/json"},
+        method="POST",
     )
 
-    # De respons bevat ruwe PCM-audio (24 kHz, 16-bit mono)
-    audio_data = response.candidates[0].content.parts[0].inline_data.data
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        body = json.loads(resp.read().decode("utf-8"))
 
-    # Converteer PCM naar WAV, dan naar MP3 via ffmpeg
-    return pcm_naar_mp3(audio_data, sample_rate=24000, channels=1, sample_width=2)
+    # Audio zit in candidates[0].content.parts[0].inlineData.data (base64 PCM)
+    try:
+        inline = body["candidates"][0]["content"]["parts"][0]["inlineData"]
+        mime   = inline.get("mimeType", "audio/L16;rate=24000")
+        pcm    = base64.b64decode(inline["data"])
+    except (KeyError, IndexError) as e:
+        raise RuntimeError(f"Onverwacht Gemini-antwoord: {e}\n{json.dumps(body)[:400]}")
+
+    # Haal sample rate op uit MIME-type (bv. "audio/L16;rate=24000")
+    sample_rate = 24000
+    for part in mime.split(";"):
+        part = part.strip()
+        if part.startswith("rate="):
+            try:
+                sample_rate = int(part[5:])
+            except ValueError:
+                pass
+
+    return pcm_naar_mp3(pcm, sample_rate=sample_rate, channels=1, sample_width=2)
 
 
 def pcm_naar_mp3(pcm: bytes, sample_rate: int = 24000,
@@ -80,7 +105,6 @@ def pcm_naar_mp3(pcm: bytes, sample_rate: int = 24000,
             raise RuntimeError(f"ffmpeg fout: {result.stderr.decode()}")
         return result.stdout
     except FileNotFoundError:
-        # ffmpeg niet beschikbaar → retourneer WAV (browser speelt dat ook af)
         sys.stderr.write("[tts] ffmpeg niet gevonden, retourneer WAV\n")
         return wav
 
@@ -95,13 +119,13 @@ def pcm_naar_wav(pcm: bytes, sample_rate: int, channels: int,
         36 + data_size,
         b"WAVE",
         b"fmt ",
-        16,                          # chunk-grootte
+        16,
         1,                           # PCM
         channels,
         sample_rate,
-        sample_rate * channels * sample_width,  # byte rate
-        channels * sample_width,     # block align
-        sample_width * 8,            # bits per sample
+        sample_rate * channels * sample_width,
+        channels * sample_width,
+        sample_width * 8,
         b"data",
         data_size,
     )
@@ -152,15 +176,16 @@ if __name__ == "__main__":
         sys.exit(1)
 
     tekst = sys.argv[1]
+    api_key = os.environ.get("GEMINI_API_KEY", "").strip()
 
-    if os.environ.get("GEMINI_API_KEY"):
-        sys.stderr.write("[tts] Pad 1: google-genai REST API (Sulafat)\n")
+    if api_key:
+        sys.stderr.write("[tts] Pad 1: Gemini REST API (Sulafat, geen pip vereist)\n")
         try:
-            audio = genereer_via_genai(tekst)
+            audio = genereer_via_rest(tekst, api_key)
             sys.stdout.buffer.write(audio)
             sys.exit(0)
         except Exception as e:
-            sys.stderr.write(f"[tts] google-genai mislukt: {e}\n")
+            sys.stderr.write(f"[tts] REST API mislukt: {e}\n")
             sys.exit(1)
     else:
         sys.stderr.write("[tts] Pad 2: pplx interne SDK (sandbox)\n")
