@@ -283,17 +283,45 @@ function UitlegPaneel({ token, taal, toon = "deelnemer" }: { token: string; taal
   const blokken = script?.blokken ?? [];
   const huidig = blokken[index];
 
-  // --- Sulafat TTS helpers (server-side, Vlaamse stem — altijd dezelfde ongeacht browser) ---
+  // --- TTS helpers ---
+  // Primair: server-side Sulafat (Vlaamse stem via Gemini TTS).
+  // Fallback: Web Speech API (browser-ingebouwd) — geen foutmelding, wel uitleg.
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+
   function stopSpraak() {
     const a = audioRef.current;
-    if (a) {
-      a.pause();
-      a.src = "";
-    }
+    if (a) { a.pause(); a.src = ""; }
     audioRef.current = null;
+    if (utteranceRef.current) {
+      window.speechSynthesis?.cancel();
+      utteranceRef.current = null;
+    }
     setSpreekt(false);
     setGepauzeerd(false);
     setTtsLaden(false);
+  }
+
+  function spreekViaBrowser(tekst: string) {
+    if (!window.speechSynthesis) {
+      setFout(k(STR.fout, taal));
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utt = new SpeechSynthesisUtterance(tekst);
+    utt.lang = "nl-BE";
+    utt.rate = 0.92;
+    utt.pitch = 1.0;
+    // Voorkeur voor Nederlandstalige stem
+    const stemmen = window.speechSynthesis.getVoices();
+    const nlStem = stemmen.find(v => v.lang === "nl-BE") ||
+                   stemmen.find(v => v.lang.startsWith("nl"));
+    if (nlStem) utt.voice = nlStem;
+    utt.onend = () => { setSpreekt(false); setGepauzeerd(false); utteranceRef.current = null; };
+    utt.onerror = () => { setSpreekt(false); setGepauzeerd(false); };
+    utteranceRef.current = utt;
+    setSpreekt(true);
+    setTtsLaden(false);
+    window.speechSynthesis.speak(utt);
   }
 
   async function spreek(tekst: string) {
@@ -306,27 +334,34 @@ function UitlegPaneel({ token, taal, toon = "deelnemer" }: { token: string; taal
         body: JSON.stringify({ tekst }),
         credentials: "include",
       });
-      if (!res.ok) throw new Error("TTS mislukt");
+      if (!res.ok) {
+        // Server-TTS niet beschikbaar → stille fallback naar browser
+        spreekViaBrowser(tekst);
+        return;
+      }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
       audioRef.current = audio;
-      audio.onended = () => {
-        setSpreekt(false);
-        setGepauzeerd(false);
-        URL.revokeObjectURL(url);
-      };
-      audio.onerror = () => {
-        setSpreekt(false);
-        setGepauzeerd(false);
-      };
+      audio.onended = () => { setSpreekt(false); setGepauzeerd(false); URL.revokeObjectURL(url); };
+      audio.onerror = () => { spreekViaBrowser(tekst); };
       setTtsLaden(false);
       setSpreekt(true);
       audio.play();
     } catch {
-      setTtsLaden(false);
-      setSpreekt(false);
-      setFout(k(STR.fout, taal));
+      // Netwerk/parse fout → stille fallback naar browser
+      spreekViaBrowser(tekst);
+    }
+  }
+
+  function pauzeOfHervatBrowser() {
+    if (!window.speechSynthesis) return;
+    if (gepauzeerd) {
+      window.speechSynthesis.resume();
+      setGepauzeerd(false);
+    } else {
+      window.speechSynthesis.pause();
+      setGepauzeerd(true);
     }
   }
 
@@ -335,14 +370,16 @@ function UitlegPaneel({ token, taal, toon = "deelnemer" }: { token: string; taal
   }
 
   function pauzeOfHervat() {
-    const a = audioRef.current;
-    if (!a) return;
-    if (gepauzeerd) {
-      a.play();
-      setGepauzeerd(false);
-    } else {
-      a.pause();
-      setGepauzeerd(true);
+    // Server-side audio (HTMLAudioElement)
+    if (audioRef.current) {
+      const a = audioRef.current;
+      if (gepauzeerd) { a.play(); setGepauzeerd(false); }
+      else { a.pause(); setGepauzeerd(true); }
+      return;
+    }
+    // Browser-fallback (Web Speech API)
+    if (utteranceRef.current) {
+      pauzeOfHervatBrowser();
     }
   }
 
