@@ -2,12 +2,13 @@
 """
 server/tts.py — Sulafat TTS voor TaPas Platform
 Gebruik: python3 server/tts.py "<volledige tekst inclusief Vlaamse prompt>"
-Output: mp3-bytes naar stdout
+Output: mp3-bytes (of WAV als ffmpeg ontbreekt) naar stdout
 
 Twee modi (automatisch gekozen):
   1. GEMINI_API_KEY aanwezig → Gemini generateContent REST API (Render-compatibel)
      Gebruikt alleen stdlib (urllib, json, struct, subprocess) — geen pip nodig.
      Model: gemini-2.5-flash-preview-tts  |  Stem: Sulafat (Warm, Vlaamse tongval)
+     Fallback model: gemini-2.5-flash-tts (stabiele alias)
   2. Geen GEMINI_API_KEY → pplx interne SDK (sandbox-only fallback)
 
 De Vlaamse prompt-prefix wordt toegevoegd door de aanroeper (routes.ts via VLAAMSE_STEM_PROMPT).
@@ -20,11 +21,16 @@ import os
 import struct
 import subprocess
 import sys
+import urllib.error
 import urllib.request
 
 
 TTS_VOICE = "Sulafat"
-TTS_MODEL_REST  = "gemini-2.5-flash-preview-tts"
+# Probeer eerst het preview model, dan de stabiele alias
+TTS_MODELS_REST = [
+    "gemini-2.5-flash-preview-tts",
+    "gemini-2.5-flash-tts",
+]
 TTS_MODEL_PPLX  = "gemini_2_5_pro_tts"
 
 GEMINI_API_URL = (
@@ -37,9 +43,9 @@ GEMINI_API_URL = (
 # Pad 1 — Gemini REST API via stdlib urllib (geen pip-afhankelijkheid)
 # ---------------------------------------------------------------------------
 
-def genereer_via_rest(tekst: str, api_key: str) -> bytes:
-    """Genereer audio via Gemini generateContent REST API."""
-    url = GEMINI_API_URL.format(model=TTS_MODEL_REST, key=api_key)
+def genereer_via_rest_model(tekst: str, api_key: str, model: str) -> bytes:
+    """Genereer audio via Gemini generateContent REST API met een specifiek model."""
+    url = GEMINI_API_URL.format(model=model, key=api_key)
 
     payload = {
         "contents": [{"parts": [{"text": tekst}]}],
@@ -57,12 +63,29 @@ def genereer_via_rest(tekst: str, api_key: str) -> bytes:
     req = urllib.request.Request(
         url,
         data=data,
-        headers={"Content-Type": "application/json"},
+        headers={
+            "Content-Type": "application/json",
+            "x-goog-api-key": api_key,
+        },
         method="POST",
     )
 
-    with urllib.request.urlopen(req, timeout=30) as resp:
-        body = json.loads(resp.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            body = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        # Lees de volledige response body voor diagnostiek
+        try:
+            err_body = e.read().decode("utf-8")
+            err_json = json.loads(err_body)
+            err_msg = err_json.get("error", {}).get("message", err_body[:300])
+            err_status = err_json.get("error", {}).get("status", "UNKNOWN")
+        except Exception:
+            err_msg = str(e)
+            err_status = "PARSE_ERROR"
+        raise RuntimeError(f"HTTP {e.code} {err_status}: {err_msg}")
+    except urllib.error.URLError as e:
+        raise RuntimeError(f"Netwerk-/SSL-fout: {e.reason}")
 
     # Audio zit in candidates[0].content.parts[0].inlineData.data (base64 PCM)
     try:
@@ -70,9 +93,9 @@ def genereer_via_rest(tekst: str, api_key: str) -> bytes:
         mime   = inline.get("mimeType", "audio/L16;rate=24000")
         pcm    = base64.b64decode(inline["data"])
     except (KeyError, IndexError) as e:
-        raise RuntimeError(f"Onverwacht Gemini-antwoord: {e}\n{json.dumps(body)[:400]}")
+        raise RuntimeError(f"Onverwacht Gemini-antwoord: {e}\n{json.dumps(body)[:500]}")
 
-    # Haal sample rate op uit MIME-type (bv. "audio/L16;rate=24000")
+    # Haal sample rate op uit MIME-type (bv. "audio/L16;codec=pcm;rate=24000")
     sample_rate = 24000
     for part in mime.split(";"):
         part = part.strip()
@@ -82,12 +105,26 @@ def genereer_via_rest(tekst: str, api_key: str) -> bytes:
             except ValueError:
                 pass
 
+    sys.stderr.write(f"[tts] PCM ontvangen: {len(pcm)} bytes, samplerate={sample_rate}\n")
     return pcm_naar_mp3(pcm, sample_rate=sample_rate, channels=1, sample_width=2)
+
+
+def genereer_via_rest(tekst: str, api_key: str) -> bytes:
+    """Probeer meerdere modellen in volgorde totdat één slaagt."""
+    laatste_fout = None
+    for model in TTS_MODELS_REST:
+        sys.stderr.write(f"[tts] Probeer model: {model}\n")
+        try:
+            return genereer_via_rest_model(tekst, api_key, model)
+        except RuntimeError as e:
+            sys.stderr.write(f"[tts] Model {model} mislukt: {e}\n")
+            laatste_fout = e
+    raise laatste_fout
 
 
 def pcm_naar_mp3(pcm: bytes, sample_rate: int = 24000,
                   channels: int = 1, sample_width: int = 2) -> bytes:
-    """Converteer ruwe PCM-bytes naar MP3 via ffmpeg."""
+    """Converteer ruwe PCM-bytes naar MP3 via ffmpeg. Valt terug op WAV als ffmpeg ontbreekt."""
     wav = pcm_naar_wav(pcm, sample_rate, channels, sample_width)
     try:
         result = subprocess.run(
@@ -102,10 +139,16 @@ def pcm_naar_mp3(pcm: bytes, sample_rate: int = 24000,
             timeout=30,
         )
         if result.returncode != 0:
-            raise RuntimeError(f"ffmpeg fout: {result.stderr.decode()}")
+            sys.stderr.write(f"[tts] ffmpeg fout (returncode {result.returncode}): {result.stderr.decode()[:200]}\n")
+            sys.stderr.write("[tts] Fallback: WAV retourneren\n")
+            return wav
+        sys.stderr.write(f"[tts] MP3 gegenereerd: {len(result.stdout)} bytes\n")
         return result.stdout
     except FileNotFoundError:
-        sys.stderr.write("[tts] ffmpeg niet gevonden, retourneer WAV\n")
+        sys.stderr.write("[tts] ffmpeg niet gevonden — WAV retourneren (browser ondersteunt WAV)\n")
+        return wav
+    except subprocess.TimeoutExpired:
+        sys.stderr.write("[tts] ffmpeg timeout — WAV retourneren\n")
         return wav
 
 
@@ -178,17 +221,20 @@ if __name__ == "__main__":
     tekst = sys.argv[1]
     api_key = os.environ.get("GEMINI_API_KEY", "").strip()
 
+    # Diagnostische logging (geen gevoelige data)
+    sys.stderr.write(f"[tts] Tekstlengte: {len(tekst)} tekens\n")
     if api_key:
+        sys.stderr.write(f"[tts] API key aanwezig: {api_key[:8]}...\n")
         sys.stderr.write("[tts] Pad 1: Gemini REST API (Sulafat, geen pip vereist)\n")
         try:
             audio = genereer_via_rest(tekst, api_key)
             sys.stdout.buffer.write(audio)
             sys.exit(0)
         except Exception as e:
-            sys.stderr.write(f"[tts] REST API mislukt: {e}\n")
+            sys.stderr.write(f"[tts] REST API definitief mislukt: {e}\n")
             sys.exit(1)
     else:
-        sys.stderr.write("[tts] Pad 2: pplx interne SDK (sandbox)\n")
+        sys.stderr.write("[tts] Geen GEMINI_API_KEY — Pad 2: pplx interne SDK (sandbox)\n")
         try:
             audio = asyncio.run(genereer_via_pplx(tekst))
             sys.stdout.buffer.write(audio)
