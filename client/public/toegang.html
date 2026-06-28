@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+  <title>TaPas — Jouw toegang</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Lora:wght@400;600&family=Architects+Daughter&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+
+    body {
+      min-height: 100dvh;
+      background: radial-gradient(120% 90% at 50% 0%, #0e1520 0%, #080d18 55%, #030508 100%);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 20px;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      overflow: hidden;
+      position: relative;
+      transition: background 1.2s ease;
+    }
+
+    /* ── Sterren-overlay (altijd) ── */
+    #sterren {
+      position: absolute; inset: 0; pointer-events: none;
+      background-image:
+        radial-gradient(1px 1px at 20% 30%, rgba(216,201,163,0.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 80% 15%, rgba(255,255,255,0.4) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 50% 60%, rgba(216,201,163,0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 10% 70%, rgba(255,255,255,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 90% 80%, rgba(216,201,163,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 35% 85%, rgba(255,255,255,0.3) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 65% 40%, rgba(216,201,163,0.45) 0%, transparent 100%),
+        radial-gradient(1px 1px at 45% 10%, rgba(255,255,255,0.35) 0%, transparent 100%);
+      opacity: 0; transition: opacity 1s;
+    }
+    body.fase-geladen #sterren { opacity: 1; }
+
+    /* ── Achtergrondafbeelding ── */
+    #bg-img {
+      position: absolute; inset: 0; pointer-events: none;
+      background-size: cover; background-position: center center; background-repeat: no-repeat;
+      opacity: 0; transition: opacity 1.4s ease;
+    }
+    body.fase-reveal #bg-img,
+    body.fase-animatie #bg-img,
+    body.fase-ademhaling #bg-img { opacity: 1; }
+
+    /* ── Donkere overlay ── */
+    #overlay-donker {
+      position: absolute; inset: 0; pointer-events: none;
+      background: radial-gradient(70% 60% at 50% 48%, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.34) 60%, rgba(0,0,0,0.52) 100%);
+    }
+
+    /* ── Accent glow ── */
+    #overlay-glow {
+      position: absolute; inset: 0; pointer-events: none;
+      opacity: 0; transition: opacity 1.6s;
+    }
+    body.fase-reveal #overlay-glow,
+    body.fase-animatie #overlay-glow,
+    body.fase-ademhaling #overlay-glow { opacity: 0.22; }
+
+    /* ── Inhoud container ── */
+    #inhoud {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 420px;
+      text-align: center;
+    }
+
+    /* ── TaPas logo boven (laadfase) ── */
+    #laad-logo {
+      display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 14px;
+    }
+    .logo-bol {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: radial-gradient(circle, #d8c9a3 0%, rgba(216,201,163,0.3) 60%, transparent 100%);
+      box-shadow: 0 0 14px rgba(216,201,163,0.7), 0 0 28px rgba(216,201,163,0.3);
+    }
+    .logo-tekst {
+      font-size: 22px; font-weight: 700; letter-spacing: 0.12em;
+      color: rgba(255,255,255,0.92); font-family: 'Playfair Display', Georgia, serif;
+      text-transform: uppercase;
+    }
+    #laad-status { font-size: 13px; color: rgba(255,255,255,0.38); letter-spacing: 0.1em; margin-top: 8px; }
+
+    /* ── Fase: reveal / animatie ── */
+    #welkom-tekst {
+      font-size: 26px; font-weight: 700; letter-spacing: -0.01em;
+      line-height: 1.25; margin: 0; color: #d8c9a3;
+      opacity: 0; transform: translateY(16px); transition: opacity 0.9s ease, transform 0.9s ease;
+    }
+    body.fase-reveal #welkom-tekst,
+    body.fase-animatie #welkom-tekst { opacity: 1; transform: translateY(0); }
+
+    #ondertitel {
+      margin-top: 12px; font-size: 14.5px; line-height: 1.6;
+      color: rgba(255,255,255,0.66);
+      opacity: 0; transition: opacity 0.9s ease 0.2s;
+    }
+    body.fase-reveal #ondertitel { opacity: 1; }
+
+    /* ── Draaischijven ── */
+    #schijven {
+      display: flex; gap: 12px; justify-content: center; margin-top: 30px;
+    }
+    .schijf {
+      position: relative; width: 56px; height: 84px; border-radius: 12px;
+      background: linear-gradient(180deg, #344158 0%, #1b2740 50%, #0e1830 100%);
+      border: 1px solid rgba(216,201,163,0.35);
+      overflow: hidden;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -8px 14px rgba(0,0,0,0.5);
+      transition: border-color 0.4s ease, box-shadow 0.4s ease;
+    }
+    .schijf.juist {
+      border-color: var(--accent, #d8c9a3);
+      box-shadow: 0 0 18px var(--accent-zacht, rgba(216,201,163,0.45)), inset 0 1px 0 rgba(255,255,255,0.12);
+    }
+    .schijf-gradient {
+      position: absolute; inset: 0; pointer-events: none; z-index: 2;
+      background: linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 35%, rgba(0,0,0,0) 65%, rgba(0,0,0,0.55) 100%);
+    }
+    .schijf-getal {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      font-size: 34px; font-weight: 600; font-variant-numeric: tabular-nums;
+      color: rgba(255,255,255,0.82);
+      transition: color 0.4s ease;
+    }
+    .schijf-getal.wacht { font-size: 28px; color: rgba(255,255,255,0.28); }
+    .schijf-getal.juist { color: var(--accent, #d8c9a3); text-shadow: 0 0 12px var(--accent-zacht, rgba(216,201,163,0.45)); }
+
+    /* ── Knop ── */
+    #activeer-knop {
+      margin-top: 32px; width: 100%; padding: 14px 16px; border-radius: 11px;
+      border: 1px solid rgba(216,201,163,0.45); cursor: pointer;
+      background: #d8c9a3; color: #111626; font-size: 16px; font-weight: 700;
+      letter-spacing: 0.02em;
+      box-shadow: 0 0 28px rgba(216,201,163,0.45);
+      transition: transform 0.1s ease, box-shadow 0.2s ease, opacity 0.3s;
+      font-family: 'Playfair Display', Georgia, serif;
+      opacity: 0;
+    }
+    body.fase-reveal #activeer-knop { opacity: 1; transition: transform 0.1s ease, box-shadow 0.2s ease, opacity 0.9s ease 0.3s; }
+    #activeer-knop:hover { transform: scale(1.02); box-shadow: 0 0 40px rgba(216,201,163,0.55); }
+    #activeer-knop:disabled { opacity: 0.5; cursor: default; transform: none; }
+
+    #animatie-label {
+      font-size: 14px; color: rgba(255,255,255,0.5); margin-bottom: 28px;
+      display: none;
+    }
+    body.fase-animatie #animatie-label { display: block; }
+    body.fase-animatie #activeer-knop { display: none; }
+    body.fase-animatie #ondertitel { opacity: 0; }
+
+    /* ── Ademhaling ── */
+    #ademhaling {
+      display: none; flex-direction: column; align-items: center; gap: 28px;
+    }
+    body.fase-ademhaling #ademhaling { display: flex; }
+    body.fase-ademhaling #schijven,
+    body.fase-ademhaling #welkom-tekst,
+    body.fase-ademhaling #ondertitel,
+    body.fase-ademhaling #activeer-knop,
+    body.fase-ademhaling #animatie-label { display: none; }
+
+    #adem-ring {
+      width: 200px; height: 200px; position: relative;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #adem-bol {
+      position: absolute; width: 110px; height: 110px; border-radius: 50%;
+      background: radial-gradient(circle at 50% 45%, #d8c9a3 0%, rgba(216,201,163,0.3) 55%, transparent 75%);
+      box-shadow: 0 0 60px rgba(216,201,163,0.45);
+      transition: transform 4s ease-in-out, opacity 4s ease-in-out;
+    }
+    #adem-label {
+      position: relative; z-index: 1; font-size: 16px; font-weight: 500;
+      color: rgba(255,255,255,0.92); letter-spacing: 0.04em;
+    }
+    #mantra {
+      max-width: 320px; text-align: center; font-size: 17px; line-height: 1.5;
+      color: #d8c9a3; font-style: italic;
+      font-family: 'Playfair Display', Georgia, serif;
+    }
+    #sla-over {
+      background: transparent; border: none; color: rgba(255,255,255,0.55);
+      font-size: 13.5px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px;
+    }
+
+    /* ── Fout ── */
+    #fout {
+      display: none; text-align: center; color: #ffb4a8; font-size: 15px; line-height: 1.6;
+    }
+    #fout.toon { display: block; }
+  </style>
+</head>
+<body class="fase-geladen">
+
+  <!-- Achtergrond-lagen -->
+  <div id="sterren"></div>
+  <div id="bg-img"></div>
+  <div id="overlay-donker"></div>
+  <div id="overlay-glow"></div>
+
+  <!-- Inhoud -->
+  <div id="inhoud">
+
+    <!-- Laad-scherm (terwijl API-call loopt) -->
+    <div id="laad-scherm">
+      <div id="laad-logo">
+        <div class="logo-bol"></div>
+        <span class="logo-tekst">TaPas</span>
+        <div class="logo-bol"></div>
+      </div>
+      <p id="laad-status">Even geduld…</p>
+    </div>
+
+    <!-- Welkomtekst (zichtbaar in reveal + animatie) -->
+    <h1 id="welkom-tekst" style="display:none;"></h1>
+
+    <!-- Ondertitel -->
+    <p id="ondertitel" style="display:none;"></p>
+
+    <!-- Animatie-label -->
+    <p id="animatie-label">De schijven draaien…</p>
+
+    <!-- Draaischijven -->
+    <div id="schijven" style="display:none;">
+      <div class="schijf" id="s0"><div class="schijf-gradient"></div><div class="schijf-getal wacht" id="g0">–</div></div>
+      <div class="schijf" id="s1"><div class="schijf-gradient"></div><div class="schijf-getal wacht" id="g1">–</div></div>
+      <div class="schijf" id="s2"><div class="schijf-gradient"></div><div class="schijf-getal wacht" id="g2">–</div></div>
+      <div class="schijf" id="s3"><div class="schijf-gradient"></div><div class="schijf-getal wacht" id="g3">–</div></div>
+    </div>
+
+    <!-- Activeer-knop -->
+    <button id="activeer-knop" disabled style="display:none;">Activeer mijn slot</button>
+
+    <!-- Ademhaling -->
+    <div id="ademhaling">
+      <div id="adem-ring">
+        <div id="adem-bol"></div>
+        <span id="adem-label">Adem in</span>
+      </div>
+      <p id="mantra"></p>
+      <button id="sla-over">Sla over</button>
+    </div>
+
+    <!-- Fout -->
+    <div id="fout">
+      <p>Token niet herkend.</p>
+      <p style="margin-top:8px;font-size:13px;color:rgba(255,255,255,0.5);">Controleer je uitnodigingslink of ga naar <a href="https://tapas-platform-2.pplx.app/#/" style="color:#d8c9a3;">het platform</a>.</p>
+    </div>
+
+  </div><!-- /inhoud -->
+
+<script>
+// =============================================================================
+// TaPas Toegang — R31 — Volledig zelfstandig statisch HTML-bestand
+// Geserveerd door S3 (geen Node-server betrokken).
+// URL: https://tapas-platform-2.pplx.app/toegang.html?t=TOKEN
+//
+// Werking:
+//  1. Lees token uit ?t= query string
+//  2. POST /port/5000/api/deelnemers/login met email = token (token-modus)
+//     → Als dat faalt: gebruik token direct (skin bepaald uit token-prefix)
+//  3. Toon skin-achtergrond + welkom + draaischijven
+//  4. Deelnemer klikt "Activeer mijn slot"
+//  5. Draaischijven animeren naar persoonlijke code
+//  6. Ademhaling (12.5s, overslaan mogelijk)
+//  7. sessionStorage.setItem('tapas_skip_intro', '1')
+//  8. window.location.replace naar /#/dashboard/TOKEN
+// =============================================================================
+
+(function() {
+  'use strict';
+
+  // ── Constanten ──────────────────────────────────────────────────────────────
+  var BASE = 'https://tapas-platform-2.pplx.app';
+  var API  = BASE + '/port/5000';
+
+  // ── Skin configuratie ───────────────────────────────────────────────────────
+  var SKINS = {
+    business: {
+      bg: 'radial-gradient(120% 90% at 50% 0%, #14213d 0%, #0b1326 55%, #060a16 100%)',
+      bgImage: '/poort/bg-business.png',
+      accent: '#d8c9a3',
+      accentZacht: 'rgba(216,201,163,0.45)',
+      schijf: 'linear-gradient(180deg, #344158 0%, #1b2740 50%, #0e1830 100%)',
+      schijfRand: 'rgba(216,201,163,0.35)',
+      font: "'Playfair Display', Georgia, serif",
+      welkom: 'Welkom terug, {naam}.',
+      welkomZonder: 'Welkom terug. Jouw plek is er nog.',
+      ondertitel: 'Jouw persoonlijke combinatie staat klaar. Activeer het slot om verder te gaan.',
+      activeerKnop: 'Activeer mijn slot',
+      mantra: 'De beste leiders weten wie ze zijn als niemand kijkt.',
+    },
+    students: {
+      bg: 'radial-gradient(120% 90% at 50% 0%, #2a1f3d 0%, #1a1530 55%, #0f0b1c 100%)',
+      bgImage: '/poort/bg-students.png',
+      accent: '#e9c46a',
+      accentZacht: 'rgba(233,196,106,0.45)',
+      schijf: 'linear-gradient(180deg, #4a3d2a 0%, #2c2418 50%, #1a140c 100%)',
+      schijfRand: 'rgba(233,196,106,0.4)',
+      font: "'Lora', Georgia, serif",
+      welkom: 'Fijn dat je er weer bent, {naam}.',
+      welkomZonder: 'Fijn dat je er weer bent. Jouw plek is er nog.',
+      ondertitel: 'Jouw persoonlijke combinatie staat klaar. Activeer het slot om verder te gaan.',
+      activeerKnop: 'Activeer mijn slot',
+      mantra: 'Richting kiezen vraagt geen zekerheid — alleen eerlijkheid over wie je bent.',
+    },
+    teens: {
+      bg: 'radial-gradient(120% 90% at 50% 0%, #3a2150 0%, #241338 55%, #150a26 100%)',
+      bgImage: '/poort/bg-teens.png',
+      accent: '#c9a8ff',
+      accentZacht: 'rgba(201,168,255,0.5)',
+      schijf: 'linear-gradient(180deg, #4d3a6e 0%, #2e2147 50%, #1b1230 100%)',
+      schijfRand: 'rgba(201,168,255,0.45)',
+      font: "'Architects Daughter', cursive",
+      welkom: 'Hé, daar ben je weer, {naam}.',
+      welkomZonder: 'Hé, daar ben je weer. Jouw plek is er nog.',
+      ondertitel: 'Jouw geheime combinatie staat klaar. Activeer het slot om naar jouw plek te gaan.',
+      activeerKnop: 'Activeer mijn slot',
+      mantra: 'Wat jou doet oplichten, is geen toeval. Dat ben jij.',
+    }
+  };
+
+  // ── State ───────────────────────────────────────────────────────────────────
+  var token = '';
+  var skin = SKINS.business;
+  var skinKey = 'business';
+  var dashboardToken = '';
+  var voornaam = '';
+  var doelCombo = [2, 0, 2, 6];
+  var schijfWaarden = [0, 0, 0, 0];
+  var animatieInterval = null;
+  var fase = 'laden';
+
+  // ── DOM ─────────────────────────────────────────────────────────────────────
+  var body       = document.body;
+  var laadScherm = document.getElementById('laad-scherm');
+  var laadStatus = document.getElementById('laad-status');
+  var welkomEl   = document.getElementById('welkom-tekst');
+  var ondertitelEl = document.getElementById('ondertitel');
+  var schijvenEl = document.getElementById('schijven');
+  var activeerKnop = document.getElementById('activeer-knop');
+  var animatieLabel = document.getElementById('animatie-label');
+  var ademhalingEl = document.getElementById('ademhaling');
+  var ademBol    = document.getElementById('adem-bol');
+  var ademLabel  = document.getElementById('adem-label');
+  var mantraEl   = document.getElementById('mantra');
+  var slaOverKnop = document.getElementById('sla-over');
+  var foutEl     = document.getElementById('fout');
+  var bgImg      = document.getElementById('bg-img');
+  var overlayGlow = document.getElementById('overlay-glow');
+
+  // ── Hulpfuncties ────────────────────────────────────────────────────────────
+  function parseCode(code) {
+    if (code && /^\d{4}$/.test(code)) return code.split('').map(Number);
+    return [2, 0, 2, 6];
+  }
+
+  function bepaalSkinUitToken(t) {
+    var tl = (t || '').toLowerCase();
+    if (tl.indexOf('teen') !== -1 || tl.indexOf('jana') !== -1 || tl.indexOf('lana') !== -1) return 'teens';
+    if (tl.indexOf('student') !== -1 || tl.indexOf('studen') !== -1 || tl.indexOf('luca') !== -1) return 'students';
+    return 'business';
+  }
+
+  function stelSkinIn(sk) {
+    skinKey = sk;
+    skin = SKINS[sk];
+    body.style.background = skin.bg;
+    bgImg.style.backgroundImage = 'url(' + skin.bgImage + ')';
+    overlayGlow.style.background = 'radial-gradient(46% 36% at 50% 46%, ' + skin.accentZacht + ' 0%, transparent 70%)';
+    body.style.setProperty('--accent', skin.accent);
+    body.style.setProperty('--accent-zacht', skin.accentZacht);
+    // Schijven skin
+    for (var i = 0; i < 4; i++) {
+      var s = document.getElementById('s' + i);
+      if (s) s.style.background = skin.schijf;
+    }
+    // Knop
+    activeerKnop.style.background = skin.accent;
+    activeerKnop.style.border = '1px solid ' + skin.accentZacht;
+    activeerKnop.style.boxShadow = '0 0 28px ' + skin.accentZacht;
+    activeerKnop.style.fontFamily = skin.font;
+    activeerKnop.textContent = skin.activeerKnop;
+    // Welkom
+    welkomEl.style.fontFamily = skin.font;
+    welkomEl.style.color = skin.accent;
+    welkomEl.style.textShadow = '0 0 20px ' + skin.accentZacht;
+    // Mantra
+    mantraEl.textContent = skin.mantra;
+    mantraEl.style.color = skin.accent;
+    mantraEl.style.fontFamily = skin.font;
+    // Adem-bol
+    ademBol.style.background = 'radial-gradient(circle at 50% 45%, ' + skin.accent + ' 0%, ' + skin.accentZacht + ' 55%, transparent 75%)';
+    ademBol.style.boxShadow = '0 0 60px ' + skin.accentZacht;
+  }
+
+  function stelWelkomIn(naam) {
+    var tekst = naam
+      ? skin.welkom.replace('{naam}', naam)
+      : skin.welkomZonder;
+    welkomEl.textContent = tekst;
+  }
+
+  function updateSchijf(i, waarde, isJuist, isWacht) {
+    var g = document.getElementById('g' + i);
+    var s = document.getElementById('s' + i);
+    if (!g || !s) return;
+    if (isWacht) {
+      g.textContent = '–';
+      g.className = 'schijf-getal wacht';
+      s.classList.remove('juist');
+    } else {
+      g.textContent = String(waarde);
+      if (isJuist) {
+        g.className = 'schijf-getal juist';
+        s.classList.add('juist');
+      } else {
+        g.className = 'schijf-getal';
+        s.classList.remove('juist');
+      }
+    }
+  }
+
+  // ── Fase-overgangen ─────────────────────────────────────────────────────────
+  function naarReveal() {
+    fase = 'reveal';
+    // Verberg laad-scherm
+    laadScherm.style.display = 'none';
+    // Toon elementen
+    welkomEl.style.display = 'block';
+    ondertitelEl.style.display = 'block';
+    ondertitelEl.textContent = skin.ondertitel;
+    schijvenEl.style.display = 'flex';
+    activeerKnop.style.display = 'block';
+    activeerKnop.disabled = false;
+    // Zet fase-klassen
+    body.className = 'fase-reveal';
+  }
+
+  function naarAnimatie() {
+    fase = 'animatie';
+    body.className = 'fase-animatie';
+    startSchijfAnimatie();
+  }
+
+  function naarAdemhaling() {
+    fase = 'ademhaling';
+    body.className = 'fase-ademhaling';
+    startAdemhaling();
+  }
+
+  function naarDashboard() {
+    try { sessionStorage.setItem('tapas_skip_intro', '1'); } catch(e) {}
+    window.location.replace(BASE + '/#/dashboard/' + dashboardToken);
+  }
+
+  function toonFout() {
+    laadScherm.style.display = 'none';
+    foutEl.classList.add('toon');
+  }
+
+  // ── Schijf-animatie ─────────────────────────────────────────────────────────
+  function startSchijfAnimatie() {
+    if (animatieInterval) clearInterval(animatieInterval);
+    var tick = 0;
+    var waarden = [0, 0, 0, 0];
+
+    animatieInterval = setInterval(function() {
+      var schijfIdx = Math.min(Math.floor(tick / 8), 4);
+
+      if (schijfIdx > 3) {
+        clearInterval(animatieInterval);
+        animatieInterval = null;
+        // Alle schijven op doel
+        for (var j = 0; j < 4; j++) {
+          updateSchijf(j, doelCombo[j], true, false);
+        }
+        setTimeout(naarAdemhaling, 900);
+        return;
+      }
+
+      var tickInSchijf = tick % 8;
+
+      if (tickInSchijf < 7) {
+        waarden[schijfIdx] = Math.floor(Math.random() * 10);
+        updateSchijf(schijfIdx, waarden[schijfIdx], false, false);
+      } else {
+        waarden[schijfIdx] = doelCombo[schijfIdx];
+        updateSchijf(schijfIdx, waarden[schijfIdx], true, false);
+      }
+
+      tick++;
+    }, 70);
+  }
+
+  // ── Ademhaling ──────────────────────────────────────────────────────────────
+  function startAdemhaling() {
+    var timers = [];
+
+    // Fase: adem in (0-4s)
+    ademBol.style.transition = 'transform 4s ease-in-out, opacity 4s ease-in-out';
+    ademBol.style.transform = 'scale(1.6)';
+    ademBol.style.opacity = '0.95';
+    ademLabel.textContent = 'Adem in';
+
+    // Fase: houd vast (4-6s)
+    timers.push(setTimeout(function() {
+      ademBol.style.transition = 'transform 0.2s ease-in-out, opacity 0.2s ease-in-out';
+      ademLabel.textContent = 'Houd vast';
+    }, 4000));
+
+    // Fase: adem uit (6-12s)
+    timers.push(setTimeout(function() {
+      ademBol.style.transition = 'transform 6s ease-in-out, opacity 6s ease-in-out';
+      ademBol.style.transform = 'scale(1.0)';
+      ademBol.style.opacity = '0.7';
+      ademLabel.textContent = 'Adem uit';
+    }, 6000));
+
+    // Naar dashboard (12.5s)
+    timers.push(setTimeout(naarDashboard, 12500));
+
+    slaOverKnop.onclick = function() {
+      timers.forEach(clearTimeout);
+      naarDashboard();
+    };
+  }
+
+  // ── Activeer-knop ───────────────────────────────────────────────────────────
+  activeerKnop.onclick = function() {
+    if (fase !== 'reveal') return;
+    naarAnimatie();
+  };
+
+  // ── Hoofd-initialisatie ─────────────────────────────────────────────────────
+  function init() {
+    // Lees token uit query string
+    var params = new URLSearchParams(window.location.search);
+    token = (params.get('t') || '').replace(/[^a-zA-Z0-9_-]/g, '');
+
+    if (!token || token.length < 8) {
+      toonFout();
+      return;
+    }
+
+    // Bepaal skin voorlopig uit token (wordt overschreven door API-respons)
+    var voorlopigeSkin = bepaalSkinUitToken(token);
+    stelSkinIn(voorlopigeSkin);
+
+    // API-call: token-login (server herkent token direct)
+    laadStatus.textContent = 'Jouw plek zoeken…';
+
+    fetch(API + '/api/deelnemers/token-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: token })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (!data || !data.dashboardToken) {
+        // Fallback: token IS het dashboardToken
+        dashboardToken = token;
+        doelCombo = [2, 0, 2, 6];
+        voornaam = '';
+        stelSkinIn(bepaalSkinUitToken(token));
+        stelWelkomIn('');
+        naarReveal();
+        return;
+      }
+      dashboardToken = data.dashboardToken || token;
+      voornaam = data.voornaam || '';
+      doelCombo = parseCode(data.dashboardCode);
+      // Skin: server wint
+      var serverSkin = (data.skin || '').toLowerCase();
+      var sk = (serverSkin === 'teens' || serverSkin === 'students') ? serverSkin : skinKey;
+      stelSkinIn(sk);
+      stelWelkomIn(voornaam);
+      naarReveal();
+    })
+    .catch(function() {
+      // Netwerk-fout of server niet bereikbaar: gebruik token direct
+      dashboardToken = token;
+      doelCombo = [2, 0, 2, 6];
+      stelSkinIn(bepaalSkinUitToken(token));
+      stelWelkomIn('');
+      naarReveal();
+    });
+  }
+
+  // Start
+  window.addEventListener('DOMContentLoaded', init);
+  if (document.readyState !== 'loading') init();
+
+})();
+</script>
+</body>
+</html>

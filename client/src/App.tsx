@@ -40,6 +40,7 @@ import { Redirect } from "wouter";
 import Studie, { StudieScholenPagina, StudieLeerlingenPagina, StudieInstrumentenPagina } from "@/pages/studie";
 import Werk from "@/pages/werk";
 import Poort from "@/pages/poort";
+import Magic from "@/pages/magic";
 import VoorBegeleiders from "@/pages/voor-begeleiders";
 import AdminCoaches from "@/pages/admin-coaches";
 import AdminInzichten from "@/pages/admin-inzichten";
@@ -48,6 +49,10 @@ import AdminMailbeheer from "@/pages/admin-mailbeheer";
 import Coaches from "@/pages/coaches";
 import Academy from "@/pages/academy";
 import AcademyJester from "@/pages/academy-jester";
+import CoachAanvraag from "@/pages/coach-aanvraag";
+import AdminKwaliteit from "@/pages/admin-kwaliteit";
+import Stm from "@/pages/stm";
+import Webinars from "@/pages/webinars";
 
 function AdminStub({ titel, omschrijving }: { titel: string; omschrijving: string }) {
   return (
@@ -83,11 +88,16 @@ function AppRouter() {
       <Route path="/admin/inzichten">{() => <AdminLoginGate><AdminInzichten /></AdminLoginGate>}</Route>
       <Route path="/admin/academy">{() => <AdminLoginGate><AdminAcademy /></AdminLoginGate>}</Route>
       <Route path="/admin/mailbeheer">{() => <AdminLoginGate><AdminMailbeheer /></AdminLoginGate>}</Route>
+      <Route path="/admin/kwaliteit">{() => <AdminLoginGate><AdminKwaliteit /></AdminLoginGate>}</Route>
+      <Route path="/admin/stm">{() => <AdminLoginGate><Stm /></AdminLoginGate>}</Route>
+      <Route path="/admin/webinars">{() => <AdminLoginGate><Webinars /></AdminLoginGate>}</Route>
       <Route path="/coaches" component={Coaches} />
       <Route path="/academy/jester" component={AcademyJester} />
       <Route path="/academy" component={Academy} />
       {/* /coach = coach-omgeving: nog niet beschikbaar in demo, stub met terugknop */}
       <Route path="/coach">{() => <AdminStub titel="Coach omgeving" omschrijving="De coach-omgeving is beschikbaar in de volledige versie van het platform." />}</Route>
+      {/* P6: Coach self-service accreditatie-aanvraag */}
+      <Route path="/coach-aanvraag" component={CoachAanvraag} />
       <Route path="/admin/:id">{() => <AdminLoginGate><AdminDetail /></AdminLoginGate>}</Route>
       <Route path="/t4r" component={T4RHome} />
       <Route path="/t4r/sessie/:id" component={T4RSession} />
@@ -112,16 +122,41 @@ function AppRouter() {
       {/* Cijferslot — toegangsschil voor het persoonlijk dashboard (drie skins) */}
       <Route path="/poort" component={Poort} />
       <Route path="/poort/:skin" component={Poort} />
+      {/* Magic-link inwisselaar — /#/magic/:token → redirect naar dashboard */}
+      <Route path="/magic/:token" component={Magic} />
       <Route component={NotFound} />
     </Switch>
   );
 }
 
-// Admin-routes en coach-routes slaan de poorten-intro over (beheerder navigeert rechtstreeks).
+// Routes die de poorten-intro overslaan bij directe landing (bladwijzer, permalink, e-maillink).
+// Drie mechanismen (gesorteerd op betrouwbaarheid):
+//   1. sessionStorage 'tapas_skip_intro': gezet door de server (/api/go/ route) VOOR
+//      React initialiseert. 100% betrouwbaar, ongeacht React-versie of bundle-cache.
+//   2. Hash-check: checkt de hash van de huidige URL.
+//   3. Fallback: false (toon intro).
 function isAdminRoute(): boolean {
   try {
+    // Mechanisme 1: sessionStorage-vlag gezet door /api/go/ server-route
+    if (typeof sessionStorage !== "undefined" &&
+        sessionStorage.getItem("tapas_skip_intro") === "1") {
+      sessionStorage.removeItem("tapas_skip_intro"); // eenmalig gebruiken
+      return true;
+    }
+  } catch { /* sessionStorage niet beschikbaar (bijv. private mode met blokkering) */ }
+  try {
+    // Mechanisme 2: hash-check
     const hash = window.location.hash.replace(/^#\/?/, "");
-    return hash.startsWith("admin") || hash.startsWith("coach");
+    return (
+      hash.startsWith("admin") ||
+      hash.startsWith("coach") ||
+      hash.startsWith("dashboard/") ||
+      hash.startsWith("magic/") ||
+      hash.startsWith("afname/") ||
+      hash.startsWith("t4r") ||
+      hash.startsWith("teamscan") ||
+      hash.startsWith("r/")
+    );
   } catch {
     return false;
   }

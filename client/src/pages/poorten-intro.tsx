@@ -116,6 +116,27 @@ interface AudioHandles {
   poortGain: GainNode;
 }
 
+// Routes die de poorten-intro onmiddellijk overslaan bij directe landing.
+// Dit is de tweede verdedigingslinie naast isAdminRoute() in App.tsx.
+// Werkt ook als de useState-initialisatie te vroeg vuurt (bijv. via permalink/bladwijzer).
+function isDirectRoute(): boolean {
+  try {
+    const hash = window.location.hash.replace(/^#\/?/, "");
+    return (
+      hash.startsWith("admin") ||
+      hash.startsWith("coach") ||
+      hash.startsWith("dashboard/") ||
+      hash.startsWith("magic/") ||
+      hash.startsWith("afname/") ||
+      hash.startsWith("t4r") ||
+      hash.startsWith("teamscan") ||
+      hash.startsWith("r/")
+    );
+  } catch {
+    return false;
+  }
+}
+
 export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
   const canvasMistRef = useRef<HTMLCanvasElement>(null);
   const canvasTekstRef = useRef<HTMLCanvasElement>(null);
@@ -124,6 +145,15 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
   const [geluidAan, setGeluidAan] = useState(true);
 
   const afgeslotenRef = useRef(false);
+
+  // Tweede verdedigingslinie: als de hash bij mount al een directe route is,
+  // roep onComplete() onmiddellijk aan — intro wordt nooit getoond.
+  useEffect(() => {
+    if (isDirectRoute()) {
+      onComplete();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const audioRef = useRef<AudioHandles | null>(null);
   const mp3BufferRef = useRef<ArrayBuffer | null>(null);
   const mp3GespeeldRef = useRef(false);
@@ -683,6 +713,13 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
   const openGraden = staat.open * 96;
   const wegAlpha = staat.weg;
   const kierAlpha = clamp01(staat.kier * (1 - staat.weg));
+
+  // Synchrone early-return: als de hash bij render al een directe route is,
+  // toon NOOIT de poorten-intro. Dit is de derde verdedigingslinie en werkt
+  // ongeacht useState-initialisatie, useEffect-timing of caching.
+  if (isDirectRoute()) {
+    return null;
+  }
 
   return createPortal(
     <div
