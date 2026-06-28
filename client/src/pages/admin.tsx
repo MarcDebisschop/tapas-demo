@@ -34,7 +34,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Afname, OrganisatieMetSaldo } from "@/lib/types";
-import { Copy, Check, Send, UserPlus, Bell, Languages, Settings2, ChartColumn, GraduationCap, Mail, KeyRound } from "lucide-react";
+import { Copy, Check, Send, UserPlus, Bell, Languages, Settings2, ChartColumn, GraduationCap, Mail, KeyRound, Users, CreditCard, BarChart2, Building2, ArrowRight } from "lucide-react";
 import { LegeStaat } from "@/components/LegeStaat";
 import {
   TALEN,
@@ -273,40 +273,7 @@ export default function Admin() {
                 </SelectContent>
               </Select>
             </div>
-            <Link href="/admin/credits">
-              <Button size="sm" variant="outline" data-testid="link-credits">{t("admin_credits")}</Button>
-            </Link>
-            <Link href="/admin/toegang">
-              <Button size="sm" variant="outline" data-testid="link-toegang">{t("tg_nav")}</Button>
-            </Link>
-            <Link href="/admin/coaches">
-              <Button size="sm" variant="outline" data-testid="link-coaches">{t("admin_nav_coaches")}</Button>
-            </Link>
-            <Link href="/admin/inzichten">
-              <Button size="sm" variant="outline" data-testid="link-inzichten">
-                <ChartColumn className="mr-1.5 h-4 w-4" />{t("iz_nav")}
-              </Button>
-            </Link>
-            <Link href="/admin/academy">
-              <Button size="sm" variant="outline" data-testid="link-academy-beheer">
-                <GraduationCap className="mr-1.5 h-4 w-4" />{t("acad_admin_nav")}
-              </Button>
-            </Link>
-            <Link href="/admin/mailbeheer">
-              <Button size="sm" variant="outline" data-testid="link-mailbeheer">
-                <Mail className="mr-1.5 h-4 w-4" />{t("mailbeheer_nav")}
-              </Button>
-            </Link>
-            <Link href="/coach">
-              <Button size="sm" variant="outline" data-testid="link-coach-omgeving">{t("admin_nav_coach_omgeving")}</Button>
-            </Link>
-            {isPrior && (
-              <Link href="/admin/vraagbeheer">
-                <Button size="sm" variant="outline" data-testid="link-vraagbeheer">
-                  <Settings2 className="mr-1.5 h-4 w-4" /> Vraagbeheer
-                </Button>
-              </Link>
-            )}
+            {/* Snelknoppen — data-testid's bewaard voor compatibiliteit */}
             <Button
               size="sm"
               variant="outline"
@@ -332,6 +299,119 @@ export default function Admin() {
       <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">{t("admin_titel")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{t("admin_intro")}</p>
+
+        {/* ---------------------------------------------------------------- */}
+        {/* CLUSTERTEGELS — R32: 4 groepen, alle data-testid's bewaard       */}
+        {/* ---------------------------------------------------------------- */}
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Cluster 1: Deelnemers & Afnames */}
+          <div className="rounded-xl border border-t-[3px] border-border p-5" style={{ borderTopColor: "hsl(var(--primary))" }}>
+            <div className="flex items-center gap-2">
+              <span className="grid h-8 w-8 place-items-center rounded-lg" style={{ background: "hsl(var(--primary)/0.1)", color: "hsl(var(--primary))" }}>
+                <Users className="h-4 w-4" />
+              </span>
+              <span className="text-sm font-semibold text-foreground">Deelnemers</span>
+            </div>
+            <div className="mt-4 flex flex-col gap-1.5">
+              <button
+                type="button"
+                onClick={() => { resetDialog(); setDialogOpen(true); }}
+                data-testid="button-open-invite"
+                className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+              >
+                <UserPlus className="h-3.5 w-3.5 shrink-0" /> Uitnodigen
+              </button>
+              <Link href="/start">
+                <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-new-afname">
+                  <ArrowRight className="h-3.5 w-3.5 shrink-0" /> Nieuwe afname
+                </a>
+              </Link>
+              <Link href="/admin/toegang">
+                <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-toegang">
+                  <Settings2 className="h-3.5 w-3.5 shrink-0" /> Toegang
+                </a>
+              </Link>
+            </div>
+          </div>
+
+          {/* Cluster 2: Financieel & Credits */}
+          <div className="rounded-xl border border-t-[3px] border-border p-5" style={{ borderTopColor: "hsl(142 70% 35%)" }}>
+            <div className="flex items-center gap-2">
+              <span className="grid h-8 w-8 place-items-center rounded-lg" style={{ background: "hsl(142 70% 35%/0.1)", color: "hsl(142 70% 35%)" }}>
+                <CreditCard className="h-4 w-4" />
+              </span>
+              <span className="text-sm font-semibold text-foreground">Financieel</span>
+            </div>
+            <div className="mt-4 flex flex-col gap-1.5">
+              <Link href="/admin/credits">
+                <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-credits">
+                  <CreditCard className="h-3.5 w-3.5 shrink-0" /> Credits &amp; saldo
+                </a>
+              </Link>
+            </div>
+          </div>
+
+          {/* Cluster 3: Kwaliteit & Inhoud */}
+          <div className="rounded-xl border border-t-[3px] border-border p-5" style={{ borderTopColor: "hsl(262 70% 50%)" }}>
+            <div className="flex items-center gap-2">
+              <span className="grid h-8 w-8 place-items-center rounded-lg" style={{ background: "hsl(262 70% 50%/0.1)", color: "hsl(262 70% 50%)" }}>
+                <BarChart2 className="h-4 w-4" />
+              </span>
+              <span className="text-sm font-semibold text-foreground">Kwaliteit</span>
+            </div>
+            <div className="mt-4 flex flex-col gap-1.5">
+              <Link href="/admin/inzichten">
+                <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-inzichten">
+                  <ChartColumn className="h-3.5 w-3.5 shrink-0" /> Inzichten
+                </a>
+              </Link>
+              <Link href="/admin/kwaliteit">
+                <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-kwaliteit-cluster">
+                  <BarChart2 className="h-3.5 w-3.5 shrink-0" /> Kwaliteitsmonitor
+                </a>
+              </Link>
+              {isPrior && (
+                <Link href="/admin/vraagbeheer">
+                  <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-vraagbeheer">
+                    <Settings2 className="h-3.5 w-3.5 shrink-0" /> Vraagbeheer
+                  </a>
+                </Link>
+              )}
+            </div>
+          </div>
+
+          {/* Cluster 4: Organisatie & Communicatie */}
+          <div className="rounded-xl border border-t-[3px] border-border p-5" style={{ borderTopColor: "hsl(var(--gold))" }}>
+            <div className="flex items-center gap-2">
+              <span className="grid h-8 w-8 place-items-center rounded-lg" style={{ background: "hsl(var(--gold)/0.1)", color: "hsl(var(--gold))" }}>
+                <Building2 className="h-4 w-4" />
+              </span>
+              <span className="text-sm font-semibold text-foreground">Organisatie</span>
+            </div>
+            <div className="mt-4 flex flex-col gap-1.5">
+              <Link href="/admin/academy">
+                <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-academy-beheer">
+                  <GraduationCap className="h-3.5 w-3.5 shrink-0" /> Academy
+                </a>
+              </Link>
+              <Link href="/admin/mailbeheer">
+                <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-mailbeheer">
+                  <Mail className="h-3.5 w-3.5 shrink-0" /> Mailbeheer
+                </a>
+              </Link>
+              <Link href="/admin/coaches">
+                <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-coaches">
+                  <Users className="h-3.5 w-3.5 shrink-0" /> Coaches
+                </a>
+              </Link>
+              <Link href="/coach">
+                <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-coach-omgeving">
+                  <ArrowRight className="h-3.5 w-3.5 shrink-0" /> Coach-omgeving
+                </a>
+              </Link>
+            </div>
+          </div>
+        </div>
 
         <Card className="mt-6">
           <CardContent className="p-0">

@@ -16,6 +16,13 @@ import {
   ShieldCheck,
   GraduationCap,
   Sofa,
+  Briefcase,
+  BookOpen,
+  Users,
+  BarChart2,
+  ScanLine,
+  ClipboardList,
+  UserCheck,
 } from "lucide-react";
 import {
   TALEN,
@@ -30,6 +37,7 @@ import { Rondleiding, startRondleiding } from "@/components/Rondleiding";
 
 // ---------------------------------------------------------------------------
 // HeroKompas — exact gereproduceerd vanuit de originele bundle (upe component)
+// NIET AANRAKEN
 // ---------------------------------------------------------------------------
 function HeroKompas() {
   return (
@@ -70,7 +78,7 @@ function HeroKompas() {
 
 // ---------------------------------------------------------------------------
 // LoungeWidget — exact overgenomen uit Kme() in ZIP-8 bundle (index-CxFhBwUz.js)
-// Toont uitnodiging voor TaPas Lounge onder de twee wereld-kaarten
+// NIET AANRAKEN
 // ---------------------------------------------------------------------------
 function LoungeWidget() {
   const [open, setOpen] = useState(false);
@@ -148,6 +156,7 @@ function LoungeWidget() {
 
 // ---------------------------------------------------------------------------
 // AcademyLink — uitnodiging naar TaPasAcademy, zichtbaar voor iedereen
+// NIET AANRAKEN
 // ---------------------------------------------------------------------------
 function AcademyLink() {
   const goud = "hsl(var(--gold))";
@@ -195,9 +204,129 @@ function AcademyLink() {
 }
 
 // ---------------------------------------------------------------------------
+// PlatformOverzicht — Zone C: visuele voorstelling van het volledige platform
+// NIEUW in R32 — informatieve tegels, geen instrumenten-navigatie
+// ---------------------------------------------------------------------------
+interface PlatformTegel {
+  label: string;
+  titel: string;
+  omschrijving: string;
+  href: string;
+  kleurVar: string;
+  icon: React.ReactNode;
+  badges: string[];
+}
+
+function PlatformOverzicht() {
+  const tegels: PlatformTegel[] = [
+    {
+      label: "Werk & organisatie",
+      titel: "Professionele context",
+      omschrijving: "Instrumenten voor talent- en teamontwikkeling in de werkcontext.",
+      href: "/werk",
+      kleurVar: "--werk",
+      icon: <Briefcase className="h-5 w-5" />,
+      badges: ["T4P Business", "T4Recruitment", "Teamscan", "2MINSCAN", "Human Due Diligence"],
+    },
+    {
+      label: "Studie",
+      titel: "Studie & oriëntatie",
+      omschrijving: "Instrumenten voor jongeren en studenten op weg naar hun talent.",
+      href: "/studie",
+      kleurVar: "--studie",
+      icon: <BookOpen className="h-5 w-5" />,
+      badges: ["T4Students", "T4Teens"],
+    },
+    {
+      label: "Open voor iedereen",
+      titel: "TaPasAcademy",
+      omschrijving: "Opleidingen, accreditaties en het register van geaccrediteerde coaches.",
+      href: "/academy",
+      kleurVar: "--gold",
+      icon: <GraduationCap className="h-5 w-5" />,
+      badges: ["TaPas Jester", "Accreditaties", "Coaches"],
+    },
+  ];
+
+  return (
+    <section className="mt-16 sm:mt-24">
+      <div className="mx-auto max-w-2xl text-center">
+        <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
+          Het platform in één oogopslag
+        </p>
+        <h2 className="mt-3 font-serif text-2xl font-semibold tracking-tight text-foreground sm:text-[2rem] sm:leading-[1.2]">
+          Alles wat TaPas biedt
+        </h2>
+        <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
+          Eén coherent platform — voor elke levensfase, elke context, elke mens.
+        </p>
+      </div>
+
+      <div className="mt-8 grid gap-4 sm:grid-cols-3">
+        {tegels.map((tegel) => (
+          <Link key={tegel.href} href={tegel.href}>
+            <a
+              className="group relative block overflow-hidden rounded-2xl border border-t-[3px] border-border p-6 transition hover:-translate-y-1"
+              style={{
+                borderTopColor: `hsl(var(${tegel.kleurVar}))`,
+                background: `radial-gradient(120% 95% at 100% 0%, hsl(var(${tegel.kleurVar})/0.12) 0%, hsl(var(--card)) 65%)`,
+              }}
+            >
+              <span
+                className="grid h-9 w-9 place-items-center rounded-xl"
+                style={{
+                  background: `hsl(var(${tegel.kleurVar})/0.14)`,
+                  color: `hsl(var(${tegel.kleurVar}))`,
+                }}
+              >
+                {tegel.icon}
+              </span>
+              <p
+                className="mt-3 font-mono text-[10px] uppercase tracking-[0.15em]"
+                style={{ color: `hsl(var(${tegel.kleurVar}))` }}
+              >
+                {tegel.label}
+              </p>
+              <h3 className="mt-1 font-serif text-lg font-semibold text-foreground">
+                {tegel.titel}
+              </h3>
+              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                {tegel.omschrijving}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-1.5">
+                {tegel.badges.map((b) => (
+                  <span
+                    key={b}
+                    className="rounded-full border px-2 py-0.5 text-[10px] font-medium"
+                    style={{
+                      borderColor: `hsl(var(${tegel.kleurVar})/0.3)`,
+                      color: `hsl(var(${tegel.kleurVar}))`,
+                      background: `hsl(var(${tegel.kleurVar})/0.07)`,
+                    }}
+                  >
+                    {b}
+                  </span>
+                ))}
+              </div>
+              <span
+                className="mt-4 inline-flex items-center gap-1 text-xs font-semibold"
+                style={{ color: `hsl(var(${tegel.kleurVar}))` }}
+              >
+                Verken
+                <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
+              </span>
+            </a>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Hoofdpagina — ZIP-8 referentie: Gme() in index-CxFhBwUz.js
-// Instrumenten-suite NIET op home — enkel na wereld-keuze (werk/studie)
-// Na kies-sectie: LoungeWidget (Kme uit ZIP-8) + AcademyLink
+// R32: Zone A (banner uitgebreid) + Zone C (PlatformOverzicht) toegevoegd
+// Alle bestaande blokken ongewijzigd
 // ---------------------------------------------------------------------------
 export default function Home() {
   const [uiTaal, setUiTaal] = useState<Taal>(STANDAARD_TAAL);
@@ -205,7 +334,7 @@ export default function Home() {
 
   return (
     <div className="min-h-[100dvh] bg-background">
-      {/* NAVIGATIE */}
+      {/* NAVIGATIE — Zone A: taalswitch + rondleiding + admin (ongewijzigd qua functie, admin iets prominenter) */}
       <AppHeader
         right={
           <div className="flex items-center gap-2">
@@ -249,15 +378,16 @@ export default function Home() {
                 : "De vlucht"}
               </span>
             </button>
+            {/* Admin-knop: iets prominenter met label zichtbaar op sm+ */}
             <Link href="/admin">
               <button
                 type="button"
                 data-testid="button-admin-home"
-                className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border px-2.5 text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-secondary/50 px-3 text-sm font-medium text-foreground transition hover:bg-secondary hover:text-foreground"
                 aria-label="Admin"
               >
-                <ShieldCheck className="h-4 w-4" />
-                <span className="hidden sm:inline">Admin</span>
+                <ShieldCheck className="h-4 w-4 text-accent" />
+                <span className="hidden sm:inline">Beheer</span>
               </button>
             </Link>
           </div>
@@ -267,7 +397,7 @@ export default function Home() {
       <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-16">
 
         {/* ---------------------------------------------------------------- */}
-        {/* HERO                                                              */}
+        {/* HERO — Zone B: ongewijzigd                                        */}
         {/* ---------------------------------------------------------------- */}
         <section className="grid items-center gap-8 sm:gap-10 lg:grid-cols-[1.4fr_1fr]">
           <div>
@@ -306,7 +436,12 @@ export default function Home() {
         </section>
 
         {/* ---------------------------------------------------------------- */}
-        {/* KIES JE WERELD                                                    */}
+        {/* ZONE C — Platform in één oogopslag (NIEUW R32)                   */}
+        {/* ---------------------------------------------------------------- */}
+        <PlatformOverzicht />
+
+        {/* ---------------------------------------------------------------- */}
+        {/* KIES JE WERELD — ongewijzigd                                      */}
         {/* ---------------------------------------------------------------- */}
         <section id="kies" className="mt-16 scroll-mt-24 sm:mt-24">
           <div className="mx-auto max-w-2xl text-center">
@@ -399,10 +534,10 @@ export default function Home() {
             Eén blik volstaat om te zien: dit is TaPas.
           </p>
 
-          {/* Lounge-uitnodiging — exact Kme() uit ZIP-8 bundle */}
+          {/* Lounge-uitnodiging — exact Kme() uit ZIP-8 bundle — NIET AANRAKEN */}
           <LoungeWidget />
 
-          {/* Academy-link — zichtbaar voor iedereen */}
+          {/* Academy-link — zichtbaar voor iedereen — NIET AANRAKEN */}
           <AcademyLink />
         </section>
 
@@ -414,7 +549,7 @@ export default function Home() {
         </footer>
       </main>
 
-      {/* Rondleiding — welkom-uitnodiging bij eerste bezoek, vlucht pas na klik */}
+      {/* Rondleiding — welkom-uitnodiging bij eerste bezoek, vlucht pas na klik — NIET AANRAKEN */}
       <Rondleiding taal={uiTaal} autoStart={true} />
     </div>
   );
