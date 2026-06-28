@@ -7,6 +7,7 @@ import { storage, db, CreditError, CREDITPAKKETTEN } from "./storage";
 import { buildQuestionManagerRoutes } from "./question-manager";
 import { registerCoachesAcademyMailRoutes } from "./routes-coaches-academy-mail";
 import { registerStmRoutes } from "./routes-stm";
+import { registerTtsDebugRoute } from "./routes-tts-debug";
 import { clientInstrument } from "./instrument";
 import { instrumentSamenvattingen, clientInstrumentVoor } from "./registry";
 import { buildGeneratorContract } from "./scoring";
@@ -1868,6 +1869,7 @@ export async function registerRoutes(
 
   // Extra routes: coach-login + Self-Training Module (STM)
   registerStmRoutes(app, storage);
+  registerTtsDebugRoute(app); // TIJDELIJK: verwijderen zodra TTS werkt
 
   return httpServer;
 }
