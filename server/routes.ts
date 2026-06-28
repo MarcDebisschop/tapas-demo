@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { storage, db, CreditError, CREDITPAKKETTEN } from "./storage";
 import { buildQuestionManagerRoutes } from "./question-manager";
 import { registerCoachesAcademyMailRoutes } from "./routes-coaches-academy-mail";
+import { registerStmRoutes } from "./routes-stm";
 import { clientInstrument } from "./instrument";
 import { instrumentSamenvattingen, clientInstrumentVoor } from "./registry";
 import { buildGeneratorContract } from "./scoring";
@@ -1864,6 +1865,9 @@ export async function registerRoutes(
 
   // Extra routes: coaches, academy, mailbeheer, inzichtcentrum
   registerCoachesAcademyMailRoutes(app, db, storage);
+
+  // Extra routes: coach-login + Self-Training Module (STM)
+  registerStmRoutes(app, storage);
 
   return httpServer;
 }

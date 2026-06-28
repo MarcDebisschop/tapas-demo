@@ -53,6 +53,8 @@ import CoachAanvraag from "@/pages/coach-aanvraag";
 import AdminKwaliteit from "@/pages/admin-kwaliteit";
 import Stm from "@/pages/stm";
 import Webinars from "@/pages/webinars";
+import CoachDashboard from "@/pages/coach-dashboard";
+import { CoachLoginGate } from "@/components/CoachLoginGate";
 
 function AdminStub({ titel, omschrijving }: { titel: string; omschrijving: string }) {
   return (
@@ -94,8 +96,10 @@ function AppRouter() {
       <Route path="/coaches" component={Coaches} />
       <Route path="/academy/jester" component={AcademyJester} />
       <Route path="/academy" component={Academy} />
-      {/* /coach = coach-omgeving: nog niet beschikbaar in demo, stub met terugknop */}
-      <Route path="/coach">{() => <AdminStub titel="Coach omgeving" omschrijving="De coach-omgeving is beschikbaar in de volledige versie van het platform." />}</Route>
+      {/* /coach/dashboard = practitioner-dashboard met STM */}
+      <Route path="/coach/dashboard">{() => <CoachLoginGate><CoachDashboard /></CoachLoginGate>}</Route>
+      {/* /coach = redirect naar /coach/dashboard */}
+      <Route path="/coach">{() => <CoachLoginGate><CoachDashboard /></CoachLoginGate>}</Route>
       {/* P6: Coach self-service accreditatie-aanvraag */}
       <Route path="/coach-aanvraag" component={CoachAanvraag} />
       <Route path="/admin/:id">{() => <AdminLoginGate><AdminDetail /></AdminLoginGate>}</Route>
