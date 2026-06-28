@@ -48,6 +48,13 @@ import {
   ArrowRight,
   CreditCard,
   Loader2,
+  BookOpen,
+  BarChart2,
+  Clock,
+  Trophy,
+  Target,
+  CheckCircle,
+  Zap,
 } from "lucide-react";
 import {
   TALEN,
@@ -743,6 +750,9 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </section>
+
+        {/* STM — Self-Training Module (enkel voor geaccrediteerde TaPas coaches) */}
+        <StmSectie token={token} />
       </main>
     </div>
   );
@@ -1496,5 +1506,358 @@ function ThemaIcoon({ thema }: { thema: GalerijItem["thema"] }) {
     <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/15 text-accent">
       {map[thema]}
     </div>
+  );
+}
+
+// ── STM helpers (identiek aan coach-dashboard.tsx) ───────────────────────────
+
+function stmInschalingKleur(inschaling: string) {
+  const map: Record<string, string> = {
+    expert: "#2E7D5A",
+    meer_dan_voldoende: "#1a5fa8",
+    net_voldoende: "#8B6914",
+    onvoldoende: "#A13544",
+  };
+  return map[inschaling] || "#7a7468";
+}
+
+function StmScoreBar({ score, label }: { score: number | null; label: string }) {
+  const pct = Math.round((score ?? 0) * 100);
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+        <span style={{ fontSize: 13, color: "#14213d", fontWeight: 500 }}>{label}</span>
+        <span style={{ fontSize: 13, color: "#7a7468" }}>{score !== null ? `${pct}%` : "n/a"}</span>
+      </div>
+      <div style={{ background: "#e8e4dc", borderRadius: 4, height: 8 }}>
+        <div style={{
+          background: pct >= 70 ? "#2E7D5A" : pct >= 50 ? "#8B6914" : "#A13544",
+          width: `${pct}%`, height: "100%", borderRadius: 4, transition: "width 0.5s ease",
+        }} />
+      </div>
+    </div>
+  );
+}
+
+// ── DashboardStmModule — volledig werkende STM voor coaches via token-auth ──
+
+function DashboardStmModule({ token }: { token: string }) {
+  type StmFase = "menu" | "bezig" | "resultaat";
+  const [fase, setFase] = useState<StmFase>("menu");
+  const [sessieId, setSessieId] = useState<number | null>(null);
+  const [vragen, setVragen] = useState<any[]>([]);
+  const [huidigVraagIdx, setHuidigVraagIdx] = useState(0);
+  const [antwoorden, setAntwoorden] = useState<Record<number, string>>({});
+  const [gekozenAntwoord, setGekozenAntwoord] = useState<string | null>(null);
+  const [startTijd, setStartTijd] = useState<number>(0);
+  const [resultaat, setResultaat] = useState<any>(null);
+
+  const historiekQuery = useQuery({
+    queryKey: ["/api/stm/token/historiek", token],
+    queryFn: () => apiRequest("GET", `${API_BASE}/api/stm/token/historiek?token=${token}`).then(r => r.json()),
+  });
+
+  const laagscoresQuery = useQuery({
+    queryKey: ["/api/stm/token/laagscores", token],
+    queryFn: () => apiRequest("GET", `${API_BASE}/api/stm/token/laagscores?token=${token}`).then(r => r.json()),
+  });
+
+  const startMutation = useMutation({
+    mutationFn: () => apiRequest("POST", `${API_BASE}/api/stm/token/start`, { aantal: 12, token }).then(r => r.json()),
+    onSuccess: (data) => {
+      setSessieId(data.sessie_id);
+      setVragen(data.vragen);
+      setHuidigVraagIdx(0);
+      setAntwoorden({});
+      setGekozenAntwoord(null);
+      setStartTijd(Date.now());
+      setFase("bezig");
+    },
+  });
+
+  const afrondenMutation = useMutation({
+    mutationFn: (payload: { sessie_id: number; antwoorden: Record<number, string>; duur_seconden: number; token: string }) =>
+      apiRequest("POST", `${API_BASE}/api/stm/token/afronden`, payload).then(r => r.json()),
+    onSuccess: (data) => {
+      setResultaat(data);
+      setFase("resultaat");
+      queryClient.invalidateQueries({ queryKey: ["/api/stm/token/historiek", token] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stm/token/laagscores", token] });
+    },
+  });
+
+  function selecteerAntwoord(antwoord: string) {
+    if (gekozenAntwoord !== null) return;
+    setAntwoorden({ ...antwoorden, [vragen[huidigVraagIdx].id]: antwoord });
+    setGekozenAntwoord(antwoord);
+  }
+
+  function volgende() {
+    setGekozenAntwoord(null);
+    if (huidigVraagIdx < vragen.length - 1) {
+      setHuidigVraagIdx(huidigVraagIdx + 1);
+    } else {
+      const duur = Math.round((Date.now() - startTijd) / 1000);
+      afrondenMutation.mutate({ sessie_id: sessieId!, antwoorden, duur_seconden: duur, token });
+    }
+  }
+
+  const laagNamen: Record<number, string> = { 1: "Parate kennis", 2: "Begrip", 3: "Analyse", 4: "Synthese" };
+
+  // ── MENU ──────────────────────────────────────────────────────────────────
+  if (fase === "menu") {
+    const scores = laagscoresQuery.data?.scores;
+    const historiek = historiekQuery.data?.sessies || [];
+
+    return (
+      <div>
+        {scores && (
+          <Card style={{ background: "#fff", border: "1px solid #e8e4dc", marginBottom: 20 }}>
+            <CardContent className="pt-4 px-5 pb-4">
+              <p style={{ fontWeight: 600, color: "#14213d", marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
+                <BarChart2 className="inline w-4 h-4" /> Jouw kennisprofiel ({scores.sessies_totaal} sessies)
+              </p>
+              <StmScoreBar score={scores.laag1} label="Laag 1 — Parate kennis" />
+              <StmScoreBar score={scores.laag2} label="Laag 2 — Begrip" />
+              <StmScoreBar score={scores.laag3} label="Laag 3 — Analyse" />
+              <StmScoreBar score={scores.laag4} label="Laag 4 — Synthese" />
+              {scores.laatste_sessie && (
+                <p style={{ fontSize: 12, color: "#7a7468", marginTop: 8 }}>
+                  Laatste sessie: {new Date(scores.laatste_sessie).toLocaleDateString("nl-BE")}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        <Card style={{ background: "#14213d", border: "none", marginBottom: 20 }}>
+          <CardContent className="p-8 text-center">
+            <Zap className="w-10 h-10 mx-auto mb-4" style={{ color: "#d8c9a3" }} />
+            <h3 style={{ color: "#fff", fontSize: 18, fontWeight: 700, marginBottom: 8 }}>
+              Start een nieuwe sessie
+            </h3>
+            <p style={{ color: "#d8c9a3", fontSize: 13, marginBottom: 20, opacity: 0.8 }}>
+              12 adaptieve vragen · max. 15 minuten · directe feedback
+            </p>
+            <Button
+              style={{ background: "#d8c9a3", color: "#14213d", fontWeight: 700, padding: "10px 28px" }}
+              onClick={() => startMutation.mutate()}
+              disabled={startMutation.isPending}
+            >
+              {startMutation.isPending
+                ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                : <BookOpen className="w-4 h-4 mr-2" />}
+              Start sessie
+            </Button>
+          </CardContent>
+        </Card>
+
+        {historiek.length > 0 && (
+          <Card style={{ background: "#fff", border: "1px solid #e8e4dc" }}>
+            <CardContent className="p-0">
+              <p style={{ padding: "12px 16px", fontWeight: 600, color: "#14213d", borderBottom: "1px solid #e8e4dc", display: "flex", alignItems: "center", gap: 6 }}>
+                <Clock className="inline w-4 h-4" /> Recente sessies
+              </p>
+              {historiek.slice(0, 5).map((s: any) => (
+                <div key={s.id} style={{ padding: "10px 16px", borderBottom: "1px solid #f0ede6", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <div style={{ fontSize: 14, color: "#14213d", fontWeight: 500 }}>
+                      {new Date(s.afgerond_at).toLocaleDateString("nl-BE")}
+                    </div>
+                    <div style={{ fontSize: 12, color: "#7a7468" }}>
+                      {s.duur_seconden ? `${Math.round(s.duur_seconden / 60)} min` : "—"}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: stmInschalingKleur(s.inschaling) }}>
+                      {Math.round((s.score_totaal ?? 0) * 100)}%
+                    </div>
+                    <Badge style={{ background: stmInschalingKleur(s.inschaling) + "20", color: stmInschalingKleur(s.inschaling), fontSize: 10 }}>
+                      {s.inschaling?.replace(/_/g, " ")}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        {!scores && historiek.length === 0 && (
+          <Card style={{ background: "#fff", border: "1px solid #e8e4dc" }}>
+            <CardContent className="p-8 text-center">
+              <Target className="w-10 h-10 mx-auto mb-3" style={{ color: "#d8c9a3" }} />
+              <p style={{ color: "#7a7468", fontSize: 14 }}>
+                Nog geen sessies voltooid. Start je eerste sessie hierboven.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  }
+
+  // ── SESSIE BEZIG ──────────────────────────────────────────────────────────
+  if (fase === "bezig") {
+    const vraag = vragen[huidigVraagIdx];
+    const opties: string[] = vraag?.opties || [];
+    const progress = Math.round((huidigVraagIdx / vragen.length) * 100);
+    const isLaatste = huidigVraagIdx === vragen.length - 1;
+
+    return (
+      <div>
+        <div style={{ background: "#14213d", borderRadius: 8, padding: "12px 16px", marginBottom: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <span style={{ color: "#d8c9a3", fontSize: 13 }}>Vraag {huidigVraagIdx + 1} / {vragen.length}</span>
+            <span style={{ color: "#d8c9a3", fontSize: 12 }}>Laag {vraag?.laag} — {laagNamen[vraag?.laag]}</span>
+          </div>
+          <div style={{ background: "#060a16", borderRadius: 20, height: 6, overflow: "hidden" }}>
+            <div style={{ background: "#d8c9a3", width: `${progress}%`, height: "100%", transition: "width 0.3s" }} />
+          </div>
+        </div>
+
+        <Card style={{ background: "#fff", border: "1px solid #e8e4dc" }}>
+          <CardContent className="p-6">
+            <Badge style={{ background: "#f4f1ec", color: "#14213d", marginBottom: 16, fontSize: 11 }}>
+              {vraag?.thema}
+            </Badge>
+            <h3 style={{ color: "#14213d", fontSize: 17, fontWeight: 600, lineHeight: 1.5, marginBottom: 20 }}>
+              {vraag?.vraag_tekst}
+            </h3>
+            <div className="flex flex-col gap-3">
+              {opties.map((optie: string, i: number) => {
+                const isGekozen = gekozenAntwoord === optie;
+                return (
+                  <button key={i} onClick={() => selecteerAntwoord(optie)}
+                    disabled={gekozenAntwoord !== null}
+                    style={{
+                      textAlign: "left", padding: "12px 16px", borderRadius: 8,
+                      border: isGekozen ? "2px solid #14213d" : "2px solid #e8e4dc",
+                      background: isGekozen ? "#f4f1ec" : "#fff",
+                      color: "#14213d", fontSize: 14,
+                      cursor: gekozenAntwoord !== null ? "default" : "pointer",
+                      fontWeight: isGekozen ? 600 : 400,
+                    }}>
+                    {optie}
+                  </button>
+                );
+              })}
+            </div>
+            {gekozenAntwoord !== null && (
+              <div style={{ marginTop: 16 }}>
+                <Button
+                  style={{ background: "#14213d", color: "#d8c9a3", width: "100%" }}
+                  onClick={volgende}
+                  disabled={afrondenMutation.isPending}
+                >
+                  {afrondenMutation.isPending ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : null}
+                  {isLaatste ? "Afronden & resultaat bekijken" : "Volgende vraag"}
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // ── RESULTAAT ─────────────────────────────────────────────────────────────
+  if (fase === "resultaat" && resultaat) {
+    const kleur = stmInschalingKleur(resultaat.inschaling);
+    const totalePct = Math.round((resultaat.scores?.totaal ?? 0) * 100);
+
+    return (
+      <div>
+        <Card style={{ background: "#fff", border: `2px solid ${kleur}`, marginBottom: 16 }}>
+          <CardContent className="p-8 text-center">
+            <Trophy className="w-10 h-10 mx-auto mb-3" style={{ color: kleur }} />
+            <div style={{ fontSize: 48, fontWeight: 800, color: kleur, lineHeight: 1 }}>{totalePct}%</div>
+            <div style={{ fontSize: 18, color: kleur, fontWeight: 600, marginTop: 8 }}>
+              {resultaat.inschaling_label}
+            </div>
+            {resultaat.reminder_over_dagen && (
+              <div style={{ marginTop: 12, fontSize: 13, color: "#7a7468" }}>
+                Volgende aanbevolen sessie over {resultaat.reminder_over_dagen} dagen
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card style={{ background: "#fff", border: "1px solid #e8e4dc", marginBottom: 16 }}>
+          <CardContent className="pt-4 px-5 pb-4">
+            <p style={{ fontWeight: 600, color: "#14213d", marginBottom: 12 }}>Score per laag</p>
+            <StmScoreBar score={resultaat.scores?.laag1} label="Laag 1 — Parate kennis" />
+            <StmScoreBar score={resultaat.scores?.laag2} label="Laag 2 — Begrip" />
+            <StmScoreBar score={resultaat.scores?.laag3} label="Laag 3 — Analyse" />
+            <StmScoreBar score={resultaat.scores?.laag4} label="Laag 4 — Synthese" />
+          </CardContent>
+        </Card>
+
+        <Card style={{ background: "#fff", border: "1px solid #e8e4dc", marginBottom: 16 }}>
+          <CardContent className="p-0">
+            <p style={{ padding: "12px 16px", fontWeight: 600, color: "#14213d", borderBottom: "1px solid #e8e4dc" }}>Feedback per vraag</p>
+            {(resultaat.feedback || []).map((f: any, i: number) => (
+              <div key={f.vraag_id} style={{ padding: "10px 14px", borderBottom: "1px solid #f0ede6", display: "flex", gap: 10 }}>
+                <div style={{ flexShrink: 0, marginTop: 2 }}>
+                  {f.correct
+                    ? <CheckCircle className="w-5 h-5" style={{ color: "#2E7D5A" }} />
+                    : <AlertCircle className="w-5 h-5" style={{ color: "#A13544" }} />}
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: "#7a7468", marginBottom: 2 }}>Vraag {i + 1}</div>
+                  <div style={{ fontSize: 13, color: "#14213d" }}>{f.feedback}</div>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <div className="flex gap-3">
+          <Button
+            style={{ background: "#14213d", color: "#d8c9a3", flex: 1 }}
+            onClick={() => { setFase("menu"); setResultaat(null); }}>
+            Terug naar menu
+          </Button>
+          <Button variant="outline" style={{ flex: 1 }}
+            onClick={() => { setResultaat(null); startMutation.mutate(); }}>
+            Nieuwe sessie
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+// ── StmSectie — wrapper met coach-detectie ────────────────────────────────
+
+function StmSectie({ token }: { token: string }) {
+  const coachQuery = useQuery({
+    queryKey: ["/api/dashboard/is-coach", token],
+    queryFn: () => apiRequest("GET", `${API_BASE}/api/dashboard/${token}/is-coach`).then(r => r.json()),
+    staleTime: 60000,
+  });
+
+  // Niet laden of niet-coach: niets tonen
+  if (coachQuery.isLoading || !coachQuery.data?.isCoach) return null;
+
+  return (
+    <section className="mt-8" data-testid="stm-sectie">
+      <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground" style={{ marginBottom: 16 }}>
+        <BookOpen className="h-4 w-4" /> Self-Training Module
+      </h2>
+      <div style={{ background: "#f9f6f0", borderRadius: 12, padding: "4px 0 0 0", border: "1px solid #e8e4dc" }}>
+        <div style={{ padding: "12px 16px 4px", borderBottom: "1px solid #e8e4dc", marginBottom: 16 }}>
+          <p style={{ fontSize: 12, color: "#7a7468" }}>
+            Als geaccrediteerd TaPas coach train je hier je kennis van de methodiek.
+            Je scores worden bijgehouden voor kwaliteitsmonitoring.
+          </p>
+        </div>
+        <div style={{ padding: "0 16px 16px" }}>
+          <DashboardStmModule token={token} />
+        </div>
+      </div>
+    </section>
   );
 }

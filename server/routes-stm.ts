@@ -711,4 +711,327 @@ export function registerStmRoutes(app: Express, storage: any): void {
       },
     });
   });
+
+  // ── Coach-detectie via deelnemers-token ────────────────────────────────────
+  // Controleert of de deelnemer (via email-match) een actieve beheerder is.
+  // Retourneert { isCoach, beheerderId, naam }
+
+  app.get("/api/dashboard/:token/is-coach", async (req: Request, res: Response) => {
+    const { token } = req.params;
+    try {
+      const deelnemer = await storage.getDeelnemerByToken(token);
+      if (!deelnemer?.email) return res.json({ isCoach: false, beheerderId: null });
+
+      const beheerder = await storage.getBeheerderByEmail(deelnemer.email);
+      if (!beheerder || !beheerder.actief) return res.json({ isCoach: false, beheerderId: null });
+
+      return res.json({ isCoach: true, beheerderId: beheerder.id, naam: beheerder.naam });
+    } catch (e) {
+      return res.json({ isCoach: false, beheerderId: null });
+    }
+  });
+
+  // ── Token-auth helper (voor dashboard-integratie) ──────────────────────────
+  // Accepteert sessie-auth (adminId/coachId) OF token via query/body.
+
+  async function resolveBeheerderId(req: Request, res: Response): Promise<number | null> {
+    const sessieId = getPractitionerId(req);
+    if (sessieId) return sessieId;
+
+    const token = (req.query.token || req.body?.token) as string | undefined;
+    if (!token) {
+      res.status(401).json({ error: "Niet ingelogd en geen token opgegeven." });
+      return null;
+    }
+    const deelnemer = await storage.getDeelnemerByToken(token);
+    if (!deelnemer?.email) {
+      res.status(401).json({ error: "Ongeldig token." });
+      return null;
+    }
+    const beheerder = await storage.getBeheerderByEmail(deelnemer.email);
+    if (!beheerder || !beheerder.actief) {
+      res.status(403).json({ error: "Geen actieve coach-account." });
+      return null;
+    }
+    return beheerder.id;
+  }
+
+  // ── STM via token: start ───────────────────────────────────────────────────
+
+  app.post("/api/stm/token/start", async (req: Request, res: Response) => {
+    const beheerderId = await resolveBeheerderId(req, res);
+    if (beheerderId === null) return;
+
+    const aantal = Math.min(Number(req.body?.aantal) || 12, 20);
+    const vragen = selecteerVragen(beheerderId, aantal);
+    const id = sessieCounter++;
+
+    stmSessies.set(id, {
+      id, beheerder_id: beheerderId,
+      gestart_at: new Date().toISOString(),
+      afgerond_at: null, score_totaal: null, inschaling: null,
+      duur_seconden: null, scores_per_laag: {}, feedback: [],
+    });
+    if (!stmSessiesByBeheerder.has(beheerderId)) stmSessiesByBeheerder.set(beheerderId, []);
+    stmSessiesByBeheerder.get(beheerderId)!.push(id);
+
+    const vragenVoorClient = vragen.map(v => ({
+      id: v.id, vraag_tekst: v.vraag_tekst, thema: v.thema,
+      laag: v.laag, vraag_type: v.vraag_type, opties: v.opties,
+    }));
+    res.json({ sessie_id: id, vragen: vragenVoorClient });
+  });
+
+  // ── STM via token: afronden ────────────────────────────────────────────────
+
+  app.post("/api/stm/token/afronden", async (req: Request, res: Response) => {
+    const beheerderId = await resolveBeheerderId(req, res);
+    if (beheerderId === null) return;
+
+    const { sessie_id, antwoorden, duur_seconden } = req.body || {};
+    const sessie = stmSessies.get(Number(sessie_id));
+    if (!sessie || sessie.beheerder_id !== beheerderId) {
+      return res.status(404).json({ error: "Sessie niet gevonden." });
+    }
+    if (sessie.afgerond_at) return res.status(400).json({ error: "Sessie al afgerond." });
+
+    const correctPerLaag: Record<number, { correct: number; totaal: number }> = {
+      1: { correct: 0, totaal: 0 }, 2: { correct: 0, totaal: 0 },
+      3: { correct: 0, totaal: 0 }, 4: { correct: 0, totaal: 0 },
+    };
+    const feedback: StmSessieRecord["feedback"] = [];
+    const vraagIds = Object.keys(antwoorden || {}).map(Number);
+    for (const vraagId of vraagIds) {
+      const vraag = VRAAGBANK.find(v => v.id === vraagId);
+      if (!vraag) continue;
+      const antwoord = antwoorden[vraagId];
+      const correct = antwoord === vraag.correct_antwoord;
+      correctPerLaag[vraag.laag].totaal++;
+      if (correct) correctPerLaag[vraag.laag].correct++;
+      feedback.push({ vraag_id: vraagId, correct, feedback: correct ? vraag.feedback_correct : vraag.feedback_fout });
+    }
+    const scoresPerLaag: Record<string, number> = {};
+    let totaalCorrect = 0; let totaalVragen = 0;
+    for (let l = 1; l <= 4; l++) {
+      const { correct, totaal } = correctPerLaag[l];
+      scoresPerLaag[`laag${l}`] = totaal > 0 ? correct / totaal : 0;
+      totaalCorrect += correct; totaalVragen += totaal;
+    }
+    const scoreTotaal = totaalVragen > 0 ? totaalCorrect / totaalVragen : 0;
+    const inschaling = bepaalInschaling(scoreTotaal);
+    sessie.afgerond_at = new Date().toISOString();
+    sessie.score_totaal = scoreTotaal;
+    sessie.inschaling = inschaling;
+    sessie.duur_seconden = Number(duur_seconden) || null;
+    sessie.scores_per_laag = scoresPerLaag;
+    sessie.feedback = feedback;
+
+    res.json({
+      ok: true, inschaling,
+      inschaling_label: INSCHALING_LABELS[inschaling],
+      scores: { totaal: scoreTotaal, laag1: scoresPerLaag.laag1, laag2: scoresPerLaag.laag2, laag3: scoresPerLaag.laag3, laag4: scoresPerLaag.laag4 },
+      feedback, reminder_over_dagen: bepaalReminderDagen(inschaling),
+    });
+  });
+
+  // ── STM via token: historiek ───────────────────────────────────────────────
+
+  app.get("/api/stm/token/historiek", async (req: Request, res: Response) => {
+    const beheerderId = await resolveBeheerderId(req, res);
+    if (beheerderId === null) return;
+    const ids = stmSessiesByBeheerder.get(beheerderId) || [];
+    const sessies = ids.map(id => stmSessies.get(id))
+      .filter(s => s?.afgerond_at)
+      .sort((a, b) => (b!.afgerond_at! > a!.afgerond_at! ? 1 : -1));
+    res.json({ sessies });
+  });
+
+  // ── STM via token: laagscores ──────────────────────────────────────────────
+
+  app.get("/api/stm/token/laagscores", async (req: Request, res: Response) => {
+    const beheerderId = await resolveBeheerderId(req, res);
+    if (beheerderId === null) return;
+    const ids = stmSessiesByBeheerder.get(beheerderId) || [];
+    const afgerond = ids.map(id => stmSessies.get(id)).filter(s => s?.afgerond_at);
+    if (afgerond.length === 0) return res.json({ scores: null });
+    const laagSommen: Record<string, number[]> = { laag1: [], laag2: [], laag3: [], laag4: [] };
+    let latestDate: string | null = null;
+    for (const s of afgerond) {
+      for (const k of Object.keys(laagSommen)) {
+        const v = s!.scores_per_laag[k];
+        if (v !== undefined) laagSommen[k].push(v);
+      }
+      if (!latestDate || s!.afgerond_at! > latestDate) latestDate = s!.afgerond_at;
+    }
+    const gem = (arr: number[]) => arr.length > 0 ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+    res.json({
+      scores: {
+        sessies_totaal: afgerond.length,
+        laag1: gem(laagSommen.laag1), laag2: gem(laagSommen.laag2),
+        laag3: gem(laagSommen.laag3), laag4: gem(laagSommen.laag4),
+        laatste_sessie: latestDate,
+      },
+    });
+  });
+
+  // ── Kwaliteitsmonitor: in-memory status per beheerder ─────────────────────
+  // Statusoverrides en alerts worden in-memory bijgehouden (geen DB-migratie).
+
+  const kwaliteitOverrides = new Map<number, { status?: string; norm?: number }>();
+  const alertSentFlags = new Map<number, { trap1?: boolean; trap2?: boolean; trap3?: boolean }>();
+  const mailLog: Array<{ beheerderId: number; trap: number; verstuurdAt: string; email: string; naam: string }> = [];
+
+  function berekenKwaliteitsStatus(beheerderId: number): {
+    afnames_count: number; norm: number; verwacht: number;
+    progressie_pct: number; status_berekend: string; voorspelling_einde_jaar: number;
+  } {
+    const now = new Date();
+    const startJaar = new Date(now.getFullYear(), 0, 1);
+    const eindJaar = new Date(now.getFullYear(), 11, 31);
+    const dagenVerstreken = Math.floor((now.getTime() - startJaar.getTime()) / 86400000);
+    const dagenTotaal = Math.floor((eindJaar.getTime() - startJaar.getTime()) / 86400000);
+
+    const ids = stmSessiesByBeheerder.get(beheerderId) || [];
+    const jaarSessies = ids
+      .map(id => stmSessies.get(id))
+      .filter(s => s?.afgerond_at && s.afgerond_at.startsWith(String(now.getFullYear())));
+
+    const norm = kwaliteitOverrides.get(beheerderId)?.norm ?? 12;
+    const afnames_count = jaarSessies.length;
+    const verwacht = Math.round((dagenVerstreken / dagenTotaal) * norm);
+    const progressie_pct = norm > 0 ? Math.round((afnames_count / norm) * 100) : 0;
+    const gemVsVerwacht = verwacht > 0 ? afnames_count / verwacht : 1;
+
+    let status_berekend: string;
+    const override = kwaliteitOverrides.get(beheerderId)?.status;
+    if (override && ["opgeschort", "uitzondering"].includes(override)) {
+      status_berekend = override;
+    } else if (progressie_pct >= 100) {
+      status_berekend = "norm_gehaald";
+    } else if (gemVsVerwacht >= 0.75) {
+      status_berekend = "actief";
+    } else if (gemVsVerwacht >= 0.50) {
+      status_berekend = "achterstand_25";
+    } else {
+      status_berekend = "achterstand_50";
+    }
+
+    const dagelijksTempo = dagenVerstreken > 0 ? afnames_count / dagenVerstreken : 0;
+    const voorspelling_einde_jaar = Math.round(dagelijksTempo * dagenTotaal);
+    return { afnames_count, norm, verwacht, progressie_pct, status_berekend, voorspelling_einde_jaar };
+  }
+
+  // GET /api/kwaliteit/dashboard?jaar=
+  app.get("/api/kwaliteit/dashboard", async (req: Request, res: Response) => {
+    const s = (req.session as any);
+    if (!s?.adminId) return res.status(401).json({ error: "Enkel toegankelijk voor admins." });
+    try {
+      const alleBeheerders = await storage.listBeheerders();
+      const practitioners = alleBeheerders.map((b: any) => {
+        const stats = berekenKwaliteitsStatus(b.id);
+        const alerts = alertSentFlags.get(b.id) || {};
+        return {
+          beheerder_id: b.id, naam: b.naam, email: b.email,
+          ...stats,
+          alert_trap1_sent: alerts.trap1 ?? false,
+          alert_trap2_sent: alerts.trap2 ?? false,
+          alert_trap3_sent: alerts.trap3 ?? false,
+        };
+      });
+      res.json({ practitioners });
+    } catch (e) {
+      res.status(500).json({ error: "Kon data niet laden." });
+    }
+  });
+
+  // PUT /api/kwaliteit/:id/norm
+  app.put("/api/kwaliteit/:id/norm", (req: Request, res: Response) => {
+    const s = (req.session as any);
+    if (!s?.adminId) return res.status(401).json({ error: "Geen toegang." });
+    const id = Number(req.params.id);
+    const norm = Number(req.body?.norm);
+    if (!norm || norm < 1 || norm > 500) return res.status(400).json({ error: "Ongeldige norm." });
+    const bestaand = kwaliteitOverrides.get(id) || {};
+    kwaliteitOverrides.set(id, { ...bestaand, norm });
+    res.json({ ok: true, norm });
+  });
+
+  // POST /api/kwaliteit/:id/alert (trap 1/2/3)
+  app.post("/api/kwaliteit/:id/alert", async (req: Request, res: Response) => {
+    const s = (req.session as any);
+    if (!s?.adminId) return res.status(401).json({ error: "Geen toegang." });
+    const id = Number(req.params.id);
+    const trap = Number(req.body?.trap);
+    if (![1, 2, 3].includes(trap)) return res.status(400).json({ error: "Ongeldige trap." });
+    try {
+      const beheerder = await storage.getBeheerder(id);
+      if (!beheerder) return res.status(404).json({ error: "Practitioner niet gevonden." });
+      mailLog.push({ beheerderId: id, trap, verstuurdAt: new Date().toISOString(), email: beheerder.email, naam: beheerder.naam });
+      const flags = alertSentFlags.get(id) || {};
+      if (trap === 1) flags.trap1 = true;
+      if (trap === 2) flags.trap2 = true;
+      if (trap === 3) flags.trap3 = true;
+      alertSentFlags.set(id, flags);
+      const trapLabels: Record<number, string> = {
+        1: "Intern signaal (geen mail naar practitioner)",
+        2: "E-mail verstuurd naar practitioner",
+        3: "Escalatie — fondateur op de hoogte gebracht",
+      };
+      res.json({ ok: true, bericht: trapLabels[trap], email: beheerder.email });
+    } catch (e) {
+      res.status(500).json({ error: "Alert kon niet verstuurd worden." });
+    }
+  });
+
+  // POST /api/kwaliteit/:id/actie (opschorten / uitzondering / herstel)
+  app.post("/api/kwaliteit/:id/actie", (req: Request, res: Response) => {
+    const s = (req.session as any);
+    if (!s?.adminId) return res.status(401).json({ error: "Geen toegang." });
+    const id = Number(req.params.id);
+    const actie = req.body?.actie as string;
+    if (!["opschorten", "uitzondering", "herstel"].includes(actie)) return res.status(400).json({ error: "Ongeldige actie." });
+    const bestaand = kwaliteitOverrides.get(id) || {};
+    if (actie === "herstel") {
+      kwaliteitOverrides.set(id, { ...bestaand, status: undefined });
+    } else {
+      kwaliteitOverrides.set(id, { ...bestaand, status: actie === "opschorten" ? "opgeschort" : "uitzondering" });
+    }
+    res.json({ ok: true, actie });
+  });
+
+  // POST /api/kwaliteit/:id/herbereken
+  app.post("/api/kwaliteit/:id/herbereken", (req: Request, res: Response) => {
+    const s = (req.session as any);
+    if (!s?.adminId) return res.status(401).json({ error: "Geen toegang." });
+    const id = Number(req.params.id);
+    const stats = berekenKwaliteitsStatus(id);
+    res.json({ ok: true, ...stats });
+  });
+
+  // GET /api/kwaliteit/rapport/kwartaal
+  app.get("/api/kwaliteit/rapport/kwartaal", async (req: Request, res: Response) => {
+    const s = (req.session as any);
+    if (!s?.adminId) return res.status(401).json({ error: "Geen toegang." });
+    try {
+      const alleBeheerders = await storage.listBeheerders();
+      const practitioners = alleBeheerders.map((b: any) => {
+        const stats = berekenKwaliteitsStatus(b.id);
+        return { beheerder_id: b.id, naam: b.naam, email: b.email, ...stats };
+      });
+      const totaal_practitioners = practitioners.length;
+      const op_schema = practitioners.filter((p: any) => p.status_berekend === "actief").length;
+      const norm_gehaald = practitioners.filter((p: any) => p.status_berekend === "norm_gehaald").length;
+      const achterstand_licht = practitioners.filter((p: any) => p.status_berekend === "achterstand_25").length;
+      const achterstand_zwaar = practitioners.filter((p: any) => p.status_berekend === "achterstand_50").length;
+      res.json({
+        kwartaal: Math.ceil((new Date().getMonth() + 1) / 3),
+        jaar: new Date().getFullYear(),
+        samenvatting: { totaal_practitioners, op_schema, norm_gehaald, achterstand_licht, achterstand_zwaar },
+        practitioners,
+        mail_log: mailLog.slice(-20),
+      });
+    } catch (e) {
+      res.status(500).json({ error: "Rapport kon niet gegenereerd worden." });
+    }
+  });
 }
