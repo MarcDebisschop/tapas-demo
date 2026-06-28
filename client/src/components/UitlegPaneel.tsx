@@ -309,12 +309,17 @@ function UitlegPaneel({ token, taal, toon = "deelnemer" }: { token: string; taal
     window.speechSynthesis.cancel();
     const utt = new SpeechSynthesisUtterance(tekst);
     utt.lang = "nl-BE";
-    utt.rate = 0.92;
-    utt.pitch = 1.0;
-    // Voorkeur voor Nederlandstalige stem
+    utt.rate = 0.88;
+    utt.pitch = 0.97;
+    // Vlaamse stemkeuze: voorkeursvolgorde — Belgisch-Nederlands boven Hollands
+    // Browsers labelen Vlaamse stemmen vaak als nl-BE, soms met naam "Belgian" of "Flemish"
     const stemmen = window.speechSynthesis.getVoices();
-    const nlStem = stemmen.find(v => v.lang === "nl-BE") ||
-                   stemmen.find(v => v.lang.startsWith("nl"));
+    const nlStem =
+      stemmen.find(v => v.lang === "nl-BE") ||
+      stemmen.find(v => /belgi|flemish|vlaams/i.test(v.name)) ||
+      stemmen.find(v => v.lang === "nl-BE" && v.localService) ||
+      stemmen.find(v => v.lang.startsWith("nl") && /female|vrouw/i.test(v.name)) ||
+      stemmen.find(v => v.lang.startsWith("nl"));
     if (nlStem) utt.voice = nlStem;
     utt.onend = () => { setSpreekt(false); setGepauzeerd(false); utteranceRef.current = null; };
     utt.onerror = () => { setSpreekt(false); setGepauzeerd(false); };

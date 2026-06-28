@@ -6,7 +6,7 @@ services:
     plan: free
     nodeVersion: 20.19.0
 
-    buildCommand: npm install --legacy-peer-deps && npm run build
+    buildCommand: pip3 install -r requirements.txt && npm install --legacy-peer-deps && npm run build
     startCommand: node dist/index.cjs
 
     envVars:
