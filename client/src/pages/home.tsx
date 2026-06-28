@@ -264,59 +264,59 @@ function PlatformOverzicht() {
 
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
         {tegels.map((tegel) => (
-          <Link key={tegel.href} href={tegel.href} asChild>
-            <a
-              className="group relative flex flex-col overflow-hidden rounded-2xl border border-t-[3px] border-border p-6 transition hover:-translate-y-1"
+          <a
+            key={tegel.href}
+            href={`#${tegel.href}`}
+            className="group relative flex flex-col overflow-hidden rounded-2xl border border-t-[3px] border-border p-6 transition hover:-translate-y-1"
+            style={{
+              borderTopColor: `hsl(var(${tegel.kleurVar}))`,
+              background: `radial-gradient(120% 95% at 100% 0%, hsl(var(${tegel.kleurVar})/0.12) 0%, hsl(var(--card)) 65%)`,
+            }}
+          >
+            <span
+              className="grid h-9 w-9 place-items-center rounded-xl"
               style={{
-                borderTopColor: `hsl(var(${tegel.kleurVar}))`,
-                background: `radial-gradient(120% 95% at 100% 0%, hsl(var(${tegel.kleurVar})/0.12) 0%, hsl(var(--card)) 65%)`,
+                background: `hsl(var(${tegel.kleurVar})/0.14)`,
+                color: `hsl(var(${tegel.kleurVar}))`,
               }}
             >
-              <span
-                className="grid h-9 w-9 place-items-center rounded-xl"
-                style={{
-                  background: `hsl(var(${tegel.kleurVar})/0.14)`,
-                  color: `hsl(var(${tegel.kleurVar}))`,
-                }}
-              >
-                {tegel.icon}
-              </span>
-              <p
-                className="mt-3 font-mono text-[10px] uppercase tracking-[0.15em]"
-                style={{ color: `hsl(var(${tegel.kleurVar}))` }}
-              >
-                {tegel.label}
-              </p>
-              <h3 className="mt-1 font-serif text-lg font-semibold text-foreground">
-                {tegel.titel}
-              </h3>
-              <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                {tegel.omschrijving}
-              </p>
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {tegel.badges.map((b) => (
-                  <span
-                    key={b}
-                    className="rounded-full border px-2 py-0.5 text-[10px] font-medium"
-                    style={{
-                      borderColor: `hsl(var(${tegel.kleurVar})/0.3)`,
-                      color: `hsl(var(${tegel.kleurVar}))`,
-                      background: `hsl(var(${tegel.kleurVar})/0.07)`,
-                    }}
-                  >
-                    {b}
-                  </span>
-                ))}
-              </div>
-              <span
-                className="mt-auto pt-4 inline-flex items-center gap-1 text-xs font-semibold"
-                style={{ color: `hsl(var(${tegel.kleurVar}))` }}
-              >
-                Verken
-                <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
-              </span>
-            </a>
-          </Link>
+              {tegel.icon}
+            </span>
+            <p
+              className="mt-3 font-mono text-[10px] uppercase tracking-[0.15em]"
+              style={{ color: `hsl(var(${tegel.kleurVar}))` }}
+            >
+              {tegel.label}
+            </p>
+            <h3 className="mt-1 font-serif text-lg font-semibold text-foreground">
+              {tegel.titel}
+            </h3>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+              {tegel.omschrijving}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-1.5">
+              {tegel.badges.map((b) => (
+                <span
+                  key={b}
+                  className="rounded-full border px-2 py-0.5 text-[10px] font-medium"
+                  style={{
+                    borderColor: `hsl(var(${tegel.kleurVar})/0.3)`,
+                    color: `hsl(var(${tegel.kleurVar}))`,
+                    background: `hsl(var(${tegel.kleurVar})/0.07)`,
+                  }}
+                >
+                  {b}
+                </span>
+              ))}
+            </div>
+            <span
+              className="mt-auto pt-4 inline-flex items-center gap-1 text-xs font-semibold"
+              style={{ color: `hsl(var(${tegel.kleurVar}))` }}
+            >
+              Verken
+              <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
+            </span>
+          </a>
         ))}
       </div>
     </section>
