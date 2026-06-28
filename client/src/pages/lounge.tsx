@@ -440,8 +440,8 @@ function StilteKamer() {
 }
 
 // =============================================================================
-// Generieke "Kom terug" kamer (voor kamers die leden-login vereisen)
-// Vervangt Y8e, J8e, eHe, tHe, Z8e (die eh() auth gebruiken)
+// Generieke kamer — open voor demo, met zachte lidmaatschapsteaser onderaan.
+// In de live versie worden de inhoud-secties vervangen door echte content per kamer.
 // =============================================================================
 function KamerKomTerug({ titel, eyebrow, intro, img, imgAlt }: {
   titel: string; eyebrow: string; intro: string; img?: string; imgAlt?: string;
@@ -454,15 +454,36 @@ function KamerKomTerug({ titel, eyebrow, intro, img, imgAlt }: {
           <img src={img} alt={imgAlt || titel} className="h-60 w-full object-cover sm:h-72" loading="lazy" />
         </div>
       )}
-      <div className="mt-8">
+
+      {/* Demo inhoud — toegankelijk voor iedereen */}
+      <div className="mt-8 space-y-6">
         <KaartContainer>
-          <div className="flex flex-col items-center py-6 text-center">
-            <LoungebBadge tekst="TaPasCity-leden" />
-            <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
-              Deze kamer is open voor leden van TaPasCity. De deuren openen binnenkort voor wie een TIP-card draagt.
-            </p>
-          </div>
+          <Eyebrow>Wat je hier vindt</Eyebrow>
+          <h3 className="mt-2 font-serif text-xl font-semibold text-foreground">{titel}</h3>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            {intro}
+          </p>
+          <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+            In de volledige versie vind je hier exclusieve content, live events en een persoonlijke ruimte
+            die meegroeit met jouw talent-traject. Als TaPasCity-lid draag je een TIP-card die toegang
+            geeft tot alle kamers — en tot de mensen die er al aanwezig zijn.
+          </p>
         </KaartContainer>
+
+        {/* Zachte teaser — geen blokkade, wel uitnodiging */}
+        <div
+          className="rounded-2xl border border-dashed p-5 text-center"
+          style={{
+            borderColor: `hsl(var(${LOUNGE_VAR})/0.45)`,
+            background: `radial-gradient(120% 120% at 50% 0%, hsl(var(${LOUNGE_VAR})/0.10) 0%, hsl(var(--card)) 70%)`,
+          }}
+        >
+          <LoungebBadge tekst="TaPasCity-leden" />
+          <p className="mt-3 max-w-md mx-auto text-sm leading-relaxed text-muted-foreground">
+            Als lid van TaPasCity krijg je volledige toegang tot deze kamer via je persoonlijke TIP-card.
+            Ontdek het lidmaatschap via het <strong>Onthaal</strong>.
+          </p>
+        </div>
       </div>
     </div>
   );
@@ -811,6 +832,106 @@ function Webshop() {
 }
 
 // =============================================================================
+// =============================================================================
+// TIP Card Teaser — zichtbaar in het Onthaal als uitnodiging tot lidmaatschap.
+// Toont de Evarist Galois TIP-card als visueel voorbeeld + voordelen + CTA.
+// =============================================================================
+function TipCardTeaser({ gaaNaar }: { gaaNaar?: (id: string) => void }) {
+  const VOORDELEN = [
+    { icon: "✦", tekst: "Toegang tot alle kamers van de TaPas Lounge" },
+    { icon: "✦", tekst: "Persoonlijk TIP-card met jouw talentprofiel" },
+    { icon: "✦", tekst: "Deelname aan live sessies en het Talentencafé" },
+    { icon: "✦", tekst: "Verbinding met een gemeenschap van talent-bewuste mensen" },
+    { icon: "✦", tekst: "Zichtbaarheid op de Inspiratiewand (opt-in)" },
+    { icon: "✦", tekst: "Prioriteit bij nieuwe TaPas-modules en β-toegang" },
+  ];
+
+  return (
+    <section className="mt-14">
+      <div className="text-center">
+        <Eyebrow>Lidmaatschap</Eyebrow>
+        <h2 className="mx-auto mt-2 max-w-xl font-serif text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+          Jouw TIP-card: de sleutel tot de Lounge
+        </h2>
+        <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
+          TIP staat voor <strong>Talent In Passie</strong>. Elke TaPasCity-lid draagt een persoonlijke TIP-card
+          met zijn of haar talentprofiel — zichtbaar voor wie het wil delen, altijd als spiegel voor zichzelf.
+        </p>
+      </div>
+
+      {/* Visuele TIP card + voordelen naast elkaar */}
+      <div className="mt-8 grid gap-8 sm:grid-cols-2 items-start">
+
+        {/* TIP card afbeelding — Evarist Galois als voorbeeld */}
+        <div className="flex flex-col items-center gap-4">
+          <div
+            className="relative w-full max-w-sm overflow-hidden rounded-3xl border border-t-[3px] shadow-xl"
+            style={{
+              borderTopColor: LOUNGE_KLEUR,
+              background: `radial-gradient(140% 110% at 0% 0%, hsl(var(${LOUNGE_VAR})/0.18) 0%, hsl(var(--card)) 65%)`,
+            }}
+          >
+            <img
+              src="/lounge/img/jester-card.png"
+              alt="Voorbeeld TIP-card: Evarist Galois — TaPas Jester"
+              className="w-full object-contain"
+              loading="lazy"
+            />
+          </div>
+          <p className="text-center text-xs text-muted-foreground max-w-xs">
+            Voorbeeldkaart: <em>Evarist Galois</em> — TaPas Jester · Talent In Passie
+          </p>
+        </div>
+
+        {/* Voordelen + CTA */}
+        <div className="flex flex-col gap-5">
+          <KaartContainer>
+            <Eyebrow>Wat je krijgt als lid</Eyebrow>
+            <h3 className="mt-2 font-serif text-xl font-semibold text-foreground">Alles wat de Lounge te bieden heeft</h3>
+            <ul className="mt-4 space-y-3">
+              {VOORDELEN.map((v, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm text-muted-foreground">
+                  <span className="mt-0.5 shrink-0 text-base" style={{ color: LOUNGE_KLEUR }}>{v.icon}</span>
+                  <span>{v.tekst}</span>
+                </li>
+              ))}
+            </ul>
+          </KaartContainer>
+
+          {/* Lidmaatschap info */}
+          <div
+            className="rounded-2xl border border-dashed p-5"
+            style={{
+              borderColor: `hsl(var(${LOUNGE_VAR})/0.45)`,
+              background: `radial-gradient(120% 120% at 50% 0%, hsl(var(${LOUNGE_VAR})/0.08) 0%, hsl(var(--card)) 70%)`,
+            }}
+          >
+            <Eyebrow>Word lid</Eyebrow>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Lidmaatschap van TaPasCity is op uitnodiging. Je kunt je interesse registreren via
+              de <strong>Webshop</strong> of door contact op te nemen met een TaPas Jester in jouw netwerk.
+            </p>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              Elke nieuwe TaPas-deelnemer ontvangt na hun traject een persoonlijke TIP-card. Die kaart
+              is meteen je toegangspas tot de Lounge.
+            </p>
+            <button
+              type="button"
+              className="mt-4 inline-flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold text-background transition hover:-translate-y-0.5"
+              style={{ background: LOUNGE_KLEUR }}
+              onClick={() => gaaNaar ? gaaNaar("webshop") : undefined}
+            >
+              Bekijk de Webshop
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// =============================================================================
 // Aanwezigen sectie (verbatim uit bundle: function AHe)
 // Vereenvoudigd voor demo — geen live member data
 // =============================================================================
@@ -905,7 +1026,7 @@ function RadioKnop() {
 // =============================================================================
 // Onthaal — hero + kamer grid (verbatim uit bundle: function rHe)
 // =============================================================================
-function Onthaal({ gaaNaar }: { gaaNaar: (id: string) => void }) {
+function Onthaal({ gaaNaar, gaaNaarWebshop }: { gaaNaar: (id: string) => void; gaaNaarWebshop?: () => void }) {
   return (
     <div>
       {/* Hero sectie — verbatim uit rHe */}
@@ -981,6 +1102,9 @@ function Onthaal({ gaaNaar }: { gaaNaar: (id: string) => void }) {
           );
         })}
       </section>
+
+      {/* TIP card teaser — zichtbaar in onthaal, onder het kamer-grid */}
+      <TipCardTeaser gaaNaar={gaaNaar} />
     </div>
   );
 }
