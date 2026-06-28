@@ -367,8 +367,10 @@
 
   function bepaalSkinUitToken(t) {
     var tl = (t || '').toLowerCase();
+    // students eerst checken — LucaDemoTeensT4P01 bevat 'teens' maar is students
+    if (tl.indexOf('student') !== -1 || tl.indexOf('luca') !== -1) return 'students';
+    // teens: jana, lana, of expliciet 'teen' in token (zonder 'student' ervoor)
     if (tl.indexOf('teen') !== -1 || tl.indexOf('jana') !== -1 || tl.indexOf('lana') !== -1) return 'teens';
-    if (tl.indexOf('student') !== -1 || tl.indexOf('studen') !== -1 || tl.indexOf('luca') !== -1) return 'students';
     return 'business';
   }
 
