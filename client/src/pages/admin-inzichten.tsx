@@ -358,7 +358,7 @@ export default function AdminInzichten() {
               </Select>
             </div>
             <Link href="/admin">
-              <Button size="sm" variant="outline" data-testid="link-admin-terug">{n("iz_nav")}</Button>
+              <Button size="sm" variant="outline" data-testid="link-admin-terug">← Admin beheer</Button>
             </Link>
           </div>
         }

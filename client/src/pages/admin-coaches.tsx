@@ -387,7 +387,7 @@ export default function AdminCoaches() {
         right={
           <div className="flex items-center gap-2">
             <Link href="/admin">
-              <Button size="sm" variant="outline" data-testid="link-admin">Beheer</Button>
+              <Button size="sm" variant="outline" data-testid="link-admin">← Admin beheer</Button>
             </Link>
             
           </div>

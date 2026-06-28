@@ -1531,7 +1531,7 @@ export default function AdminCredits() {
       <AppHeader
         right={
           <Link href="/admin">
-            <Button size="sm" variant="outline" data-testid="link-afnames">Afnames</Button>
+            <Button size="sm" variant="outline" data-testid="link-afnames">← Admin beheer</Button>
           </Link>
         }
       />

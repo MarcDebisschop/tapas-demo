@@ -6,6 +6,7 @@
 // ---------------------------------------------------------------------------
 
 import { useState } from "react";
+import { Link } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AppHeader } from "@/components/Brand";
 import { Card, CardContent } from "@/components/ui/card";
@@ -239,7 +240,9 @@ export default function AdminMailbeheer() {
                 ))}
               </SelectContent>
             </Select>
-            
+            <Link href="/admin">
+              <Button size="sm" variant="outline" data-testid="link-admin-terug">← Admin beheer</Button>
+            </Link>
           </div>
         }
       />

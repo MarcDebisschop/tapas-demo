@@ -298,7 +298,7 @@ export default function AdminAcademy() {
             </Select>
             
             <Link href="/admin">
-              <Button variant="ghost" size="sm" data-testid="link-terug-admin">Admin</Button>
+              <Button variant="outline" size="sm" data-testid="link-terug-admin">← Admin beheer</Button>
             </Link>
           </div>
         }

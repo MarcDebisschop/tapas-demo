@@ -176,7 +176,7 @@ export default function AdminToegang() {
               </Select>
             </div>
             <Link href="/admin">
-              <Button size="sm" variant="outline" data-testid="link-admin">{t("admin_titel")}</Button>
+              <Button size="sm" variant="outline" data-testid="link-admin">← Admin beheer</Button>
             </Link>
           </div>
         }
