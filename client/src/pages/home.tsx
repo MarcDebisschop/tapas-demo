@@ -262,11 +262,11 @@ function PlatformOverzicht() {
         </p>
       </div>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-3">
+      <div className="mt-8 grid items-stretch gap-4 sm:grid-cols-3">
         {tegels.map((tegel) => (
-          <Link key={tegel.href} href={tegel.href} className="h-full">
+          <Link key={tegel.href} href={tegel.href} className="contents">
             <a
-              className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-t-[3px] border-border p-6 transition hover:-translate-y-1"
+              className="group relative flex flex-col overflow-hidden rounded-2xl border border-t-[3px] border-border p-6 transition hover:-translate-y-1"
               style={{
                 borderTopColor: `hsl(var(${tegel.kleurVar}))`,
                 background: `radial-gradient(120% 95% at 100% 0%, hsl(var(${tegel.kleurVar})/0.12) 0%, hsl(var(--card)) 65%)`,
