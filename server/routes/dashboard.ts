@@ -16,12 +16,10 @@
  *   GET  /api/dashboard/:token/uitleg               — uitleg-script ophalen
  *   POST /api/dashboard/:token/uitleg               — uitleg-sessie registreren
  *   POST /api/dashboard/:token/uitleg/koop-extra    — extra uitleg bijkopen
- *   POST /api/tts                                   — Vlaamse stem TTS
+ * /api/tts is NIET hier geregistreerd — leeft in server/routes-deelnemer.ts.
  */
 
 import type { Express } from "express";
-import { spawn } from "node:child_process";
-import { join } from "node:path";
 import { storage } from "../storage";
 import { normaliseerTaal } from "@shared/i18n";
 import {
@@ -453,35 +451,8 @@ export function registerDashboardRoutes(app: Express): void {
     });
   });
 
-  // =========================================================================
-  // SULAFAT TTS — Vlaamse stem (Gemini 2.5 Pro TTS, voice=sulafat)
-  // POST /api/tts  { tekst: string }
-  // =========================================================================
-  app.post("/api/tts", (req, res) => {
-    const tekst: string = (req.body?.tekst ?? "").trim();
-    if (!tekst) return res.status(400).json({ error: "tekst vereist" });
-    if (tekst.length > 4000) return res.status(400).json({ error: "tekst te lang (max 4000 tekens)" });
-
-    const volledigeTekst = VLAAMSE_STEM_PROMPT + "\n\n" + tekst;
-    // tts.py staat naast index.cjs in dist/ (gekopieerd door build.mjs)
-    const ttsScript = join(process.cwd(), "dist", "tts.py");
-
-    const py = spawn("python3", [ttsScript, volledigeTekst]);
-    const chunks: Buffer[] = [];
-
-    py.stdout.on("data", (chunk: Buffer) => chunks.push(chunk));
-    py.stderr.on("data", (d: Buffer) => console.error("[tts]", d.toString()));
-
-    py.on("close", (code) => {
-      if (code !== 0 || chunks.length === 0) {
-        if (!res.headersSent) res.status(500).json({ error: "TTS mislukt" });
-        return;
-      }
-      const audio = Buffer.concat(chunks);
-      res.setHeader("Content-Type", "audio/mpeg");
-      res.setHeader("Content-Length", audio.length);
-      res.setHeader("Cache-Control", "no-store");
-      res.end(audio);
-    });
-  });
+  // /api/tts wordt NIET hier geregistreerd.
+  // De Sulafat-route (sidecar + spawn fallback) leeft uitsluitend in
+  // server/routes-deelnemer.ts — die wordt na deze module geregistreerd.
+  // Dubbele registratie hier zou de betere sidecar-implementatie blokkeren.
 }

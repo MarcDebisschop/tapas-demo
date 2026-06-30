@@ -21,6 +21,8 @@ import { registerFinancieelRoutes } from "./routes/financieel";
 import { registerRapportenRoutes } from "./routes/rapporten";
 import { registerDashboardRoutes } from "./routes/dashboard";
 import { registerT4RInlineRoutes } from "./routes/t4r";
+import { registerWebinarRoutes } from "./routes/webinars";
+import { registerInstrumentenCatalogusRoutes } from "./routes/instrumenten-catalogus";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -47,6 +49,12 @@ export async function registerRoutes(
 
   // --- T4Recruitment: licenties, sessies, kring, /api/r ---
   registerT4RInlineRoutes(app);
+
+  // --- Webinar Ecosysteem (TaPas Terras) ---
+  registerWebinarRoutes(app);
+
+  // --- Instrumentencatalogus (demo-overzicht + admin) ---
+  registerInstrumentenCatalogusRoutes(app);
 
   // -------------------------------------------------------------------------
   // T4Recruitment — ingeplugde routes (eigen module-namespace).
