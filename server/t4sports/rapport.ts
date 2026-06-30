@@ -125,6 +125,10 @@ export function genereerT4SportsRapport(contractRaw: unknown, taal: string = "nl
   const ploeg = escHtml(contract.ploeg ?? "");
   const rol = escHtml(contract.rol ?? "");
   const datum = formatDate(contract.generatedAt ?? new Date().toISOString());
+  const niveauLabel = escHtml((contract as any).niveauLabel ?? (contract as any).niveau ?? "");
+  const sportTypeRaw = (contract as any).sportType ?? "";
+  const sportTypeLabel = sportTypeRaw === "individueel" ? "Individueel" : sportTypeRaw === "ploeg" ? "Ploeg / Team" : "";
+  const ambitieLabel = escHtml((contract as any).ambitieLabel ?? (contract as any).ambitie ?? "");
 
   const sections = contract.sections ?? {};
   const meta = sections.meta ?? {};
@@ -188,7 +192,7 @@ export function genereerT4SportsRapport(contractRaw: unknown, taal: string = "nl
     .cover-logo { color: #C9A84C; font-size: 1.1rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 40px; }
     .cover-title { font-size: 2.2rem; font-weight: 800; color: #C9A84C; margin-bottom: 8px; }
     .cover-subtitle { font-size: 1.1rem; color: #8aa8d0; margin-bottom: 32px; }
-    .cover-meta { border-top: 1px solid #C9A84C44; padding-top: 20px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .cover-meta { border-top: 1px solid #C9A84C44; padding-top: 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
     .cover-meta-item { }
     .cover-meta-label { color: #8aa8d0; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; }
     .cover-meta-value { color: white; font-size: 0.95rem; font-weight: 600; margin-top: 2px; }
@@ -247,12 +251,20 @@ export function genereerT4SportsRapport(contractRaw: unknown, taal: string = "nl
       <div class="cover-meta-value">${sporttak || "—"}</div>
     </div>
     <div class="cover-meta-item">
-      <div class="cover-meta-label">Club / Ploeg</div>
-      <div class="cover-meta-value">${ploeg || "—"}</div>
+      <div class="cover-meta-label">Type sport</div>
+      <div class="cover-meta-value">${sportTypeLabel || "—"}</div>
     </div>
     <div class="cover-meta-item">
-      <div class="cover-meta-label">Positie / Rol</div>
-      <div class="cover-meta-value">${rol || "—"}</div>
+      <div class="cover-meta-label">Niveau</div>
+      <div class="cover-meta-value">${niveauLabel || "—"}</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="cover-meta-label">Ambitie</div>
+      <div class="cover-meta-value">${ambitieLabel || "—"}</div>
+    </div>
+    <div class="cover-meta-item">
+      <div class="cover-meta-label">Club / Ploeg</div>
+      <div class="cover-meta-value">${ploeg || "—"}</div>
     </div>
     <div class="cover-meta-item">
       <div class="cover-meta-label">Datum</div>

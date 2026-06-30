@@ -71,12 +71,18 @@ function WelkomScherm({
   sporttak, setSporttak,
   ploeg, setPloeg,
   rol, setRol,
+  niveau, setNiveau,
+  sportType, setSportType,
+  ambitie, setAmbitie,
   onVolgende,
 }: {
   naam: string; setNaam: (v: string) => void;
   sporttak: string; setSporttak: (v: string) => void;
   ploeg: string; setPloeg: (v: string) => void;
   rol: string; setRol: (v: string) => void;
+  niveau: string; setNiveau: (v: string) => void;
+  sportType: string; setSportType: (v: string) => void;
+  ambitie: string; setAmbitie: (v: string) => void;
   onVolgende: () => void;
 }) {
   return (
@@ -130,11 +136,59 @@ function WelkomScherm({
               className="mt-1 bg-white/10 border-white/20 text-white placeholder:text-white/40"
             />
           </div>
+          <div>
+            <Label className="text-blue-200 text-xs uppercase tracking-wide">Niveau *</Label>
+            <select
+              value={niveau}
+              onChange={(e) => setNiveau(e.target.value)}
+              className="mt-1 w-full rounded-md bg-white/10 border border-white/20 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
+            >
+              <option value="" disabled className="text-gray-900">Selecteer je niveau…</option>
+              <option value="elite" className="text-gray-900">Elite / Professioneel</option>
+              <option value="topsport" className="text-gray-900">Topsport / Semi-professioneel</option>
+              <option value="hoog_amateurs" className="text-gray-900">Hoog competitief amateur</option>
+              <option value="recreatief_competitief" className="text-gray-900">Recreatief maar competitief</option>
+              <option value="recreatief" className="text-gray-900">Puur recreatief</option>
+            </select>
+          </div>
+          <div>
+            <Label className="text-blue-200 text-xs uppercase tracking-wide">Type sport *</Label>
+            <div className="mt-2 flex gap-3">
+              {(["individueel", "ploeg"] as const).map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => setSportType(opt)}
+                  className="flex-1 rounded-md border px-4 py-2.5 text-sm font-medium transition-all"
+                  style={sportType === opt
+                    ? { background: GOUD, borderColor: GOUD, color: NAVY, fontWeight: 700 }
+                    : { borderColor: "rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.7)" }}
+                >
+                  {opt === "individueel" ? "🏃 Individueel" : "🤝 Ploeg / Team"}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <Label className="text-blue-200 text-xs uppercase tracking-wide">Mijn ambitie *</Label>
+            <select
+              value={ambitie}
+              onChange={(e) => setAmbitie(e.target.value)}
+              className="mt-1 w-full rounded-md bg-white/10 border border-white/20 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"
+            >
+              <option value="" disabled className="text-gray-900">Wat wil je bereiken?</option>
+              <option value="best_of_world" className="text-gray-900">Best of the world — absolute top</option>
+              <option value="topper" className="text-gray-900">Topper in mijn discipline</option>
+              <option value="subtopper" className="text-gray-900">Subtopper — sterk nationaal niveau</option>
+              <option value="recreatief_limieten" className="text-gray-900">Recreatief maar mijn limieten opzoeken</option>
+              <option value="plezier" className="text-gray-900">Plezier en gezondheid voorop</option>
+            </select>
+          </div>
         </div>
 
         <Button
           onClick={onVolgende}
-          disabled={!naam.trim() || !sporttak.trim()}
+          disabled={!naam.trim() || !sporttak.trim() || !niveau || !sportType || !ambitie}
           className="mt-8 w-full font-bold"
           style={{ background: GOUD, color: NAVY }}
         >
@@ -519,6 +573,9 @@ export default function T4SportsVragenlijst() {
   const [sporttak, setSporttak] = useState("");
   const [ploeg, setPloeg] = useState("");
   const [rol, setRol] = useState("");
+  const [niveau, setNiveau] = useState("");
+  const [sportType, setSportType] = useState("");
+  const [ambitie, setAmbitie] = useState("");
   const [baseline, setBaseline] = useState(5);
   const [verbinding, setVerbinding] = useState<Record<string, number>>({
     q1: 5, q2: 5, q3: 5, q4: 5,
@@ -549,6 +606,9 @@ export default function T4SportsVragenlijst() {
         sporttak: sporttak.trim(),
         ploeg: ploeg.trim() || undefined,
         rol: rol.trim() || undefined,
+        niveau: niveau || undefined,
+        sportType: sportType || undefined,
+        ambitie: ambitie || undefined,
         baselineEnergy: baseline,
         taal: "nl",
       });
@@ -602,6 +662,9 @@ export default function T4SportsVragenlijst() {
         sporttak={sporttak} setSporttak={setSporttak}
         ploeg={ploeg} setPloeg={setPloeg}
         rol={rol} setRol={setRol}
+        niveau={niveau} setNiveau={setNiveau}
+        sportType={sportType} setSportType={setSportType}
+        ambitie={ambitie} setAmbitie={setAmbitie}
         onVolgende={startAfname}
       />
     );

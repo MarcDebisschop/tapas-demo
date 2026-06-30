@@ -32,11 +32,18 @@ function makeRespondentCode(name: string, id: number): string {
 }
 
 // Schema voor het starten van een T4Sports afname
+const SPORT_NIVEAUS = ["elite", "topsport", "hoog_amateurs", "recreatief_competitief", "recreatief"] as const;
+const SPORT_TYPES = ["individueel", "ploeg"] as const;
+const AMBITIES = ["best_of_world", "topper", "subtopper", "recreatief_limieten", "plezier"] as const;
+
 const startT4SportsSchema = z.object({
   name: z.string().min(1).max(120),
   sporttak: z.string().min(1).max(80).optional(),
   ploeg: z.string().max(80).optional(),
   rol: z.string().max(80).optional(),
+  niveau: z.enum(SPORT_NIVEAUS).optional(),
+  sportType: z.enum(SPORT_TYPES).optional(),
+  ambitie: z.enum(AMBITIES).optional(),
   taal: z.string().max(5).optional().default("nl"),
   baselineEnergy: z.number().int().min(0).max(10).default(5),
   organisatieId: z.number().int().positive().optional(),
@@ -128,11 +135,30 @@ export function registerT4SportsRoutes(app: Express): void {
 
     const finalCode = makeRespondentCode(data.name, created.id);
     // Sla extra T4Sports-specifieke velden op in generatorContract als JSON
+    const niveauLabels: Record<string, string> = {
+      elite: "Elite / Professioneel",
+      topsport: "Topsport / Semi-professioneel",
+      hoog_amateurs: "Hoog competitief amateur",
+      recreatief_competitief: "Recreatief maar competitief",
+      recreatief: "Puur recreatief",
+    };
+    const ambitieLabels: Record<string, string> = {
+      best_of_world: "Best of the world — absolute top",
+      topper: "Topper in mijn discipline",
+      subtopper: "Subtopper — sterk nationaal niveau",
+      recreatief_limieten: "Recreatief maar mijn limieten opzoeken",
+      plezier: "Plezier en gezondheid voorop",
+    };
     const t4sportsContext = JSON.stringify({
       instrumentId: "t4sports",
       sporttak: data.sporttak ?? null,
       ploeg: data.ploeg ?? null,
       rol: data.rol ?? null,
+      niveau: data.niveau ?? null,
+      niveauLabel: data.niveau ? (niveauLabels[data.niveau] ?? data.niveau) : null,
+      sportType: data.sportType ?? null,
+      ambitie: data.ambitie ?? null,
+      ambitieLabel: data.ambitie ? (ambitieLabels[data.ambitie] ?? data.ambitie) : null,
     });
     const updated = await storage.updateAfname(created.id, {
       respondentCode: finalCode,
