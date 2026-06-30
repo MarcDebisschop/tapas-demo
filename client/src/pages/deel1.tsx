@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { AppHeader } from "@/components/Brand";
+import { AfnameVoortgang } from "@/components/AfnameVoortgang";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -255,26 +256,26 @@ export default function Deel1() {
           </div>
         )}
         <div className="mb-6">
-          <div className="flex items-center justify-between text-sm">
-            <span className="font-medium text-foreground" data-testid="text-block-counter">
-              {t("deel1_blok")} {idx + 1} <span className="text-muted-foreground">{t("deel1_van")} {blocks.length}</span>
-            </span>
-            <span className="flex items-center gap-2 text-muted-foreground">
+          {/* 2.3 — AfnameVoortgang component */}
+          <AfnameVoortgang
+            huidigIndex={idx}
+            totaal={blocks.length}
+            className="mb-2"
+          />
+          <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+            <span>{publiekeFamilie(block.family, taal)}</span>
+            <span className="flex items-center gap-2">
               {conceptStatus === "bezig" && (
-                <span className="text-xs" data-testid="text-concept-status">{t("deel1_concept_bewaren_bezig")}</span>
+                <span data-testid="text-concept-status">{t("deel1_concept_bewaren_bezig")}</span>
               )}
               {conceptStatus === "bewaard" && (
-                <span className="flex items-center gap-1 text-xs text-accent" data-testid="text-concept-status">
+                <span className="flex items-center gap-1 text-accent" data-testid="text-concept-status">
                   <Check className="h-3 w-3" /> {t("deel1_concept_bewaard")}
                 </span>
               )}
-              <span>{publiekeFamilie(block.family, taal)}</span>
+              <span>{answeredCount} {t("deel1_van")} {blocks.length} {t("deel1_blokken_volledig")}</span>
             </span>
           </div>
-          <Progress value={pct} className="mt-2 h-2" />
-          <p className="mt-1.5 text-xs text-muted-foreground">
-            {answeredCount} {t("deel1_van")} {blocks.length} {t("deel1_blokken_volledig")}
-          </p>
         </div>
 
         <Card>

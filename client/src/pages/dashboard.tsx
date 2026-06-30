@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useScrollReveal } from "@/hooks/use-scroll-reveal";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -341,6 +342,8 @@ export default function Dashboard() {
   // Reflectie vanuit een leesmodule wordt hiermee in het chat-invoerveld gezet.
   const [chatPrefill, setChatPrefill] = useState<ChatPrefill | null>(null);
   const chatRef = useRef<HTMLDivElement>(null);
+  // 4.2 — scroll-reveal voor inzichtkaarten
+  const kaartRevealRef = useScrollReveal<HTMLDivElement>();
   function naarChat(tekst: string) {
     setChatPrefill({ tekst, nonce: Date.now() });
     // Laat de prefill-effect eerst lopen, scroll daarna naar het chatpaneel.
@@ -559,9 +562,14 @@ export default function Dashboard() {
               <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                 <Lightbulb className="h-4 w-4" /> {dash.labels.beeldInHetKort}
               </h2>
-              <div className="mt-3 grid gap-4 md:grid-cols-3">
+              {/* 4.2 — scroll-reveal wrapper */}
+              <div className="mt-3 grid gap-4 md:grid-cols-3" ref={kaartRevealRef}>
                 {dash.kaarten.map((kaart, i) => (
-                  <Card key={i} className="h-full" data-testid={`card-inzicht-${i}`}>
+                  <Card
+                    key={i}
+                    className={`h-full tapas-reveal tapas-reveal-delay-${Math.min(i + 1, 5)}`}
+                    data-testid={`card-inzicht-${i}`}
+                  >
                     <CardContent className="p-5">
                       <h3 className="text-sm font-semibold text-foreground">{kaart.titel}</h3>
                       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{kaart.tekst}</p>
