@@ -911,3 +911,10 @@ export const insertCoachAccreditatieAanvraagSchema = createInsertSchema(coachAcc
     motivatie: z.string().min(20, "Motivatie is verplicht (min. 20 tekens)"),
   });
 export type InsertCoachAccreditatieAanvraag = z.infer<typeof insertCoachAccreditatieAanvraagSchema>;
+
+// Stub voor routes-deelnemer.ts — magicLink flow nog niet geïmplementeerd
+export const magicLinkAanvraagSchema = z.object({
+  email: z.string().email(),
+  respondentCode: z.string().optional(),
+});
+export type MagicLinkAanvraag = z.infer<typeof magicLinkAanvraagSchema>;
