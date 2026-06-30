@@ -38,6 +38,8 @@ import { eq, and } from "drizzle-orm";
 
 const sqlite = new Database("data.db");
 sqlite.pragma("journal_mode = WAL");
+sqlite.pragma("synchronous = NORMAL");   // NP-5 fix 2026-06-30
+sqlite.pragma("cache_size = -8000");     // NP-5 fix 2026-06-30: 8 MB voor T4R
 
 sqlite.exec(`
 CREATE TABLE IF NOT EXISTS t4r_sessions (

@@ -91,6 +91,8 @@ console.log(`[tapas] SQLite database: ${DB_PAD}`);
 
 const sqlite = new Database(DB_PAD);
 sqlite.pragma("journal_mode = WAL");
+sqlite.pragma("synchronous = NORMAL");   // NP-5 fix 2026-06-30: veilig bij WAL
+sqlite.pragma("cache_size = -32000");    // NP-5 fix 2026-06-30: 32 MB pagina-cache
 
 export const db = drizzle(sqlite);
 export { sqlite }; // Directe export voor modules die raw SQLite nodig hebben

@@ -44,6 +44,7 @@ import { registerT4RRoutes } from "./t4r/routes";
 import { registerTeamscanRoutes } from "./teamscan/routes";
 import { registerHddRoutes } from "./hdd/routes";
 import { registerToegangRoutes } from "./toegang/routes";
+import { registerDeelnemerRoutes } from "./routes-deelnemer";
 import { z } from "zod";
 
 // De Python-LLM-sidecar draait op poort 8000 binnen de sandbox.
@@ -1868,6 +1869,9 @@ export async function registerRoutes(
 
   // Extra routes: coach-login + Self-Training Module (STM)
   registerStmRoutes(app, storage);
+
+  // Deelnemer-domeinrouter: login, magic-link, dashboard, TTS (NP-2 fix 2026-06-30)
+  registerDeelnemerRoutes(app);
 
   return httpServer;
 }
