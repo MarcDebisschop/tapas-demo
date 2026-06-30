@@ -45,6 +45,7 @@ import { registerTeamscanRoutes } from "./teamscan/routes";
 import { registerHddRoutes } from "./hdd/routes";
 import { registerToegangRoutes } from "./toegang/routes";
 import { registerDeelnemerRoutes } from "./routes-deelnemer";
+import { startCreditRecoveryJob } from "./credit-recovery";
 import { z } from "zod";
 
 // De Python-LLM-sidecar draait op poort 8000 binnen de sandbox.
@@ -1872,6 +1873,9 @@ export async function registerRoutes(
 
   // Deelnemer-domeinrouter: login, magic-link, dashboard, TTS (NP-2 fix 2026-06-30)
   registerDeelnemerRoutes(app);
+
+  // Credit-recovery job: verlopen afnames vrijgeven (item 1.6, 2026-06-30)
+  startCreditRecoveryJob(6);
 
   return httpServer;
 }

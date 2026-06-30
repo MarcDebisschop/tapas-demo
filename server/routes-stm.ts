@@ -5,8 +5,9 @@
 //   requirePractitioner → accepteert adminId (Prior) OF coachId (coach)
 //   requirePrior        → enkel is_prior=true beheerders (niet gebruikt hier)
 //
-// STM-data: in-memory Map per beheerderId.
-//   Geen DB-migratie nodig voor demo. Reset bij server-restart.
+// STM-data: SQLite-persistent via stm-storage.ts (NP-4 fix 2026-06-30).
+//   Was: in-memory Map — reset bij server-restart.
+//   Nu:  stm_sessies tabel in data.db — overleeft server-herstarts.
 //
 // Nieuwe routes:
 //   POST   /api/coach/login
@@ -19,10 +20,12 @@
 // ---------------------------------------------------------------------------
 
 import type { Express, Request, Response } from "express";
+import { stmSessieOpslagen, type StmSessieRecord } from "./stm-storage";
 
 // ---------------------------------------------------------------------------
 // Type-definities
 // ---------------------------------------------------------------------------
+// StmSessieRecord geïmporteerd uit stm-storage.ts (NP-4)
 
 interface StmVraag {
   id: number;
@@ -36,25 +39,10 @@ interface StmVraag {
   feedback_fout: string;
 }
 
-interface StmSessieRecord {
-  id: number;
-  beheerder_id: number;
-  gestart_at: string;
-  afgerond_at: string | null;
-  score_totaal: number | null;
-  inschaling: string | null;
-  duur_seconden: number | null;
-  scores_per_laag: Record<string, number>;
-  feedback: Array<{ vraag_id: number; correct: boolean; feedback: string }>;
-}
-
 // ---------------------------------------------------------------------------
-// In-memory opslag
+// Opslag — SQLite via stm-storage.ts (NP-4)
 // ---------------------------------------------------------------------------
-
-let sessieCounter = 1;
-const stmSessies = new Map<number, StmSessieRecord>();      // sessieId → record
-const stmSessiesByBeheerder = new Map<number, number[]>();  // beheerderId → [sessieIds]
+// stmSessieOpslagen is geïmporteerd hierboven; in-memory Maps zijn vervangen.
 
 // ---------------------------------------------------------------------------
 // Demo-vraagbank (30 vragen, 4 lagen, 5 thema's)
@@ -465,11 +453,10 @@ function bepaalReminderDagen(inschaling: string): number {
 // ---------------------------------------------------------------------------
 
 function selecteerVragen(beheerderId: number, aantal: number): StmVraag[] {
-  const sessieIds = stmSessiesByBeheerder.get(beheerderId) || [];
+  const historiek = stmSessieOpslagen.alleVanBeheerder(beheerderId);
   const laagScores: Record<number, number[]> = { 1: [], 2: [], 3: [], 4: [] };
 
-  for (const sid of sessieIds) {
-    const sessie = stmSessies.get(sid);
+  for (const sessie of historiek) {
     if (!sessie?.scores_per_laag) continue;
     for (let l = 1; l <= 4; l++) {
       const v = sessie.scores_per_laag[`laag${l}`];
@@ -558,22 +545,7 @@ export function registerStmRoutes(app: Express, storage: any): void {
     const aantal = Math.min(Number(req.body?.aantal) || 12, 20);
 
     const vragen = selecteerVragen(beheerderId, aantal);
-    const id = sessieCounter++;
-
-    stmSessies.set(id, {
-      id,
-      beheerder_id: beheerderId,
-      gestart_at: new Date().toISOString(),
-      afgerond_at: null,
-      score_totaal: null,
-      inschaling: null,
-      duur_seconden: null,
-      scores_per_laag: {},
-      feedback: [],
-    });
-
-    if (!stmSessiesByBeheerder.has(beheerderId)) stmSessiesByBeheerder.set(beheerderId, []);
-    stmSessiesByBeheerder.get(beheerderId)!.push(id);
+    const id = stmSessieOpslagen.maakAan(beheerderId);
 
     // Stuur vragen zonder correct_antwoord naar de client
     const vragenVoorClient = vragen.map(v => ({
@@ -595,7 +567,7 @@ export function registerStmRoutes(app: Express, storage: any): void {
     const beheerderId = getPractitionerId(req)!;
     const { sessie_id, antwoorden, duur_seconden } = req.body || {};
 
-    const sessie = stmSessies.get(Number(sessie_id));
+    const sessie = stmSessieOpslagen.vindOp(Number(sessie_id));
     if (!sessie || sessie.beheerder_id !== beheerderId) {
       return res.status(404).json({ error: "Sessie niet gevonden." });
     }
@@ -640,12 +612,16 @@ export function registerStmRoutes(app: Express, storage: any): void {
     const scoreTotaal = totaalVragen > 0 ? totaalCorrect / totaalVragen : 0;
     const inschaling = bepaalInschaling(scoreTotaal);
 
-    sessie.afgerond_at = new Date().toISOString();
-    sessie.score_totaal = scoreTotaal;
-    sessie.inschaling = inschaling;
-    sessie.duur_seconden = Number(duur_seconden) || null;
-    sessie.scores_per_laag = scoresPerLaag;
-    sessie.feedback = feedback;
+    const afgerondAt = new Date().toISOString();
+    stmSessieOpslagen.afronden(
+      sessie.id,
+      afgerondAt,
+      scoreTotaal,
+      inschaling,
+      Number(duur_seconden) || null,
+      scoresPerLaag,
+      feedback
+    );
 
     res.json({
       ok: true,
@@ -668,11 +644,7 @@ export function registerStmRoutes(app: Express, storage: any): void {
   app.get("/api/stm/historiek", (req, res) => {
     if (!requirePractitioner(req, res)) return;
     const beheerderId = getPractitionerId(req)!;
-    const ids = stmSessiesByBeheerder.get(beheerderId) || [];
-    const sessies = ids
-      .map(id => stmSessies.get(id))
-      .filter(s => s?.afgerond_at)
-      .sort((a, b) => (b!.afgerond_at! > a!.afgerond_at! ? 1 : -1));
+    const sessies = stmSessieOpslagen.historiek(beheerderId);
     res.json({ sessies });
   });
 
@@ -681,8 +653,7 @@ export function registerStmRoutes(app: Express, storage: any): void {
   app.get("/api/stm/laagscores", (req, res) => {
     if (!requirePractitioner(req, res)) return;
     const beheerderId = getPractitionerId(req)!;
-    const ids = stmSessiesByBeheerder.get(beheerderId) || [];
-    const afgerond = ids.map(id => stmSessies.get(id)).filter(s => s?.afgerond_at);
+    const afgerond = stmSessieOpslagen.historiek(beheerderId);
 
     if (afgerond.length === 0) {
       return res.json({ scores: null });
@@ -764,16 +735,7 @@ export function registerStmRoutes(app: Express, storage: any): void {
 
     const aantal = Math.min(Number(req.body?.aantal) || 12, 20);
     const vragen = selecteerVragen(beheerderId, aantal);
-    const id = sessieCounter++;
-
-    stmSessies.set(id, {
-      id, beheerder_id: beheerderId,
-      gestart_at: new Date().toISOString(),
-      afgerond_at: null, score_totaal: null, inschaling: null,
-      duur_seconden: null, scores_per_laag: {}, feedback: [],
-    });
-    if (!stmSessiesByBeheerder.has(beheerderId)) stmSessiesByBeheerder.set(beheerderId, []);
-    stmSessiesByBeheerder.get(beheerderId)!.push(id);
+    const id = stmSessieOpslagen.maakAan(beheerderId);
 
     const vragenVoorClient = vragen.map(v => ({
       id: v.id, vraag_tekst: v.vraag_tekst, thema: v.thema,
@@ -789,7 +751,7 @@ export function registerStmRoutes(app: Express, storage: any): void {
     if (beheerderId === null) return;
 
     const { sessie_id, antwoorden, duur_seconden } = req.body || {};
-    const sessie = stmSessies.get(Number(sessie_id));
+    const sessie = stmSessieOpslagen.vindOp(Number(sessie_id));
     if (!sessie || sessie.beheerder_id !== beheerderId) {
       return res.status(404).json({ error: "Sessie niet gevonden." });
     }
@@ -819,12 +781,8 @@ export function registerStmRoutes(app: Express, storage: any): void {
     }
     const scoreTotaal = totaalVragen > 0 ? totaalCorrect / totaalVragen : 0;
     const inschaling = bepaalInschaling(scoreTotaal);
-    sessie.afgerond_at = new Date().toISOString();
-    sessie.score_totaal = scoreTotaal;
-    sessie.inschaling = inschaling;
-    sessie.duur_seconden = Number(duur_seconden) || null;
-    sessie.scores_per_laag = scoresPerLaag;
-    sessie.feedback = feedback;
+    const afgerondAt2 = new Date().toISOString();
+    stmSessieOpslagen.afronden(sessie.id, afgerondAt2, scoreTotaal, inschaling, Number(duur_seconden) || null, scoresPerLaag, feedback);
 
     res.json({
       ok: true, inschaling,
@@ -839,10 +797,7 @@ export function registerStmRoutes(app: Express, storage: any): void {
   app.get("/api/stm/token/historiek", async (req: Request, res: Response) => {
     const beheerderId = await resolveBeheerderId(req, res);
     if (beheerderId === null) return;
-    const ids = stmSessiesByBeheerder.get(beheerderId) || [];
-    const sessies = ids.map(id => stmSessies.get(id))
-      .filter(s => s?.afgerond_at)
-      .sort((a, b) => (b!.afgerond_at! > a!.afgerond_at! ? 1 : -1));
+    const sessies = stmSessieOpslagen.historiek(beheerderId);
     res.json({ sessies });
   });
 
@@ -851,8 +806,7 @@ export function registerStmRoutes(app: Express, storage: any): void {
   app.get("/api/stm/token/laagscores", async (req: Request, res: Response) => {
     const beheerderId = await resolveBeheerderId(req, res);
     if (beheerderId === null) return;
-    const ids = stmSessiesByBeheerder.get(beheerderId) || [];
-    const afgerond = ids.map(id => stmSessies.get(id)).filter(s => s?.afgerond_at);
+    const afgerond = stmSessieOpslagen.historiek(beheerderId);
     if (afgerond.length === 0) return res.json({ scores: null });
     const laagSommen: Record<string, number[]> = { laag1: [], laag2: [], laag3: [], laag4: [] };
     let latestDate: string | null = null;
@@ -919,9 +873,8 @@ export function registerStmRoutes(app: Express, storage: any): void {
     const dagenVerstreken = Math.floor((now.getTime() - startJaar.getTime()) / 86400000);
     const dagenTotaal = Math.floor((eindJaar.getTime() - startJaar.getTime()) / 86400000);
 
-    const ids = stmSessiesByBeheerder.get(beheerderId) || [];
-    const jaarSessies = ids
-      .map(id => stmSessies.get(id))
+    const alleAfgerond = stmSessieOpslagen.historiek(beheerderId);
+    const jaarSessies = alleAfgerond
       .filter(s => s?.afgerond_at && s.afgerond_at.startsWith(String(now.getFullYear())));
 
     const norm = kwaliteitOverrides.get(beheerderId)?.norm ?? 12;

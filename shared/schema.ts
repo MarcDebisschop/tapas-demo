@@ -818,3 +818,61 @@ export const zetTariefSchema = z
     { message: "Een bundeltarief vereist een bundelgrootte (> 0) en een aantal credits." },
   );
 export type ZetTarief = z.infer<typeof zetTariefSchema>;
+
+// ---------------------------------------------------------------------------
+// Item 1.8 — Consent-scope Zod-validatie
+//
+// De consent_scope kolom staat als vrije tekst in de DB. Dit schema zorgt
+// dat enkel geldige waarden worden opgeslagen/verwerkt.
+// Gebruik: consentScope: consentScopeSchema.optional() in insertAfnameSchema
+// en startViaLinkSchema.
+// ---------------------------------------------------------------------------
+export const consentScopeSchema = z.enum([
+  "profiel-generatie + rapport",
+  "profiel-generatie",
+  "rapport-only",
+  "onderzoek",
+]);
+export type ConsentScope = z.infer<typeof consentScopeSchema>;
+
+// ---------------------------------------------------------------------------
+// Item 1.7 — Centraal Zod-schema voor GeneratorContract
+//
+// buildGeneratorContract() in server/scoring.ts produceert dit JSON-object.
+// Dit schema valideert de structuur bij uitlezen uit de DB
+// (JSON.parse(afname.generatorContract)) en voorkomt stille profielfouten.
+//
+// Gebruik: parse met generatorContractSchema.safeParse(JSON.parse(...)) in
+// server/storage.ts en overal waar het contract uitgelezen wordt.
+// ---------------------------------------------------------------------------
+export const generatorContractSchema = z.object({
+  contractVersion: z.string(),
+  instrumentId: z.string(),
+  generatedAt: z.string(),
+  taal: z.string().default("nl"),
+  participant: z.object({
+    respondentCode: z.string(),
+    name: z.string(),
+    company: z.string().nullable(),
+    role: z.string().nullable(),
+  }),
+  consent: z.object({
+    given: z.literal(true),
+    scope: consentScopeSchema,
+    timestamp: z.string().nullable(),
+  }),
+  sections: z.object({
+    main: z.record(z.string(), z.unknown()),
+    connection: z.object({
+      scale: z.string(),
+      answers: z.object({
+        q1: z.number(),
+        q2: z.number(),
+        q3: z.number(),
+        q4: z.number(),
+      }),
+      labels: z.record(z.string(), z.string()).optional(),
+    }),
+  }),
+});
+export type GeneratorContract = z.infer<typeof generatorContractSchema>;
