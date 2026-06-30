@@ -3,6 +3,7 @@ import { AppHeader } from "@/components/Brand";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download, Compass, Users, Sparkles } from "lucide-react";
+import ImpactRoosSvg from "@/components/ImpactRoosSvg";
 
 /**
  * Impact-roos — voorbeeldpagina.
@@ -70,13 +71,12 @@ export default function ImpactHome() {
           </p>
         </div>
 
-        {/* ---------- De roos ---------- */}
-        <div className="mt-8 overflow-hidden rounded-xl border border-border bg-card">
-          <img
-            src="./impact-roos-voorbeeld.png"
-            alt="Voorbeeld van een ingevulde Impact-roos: octant-radar met de assen Ruimte en Verbinding."
-            className="w-full"
-            data-testid="img-impact-roos"
+        {/* ---------- De roos (4.3 — inline SVG octant-radar) ---------- */}
+        <div className="mt-8 flex flex-col items-center rounded-xl border border-border bg-card py-8 px-4" data-testid="impact-roos-container">
+          <ImpactRoosSvg
+            scores={[5, 4, 6, 7, 3, 2, 3, 4]}
+            congruentie={{ v: 74, h: 82 }}
+            grootte={380}
           />
         </div>
         <p className="mt-3 text-xs text-muted-foreground">

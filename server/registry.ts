@@ -273,6 +273,46 @@ function bouwRegistry(): Map<string, InstrumentDescriptor> {
     bundelCredits: roosBundelCredits,
   });
 
+  // -------------------------------------------------------------------------
+  // T4Teens — individueel instrument voor jongeren (16-21 jaar).
+  //
+  // T4Teens is een op maat gemaakte variant van het T4P-profiel, ontwikkeld
+  // voor jongeren in het voortgezet onderwijs. De inhoud (vragenlijst, blokken,
+  // rapport) is doelgroepspecifiek en verschilt structureel van het Business
+  // Kompas. Geen instrument.json — de descriptor is metadata-only; de
+  // rapport-branch gebruikt instrumentId "t4teens" als routing-sleutel.
+  // -------------------------------------------------------------------------
+  map.set("t4teens", {
+    instrumentId: "t4teens",
+    flowType: "individual",
+    name: "T4Teens",
+    version: "1.0.0",
+    description:
+      "Individueel TaPas-profiel voor jongeren (16-21 jaar): ontdek je talent, " +
+      "energie en gedragspatroon in een doelgroepspecifieke vragenlijst en rapport.",
+    isDefault: false,
+    creditCost: 1,
+  });
+
+  // -------------------------------------------------------------------------
+  // T4Students — individueel instrument voor studenten in het hoger onderwijs.
+  //
+  // T4Students is een op maat gemaakte variant van het T4P-profiel, ontwikkeld
+  // voor studenten in het hoger onderwijs. De descriptor is metadata-only;
+  // de rapport-branch gebruikt instrumentId "t4students" als routing-sleutel.
+  // -------------------------------------------------------------------------
+  map.set("t4students", {
+    instrumentId: "t4students",
+    flowType: "individual",
+    name: "T4Students",
+    version: "1.0.0",
+    description:
+      "Individueel TaPas-profiel voor studenten in het hoger onderwijs: ontdek je " +
+      "talent, energie en gedragspatroon in een academisch kader.",
+    isDefault: false,
+    creditCost: 1,
+  });
+
   return map;
 }
 

@@ -41,13 +41,75 @@ import {
 
 
 // -----------------------------------------------------------------------
-// KPI card (b1 uit bundle)
+// KPI card (2.5 — uitgebreid met sparkline-trend)
+// Een sparkline is een miniatuurstaafgrafiek van de laatste periodes.
 // -----------------------------------------------------------------------
-function KpiCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function KpiSparkline({ punten }: { punten: number[] }) {
+  if (!punten || punten.length < 2) return null;
+  const max = Math.max(...punten, 1);
+  const breedte = 48;
+  const hoogte = 20;
+  const stapBreedte = breedte / punten.length;
+  const delta = punten[punten.length - 1] - punten[punten.length - 2];
+  const kleur = delta > 0 ? "#0d9488" : delta < 0 ? "#ef4444" : "#94a3b8";
+
+  return (
+    <svg
+      width={breedte}
+      height={hoogte}
+      viewBox={`0 0 ${breedte} ${hoogte}`}
+      aria-hidden
+      className="ml-auto shrink-0"
+    >
+      {punten.map((p, i) => {
+        const h = max > 0 ? Math.max(2, Math.round((p / max) * hoogte)) : 2;
+        return (
+          <rect
+            key={i}
+            x={i * stapBreedte + 1}
+            y={hoogte - h}
+            width={Math.max(1, stapBreedte - 2)}
+            height={h}
+            rx="1"
+            fill={i === punten.length - 1 ? kleur : "#e2e8f0"}
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
+function KpiCard({
+  label,
+  value,
+  sub,
+  sparkPunten,
+  trend,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  sparkPunten?: number[];
+  trend?: number | null;
+}) {
+  const trendKleur =
+    trend == null ? "" : trend > 0 ? "text-emerald-600" : trend < 0 ? "text-red-500" : "text-muted-foreground";
+  const trendLabel = trend == null ? null : trend > 0 ? `+${trend}%` : trend < 0 ? `${trend}%` : "0%";
+
   return (
     <div className="rounded-lg border border-border bg-card p-4">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tracking-tight text-foreground">{value}</p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs text-muted-foreground">{label}</p>
+        {sparkPunten && <KpiSparkline punten={sparkPunten} />}
+      </div>
+      <div className="mt-1 flex items-baseline gap-2">
+        <p className="text-2xl font-semibold tracking-tight text-foreground">{value}</p>
+        {trendLabel && (
+          <span className={`text-xs font-medium ${trendKleur}`} aria-label={`Trend: ${trendLabel}`}>
+            {trendLabel}
+          </span>
+        )}
+      </div>
       {sub && <p className="mt-0.5 text-xs text-muted-foreground">{sub}</p>}
     </div>
   );
@@ -145,9 +207,11 @@ function GrafiekCard({ titel, rijen, weergave, toonBenchmark, t }: {
 }
 
 // -----------------------------------------------------------------------
-// Evolutiegrafiek ($Pe uit bundle — vereenvoudigd als tabel)
+// Evolutiegrafiek (2.5 — uitgebreid met week/maand-toggle)
 // -----------------------------------------------------------------------
 function EvolutieGrafiek({ rijen, t }: { rijen: any[]; t: (s: string) => string }) {
+  const [periode, setPeriode] = useState<"week" | "maand">("maand");
+
   if (rijen.length === 0) {
     return (
       <Card>
@@ -160,24 +224,75 @@ function EvolutieGrafiek({ rijen, t }: { rijen: any[]; t: (s: string) => string 
       </Card>
     );
   }
-  const max = Math.max(...rijen.map((r) => r.aantal ?? 0), 1);
+
+  // Bij week-weergave: splits elke maand in 4 pseudo-weken. Visuele benadering.
+  const weergaveRijen: { label: string; aantal: number; onderdrukt: boolean }[] =
+    periode === "maand"
+      ? rijen.map((r) => ({ label: r.maand?.slice(5) ?? "", aantal: r.aantal ?? 0, onderdrukt: r.onderdrukt ?? false }))
+      : rijen.flatMap((r) => {
+          const basis = r.onderdrukt ? 0 : Math.round((r.aantal ?? 0) / 4);
+          const rest = r.onderdrukt ? 0 : (r.aantal ?? 0) - basis * 3;
+          const slug = r.maand?.slice(5) ?? "";
+          return [
+            { label: `${slug}W1`, aantal: basis, onderdrukt: r.onderdrukt ?? false },
+            { label: `${slug}W2`, aantal: basis, onderdrukt: r.onderdrukt ?? false },
+            { label: `${slug}W3`, aantal: basis, onderdrukt: r.onderdrukt ?? false },
+            { label: `${slug}W4`, aantal: rest, onderdrukt: r.onderdrukt ?? false },
+          ];
+        });
+
+  const zichtbaar = periode === "maand" ? weergaveRijen : weergaveRijen.slice(-16);
+  const max = Math.max(...zichtbaar.map((r) => r.aantal), 1);
+
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">{t("iz_evolutie_titel")}</CardTitle>
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-sm font-medium">{t("iz_evolutie_titel")}</CardTitle>
+          <div className="inline-flex rounded-md border border-border p-0.5" role="tablist">
+            <button
+              type="button"
+              onClick={() => setPeriode("maand")}
+              data-testid="tab-evolutie-maand"
+              className={`rounded px-2.5 py-1 text-xs transition-colors ${
+                periode === "maand" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Maand
+            </button>
+            <button
+              type="button"
+              onClick={() => setPeriode("week")}
+              data-testid="tab-evolutie-week"
+              className={`rounded px-2.5 py-1 text-xs transition-colors ${
+                periode === "week" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Week
+            </button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="flex items-end gap-1 h-24">
-          {rijen.map((r, i) => {
-            const h = r.onderdrukt ? 4 : Math.max(4, Math.round(((r.aantal ?? 0) / max) * 96));
+        <div className="flex items-end gap-0.5 h-28 overflow-x-auto pb-1">
+          {zichtbaar.map((r, i) => {
+            const h = r.onderdrukt ? 4 : Math.max(4, Math.round((r.aantal / max) * 112));
             return (
-              <div key={i} className="flex flex-1 flex-col items-center gap-1">
+              <div key={i} className="flex flex-1 min-w-[10px] flex-col items-center gap-1">
                 <div
-                  className="w-full rounded-sm bg-primary/60"
-                  style={{ height: `${h}px` }}
-                  title={r.onderdrukt ? t("iz_te_weinig_data") : `${r.maand}: ${r.aantal}`}
+                  className="w-full rounded-sm transition-all"
+                  style={{
+                    height: `${h}px`,
+                    background: r.onderdrukt ? "#e2e8f0" : i === zichtbaar.length - 1 ? "#0d9488" : "hsl(var(--primary) / 0.5)",
+                  }}
+                  title={r.onderdrukt ? t("iz_te_weinig_data") : `${r.label}: ${r.aantal}`}
                 />
-                <span className="text-[9px] text-muted-foreground rotate-45 origin-left translate-x-1">{r.maand?.slice(5)}</span>
+                <span
+                  className="text-[8px] text-muted-foreground"
+                  style={{ transform: "rotate(45deg)", transformOrigin: "left top", whiteSpace: "nowrap" }}
+                >
+                  {r.label}
+                </span>
               </div>
             );
           })}
@@ -437,10 +552,40 @@ export default function AdminInzichten() {
           <>
             {/* KPI cards */}
             <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <KpiCard label={n("iz_kpi_afnames_totaal")} value={String(overzicht.totalen.afnamesTotaal)} />
-              <KpiCard label={n("iz_kpi_afnames_voltooid")} value={String(overzicht.totalen.afnamesVoltooid)} />
-              <KpiCard label={n("iz_kpi_organisaties")} value={String(overzicht.totalen.organisaties)} />
-              <KpiCard label={n("iz_kpi_deelnemers")} value={String(overzicht.totalen.deelnemers)} />
+              {/* 2.5 — sparklines: laatste 6 maanden evolutie als minitrend per KPI */}
+              {(() => {
+                const evo = (overzicht.evolutie ?? []).slice(-6).map((r: any) => r.onderdrukt ? 0 : (r.aantal ?? 0));
+                const totaal = overzicht.totalen.afnamesTotaal;
+                const voltooid = overzicht.totalen.afnamesVoltooid;
+                const trendPct = (a: number, b: number) =>
+                  b > 0 ? Math.round(((a - b) / b) * 100) : null;
+                const prev = evo.length >= 2 ? evo[evo.length - 2] : null;
+                const last = evo.length >= 1 ? evo[evo.length - 1] : null;
+                const trendAfn = prev != null && last != null ? trendPct(last, prev) : null;
+                return (
+                  <>
+                    <KpiCard
+                      label={n("iz_kpi_afnames_totaal")}
+                      value={String(totaal)}
+                      sparkPunten={evo.length >= 2 ? evo : undefined}
+                      trend={trendAfn}
+                    />
+                    <KpiCard
+                      label={n("iz_kpi_afnames_voltooid")}
+                      value={String(voltooid)}
+                      sub={totaal > 0 ? `${Math.round((voltooid / totaal) * 100)}%` : undefined}
+                    />
+                    <KpiCard
+                      label={n("iz_kpi_organisaties")}
+                      value={String(overzicht.totalen.organisaties)}
+                    />
+                    <KpiCard
+                      label={n("iz_kpi_deelnemers")}
+                      value={String(overzicht.totalen.deelnemers)}
+                    />
+                  </>
+                );
+              })()}
             </div>
 
             {/* Weergave toggle + export */}

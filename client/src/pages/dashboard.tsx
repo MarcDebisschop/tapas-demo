@@ -4,6 +4,7 @@ import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import UitlegPaneel from "@/components/UitlegPaneel";
+import DashboardLeerpad from "@/components/DashboardLeerpad";
 import { AppHeader } from "@/components/Brand";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -557,6 +558,12 @@ export default function Dashboard() {
 
         {dash ? (
           <>
+            {/* 2.2 — LEERPAD STAPSGEWIJZE BEGELEIDING */}
+            <DashboardLeerpad
+              actieveStap={1}
+              taal={taal}
+            />
+
             {/* INZICHTSKAARTEN */}
             <section className="mt-8">
               <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">

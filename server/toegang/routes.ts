@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { storage } from "../storage";
-import { insertBeheerderSchema, zetToegangSchema } from "@shared/schema";
+import { insertBeheerderSchema, zetToegangSchema, insertCoachAccreditatieAanvraagSchema } from "@shared/schema";
 import { PLATFORMDELEN, PLATFORMDEEL_IDS, PRIOR_ORGANISATIE } from "@shared/platformdelen";
 import { zetTariefSchema, type Tarief } from "@shared/schema";
 import { tarievenSamengevoegd, getDescriptor, type TariefOverride } from "../registry";
@@ -193,5 +193,40 @@ export function registerToegangRoutes(app: Express): void {
       guard.naam,
     );
     res.json(t);
+  });
+
+  // ---------------------------------------------------------------------------
+  // Coach self-service accreditatie-aanvraag (Fase 4 — item 2.7)
+  //
+  // POST /api/toegang/accreditatie-aanvraag
+  //   Geen authenticatie vereist — coach dient zelf een aanvraag in.
+  //   De aanvraag wordt opgeslagen met status "ingediend" en is zichtbaar
+  //   voor prior beheerders in het admin-panel.
+  //
+  // GET /api/toegang/accreditatie-aanvragen
+  //   Enkel voor prior beheerders (actorId vereist).
+  // ---------------------------------------------------------------------------
+  app.post("/api/toegang/accreditatie-aanvraag", async (req, res) => {
+    const parsed = insertCoachAccreditatieAanvraagSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: parsed.error.errors[0]?.message ?? "Ongeldige invoer",
+        velden: parsed.error.errors.map((e) => ({ pad: e.path.join("."), bericht: e.message })),
+      });
+    }
+    try {
+      const aanvraag = await storage.maakCoachAccreditatieAanvraag(parsed.data);
+      res.status(201).json(aanvraag);
+    } catch (err: any) {
+      res.status(500).json({ error: "Opslaan mislukt. Probeer opnieuw." });
+    }
+  });
+
+  app.get("/api/toegang/accreditatie-aanvragen", async (req, res) => {
+    const actorId = Number(req.query.actorId);
+    const guard = await vereisPrior(actorId);
+    if (!guard.ok) return res.status(guard.status).json({ error: guard.error });
+    const aanvragen = await storage.getCoachAccreditatieAanvragen();
+    res.json(aanvragen);
   });
 }

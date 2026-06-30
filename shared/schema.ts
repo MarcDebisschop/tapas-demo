@@ -876,3 +876,38 @@ export const generatorContractSchema = z.object({
   }),
 });
 export type GeneratorContract = z.infer<typeof generatorContractSchema>;
+
+// ---------------------------------------------------------------------------
+// Coach accreditatie-aanvragen (Fase 4 — item 2.7)
+//
+// Coaches kunnen via de TaPas Jester-pagina een self-service aanvraag
+// indienen voor accreditatie als TaPas-coach. De aanvraag wordt opgeslagen
+// in deze tabel en kan door een prior beheerder worden beoordeeld.
+//
+// Status-transitie:
+//   "ingediend" → "in_behandeling" → "goedgekeurd" | "afgewezen"
+// ---------------------------------------------------------------------------
+export const coachAccreditatieAanvragen = sqliteTable("coach_accreditatie_aanvragen", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  naam: text("naam").notNull(),
+  email: text("email").notNull(),
+  certificering: text("certificering").notNull(),
+  motivatie: text("motivatie").notNull(),
+  status: text("status", { enum: ["ingediend", "in_behandeling", "goedgekeurd", "afgewezen"] })
+    .notNull()
+    .default("ingediend"),
+  behandeldDoor: text("behandeld_door"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at"),
+});
+export type CoachAccreditatieAanvraag = typeof coachAccreditatieAanvragen.$inferSelect;
+
+export const insertCoachAccreditatieAanvraagSchema = createInsertSchema(coachAccreditatieAanvragen)
+  .omit({ id: true, createdAt: true, updatedAt: true, status: true, behandeldDoor: true })
+  .extend({
+    naam: z.string().min(2, "Naam is verplicht (min. 2 tekens)"),
+    email: z.string().email("Ongeldig e-mailadres"),
+    certificering: z.string().min(3, "Certificering is verplicht"),
+    motivatie: z.string().min(20, "Motivatie is verplicht (min. 20 tekens)"),
+  });
+export type InsertCoachAccreditatieAanvraag = z.infer<typeof insertCoachAccreditatieAanvraagSchema>;

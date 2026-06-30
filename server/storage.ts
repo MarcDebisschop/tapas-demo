@@ -17,6 +17,7 @@ import {
   beheerders,
   toegangen,
   tarieven,
+  coachAccreditatieAanvragen,
 } from '@shared/schema';
 import type {
   Afname,
@@ -43,6 +44,8 @@ import type {
   Toegang,
   Tarief,
   ZetTarief,
+  CoachAccreditatieAanvraag,
+  InsertCoachAccreditatieAanvraag,
 } from '@shared/schema';
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
@@ -441,6 +444,25 @@ try {
   }
 } catch {
   // negeerbaar in nieuwe databases
+}
+
+// Fase 4 (item 2.7): maak de coach accreditatie-aanvragen tabel aan indien absent.
+try {
+  sqlite.exec(`
+    CREATE TABLE IF NOT EXISTS coach_accreditatie_aanvragen (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      naam TEXT NOT NULL,
+      email TEXT NOT NULL,
+      certificering TEXT NOT NULL,
+      motivatie TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'ingediend',
+      behandeld_door TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT
+    );
+  `);
+} catch {
+  // negeerbaar als de tabel al bestaat
 }
 
 // ---------------------------------------------------------------------------
@@ -1584,6 +1606,10 @@ export interface IStorage {
   // Vergelijkende studie (0 credits).
   voegStudieToe(sessieId: number, kandidaatLabel: string, studieContract?: unknown): Promise<SessieStudie>;
   listStudies(sessieId: number): Promise<SessieStudie[]>;
+
+  // Coach accreditatie-aanvragen (Fase 4 — item 2.7).
+  maakCoachAccreditatieAanvraag(data: InsertCoachAccreditatieAanvraag): Promise<CoachAccreditatieAanvraag>;
+  getCoachAccreditatieAanvragen(): Promise<CoachAccreditatieAanvraag[]>;
 }
 
 // Bestuurs-KPI's: alle bedragen in euro (afgerond op 2 decimalen).
@@ -3242,6 +3268,26 @@ export class DatabaseStorage implements IStorage {
   async verwijderTarief(instrumentId: string): Promise<boolean> {
     const res = db.delete(tarieven).where(eq(tarieven.instrumentId, instrumentId)).run();
     return res.changes > 0;
+  }
+
+  // --- Coach accreditatie-aanvragen (Fase 4 — item 2.7) -------------------
+  async maakCoachAccreditatieAanvraag(
+    data: InsertCoachAccreditatieAanvraag,
+  ): Promise<CoachAccreditatieAanvraag> {
+    const now = new Date().toISOString();
+    const row = db
+      .insert(coachAccreditatieAanvragen)
+      .values({ ...data, status: "ingediend", createdAt: now })
+      .returning()
+      .get();
+    return row;
+  }
+
+  async getCoachAccreditatieAanvragen(): Promise<CoachAccreditatieAanvraag[]> {
+    return db
+      .select()
+      .from(coachAccreditatieAanvragen)
+      .orderBy(desc(coachAccreditatieAanvragen.createdAt));
   }
 }
 
