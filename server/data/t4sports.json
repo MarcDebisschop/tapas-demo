@@ -1,0 +1,1518 @@
+{
+  "instrumentId": "t4sports",
+  "version": "1.0.0",
+  "name": "T4Sports — Mental Talent Profiel",
+  "language": "nl",
+  "description": "Psychometrisch mental talent profiel voor atleten: drivers, talent-foci en talent-versnellers in sporttaal. Basis voor mental coaching op maat.",
+  "responseScales": {
+    "energy": {
+      "type": "ordinal",
+      "min": -2,
+      "max": 2,
+      "options": [
+        { "value": -2, "label": { "nl": "Kost veel energie" } },
+        { "value": -1, "label": { "nl": "Kost eerder energie" } },
+        { "value": 0,  "label": { "nl": "Neutraal" } },
+        { "value": 1,  "label": { "nl": "Geeft eerder energie" } },
+        { "value": 2,  "label": { "nl": "Geeft veel energie" } }
+      ]
+    },
+    "connection0to10": {
+      "type": "numeric",
+      "min": 0,
+      "max": 10,
+      "description": "0 tot 10 schaal voor sportverbondenheid"
+    },
+    "baselineEnergy0to10": {
+      "type": "numeric",
+      "min": 0,
+      "max": 10,
+      "description": "Zelf-ingeschatte mentale energie als atleet."
+    }
+  },
+  "families": [
+    {
+      "id": "Drivers",
+      "label": "Drivers",
+      "energyMode": "item",
+      "constructs": [
+        "Be Perfect",
+        "Be Strong",
+        "Hurry Up",
+        "Please Others",
+        "Try Hard"
+      ]
+    },
+    {
+      "id": "Talent-foci",
+      "label": "Talent-foci",
+      "energyMode": "item",
+      "constructs": [
+        "Functioneel Innovatief",
+        "Artistiek Innovatief",
+        "Complexiteit/Conceptueel",
+        "Systematisch/Uitvoerend",
+        "Sociaal Interactief",
+        "Overdrachtelijk Interactief"
+      ]
+    },
+    {
+      "id": "Talent-versnellers",
+      "label": "Talent-versnellers",
+      "energyMode": "item",
+      "constructs": [
+        "Analyse",
+        "Individueel ondersteunend",
+        "Groepsondersteunend",
+        "Impact",
+        "Resultaat",
+        "Constructief onderscheidend"
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "sectionId": "main",
+      "title": { "nl": "Mental Talent Vragenlijst" },
+      "type": "forced-choice-with-energy",
+      "instructions": "Kies per blok de meest en minst herkenbare uitspraak als atleet; geef daarna energie.",
+      "blockCount": 34,
+      "itemCount": 136,
+      "blocks": [
+        {
+          "blockIndex": 0,
+          "stateKey": "B0",
+          "family": "Drivers",
+          "module": "Drivers",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "BP.1",
+              "pos": "A",
+              "family": "Drivers",
+              "construct": "Be Perfect",
+              "cluster": "Be Perfect",
+              "text": { "nl": "Ik train extra lang door tot een beweging perfect zit" }
+            },
+            {
+              "id": "BS.1",
+              "pos": "B",
+              "family": "Drivers",
+              "construct": "Be Strong",
+              "cluster": "Be Strong",
+              "text": { "nl": "Ik toon nooit zwakte aan mijn coach of ploegmakkers, ook niet bij pijn" }
+            },
+            {
+              "id": "HU.1",
+              "pos": "C",
+              "family": "Drivers",
+              "construct": "Hurry Up",
+              "cluster": "Hurry Up",
+              "text": { "nl": "Ik neem snel beslissingen in het veld, ook als er nog ruimte is voor analyse" }
+            },
+            {
+              "id": "PO.1",
+              "pos": "D",
+              "family": "Drivers",
+              "construct": "Please Others",
+              "cluster": "Please Others",
+              "text": { "nl": "Ik presteer beter als mijn coach tevreden is met mijn werk" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 1,
+          "stateKey": "B1",
+          "family": "Drivers",
+          "module": "Drivers",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "BP.2",
+              "pos": "A",
+              "family": "Drivers",
+              "construct": "Be Perfect",
+              "cluster": "Be Perfect",
+              "text": { "nl": "Na een wedstrijd herbeluister ik elk gemist kans in detail" }
+            },
+            {
+              "id": "TH.1",
+              "pos": "B",
+              "family": "Drivers",
+              "construct": "Try Hard",
+              "cluster": "Try Hard",
+              "text": { "nl": "Er is één persoon die echt gelooft in mij, en voor die persoon ga ik door de muur" }
+            },
+            {
+              "id": "HU.2",
+              "pos": "C",
+              "family": "Drivers",
+              "construct": "Hurry Up",
+              "cluster": "Hurry Up",
+              "text": { "nl": "Mijn beste prestaties komen wanneer alles snel en vloeiend verloopt" }
+            },
+            {
+              "id": "BS.2",
+              "pos": "D",
+              "family": "Drivers",
+              "construct": "Be Strong",
+              "cluster": "Be Strong",
+              "text": { "nl": "Ik herstel sneller als ik het alleen verwerk" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 2,
+          "stateKey": "B2",
+          "family": "Drivers",
+          "module": "Drivers",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "PO.2",
+              "pos": "A",
+              "family": "Drivers",
+              "construct": "Please Others",
+              "cluster": "Please Others",
+              "text": { "nl": "Als het publiek enthousiast is, stijg ik boven mezelf uit" }
+            },
+            {
+              "id": "TH.2",
+              "pos": "B",
+              "family": "Drivers",
+              "construct": "Try Hard",
+              "cluster": "Try Hard",
+              "text": { "nl": "Mijn doorzettingsvermogen is onbegrensd als ik aan die ene bijzondere persoon denk" }
+            },
+            {
+              "id": "BP.3",
+              "pos": "C",
+              "family": "Drivers",
+              "construct": "Be Perfect",
+              "cluster": "Be Perfect",
+              "text": { "nl": "Ik geef pas rust als een technisch element volledig foutloos is" }
+            },
+            {
+              "id": "HU.3",
+              "pos": "D",
+              "family": "Drivers",
+              "construct": "Hurry Up",
+              "cluster": "Hurry Up",
+              "text": { "nl": "Wachten op het sein van de coach frustreert mij als ik klaar ben om te gaan" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 3,
+          "stateKey": "B3",
+          "family": "Drivers",
+          "module": "Drivers",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "BS.3",
+              "pos": "A",
+              "family": "Drivers",
+              "construct": "Be Strong",
+              "cluster": "Be Strong",
+              "text": { "nl": "Ik vraag nooit om hulp tenzij ik echt geen andere keuze zie" }
+            },
+            {
+              "id": "PO.3",
+              "pos": "B",
+              "family": "Drivers",
+              "construct": "Please Others",
+              "cluster": "Please Others",
+              "text": { "nl": "Ik voel mij schuldig als ik de teamsfeer negatief beïnvloed, zelfs door blessure" }
+            },
+            {
+              "id": "TH.3",
+              "pos": "C",
+              "family": "Drivers",
+              "construct": "Try Hard",
+              "cluster": "Try Hard",
+              "text": { "nl": "Ik train harder wanneer iemand die mij dierbaar is in de tribunes zit" }
+            },
+            {
+              "id": "BP.4",
+              "pos": "D",
+              "family": "Drivers",
+              "construct": "Be Perfect",
+              "cluster": "Be Perfect",
+              "text": { "nl": "Kleine technische fouten in training blijven mij lang bezighouden" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 4,
+          "stateKey": "B4",
+          "family": "Drivers",
+          "module": "Drivers",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "HU.4",
+              "pos": "A",
+              "family": "Drivers",
+              "construct": "Hurry Up",
+              "cluster": "Hurry Up",
+              "text": { "nl": "Ik heb een hekel aan lange inleidingen, ik wil meteen aan de slag" }
+            },
+            {
+              "id": "BS.4",
+              "pos": "B",
+              "family": "Drivers",
+              "construct": "Be Strong",
+              "cluster": "Be Strong",
+              "text": { "nl": "Ik zet mijn pijn opzij en speel door totdat de wedstrijd voorbij is" }
+            },
+            {
+              "id": "PO.4",
+              "pos": "C",
+              "family": "Drivers",
+              "construct": "Please Others",
+              "cluster": "Please Others",
+              "text": { "nl": "De goedkeuring van mijn coach geeft mij extra motivatie om door te gaan" }
+            },
+            {
+              "id": "TH.4",
+              "pos": "D",
+              "family": "Drivers",
+              "construct": "Try Hard",
+              "cluster": "Try Hard",
+              "text": { "nl": "Ik wil bewijzen aan een specifiek persoon dat ik het in mij heb" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 5,
+          "stateKey": "B5",
+          "family": "Drivers",
+          "module": "Drivers",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "BP.5",
+              "pos": "A",
+              "family": "Drivers",
+              "construct": "Be Perfect",
+              "cluster": "Be Perfect",
+              "text": { "nl": "Ik ben pas tevreden met mijn prestatie als alles klopt, niet alleen het resultaat" }
+            },
+            {
+              "id": "HU.5",
+              "pos": "B",
+              "family": "Drivers",
+              "construct": "Hurry Up",
+              "cluster": "Hurry Up",
+              "text": { "nl": "Lange trainingen met veel pauzes demotiveren mij" }
+            },
+            {
+              "id": "TH.5",
+              "pos": "C",
+              "family": "Drivers",
+              "construct": "Try Hard",
+              "cluster": "Try Hard",
+              "text": { "nl": "Ik put kracht uit de herinnering aan mensen die mij ooit geloofd hebben" }
+            },
+            {
+              "id": "BS.5",
+              "pos": "D",
+              "family": "Drivers",
+              "construct": "Be Strong",
+              "cluster": "Be Strong",
+              "text": { "nl": "Kwetsbaarheid tonen in een sport-omgeving beschouw ik als een nadeel" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 6,
+          "stateKey": "B6",
+          "family": "Drivers",
+          "module": "Drivers",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "PO.5",
+              "pos": "A",
+              "family": "Drivers",
+              "construct": "Please Others",
+              "cluster": "Please Others",
+              "text": { "nl": "Ik stem mijn speelstijl soms aan op wat ik denk dat de coach wil zien" }
+            },
+            {
+              "id": "BP.6",
+              "pos": "B",
+              "family": "Drivers",
+              "construct": "Be Perfect",
+              "cluster": "Be Perfect",
+              "text": { "nl": "Ik herbekijk beelden van mijn eigen prestaties systematisch op fouten" }
+            },
+            {
+              "id": "BS.6",
+              "pos": "C",
+              "family": "Drivers",
+              "construct": "Be Strong",
+              "cluster": "Be Strong",
+              "text": { "nl": "Ik voel mij ongemakkelijk als anderen merken dat ik het emotioneel moeilijk heb" }
+            },
+            {
+              "id": "HU.6",
+              "pos": "D",
+              "family": "Drivers",
+              "construct": "Hurry Up",
+              "cluster": "Hurry Up",
+              "text": { "nl": "Ik reageer sneller dan mijn ploegmaats in kritieke wedstrijdmomenten" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 7,
+          "stateKey": "B7",
+          "family": "Drivers",
+          "module": "Drivers",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "TH.6",
+              "pos": "A",
+              "family": "Drivers",
+              "construct": "Try Hard",
+              "cluster": "Try Hard",
+              "text": { "nl": "Ik geef pas op als ik zeker weet dat ik alles geprobeerd heb voor de mensen die op mij rekenen" }
+            },
+            {
+              "id": "PO.6",
+              "pos": "B",
+              "family": "Drivers",
+              "construct": "Please Others",
+              "cluster": "Please Others",
+              "text": { "nl": "De sfeer in het team heeft grote invloed op hoe ik mij presteer" }
+            },
+            {
+              "id": "BP.7",
+              "pos": "C",
+              "family": "Drivers",
+              "construct": "Be Perfect",
+              "cluster": "Be Perfect",
+              "text": { "nl": "Ik stel mezelf hogere normen dan mijn coach ooit van mij vraagt" }
+            },
+            {
+              "id": "HU.7",
+              "pos": "D",
+              "family": "Drivers",
+              "construct": "Hurry Up",
+              "cluster": "Hurry Up",
+              "text": { "nl": "Ik wordt onrustig als een wedstrijd of training trager verloopt dan verwacht" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 8,
+          "stateKey": "B8",
+          "family": "Drivers",
+          "module": "Drivers",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "BS.7",
+              "pos": "A",
+              "family": "Drivers",
+              "construct": "Be Strong",
+              "cluster": "Be Strong",
+              "text": { "nl": "Ik toon mijn emoties pas na de wedstrijd, nooit tijdens" }
+            },
+            {
+              "id": "TH.7",
+              "pos": "B",
+              "family": "Drivers",
+              "construct": "Try Hard",
+              "cluster": "Try Hard",
+              "text": { "nl": "Voor de juiste mensen kan ik prestaties leveren die ik zelf niet voor mogelijk hield" }
+            },
+            {
+              "id": "PO.7",
+              "pos": "C",
+              "family": "Drivers",
+              "construct": "Please Others",
+              "cluster": "Please Others",
+              "text": { "nl": "Het is moeilijk voor mij om te presteren als ik merk dat de coach het niet in mij gelooft" }
+            },
+            {
+              "id": "BP.8",
+              "pos": "D",
+              "family": "Drivers",
+              "construct": "Be Perfect",
+              "cluster": "Be Perfect",
+              "text": { "nl": "Een 'bijna perfect' prestatie is voor mij geen succes" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 9,
+          "stateKey": "B9",
+          "family": "Drivers",
+          "module": "Drivers",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "HU.8",
+              "pos": "A",
+              "family": "Drivers",
+              "construct": "Hurry Up",
+              "cluster": "Hurry Up",
+              "text": { "nl": "Ik vind het moeilijk om geduldig te wachten op het juiste moment in een wedstrijd" }
+            },
+            {
+              "id": "BS.8",
+              "pos": "B",
+              "family": "Drivers",
+              "construct": "Be Strong",
+              "cluster": "Be Strong",
+              "text": { "nl": "Ik ga door ook als anderen zouden afhaken door pijn of vermoeidheid" }
+            },
+            {
+              "id": "PO.8",
+              "pos": "C",
+              "family": "Drivers",
+              "construct": "Please Others",
+              "cluster": "Please Others",
+              "text": { "nl": "Ik pas mijn spel aan als ik merk dat een ploegmaat het nodig heeft" }
+            },
+            {
+              "id": "TH.8",
+              "pos": "D",
+              "family": "Drivers",
+              "construct": "Try Hard",
+              "cluster": "Try Hard",
+              "text": { "nl": "Mijn motivatie is het sterkst als ik weet dat ik iemand trots kan maken" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 10,
+          "stateKey": "B10",
+          "family": "Talent-foci",
+          "module": "Talent-foci",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "FI.1",
+              "pos": "A",
+              "family": "Talent-foci",
+              "construct": "Functioneel Innovatief",
+              "cluster": "Functioneel Innovatief",
+              "text": { "nl": "Ik bedenk in het veld eigen oplossingen die mijn trainer me nooit heeft geleerd" }
+            },
+            {
+              "id": "AI.1",
+              "pos": "B",
+              "family": "Talent-foci",
+              "construct": "Artistiek Innovatief",
+              "cluster": "Artistiek Innovatief",
+              "text": { "nl": "Mijn sport is voor mij ook een vorm van zelfexpressie, niet alleen prestatie" }
+            },
+            {
+              "id": "CC.1",
+              "pos": "C",
+              "family": "Talent-foci",
+              "construct": "Complexiteit/Conceptueel",
+              "cluster": "Complexiteit/Conceptueel",
+              "text": { "nl": "Ik wil begrijpen waarom een tactiek werkt, niet alleen hoe ik hem moet uitvoeren" }
+            },
+            {
+              "id": "SU.1",
+              "pos": "D",
+              "family": "Talent-foci",
+              "construct": "Systematisch/Uitvoerend",
+              "cluster": "Systematisch/Uitvoerend",
+              "text": { "nl": "Ik presteer het best als ik een vaste, betrouwbare routine heb opgebouwd" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 11,
+          "stateKey": "B11",
+          "family": "Talent-foci",
+          "module": "Talent-foci",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "SI.1",
+              "pos": "A",
+              "family": "Talent-foci",
+              "construct": "Sociaal Interactief",
+              "cluster": "Sociaal Interactief",
+              "text": { "nl": "In een team haal ik meer uit mezelf dan alleen trainen" }
+            },
+            {
+              "id": "OI.1",
+              "pos": "B",
+              "family": "Talent-foci",
+              "construct": "Overdrachtelijk Interactief",
+              "cluster": "Overdrachtelijk Interactief",
+              "text": { "nl": "Ik merk dat ik andere atleten spontaan begin te coachen en dat geeft me ook energie" }
+            },
+            {
+              "id": "FI.2",
+              "pos": "C",
+              "family": "Talent-foci",
+              "construct": "Functioneel Innovatief",
+              "cluster": "Functioneel Innovatief",
+              "text": { "nl": "Ik kom vanzelf op nieuwe manieren om een technisch probleem op te lossen" }
+            },
+            {
+              "id": "CC.2",
+              "pos": "D",
+              "family": "Talent-foci",
+              "construct": "Complexiteit/Conceptueel",
+              "cluster": "Complexiteit/Conceptueel",
+              "text": { "nl": "Ik analyseer wedstrijden van tegenstanders om patronen te ontdekken" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 12,
+          "stateKey": "B12",
+          "family": "Talent-foci",
+          "module": "Talent-foci",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "AI.2",
+              "pos": "A",
+              "family": "Talent-foci",
+              "construct": "Artistiek Innovatief",
+              "cluster": "Artistiek Innovatief",
+              "text": { "nl": "Ik zoek bewust naar mooiheid in mijn beweging, ook al is dat functioneel niet nodig" }
+            },
+            {
+              "id": "SU.2",
+              "pos": "B",
+              "family": "Talent-foci",
+              "construct": "Systematisch/Uitvoerend",
+              "cluster": "Systematisch/Uitvoerend",
+              "text": { "nl": "Ik volg trainingsschema's nauwkeurig en haat onverwachte wijzigingen" }
+            },
+            {
+              "id": "OI.2",
+              "pos": "C",
+              "family": "Talent-foci",
+              "construct": "Overdrachtelijk Interactief",
+              "cluster": "Overdrachtelijk Interactief",
+              "text": { "nl": "Het enthousiasmeren van jongere sporters geeft mij net zoveel voldoening als mijn eigen prestatie" }
+            },
+            {
+              "id": "SI.2",
+              "pos": "D",
+              "family": "Talent-foci",
+              "construct": "Sociaal Interactief",
+              "cluster": "Sociaal Interactief",
+              "text": { "nl": "Groepstraining laadt mij op; solotraining put mij sneller uit" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 13,
+          "stateKey": "B13",
+          "family": "Talent-foci",
+          "module": "Talent-foci",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "FI.3",
+              "pos": "A",
+              "family": "Talent-foci",
+              "construct": "Functioneel Innovatief",
+              "cluster": "Functioneel Innovatief",
+              "text": { "nl": "Ik ben op mijn best als ik improviseer en out-of-the-box speel" }
+            },
+            {
+              "id": "CC.3",
+              "pos": "B",
+              "family": "Talent-foci",
+              "construct": "Complexiteit/Conceptueel",
+              "cluster": "Complexiteit/Conceptueel",
+              "text": { "nl": "Een complexe tactiek uitpluizen motiveert mij meer dan het uitvoeren ervan" }
+            },
+            {
+              "id": "SU.3",
+              "pos": "C",
+              "family": "Talent-foci",
+              "construct": "Systematisch/Uitvoerend",
+              "cluster": "Systematisch/Uitvoerend",
+              "text": { "nl": "Mijn kracht zit in de consistentie en betrouwbaarheid van mijn uitvoering" }
+            },
+            {
+              "id": "AI.3",
+              "pos": "D",
+              "family": "Talent-foci",
+              "construct": "Artistiek Innovatief",
+              "cluster": "Artistiek Innovatief",
+              "text": { "nl": "Ik voel mij het best als mijn bewegingsstijl authentiek en persoonlijk is" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 14,
+          "stateKey": "B14",
+          "family": "Talent-foci",
+          "module": "Talent-foci",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "SI.3",
+              "pos": "A",
+              "family": "Talent-foci",
+              "construct": "Sociaal Interactief",
+              "cluster": "Sociaal Interactief",
+              "text": { "nl": "Ik merk dat ik beter word door de interactie met mijn ploegmaten tijdens training" }
+            },
+            {
+              "id": "OI.3",
+              "pos": "B",
+              "family": "Talent-foci",
+              "construct": "Overdrachtelijk Interactief",
+              "cluster": "Overdrachtelijk Interactief",
+              "text": { "nl": "Kennis en ervaring doorgeven aan anderen is voor mij een belangrijk deel van mijn sportbeleving" }
+            },
+            {
+              "id": "FI.4",
+              "pos": "C",
+              "family": "Talent-foci",
+              "construct": "Functioneel Innovatief",
+              "cluster": "Functioneel Innovatief",
+              "text": { "nl": "Standaard oplossingen voldoen mij niet — ik zoek altijd naar een slimmere aanpak" }
+            },
+            {
+              "id": "CC.4",
+              "pos": "D",
+              "family": "Talent-foci",
+              "construct": "Complexiteit/Conceptueel",
+              "cluster": "Complexiteit/Conceptueel",
+              "text": { "nl": "Ik word gemotiveerd door complexe tactische opdrachten die nadenken vereisen" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 15,
+          "stateKey": "B15",
+          "family": "Talent-foci",
+          "module": "Talent-foci",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "SU.4",
+              "pos": "A",
+              "family": "Talent-foci",
+              "construct": "Systematisch/Uitvoerend",
+              "cluster": "Systematisch/Uitvoerend",
+              "text": { "nl": "Ik bereid mij met een vast pre-wedstrijdritueel voor" }
+            },
+            {
+              "id": "AI.4",
+              "pos": "B",
+              "family": "Talent-foci",
+              "construct": "Artistiek Innovatief",
+              "cluster": "Artistiek Innovatief",
+              "text": { "nl": "Mijn sport is ook een creatief medium: ik wil er iets mee uitdrukken" }
+            },
+            {
+              "id": "SI.4",
+              "pos": "C",
+              "family": "Talent-foci",
+              "construct": "Sociaal Interactief",
+              "cluster": "Sociaal Interactief",
+              "text": { "nl": "De verbinding met mijn ploeg is een bron van energie die ik nergens anders vind" }
+            },
+            {
+              "id": "OI.4",
+              "pos": "D",
+              "family": "Talent-foci",
+              "construct": "Overdrachtelijk Interactief",
+              "cluster": "Overdrachtelijk Interactief",
+              "text": { "nl": "Ik investeer spontaan tijd in het helpen van anderen die minder ervaren zijn dan ik" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 16,
+          "stateKey": "B16",
+          "family": "Talent-foci",
+          "module": "Talent-foci",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "FI.5",
+              "pos": "A",
+              "family": "Talent-foci",
+              "construct": "Functioneel Innovatief",
+              "cluster": "Functioneel Innovatief",
+              "text": { "nl": "Ik experimenteer graag met onorthodoxe technieken als de situatie het toelaat" }
+            },
+            {
+              "id": "SU.5",
+              "pos": "B",
+              "family": "Talent-foci",
+              "construct": "Systematisch/Uitvoerend",
+              "cluster": "Systematisch/Uitvoerend",
+              "text": { "nl": "Ik houd van herhaling en het verfijnen van bestaande patronen tot ze perfect zitten" }
+            },
+            {
+              "id": "CC.5",
+              "pos": "C",
+              "family": "Talent-foci",
+              "construct": "Complexiteit/Conceptueel",
+              "cluster": "Complexiteit/Conceptueel",
+              "text": { "nl": "Ik begrijp het grote plaatje van het spel beter dan de meeste van mijn ploegmaten" }
+            },
+            {
+              "id": "AI.5",
+              "pos": "D",
+              "family": "Talent-foci",
+              "construct": "Artistiek Innovatief",
+              "cluster": "Artistiek Innovatief",
+              "text": { "nl": "De esthetiek van een goed uitgevoerde actie raakt mij meer dan puur het resultaat" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 17,
+          "stateKey": "B17",
+          "family": "Talent-foci",
+          "module": "Talent-foci",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "OI.5",
+              "pos": "A",
+              "family": "Talent-foci",
+              "construct": "Overdrachtelijk Interactief",
+              "cluster": "Overdrachtelijk Interactief",
+              "text": { "nl": "Ik merkte al vroeg dat ik natuurlijk talent heb voor het activeren van mijn omgeving" }
+            },
+            {
+              "id": "SI.5",
+              "pos": "B",
+              "family": "Talent-foci",
+              "construct": "Sociaal Interactief",
+              "cluster": "Sociaal Interactief",
+              "text": { "nl": "Mijn relatie met ploegmaten is een van de belangrijkste redenen waarom ik blijf sporten" }
+            },
+            {
+              "id": "SU.6",
+              "pos": "C",
+              "family": "Talent-foci",
+              "construct": "Systematisch/Uitvoerend",
+              "cluster": "Systematisch/Uitvoerend",
+              "text": { "nl": "Ik word het best van een duidelijk plan met stap-voor-stap instructies" }
+            },
+            {
+              "id": "FI.6",
+              "pos": "D",
+              "family": "Talent-foci",
+              "construct": "Functioneel Innovatief",
+              "cluster": "Functioneel Innovatief",
+              "text": { "nl": "Ik los tactische problemen op eigen manier op, zonder vooraf gegeven kader" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 18,
+          "stateKey": "B18",
+          "family": "Talent-foci",
+          "module": "Talent-foci",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "CC.6",
+              "pos": "A",
+              "family": "Talent-foci",
+              "construct": "Complexiteit/Conceptueel",
+              "cluster": "Complexiteit/Conceptueel",
+              "text": { "nl": "Ik verheug mij op tactische besprekingen evenveel als op de training zelf" }
+            },
+            {
+              "id": "AI.6",
+              "pos": "B",
+              "family": "Talent-foci",
+              "construct": "Artistiek Innovatief",
+              "cluster": "Artistiek Innovatief",
+              "text": { "nl": "Ik zoek naar schoonheid in de uitvoering, niet enkel doelmatigheid" }
+            },
+            {
+              "id": "SI.6",
+              "pos": "C",
+              "family": "Talent-foci",
+              "construct": "Sociaal Interactief",
+              "cluster": "Sociaal Interactief",
+              "text": { "nl": "Ik presteer beter wanneer er goede chemie is tussen mij en mijn ploeg" }
+            },
+            {
+              "id": "OI.6",
+              "pos": "D",
+              "family": "Talent-foci",
+              "construct": "Overdrachtelijk Interactief",
+              "cluster": "Overdrachtelijk Interactief",
+              "text": { "nl": "Ik leg dingen graag uit aan anderen en zie dat als een investering in het team" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 19,
+          "stateKey": "B19",
+          "family": "Talent-foci",
+          "module": "Talent-foci",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "FI.7",
+              "pos": "A",
+              "family": "Talent-foci",
+              "construct": "Functioneel Innovatief",
+              "cluster": "Functioneel Innovatief",
+              "text": { "nl": "Ik vind het leuk om trainingsvormen te bedenken die niemand nog eerder geprobeerd heeft" }
+            },
+            {
+              "id": "SU.7",
+              "pos": "B",
+              "family": "Talent-foci",
+              "construct": "Systematisch/Uitvoerend",
+              "cluster": "Systematisch/Uitvoerend",
+              "text": { "nl": "Ik vertrouw op mijn opgebouwde systeem, ook als de druk hoog is" }
+            },
+            {
+              "id": "CC.7",
+              "pos": "C",
+              "family": "Talent-foci",
+              "construct": "Complexiteit/Conceptueel",
+              "cluster": "Complexiteit/Conceptueel",
+              "text": { "nl": "Ik stel vragen bij de tactische keuzes van mijn coach als ik ze niet volledig begrijp" }
+            },
+            {
+              "id": "AI.7",
+              "pos": "D",
+              "family": "Talent-foci",
+              "construct": "Artistiek Innovatief",
+              "cluster": "Artistiek Innovatief",
+              "text": { "nl": "Ik probeer mijn sport te beoefenen als een kunstenaar, met gevoel voor stijl" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 20,
+          "stateKey": "B20",
+          "family": "Talent-foci",
+          "module": "Talent-foci",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "SI.7",
+              "pos": "A",
+              "family": "Talent-foci",
+              "construct": "Sociaal Interactief",
+              "cluster": "Sociaal Interactief",
+              "text": { "nl": "Ik geniet van het sociale aspect van sport bijna net zoveel als van de sport zelf" }
+            },
+            {
+              "id": "OI.7",
+              "pos": "B",
+              "family": "Talent-foci",
+              "construct": "Overdrachtelijk Interactief",
+              "cluster": "Overdrachtelijk Interactief",
+              "text": { "nl": "Ik word energiek van het overdragen van inzichten aan jongere of minder ervaren sporters" }
+            },
+            {
+              "id": "SU.8",
+              "pos": "C",
+              "family": "Talent-foci",
+              "construct": "Systematisch/Uitvoerend",
+              "cluster": "Systematisch/Uitvoerend",
+              "text": { "nl": "Ik bouw structuur en voorspelbaarheid in om beter te presteren" }
+            },
+            {
+              "id": "FI.8",
+              "pos": "D",
+              "family": "Talent-foci",
+              "construct": "Functioneel Innovatief",
+              "cluster": "Functioneel Innovatief",
+              "text": { "nl": "Ik ben creatief in het veld en bedenk in het moment nieuwe manieren om een obstakel te overwinnen" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 21,
+          "stateKey": "B21",
+          "family": "Talent-foci",
+          "module": "Talent-foci",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "CC.8",
+              "pos": "A",
+              "family": "Talent-foci",
+              "construct": "Complexiteit/Conceptueel",
+              "cluster": "Complexiteit/Conceptueel",
+              "text": { "nl": "Ik denk graag na over de grotere sportstrategieën en wat ze betekenen voor mijn positie" }
+            },
+            {
+              "id": "AI.8",
+              "pos": "B",
+              "family": "Talent-foci",
+              "construct": "Artistiek Innovatief",
+              "cluster": "Artistiek Innovatief",
+              "text": { "nl": "Ik hecht waarde aan de esthetische dimensie van mijn sportprestatie" }
+            },
+            {
+              "id": "SI.8",
+              "pos": "C",
+              "family": "Talent-foci",
+              "construct": "Sociaal Interactief",
+              "cluster": "Sociaal Interactief",
+              "text": { "nl": "De sfeer en de verbinding binnen het team zijn doorslaggevend voor mijn prestatieplezier" }
+            },
+            {
+              "id": "OI.8",
+              "pos": "D",
+              "family": "Talent-foci",
+              "construct": "Overdrachtelijk Interactief",
+              "cluster": "Overdrachtelijk Interactief",
+              "text": { "nl": "Ik voel mij vervuld als een teamgenoot dankzij mij een doorbraak maakt" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 22,
+          "stateKey": "B22",
+          "family": "Talent-foci",
+          "module": "Talent-foci",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "SU.9",
+              "pos": "A",
+              "family": "Talent-foci",
+              "construct": "Systematisch/Uitvoerend",
+              "cluster": "Systematisch/Uitvoerend",
+              "text": { "nl": "Ik houd van een gestructureerd trainingsplan en voer het nauwgezet uit" }
+            },
+            {
+              "id": "FI.9",
+              "pos": "B",
+              "family": "Talent-foci",
+              "construct": "Functioneel Innovatief",
+              "cluster": "Functioneel Innovatief",
+              "text": { "nl": "Ik voeg altijd iets eigens toe aan wat mij geleerd werd" }
+            },
+            {
+              "id": "CC.9",
+              "pos": "C",
+              "family": "Talent-foci",
+              "construct": "Complexiteit/Conceptueel",
+              "cluster": "Complexiteit/Conceptueel",
+              "text": { "nl": "Ik zie verbanden in het spel die anderen niet snel opmerken" }
+            },
+            {
+              "id": "AI.9",
+              "pos": "D",
+              "family": "Talent-foci",
+              "construct": "Artistiek Innovatief",
+              "cluster": "Artistiek Innovatief",
+              "text": { "nl": "Ik vind het belangrijk dat mijn bewegingen er ook goed uitzien" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 23,
+          "stateKey": "B23",
+          "family": "Talent-versnellers",
+          "module": "Talent-versnellers",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "AN.1",
+              "pos": "A",
+              "family": "Talent-versnellers",
+              "construct": "Analyse",
+              "cluster": "Analyse",
+              "text": { "nl": "Ik analyseer mijn wedstrijden systematisch om te begrijpen wat beter kan" }
+            },
+            {
+              "id": "IO.1",
+              "pos": "B",
+              "family": "Talent-versnellers",
+              "construct": "Individueel ondersteunend",
+              "cluster": "Individueel ondersteunend",
+              "text": { "nl": "Ik begeleid graag jongere atleten en dat geeft me ook zelf energie" }
+            },
+            {
+              "id": "GO.1",
+              "pos": "C",
+              "family": "Talent-versnellers",
+              "construct": "Groepsondersteunend",
+              "cluster": "Groepsondersteunend",
+              "text": { "nl": "Ik breng een team in flow door de juiste omgeving te creëren" }
+            },
+            {
+              "id": "IM.1",
+              "pos": "D",
+              "family": "Talent-versnellers",
+              "construct": "Impact",
+              "cluster": "Impact",
+              "text": { "nl": "Mijn beste prestaties leveer ik onder druk, met publiek, bij grote inzet" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 24,
+          "stateKey": "B24",
+          "family": "Talent-versnellers",
+          "module": "Talent-versnellers",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "RE.1",
+              "pos": "A",
+              "family": "Talent-versnellers",
+              "construct": "Resultaat",
+              "cluster": "Resultaat",
+              "text": { "nl": "Ik richt me volledig op het doel en laat me niet afleiden tot ik er ben" }
+            },
+            {
+              "id": "CO.1",
+              "pos": "B",
+              "family": "Talent-versnellers",
+              "construct": "Constructief onderscheidend",
+              "cluster": "Constructief onderscheidend",
+              "text": { "nl": "Ik doe het op mijn manier, ook als de standaard anders is" }
+            },
+            {
+              "id": "AN.2",
+              "pos": "C",
+              "family": "Talent-versnellers",
+              "construct": "Analyse",
+              "cluster": "Analyse",
+              "text": { "nl": "Ik gebruik data en statistieken om mijn prestaties te verbeteren" }
+            },
+            {
+              "id": "IO.2",
+              "pos": "D",
+              "family": "Talent-versnellers",
+              "construct": "Individueel ondersteunend",
+              "cluster": "Individueel ondersteunend",
+              "text": { "nl": "Ik zet mij spontaan in voor de persoonlijke ontwikkeling van een ploeggenoot" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 25,
+          "stateKey": "B25",
+          "family": "Talent-versnellers",
+          "module": "Talent-versnellers",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "GO.2",
+              "pos": "A",
+              "family": "Talent-versnellers",
+              "construct": "Groepsondersteunend",
+              "cluster": "Groepsondersteunend",
+              "text": { "nl": "Ik neem initiatief om de groepsdynamiek positief te beïnvloeden" }
+            },
+            {
+              "id": "IM.2",
+              "pos": "B",
+              "family": "Talent-versnellers",
+              "construct": "Impact",
+              "cluster": "Impact",
+              "text": { "nl": "Ik zoek grote podia op — finales, toernooien, bijzondere wedstrijden" }
+            },
+            {
+              "id": "RE.2",
+              "pos": "C",
+              "family": "Talent-versnellers",
+              "construct": "Resultaat",
+              "cluster": "Resultaat",
+              "text": { "nl": "Ik verlies zelden doelen uit het oog, ook niet als het traject moeilijk wordt" }
+            },
+            {
+              "id": "CO.2",
+              "pos": "D",
+              "family": "Talent-versnellers",
+              "construct": "Constructief onderscheidend",
+              "cluster": "Constructief onderscheidend",
+              "text": { "nl": "Ik durf bestaande trainingsmethodes in vraag te stellen als ik betere zie" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 26,
+          "stateKey": "B26",
+          "family": "Talent-versnellers",
+          "module": "Talent-versnellers",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "AN.3",
+              "pos": "A",
+              "family": "Talent-versnellers",
+              "construct": "Analyse",
+              "cluster": "Analyse",
+              "text": { "nl": "Ik zoek bewust naar patronen in mijn eigen prestaties over meerdere wedstrijden heen" }
+            },
+            {
+              "id": "GO.3",
+              "pos": "B",
+              "family": "Talent-versnellers",
+              "construct": "Groepsondersteunend",
+              "cluster": "Groepsondersteunend",
+              "text": { "nl": "Ik let erop dat niemand in mijn team zich uitgesloten of ondergewaardeerd voelt" }
+            },
+            {
+              "id": "IM.3",
+              "pos": "C",
+              "family": "Talent-versnellers",
+              "construct": "Impact",
+              "cluster": "Impact",
+              "text": { "nl": "Ik wil zichtbaar zijn en een blijvende indruk nalaten op het veld" }
+            },
+            {
+              "id": "IO.3",
+              "pos": "D",
+              "family": "Talent-versnellers",
+              "construct": "Individueel ondersteunend",
+              "cluster": "Individueel ondersteunend",
+              "text": { "nl": "Een persoonlijk gesprek met een ploeggenoot die het moeilijk heeft, geeft mij ook energie" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 27,
+          "stateKey": "B27",
+          "family": "Talent-versnellers",
+          "module": "Talent-versnellers",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "RE.3",
+              "pos": "A",
+              "family": "Talent-versnellers",
+              "construct": "Resultaat",
+              "cluster": "Resultaat",
+              "text": { "nl": "Ik werk doelgericht en laat mij niet leiden door bijzaken" }
+            },
+            {
+              "id": "CO.3",
+              "pos": "B",
+              "family": "Talent-versnellers",
+              "construct": "Constructief onderscheidend",
+              "cluster": "Constructief onderscheidend",
+              "text": { "nl": "Ik kies mijn eigen pad, ook als dat betekent dat ik anders train dan de groep" }
+            },
+            {
+              "id": "AN.4",
+              "pos": "C",
+              "family": "Talent-versnellers",
+              "construct": "Analyse",
+              "cluster": "Analyse",
+              "text": { "nl": "Ik houd van het nauwkeurig ontleden van tactische en technische elementen" }
+            },
+            {
+              "id": "GO.4",
+              "pos": "D",
+              "family": "Talent-versnellers",
+              "construct": "Groepsondersteunend",
+              "cluster": "Groepsondersteunend",
+              "text": { "nl": "Ik neem de rol van emotioneel anker op in het team, ook als ik dat niet uitdrukkelijk gevraagd wordt" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 28,
+          "stateKey": "B28",
+          "family": "Talent-versnellers",
+          "module": "Talent-versnellers",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "IM.4",
+              "pos": "A",
+              "family": "Talent-versnellers",
+              "construct": "Impact",
+              "cluster": "Impact",
+              "text": { "nl": "Wanneer er veel op het spel staat, kom ik het meest tot mijn recht" }
+            },
+            {
+              "id": "IO.4",
+              "pos": "B",
+              "family": "Talent-versnellers",
+              "construct": "Individueel ondersteunend",
+              "cluster": "Individueel ondersteunend",
+              "text": { "nl": "Ik neem tijd voor één-op-één gesprekken als ik merk dat iemand vastloopt" }
+            },
+            {
+              "id": "RE.4",
+              "pos": "C",
+              "family": "Talent-versnellers",
+              "construct": "Resultaat",
+              "cluster": "Resultaat",
+              "text": { "nl": "Mijn prestaties zijn het consistent sterkst als er een concreet meetbaar doel is" }
+            },
+            {
+              "id": "CO.4",
+              "pos": "D",
+              "family": "Talent-versnellers",
+              "construct": "Constructief onderscheidend",
+              "cluster": "Constructief onderscheidend",
+              "text": { "nl": "Ik vraag mij af waarom we bepaalde dingen doen en stel voor het anders te doen als ik denk dat het beter kan" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 29,
+          "stateKey": "B29",
+          "family": "Talent-versnellers",
+          "module": "Talent-versnellers",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "AN.5",
+              "pos": "A",
+              "family": "Talent-versnellers",
+              "construct": "Analyse",
+              "cluster": "Analyse",
+              "text": { "nl": "Na een slechte wedstrijd wil ik begrijpen wat er precies misging voordat ik verdergaat" }
+            },
+            {
+              "id": "GO.5",
+              "pos": "B",
+              "family": "Talent-versnellers",
+              "construct": "Groepsondersteunend",
+              "cluster": "Groepsondersteunend",
+              "text": { "nl": "Ik creëer spontaan een sfeer die het team laat floreren" }
+            },
+            {
+              "id": "CO.5",
+              "pos": "C",
+              "family": "Talent-versnellers",
+              "construct": "Constructief onderscheidend",
+              "cluster": "Constructief onderscheidend",
+              "text": { "nl": "Ik heb een uitgesproken eigen mening en verdedig die, ook als de groep anders denkt" }
+            },
+            {
+              "id": "IM.5",
+              "pos": "D",
+              "family": "Talent-versnellers",
+              "construct": "Impact",
+              "cluster": "Impact",
+              "text": { "nl": "Ik ben op mijn best als anderen kijken — dat wakkert iets in mij aan" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 30,
+          "stateKey": "B30",
+          "family": "Talent-versnellers",
+          "module": "Talent-versnellers",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "IO.5",
+              "pos": "A",
+              "family": "Talent-versnellers",
+              "construct": "Individueel ondersteunend",
+              "cluster": "Individueel ondersteunend",
+              "text": { "nl": "Ik word vrolijk als ik merk dat iemand dankzij mijn hulp een stap vooruit zet" }
+            },
+            {
+              "id": "RE.5",
+              "pos": "B",
+              "family": "Talent-versnellers",
+              "construct": "Resultaat",
+              "cluster": "Resultaat",
+              "text": { "nl": "Ik werk het meest efficiënt als ik een helder eindpunt voor ogen heb" }
+            },
+            {
+              "id": "AN.6",
+              "pos": "C",
+              "family": "Talent-versnellers",
+              "construct": "Analyse",
+              "cluster": "Analyse",
+              "text": { "nl": "Ik verwerk informatie over mijn prestaties liever grondig dan snel" }
+            },
+            {
+              "id": "GO.6",
+              "pos": "D",
+              "family": "Talent-versnellers",
+              "construct": "Groepsondersteunend",
+              "cluster": "Groepsondersteunend",
+              "text": { "nl": "Ik investeer energie in het bouwen van een sterk groepsgevoel" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 31,
+          "stateKey": "B31",
+          "family": "Talent-versnellers",
+          "module": "Talent-versnellers",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "CO.6",
+              "pos": "A",
+              "family": "Talent-versnellers",
+              "construct": "Constructief onderscheidend",
+              "cluster": "Constructief onderscheidend",
+              "text": { "nl": "Ik weiger mij te conformeren aan wat de groep doet als ik geloof dat er een betere weg is" }
+            },
+            {
+              "id": "IM.6",
+              "pos": "B",
+              "family": "Talent-versnellers",
+              "construct": "Impact",
+              "cluster": "Impact",
+              "text": { "nl": "Ik wil indruk maken en herinnerd worden om wat ik presteer, niet wie ik ben" }
+            },
+            {
+              "id": "IO.6",
+              "pos": "C",
+              "family": "Talent-versnellers",
+              "construct": "Individueel ondersteunend",
+              "cluster": "Individueel ondersteunend",
+              "text": { "nl": "Ik zoek actief naar momenten om iemand individueel te ondersteunen of te motiveren" }
+            },
+            {
+              "id": "RE.6",
+              "pos": "D",
+              "family": "Talent-versnellers",
+              "construct": "Resultaat",
+              "cluster": "Resultaat",
+              "text": { "nl": "Als ik een doel stel, haak ik pas af als het bereikt is" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 32,
+          "stateKey": "B32",
+          "family": "Talent-versnellers",
+          "module": "Talent-versnellers",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "AN.7",
+              "pos": "A",
+              "family": "Talent-versnellers",
+              "construct": "Analyse",
+              "cluster": "Analyse",
+              "text": { "nl": "Ik bouw graag prestatieoverzichten en statistieken bij om inzicht te krijgen" }
+            },
+            {
+              "id": "GO.7",
+              "pos": "B",
+              "family": "Talent-versnellers",
+              "construct": "Groepsondersteunend",
+              "cluster": "Groepsondersteunend",
+              "text": { "nl": "Ik organiseer spontaan groepsmomenten om het teamgevoel te versterken" }
+            },
+            {
+              "id": "IM.7",
+              "pos": "C",
+              "family": "Talent-versnellers",
+              "construct": "Impact",
+              "cluster": "Impact",
+              "text": { "nl": "Ik functioneer het best als er echte gevolgen kleven aan mijn prestatie" }
+            },
+            {
+              "id": "CO.7",
+              "pos": "D",
+              "family": "Talent-versnellers",
+              "construct": "Constructief onderscheidend",
+              "cluster": "Constructief onderscheidend",
+              "text": { "nl": "Ik ben bereid de enige te zijn die iets anders doet als ik overtuigd ben dat het beter is" }
+            }
+          ]
+        },
+        {
+          "blockIndex": 33,
+          "stateKey": "B33",
+          "family": "Talent-versnellers",
+          "module": "Talent-versnellers",
+          "energyMode": "item",
+          "items": [
+            {
+              "id": "IO.7",
+              "pos": "A",
+              "family": "Talent-versnellers",
+              "construct": "Individueel ondersteunend",
+              "cluster": "Individueel ondersteunend",
+              "text": { "nl": "Ik geef graag persoonlijke feedback die mensen echt helpt groeien" }
+            },
+            {
+              "id": "RE.7",
+              "pos": "B",
+              "family": "Talent-versnellers",
+              "construct": "Resultaat",
+              "cluster": "Resultaat",
+              "text": { "nl": "Ik ben resultaatgericht en laat me niet afleiden door bijzaken of sfeer" }
+            },
+            {
+              "id": "AN.8",
+              "pos": "C",
+              "family": "Talent-versnellers",
+              "construct": "Analyse",
+              "cluster": "Analyse",
+              "text": { "nl": "Ik begrijp mijn eigen fouten pas echt als ik ze grondig geanalyseerd heb" }
+            },
+            {
+              "id": "GO.8",
+              "pos": "D",
+              "family": "Talent-versnellers",
+              "construct": "Groepsondersteunend",
+              "cluster": "Groepsondersteunend",
+              "text": { "nl": "Ik investeer in de band met het team en maak mij zorgen als iemand buiten de groep valt" }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sectionId": "connection",
+      "title": { "nl": "Sportverbondenheid" },
+      "type": "numeric-scale",
+      "instructions": "Vier vragen op een schaal van 0 tot 10.",
+      "linkKey": "respondentCode",
+      "questions": [
+        {
+          "id": "q1",
+          "scale": "connection0to10",
+          "label": { "nl": "Sportpassie" },
+          "text": { "nl": "In welke mate heb je het gevoel dat je vandaag in verbinding bent met je sport — niet uit verplichting maar vanuit echte passie?" }
+        },
+        {
+          "id": "q2",
+          "scale": "connection0to10",
+          "label": { "nl": "Billijkheid in sport" },
+          "text": { "nl": "In welke mate voel je je eerlijk behandeld door je trainer, je club en je omgeving in de sport?" }
+        },
+        {
+          "id": "q3",
+          "scale": "connection0to10",
+          "label": { "nl": "Mentale zelfinvestering" },
+          "text": { "nl": "In welke mate investeer je zelf in je mentale en emotionele ontwikkeling als atleet, buiten de fysieke training?" }
+        },
+        {
+          "id": "q4",
+          "scale": "connection0to10",
+          "label": { "nl": "Club-investering in de atleet" },
+          "text": { "nl": "In welke mate voel je dat je club/team ook investeert in jou als persoon, niet alleen in jou als prestatiemachine?" }
+        }
+      ]
+    }
+  ],
+  "identity": {
+    "required": ["respondentCode", "name"],
+    "optional": ["sporttak", "ploeg", "rol"],
+    "note": "respondentCode is de gedeelde sleutel tussen sectie 'main' en sectie 'connection'."
+  },
+  "multilingual": false
+}

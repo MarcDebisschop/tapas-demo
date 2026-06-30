@@ -55,6 +55,8 @@ import Stm from "@/pages/stm";
 import Webinars from "@/pages/webinars";
 import CoachDashboard from "@/pages/coach-dashboard";
 import { CoachLoginGate } from "@/components/CoachLoginGate";
+import T4SportsVragenlijst from "@/pages/t4sports-vragenlijst";
+import T4SportsDashboard from "@/pages/t4sports-dashboard";
 
 function AdminStub({ titel, omschrijving }: { titel: string; omschrijving: string }) {
   return (
@@ -113,6 +115,8 @@ function AppRouter() {
       <Route path="/hdd" component={HddHome} />
       <Route path="/hdd/rapport" component={HddRapport} />
       <Route path="/2minscan/rapport" component={TwominscanRapport} />
+      <Route path="/t4sports" component={T4SportsVragenlijst} />
+      <Route path="/t4sports/dashboard/:token" component={T4SportsDashboard} />
       <Route path="/impact" component={ImpactHome} />
       <Route path="/lounge" component={Lounge} />
       {/* Wereld-shortcuts: redirect naar meest relevante bestaande pagina */}

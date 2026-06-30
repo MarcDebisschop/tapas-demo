@@ -7,6 +7,7 @@ import {
   hydrateInstrument,
   clientInstrumentVan,
 } from "./instrument";
+import t4sportsJson from "./data/t4sports.json";
 
 // ---------------------------------------------------------------------------
 // Instrument-registry (Fase 1) — singleton → registry.
@@ -271,6 +272,22 @@ function bouwRegistry(): Map<string, InstrumentDescriptor> {
     creditCost: roosBundelGrootte > 0 ? roosBundelCredits / roosBundelGrootte : roosBundelCredits,
     bundelGrootte: roosBundelGrootte,
     bundelCredits: roosBundelCredits,
+  });
+
+  // -------------------------------------------------------------------------
+  // T4Sports — individueel mental talent profiel voor atleten.
+  // -------------------------------------------------------------------------
+  map.set("t4sports", {
+    instrumentId: "t4sports",
+    flowType: "individual",
+    name: "T4Sports — Mental Talent Profiel",
+    version: "1.0.0",
+    description:
+      "Psychometrisch mental talent profiel voor atleten: drivers, talent-foci en " +
+      "talent-versnellers in sporttaal. Basis voor mental coaching op maat.",
+    isDefault: false,
+    creditCost: 1,
+    instrument: hydrateInstrument(t4sportsJson),
   });
 
   // -------------------------------------------------------------------------

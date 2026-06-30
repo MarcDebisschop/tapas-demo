@@ -11,6 +11,7 @@ import { registerHddRoutes } from "./hdd/routes";
 import { registerToegangRoutes } from "./toegang/routes";
 import { registerDeelnemerRoutes } from "./routes-deelnemer";
 import { startCreditRecoveryJob } from "./credit-recovery";
+import { registerT4SportsRoutes } from "./t4sports/routes";
 
 // Domeinrouters (item 1.1, Fase 5)
 import { registerInstrumentRoutes } from "./routes/instrumenten";
@@ -94,6 +95,11 @@ export async function registerRoutes(
 
   // Deelnemer-domeinrouter: login, magic-link, dashboard, TTS (NP-2 fix 2026-06-30)
   registerDeelnemerRoutes(app);
+
+  // -------------------------------------------------------------------------
+  // T4Sports — mental talent profiel voor atleten.
+  // -------------------------------------------------------------------------
+  registerT4SportsRoutes(app);
 
   // Credit-recovery job: verlopen afnames vrijgeven (item 1.6, 2026-06-30)
   startCreditRecoveryJob(6);
