@@ -291,6 +291,57 @@ function bouwRegistry(): Map<string, InstrumentDescriptor> {
   });
 
   // -------------------------------------------------------------------------
+  // T4Sports M1 — ACSI-28 module (Athletic Coping Skills Inventory).
+  // -------------------------------------------------------------------------
+  // Optionele psychometrische module: 28 items, 7 subschalen, coping-skills.
+  // Aparte credit-kost bovenop het basisinstrument T4Sports.
+  // -------------------------------------------------------------------------
+  map.set("t4sports-m1", {
+    instrumentId: "t4sports-m1",
+    flowType: "individual",
+    name: "T4Sports M1 — ACSI-28",
+    version: "1.0.0",
+    description:
+      "Module 1: Athletic Coping Skills Inventory (28 items, 7 subschalen). " +
+      "Meet mentale copingvaardigheden van atleten (Smith et al., 1995).",
+    isDefault: false,
+    creditCost: 1,
+  });
+
+  // T4Sports M2 — DFS-2/FSS-2 module (Flow State Scale).
+  // -------------------------------------------------------------------------
+  // Optionele psychometrische module: 18 items, 6 dimensies, flow-beleving.
+  // Aparte credit-kost bovenop het basisinstrument T4Sports.
+  // -------------------------------------------------------------------------
+  map.set("t4sports-m2", {
+    instrumentId: "t4sports-m2",
+    flowType: "individual",
+    name: "T4Sports M2 — DFS-2/FSS-2",
+    version: "1.0.0",
+    description:
+      "Module 2: Dispositional Flow Scale-2 / Flow State Scale-2 (18 items, 6 dimensies). " +
+      "Meet flow-beleving in sport (Jackson & Eklund, 2002).",
+    isDefault: false,
+    creditCost: 1,
+  });
+
+  // T4Sports M3 — AIMS-7 module (Athletic Identity Measurement Scale).
+  // -------------------------------------------------------------------------
+  // Optionele psychometrische module: 7 items, atletische identiteit.
+  // Aparte credit-kost bovenop het basisinstrument T4Sports.
+  // -------------------------------------------------------------------------
+  map.set("t4sports-m3", {
+    instrumentId: "t4sports-m3",
+    flowType: "individual",
+    name: "T4Sports M3 — AIMS-7",
+    version: "1.0.0",
+    description:
+      "Module 3: Athletic Identity Measurement Scale (7 items, 7-puntsschaal). " +
+      "Meet mate van atletische identiteit (Brewer et al., 1993).",
+    isDefault: false,
+    creditCost: 1,
+  });
+
   // T4Teens — individueel instrument voor jongeren (16-21 jaar).
   //
   // T4Teens is een op maat gemaakte variant van het T4P-profiel, ontwikkeld

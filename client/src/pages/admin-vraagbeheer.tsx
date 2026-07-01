@@ -72,6 +72,7 @@ const INSTRUMENTEN = [
   { id: "tapas-2minscan", naam: "2MinScan", beschrijving: "Energetisch gedragsprofiel (EG-code)" },
   { id: "tapas-t4students", naam: "T4Students / Studiekompas", beschrijving: "Studiekeuze-oriëntatie voor jongeren" },
   { id: "tapas-t4teens", naam: "T4Teens", beschrijving: "Vonk-instrument (25 items: energie, drivers, versnellers, foci, interesse, betekenis)" },
+  { id: "tapas-t4sports", naam: "T4Sports Modules", beschrijving: "M1 ACSI-28 (28 items) · M2 DFS-2/FSS-2 (18 items) · M3 AIMS-7 (7 items)" },
 ];
 
 // ─── Item-kaart ───────────────────────────────────────────────────────────────

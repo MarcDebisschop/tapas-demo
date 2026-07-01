@@ -15,6 +15,7 @@
  *   tapas-t4recruitment→ server/t4r/library.ts              (T4Recruitment)
  *   tapas-2minscan     → interne definitie (EG-gedragscode) (2MinScan)
  *   tapas-t4students   → interne definitie (studiekompas)   (T4Students)
+ *   tapas-t4sports     → server/data/t4sports-modules.json  (T4Sports M1/M2/M3)
  *
  * Talen: nl, fr, en, es, ru
  *
@@ -513,6 +514,38 @@ function logToCSV(rows: any[]): string {
 
 // ─── Instrument-dispatcher ────────────────────────────────────────────────────
 
+/** T4Sports Modules — laadt M1 (ACSI-28), M2 (DFS-2/FSS-2), M3 (AIMS-7) uit server/data/t4sports-modules.json */
+function laadT4SportsModuleItems(): VraagItem[] {
+  try {
+    const pad = join(process.cwd(), "server/data/t4sports-modules.json");
+    const data = JSON.parse(readFileSync(pad, "utf-8"));
+    const modules = data.modules as Record<string, any>;
+    const items: VraagItem[] = [];
+    const moduleNamen: Record<string, string> = {
+      M1: "ACSI-28",
+      M2: "DFS-2/FSS-2",
+      M3: "AIMS-7",
+    };
+    for (const [moduleKey, module] of Object.entries(modules)) {
+      const moduleNaam = moduleNamen[moduleKey] ?? moduleKey;
+      for (const item of (module.items ?? []) as any[]) {
+        items.push({
+          itemId: `t4sports-${moduleKey}-${item.nr}`,
+          instrument: "tapas-t4sports",
+          family: moduleNaam,
+          construct: item.schaal ?? undefined,
+          tekst: { nl: item.tekst },
+          heeftOverride: false,
+        });
+      }
+    }
+    return items;
+  } catch (e) {
+    console.error("[QM] T4Sports modules laden mislukt:", e);
+    return [];
+  }
+}
+
 const INSTRUMENT_LOADERS: Record<string, () => VraagItem[]> = {
   "tapas-t4p":          laadT4PItems,
   "tapas-teamscan":     laadTeamscanItems,
@@ -520,6 +553,7 @@ const INSTRUMENT_LOADERS: Record<string, () => VraagItem[]> = {
   "tapas-2minscan":     laad2MinScanItems,
   "tapas-t4students":   laadT4StudentsItems,
   "tapas-t4teens":      laadT4TeensItems,
+  "tapas-t4sports":     laadT4SportsModuleItems,
 };
 
 const BEKENDE_INSTRUMENTEN = Object.keys(INSTRUMENT_LOADERS);
