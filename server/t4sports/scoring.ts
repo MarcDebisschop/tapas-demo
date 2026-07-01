@@ -160,7 +160,7 @@ function energyToTenScale(avg: number): number {
 }
 
 function consistencyScore(rows: ConstructRow[], responses: Responses): { score: number; label: string } {
-  const answered = Object.values(responses);
+  const answered = Object.values(responses).filter((r): r is BlockResponse => r != null);
   const choicePairs = answered.filter((r) => r.most && r.least).length;
   const energyPresence = answered.filter((r, i) => {
     const b = blocks[i];
