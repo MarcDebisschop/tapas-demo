@@ -45,6 +45,37 @@ function clamp01(e: number) {
   return e < 0 ? 0 : e > 1 ? 1 : e;
 }
 
+// ─── Intro-teksten in de gepersisteerde UI-taal ──────────────────────────────
+// De poorten-intro mount vóór de TaalProvider/router, dus we lezen de bewaarde
+// taalkeuze rechtstreeks uit localStorage (sleutel tapas_ui_taal). Bij een eerste
+// bezoek is er nog geen keuze → val terug op Nederlands (bron-/standaardtaal).
+type IntroTaal = "nl" | "fr" | "en" | "es" | "ru";
+function leesIntroTaal(): IntroTaal {
+  try {
+    const t = window.localStorage.getItem("tapas_ui_taal");
+    if (t === "nl" || t === "fr" || t === "en" || t === "es" || t === "ru") return t;
+  } catch {
+    /* localStorage niet beschikbaar */
+  }
+  return "nl";
+}
+const INTRO_TEKST: Record<string, Record<IntroTaal, string>> = {
+  hint: {
+    nl: "Duw de poorten open",
+    fr: "Poussez les portes",
+    en: "Push the gates open",
+    es: "Abre las puertas",
+    ru: "Откройте ворота",
+  },
+  overslaan: {
+    nl: "Overslaan",
+    fr: "Passer",
+    en: "Skip",
+    es: "Omitir",
+    ru: "Пропустить",
+  },
+};
+
 // ─── Houtnerf achtergrond (exact uit origineel lL functie) ───────────────────
 function houtNerf(kant: "links" | "rechts"): string {
   return [
@@ -895,7 +926,7 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
         }}
         className="absolute bottom-5 right-5 z-10 rounded-full border border-white/12 bg-white/5 px-4 py-1.5 text-xs font-medium uppercase tracking-wider text-white/55 backdrop-blur-sm transition-colors hover:bg-white/10 hover:text-white/85"
       >
-        Overslaan
+        {INTRO_TEKST.overslaan[leesIntroTaal()]}
       </button>
 
       {/* Hint — twee toestanden: voor animatie / na woord zichtbaar */}
@@ -914,7 +945,7 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
               textShadow: "0 1px 8px rgba(0,0,0,0.7)",
             }}
           >
-            Duw de poorten open
+            {INTRO_TEKST.hint[leesIntroTaal()]}
           </span>
         </div>
       )}
