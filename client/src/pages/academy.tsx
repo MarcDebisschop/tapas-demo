@@ -80,13 +80,15 @@ function CoachAvatar({ naam, fotoPad }: { naam: string; fotoPad?: string }) {
 
 // -----------------------------------------------------------------------
 // Foto-overrides voor de docentensectie (op verzoek Marc, 2026-07):
-// Rembrandt-portretten blijven UITSLUITEND in de Galerij der Jesters.
-// In de docentenlijst tonen we een gewone zwart-wit foto i.p.v. het
-// geschilderde Rembrandt-portret. We wijzigen GEEN serverdata: we mappen
-// enkel het bekende Rembrandt-bronpad naar de bestaande B&W-asset (Regel 2).
+// In de docentenlijst tonen we telkens de correcte, gedeelde zwart-wit foto
+// (dezelfde als in de Galerij der Jesters). Zo blijft het Rembrandt-portret
+// uitsluitend in de Jester-galerij en tonen alle docenten een consistente
+// B&W-foto. We wijzigen GEEN serverdata: we mappen enkel het bekende
+// docent-fotopad naar de reeds bestaande B&W-asset (Regel 2).
 // -----------------------------------------------------------------------
 const DOCENT_FOTO_BW_OVERRIDE: Record<string, string> = {
   "/academy/docent-leen.jpg": "/coaches-lijst/leen-bw.jpg",
+  "/academy/docent-herman.jpg": "/coaches-lijst/herman-bw.jpg",
 };
 
 function docentFotoBw(url?: string): string | undefined {
