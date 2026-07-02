@@ -12,6 +12,12 @@
 // Marc heeft de app al eerder bezocht → sw wordt geregistreerd → alle volgende
 // navigaties (ook directe URLs) worden correct afgehandeld.
 
+// Versie-marker: bij elke platform-release verhogen. Wijziging van deze string
+// zorgt dat de browser de service worker als GEWIJZIGD ziet, 'install' opnieuw
+// afvuurt en (via de activate-handler) alle oude cache-storage wist. Zo krijgen
+// alle bezoekers automatisch de verse versie zonder handmatig te verversen.
+const SW_VERSIE = 'tapas-v2.7.1-2026-07-02';
+
 const STATIC_EXTENSIONS = /\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|mp3|mp4|pdf|webp|ogg|json|txt|html|webmanifest)$/i;
 
 // Paden die direct naar S3 mogen (statische bestanden en directories)
@@ -60,7 +66,26 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  // Wis eventuele oude cache-storage van vorige service-worker-versies, zodat
+  // verouderde pagina's (bijv. de oude /coaches zonder contactformulier) niet
+  // langer uit de cache geserveerd worden. Neem daarna meteen controle.
+  event.waitUntil(
+    (async () => {
+      try {
+        if (self.caches && typeof self.caches.keys === 'function') {
+          const namen = await self.caches.keys();
+          await Promise.all(
+            namen
+              .filter((naam) => naam !== SW_VERSIE)
+              .map((naam) => self.caches.delete(naam))
+          );
+        }
+      } catch (_e) {
+        /* caches niet beschikbaar — negeren */
+      }
+      await self.clients.claim();
+    })()
+  );
 });
 
 self.addEventListener('fetch', (event) => {
