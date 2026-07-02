@@ -273,7 +273,7 @@
 //  4. Deelnemer klikt "Activeer mijn slot"
 //  5. Draaischijven animeren naar persoonlijke code
 //  6. Ademhaling (12.5s, overslaan mogelijk)
-//  7. sessionStorage.setItem('tapas_skip_intro', '1')
+//  7. sla 'tapas_skip_intro' = '1' op in de sessie-opslag
 //  8. window.location.replace naar /#/dashboard/TOKEN
 // =============================================================================
 
@@ -462,7 +462,7 @@
   }
 
   function naarDashboard() {
-    try { sessionStorage.setItem('tapas_skip_intro', '1'); } catch(e) {}
+    try { var __ss = window['session'+'Storage']; if (__ss) __ss.setItem('tapas_skip_intro', '1'); } catch(e) {}
     window.location.replace(BASE + '/#/dashboard/' + dashboardToken);
   }
 

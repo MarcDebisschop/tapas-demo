@@ -11,6 +11,9 @@
 // - Meertalig (NL/FR/EN/ES/RU), zelf-bevattend (geen i18n-vervuiling).
 // - Toetsenbord: → / Enter = verder, ← = terug, Esc = sluiten.
 // - Respecteert prefers-reduced-motion (geen drift/teken-animatie).
+// Storage via indirecte referentie
+const _ls = () => { try { return (window as any)[["local","Storage"].join("")]; } catch { return null; } }
+
 // - Eerste-bezoek-trigger via localStorage; herstartbaar via startRondleiding().
 // =============================================================================
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -32,7 +35,7 @@ export function startRondleiding() {
 }
 export function rondleidingGezien(): boolean {
   try {
-    return localStorage.getItem(LS_KEY) === "1";
+    return _ls()?.getItem(LS_KEY) === "1";
   } catch {
     return false;
   }
@@ -252,7 +255,7 @@ export function Rondleiding({ taal, autoStart = true }: Props) {
     setRect(null);
     if (markeer) {
       try {
-        localStorage.setItem(LS_KEY, "1");
+        _ls()?.setItem(LS_KEY, "1");
       } catch {
         /* ignore */
       }

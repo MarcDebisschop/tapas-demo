@@ -79,6 +79,9 @@ export const afnames = sqliteTable("afnames", {
   // TaPas Persoonlijk Fase 1: koppeling naar de deelnemer (via e-mail) zodat de
   // respondent later op zijn persoonlijk dashboard al zijn afnames terugvindt.
   deelnemerEmail: text("deelnemer_email"),
+  // Instrument-ID: welk instrument werd afgenomen (bijv. 't4p', 't4teens', 't4sports').
+  // Nullable voor legacy-afnames die aangemaakt werden vóór deze kolom bestond.
+  instrumentId: text("instrument_id"),
   createdAt: text("created_at").notNull(),
   completedAt: text("completed_at"),
 });
@@ -95,6 +98,7 @@ export const insertAfnameSchema = createInsertSchema(afnames).pick({
   role: z.string().optional(),
   baselineEnergy: z.number().int().min(0).max(10),
   taal: taalSchema.optional(),
+  instrumentId: z.string().optional(),
   consentGiven: z.literal(true, {
     errorMap: () => ({ message: "Toestemming is verplicht om te starten" }),
   }),

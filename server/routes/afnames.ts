@@ -97,6 +97,7 @@ export function registerAfnameRoutes(app: Express): void {
       role: data.role ?? null,
       baselineEnergy: data.baselineEnergy,
       taal: normaliseerTaal(data.taal),
+      instrumentId: data.instrumentId ?? null,
       consentScope: "profiel-generatie + rapport",
       consentTimestamp: new Date().toISOString(),
       consentIp,

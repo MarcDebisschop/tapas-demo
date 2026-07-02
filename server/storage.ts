@@ -419,6 +419,8 @@ try {
   if (!heeft("taal")) add(`ALTER TABLE afnames ADD COLUMN taal TEXT NOT NULL DEFAULT 'nl';`);
   // TaPas Persoonlijk Fase 1 — koppeling naar deelnemer via e-mail.
   if (!heeft("deelnemer_email")) add(`ALTER TABLE afnames ADD COLUMN deelnemer_email TEXT;`);
+  // Instrument-ID: welk instrument werd afgenomen (bijv. 't4p', 't4teens', 't4sports').
+  if (!heeft("instrument_id")) add(`ALTER TABLE afnames ADD COLUMN instrument_id TEXT;`);
 } catch {
   // negeerbaar in nieuwe databases
 }
@@ -1429,6 +1431,7 @@ export interface NewAfname {
   role?: string | null;
   baselineEnergy: number;
   taal?: string | null;
+  instrumentId?: string | null;
   consentScope: string;
   consentTimestamp: string;
   verwerkingsdoel?: string | null;
@@ -1699,6 +1702,7 @@ export class DatabaseStorage implements IStorage {
           new Date(Date.now() + STANDAARD_BEWAARMAANDEN * 30 * 24 * 3600 * 1000).toISOString(),
         baselineEnergy: data.baselineEnergy,
         taal: data.taal ?? "nl",
+        instrumentId: data.instrumentId ?? null,
         status: "deel1",
         createdAt: new Date().toISOString(),
       })

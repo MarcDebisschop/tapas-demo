@@ -433,6 +433,7 @@ export const STRINGS = {
   iz_evolutie_uitleg: { nl: "Voltooide afnames per maand (laatste 12 maanden).", fr: "Évaluations terminées par mois (12 derniers mois).", en: "Completed assessments per month (last 12 months).", es: "Evaluaciones completadas por mes (últimos 12 meses).", ru: "Завершённые оценки по месяцам (последние 12 месяцев)." },
   iz_evolutie_geen: { nl: "Nog geen voltooide afnames in deze periode.", fr: "Aucune évaluation terminée sur cette période.", en: "No completed assessments in this period.", es: "No hay evaluaciones completadas en este período.", ru: "Нет завершённых оценок за этот период." },
   iz_coachnetwerk_titel: { nl: "Coach-netwerk", fr: "Réseau de coachs", en: "Coach network", es: "Red de coaches", ru: "Сеть коучей" },
+  iz_coachnetwerk_totaal: { nl: "{n} actieve coaches in het netwerk", fr: "{n} coachs actifs dans le réseau", en: "{n} active coaches in the network", es: "{n} coaches activos en la red", ru: "{n} активных коучей в сети" },
   iz_coachnetwerk_per_land: { nl: "Coaches per land", fr: "Coachs par pays", en: "Coaches by country", es: "Coaches por país", ru: "Коучи по странам" },
   iz_coachnetwerk_per_regio: { nl: "Coaches per regio", fr: "Coachs par région", en: "Coaches by region", es: "Coaches por región", ru: "Коучи по регионам" },
   iz_coachnetwerk_per_accreditatie: { nl: "Accreditaties per instrument", fr: "Accréditations par instrument", en: "Accreditations by instrument", es: "Acreditaciones por instrumento", ru: "Аккредитации по инструментам" },
@@ -1020,6 +1021,9 @@ export type StringSleutel = keyof typeof STRINGS;
 // Haalt een vertaalde string op met veilige terugval op NL.
 export function t(sleutel: StringSleutel, taal: Taal): string {
   const v = STRINGS[sleutel];
+  // Defensief: een ontbrekende sleutel mag NOOIT de hele pagina laten crashen
+  // (React error boundary → "herladen"). Val terug op de sleutelnaam.
+  if (!v) return String(sleutel);
   return v[taal] ?? v[STANDAARD_TAAL];
 }
 

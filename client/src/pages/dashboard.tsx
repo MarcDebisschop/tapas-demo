@@ -4,6 +4,7 @@ import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import UitlegPaneel from "@/components/UitlegPaneel";
+import BibliotheekPaneel from "@/components/BibliotheekPaneel";
 import DashboardLeerpad from "@/components/DashboardLeerpad";
 import { AppHeader } from "@/components/Brand";
 import { Card, CardContent } from "@/components/ui/card";
@@ -637,6 +638,11 @@ export default function Dashboard() {
         {/* GESPROKEN PROFIELUITLEG (6 blokken, audio) */}
         <section className="mt-8">
           <UitlegPaneel token={token} taal={taal} toon="deelnemer" />
+        </section>
+
+        {/* GEPERSONALISEERDE BIBLIOTHEEK + PODCASTS (18+: professionals/studenten) */}
+        <section className="mt-8">
+          <BibliotheekPaneel token={token} taal={taal} />
         </section>
 
         {/* AI-PROFIELASSISTENT (chatbot) */}

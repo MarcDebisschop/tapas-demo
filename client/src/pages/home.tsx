@@ -23,6 +23,7 @@ import {
   ScanLine,
   ClipboardList,
   UserCheck,
+  Dumbbell,
 } from "lucide-react";
 import {
   TALEN,
@@ -226,7 +227,7 @@ function PlatformOverzicht() {
       href: "/werk",
       kleurVar: "--werk",
       icon: <Briefcase className="h-5 w-5" />,
-      badges: ["T4P Business", "T4Recruitment", "Teamscan", "2MINSCAN", "Human Due Diligence"],
+      badges: ["T4P Business", "T4Recruitment", "Teamscan", "2MINSCAN", "Human Due Diligence", "Impact-roos", "T4Sports"],
     },
     {
       label: "Studie",
@@ -441,104 +442,57 @@ export default function Home() {
         <PlatformOverzicht />
 
         {/* ---------------------------------------------------------------- */}
-        {/* KIES JE WERELD — ongewijzigd                                      */}
+        {/* KIES JE WERELD — blok "Waar wil je je talent mobiliseren?"        */}
+        {/* op verzoek van Marc definitief verwijderd (behoud Lounge/Academy) */}
         {/* ---------------------------------------------------------------- */}
         <section id="kies" className="mt-16 scroll-mt-24 sm:mt-24">
-          <div className="mx-auto max-w-2xl text-center">
-            <p
-              className="font-mono text-xs uppercase tracking-[0.18em]"
-              style={{ color: "hsl(var(--studie))" }}
-            >
-              Eén huis, twee werelden
-            </p>
-            <h2 className="mt-3 font-serif text-2xl font-semibold tracking-tight text-foreground sm:text-[2.4rem] sm:leading-[1.15]">
-              Waar wil je je talent mobiliseren?
-            </h2>
-            <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Het is dezelfde innerlijke kern — alleen in een andere fase van je leven. Kies je
-              wereld, en je voelt je meteen op je plek.
-            </p>
-          </div>
-
-          <div className="mt-10 grid gap-5 sm:grid-cols-2">
-            {/* Werk & organisatie */}
-            <Link href="/werk">
-              <a
-                data-testid="card-wereld-werk"
-                data-tour="admin-cta"
-                className="group relative block overflow-hidden rounded-2xl border border-t-[3px] border-border p-7 transition hover:-translate-y-1"
-                style={{
-                  borderTopColor: "hsl(var(--werk))",
-                  background: "radial-gradient(120% 95% at 100% 0%, hsl(var(--werk)/0.16) 0%, hsl(var(--card)) 60%)",
-                }}
-              >
-                <p
-                  className="font-mono text-xs uppercase tracking-[0.12em]"
-                  style={{ color: "hsl(var(--werk))" }}
-                >
-                  Werk & organisatie
-                </p>
-                <h3 className="mt-3 font-serif text-xl font-semibold text-foreground sm:text-2xl">
-                  Mobiliseer je talent op het werk
-                </h3>
-                <p className="mt-3 max-w-[38ch] text-sm leading-relaxed text-muted-foreground">
-                  Zie de mens achter de functie: waar het talent zit, hoe het energie krijgt, en in
-                  welke context het tot zijn recht komt.
-                </p>
-                <span
-                  className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold"
-                  style={{ color: "hsl(var(--werk))" }}
-                >
-                  Verken deze wereld
-                  <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-                </span>
-              </a>
-            </Link>
-
-            {/* Studie */}
-            <Link href="/studie">
-              <a
-                data-testid="card-wereld-studie"
-                data-tour="start-cta"
-                className="group relative block overflow-hidden rounded-2xl border border-t-[3px] border-border p-7 transition hover:-translate-y-1"
-                style={{
-                  borderTopColor: "hsl(var(--studie))",
-                  background: "radial-gradient(120% 95% at 100% 0%, hsl(var(--studie)/0.16) 0%, hsl(var(--card)) 60%)",
-                }}
-              >
-                <p
-                  className="font-mono text-xs uppercase tracking-[0.12em]"
-                  style={{ color: "hsl(var(--studie))" }}
-                >
-                  Studie
-                </p>
-                <h3 className="mt-3 font-serif text-xl font-semibold text-foreground sm:text-2xl">
-                  Mobiliseer je talent in je studie
-                </h3>
-                <p className="mt-3 max-w-[38ch] text-sm leading-relaxed text-muted-foreground">
-                  Ontdek wie je bent en wat je doet schitteren — een serene, uitnodigende weg naar de
-                  studiekoers die bij je talent past.
-                </p>
-                <span
-                  className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold"
-                  style={{ color: "hsl(var(--studie))" }}
-                >
-                  Verken deze wereld
-                  <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-                </span>
-              </a>
-            </Link>
-          </div>
-
-          <p className="mt-6 text-center text-sm italic text-muted-foreground">
-            Eén blik volstaat om te zien: dit is TaPas.
-          </p>
-
           {/* Lounge-uitnodiging — exact Kme() uit ZIP-8 bundle — NIET AANRAKEN */}
           <LoungeWidget />
 
           {/* Academy-link — zichtbaar voor iedereen — NIET AANRAKEN */}
           <AcademyLink />
+        </section>
+
+        {/* ---------------------------------------------------------------- */}
+        {/* T4SPORTS DEMO LINK — directe toegang via hash-routing             */}
+        {/* ---------------------------------------------------------------- */}
+        <section className="mt-10">
+          <a
+            href="#/t4sports"
+            data-testid="link-t4sports-demo"
+            className="group flex items-center justify-between rounded-2xl border border-dashed p-5 transition hover:-translate-y-0.5"
+            style={{
+              borderColor: "hsl(var(--accent)/0.45)",
+              background: "radial-gradient(120% 140% at 8% 0%, hsl(var(--accent)/0.10) 0%, hsl(var(--card)) 70%)",
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <span
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl"
+                style={{ background: "hsl(var(--accent)/0.14)", color: "hsl(var(--accent))" }}
+              >
+                <Dumbbell className="h-5 w-5" />
+              </span>
+              <div>
+                <span
+                  className="font-mono text-[11px] uppercase tracking-[0.2em]"
+                  style={{ color: "hsl(var(--accent))" }}
+                >
+                  Demo beschikbaar
+                </span>
+                <span className="block font-serif text-xl font-semibold text-foreground sm:text-2xl">
+                  T4Sports
+                </span>
+                <p className="mt-1 text-xs italic text-muted-foreground">
+                  Mentale coaching voor topsporters — drivers, foci en versnellers in sporttaal.
+                </p>
+              </div>
+            </div>
+            <ArrowRight
+              className="h-5 w-5 shrink-0 transition group-hover:translate-x-0.5"
+              style={{ color: "hsl(var(--accent))" }}
+            />
+          </a>
         </section>
 
         {/* FOOTER */}

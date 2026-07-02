@@ -53,6 +53,7 @@ export interface Afname {
   status: string;
   baselineEnergy: number;
   taal?: string;
+  instrumentId?: string | null;
   createdAt: string;
   completedAt: string | null;
   inviteToken?: string | null;

@@ -1,6 +1,16 @@
 // =============================================================================
 // UitlegPaneel — gesproken uitleg van het profiel (6 blokken).
-// Audio via server-side TTS (Sulafat, Vlaamse stem, Gemini 2.5 Pro TTS).
+// Audio UITSLUITEND via server-side TTS (Sulafat, Vlaamse stem, Gemini 2.5 Pro TTS).
+//
+// BELANGRIJK — DEFINITIEVE STEM-REGEL (niet terugdraaien):
+//   Er is GEEN browser-fallback (Web Speech API) meer. De ingebouwde
+//   browserstemmen leverden altijd een Hollandse nl-NL stem op omdat browsers
+//   geen Vlaamse (nl-BE) stem hebben. Die fallback is DE reden waarom de
+//   Hollandse stem telkens terugkwam. Daarom is hij permanent verwijderd.
+//   Als /api/tts niet beschikbaar is (bv. demo-omgeving zonder GEMINI_API_KEY)
+//   tonen we een nette melding i.p.v. een verkeerde stem af te spelen.
+//   Op productie (Render, met GEMINI_API_KEY) klinkt altijd de Vlaamse Sulafat.
+//
 // Backend levert script (al in de juiste taal) + limiet-status.
 // Twee tonen: "deelnemer" (warm) en "coach" (zakelijk).
 // Elke toon heeft een eigen 10-gratis-dan-betalen limiet.
@@ -175,6 +185,13 @@ const STR = {
     es: "Algo salio mal. Intentalo de nuevo.",
     ru: "Что-то пошло не так. Попробуйте ещё раз.",
   } as ML,
+  stemNietBeschikbaar: {
+    nl: "De Vlaamse stem is in deze demo-omgeving even niet beschikbaar. Op het live platform hoor je de warme Vlaamse stem (Sulafat). De tekst hierboven kun je gewoon meelezen.",
+    fr: "La voix flamande n'est pas disponible dans cette démo. Sur la plateforme en ligne, tu entends la voix flamande chaleureuse (Sulafat). Tu peux lire le texte ci-dessus.",
+    en: "The Flemish voice is temporarily unavailable in this demo. On the live platform you hear the warm Flemish voice (Sulafat). You can read the text above.",
+    es: "La voz flamenca no está disponible en esta demo. En la plataforma en vivo escuchas la cálida voz flamenca (Sulafat). Puedes leer el texto de arriba.",
+    ru: "Фламандский голос временно недоступен в этой демо-версии. На рабочей платформе звучит тёплый фламандский голос (Sulafat). Текст выше можно прочитать.",
+  } as ML,
   // Paywall
   paywallTitel: {
     nl: "Je gratis uitleg is op",
@@ -284,53 +301,22 @@ function UitlegPaneel({ token, taal, toon = "deelnemer" }: { token: string; taal
   const huidig = blokken[index];
 
   // --- TTS helpers ---
-  // Primair: server-side Sulafat (Vlaamse stem via Gemini TTS).
-  // Fallback: Web Speech API (browser-ingebouwd) — geen foutmelding, wel uitleg.
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  // UITSLUITEND server-side Sulafat (Vlaamse stem via Gemini TTS).
+  // GEEN Web Speech API-fallback: die zou een Hollandse browserstem afspelen.
+  // Bij falen tonen we een nette melding — nooit een verkeerde stem.
 
   function stopSpraak() {
     const a = audioRef.current;
     if (a) { a.pause(); a.src = ""; }
     audioRef.current = null;
-    if (utteranceRef.current) {
-      window.speechSynthesis?.cancel();
-      utteranceRef.current = null;
-    }
     setSpreekt(false);
     setGepauzeerd(false);
     setTtsLaden(false);
   }
 
-  function spreekViaBrowser(tekst: string) {
-    if (!window.speechSynthesis) {
-      setFout(k(STR.fout, taal));
-      return;
-    }
-    window.speechSynthesis.cancel();
-    const utt = new SpeechSynthesisUtterance(tekst);
-    utt.lang = "nl-BE";
-    utt.rate = 0.88;
-    utt.pitch = 0.97;
-    // Vlaamse stemkeuze: voorkeursvolgorde — Belgisch-Nederlands boven Hollands
-    // Browsers labelen Vlaamse stemmen vaak als nl-BE, soms met naam "Belgian" of "Flemish"
-    const stemmen = window.speechSynthesis.getVoices();
-    const nlStem =
-      stemmen.find(v => v.lang === "nl-BE") ||
-      stemmen.find(v => /belgi|flemish|vlaams/i.test(v.name)) ||
-      stemmen.find(v => v.lang === "nl-BE" && v.localService) ||
-      stemmen.find(v => v.lang.startsWith("nl") && /female|vrouw/i.test(v.name)) ||
-      stemmen.find(v => v.lang.startsWith("nl"));
-    if (nlStem) utt.voice = nlStem;
-    utt.onend = () => { setSpreekt(false); setGepauzeerd(false); utteranceRef.current = null; };
-    utt.onerror = () => { setSpreekt(false); setGepauzeerd(false); };
-    utteranceRef.current = utt;
-    setSpreekt(true);
-    setTtsLaden(false);
-    window.speechSynthesis.speak(utt);
-  }
-
   async function spreek(tekst: string) {
     stopSpraak();
+    setFout(null);
     setTtsLaden(true);
     try {
       const res = await fetch("/api/tts", {
@@ -340,8 +326,10 @@ function UitlegPaneel({ token, taal, toon = "deelnemer" }: { token: string; taal
         credentials: "include",
       });
       if (!res.ok) {
-        // Server-TTS niet beschikbaar → stille fallback naar browser
-        spreekViaBrowser(tekst);
+        // Server-TTS niet beschikbaar → nette melding, GEEN Hollandse browserstem
+        setTtsLaden(false);
+        setSpreekt(false);
+        setFout(k(STR.stemNietBeschikbaar, taal));
         return;
       }
       const blob = await res.blob();
@@ -349,24 +337,24 @@ function UitlegPaneel({ token, taal, toon = "deelnemer" }: { token: string; taal
       const audio = new Audio(url);
       audioRef.current = audio;
       audio.onended = () => { setSpreekt(false); setGepauzeerd(false); URL.revokeObjectURL(url); };
-      audio.onerror = () => { spreekViaBrowser(tekst); };
+      audio.onerror = () => {
+        setSpreekt(false);
+        setGepauzeerd(false);
+        setTtsLaden(false);
+        setFout(k(STR.stemNietBeschikbaar, taal));
+        URL.revokeObjectURL(url);
+      };
       setTtsLaden(false);
       setSpreekt(true);
-      audio.play();
+      audio.play().catch(() => {
+        setSpreekt(false);
+        setFout(k(STR.stemNietBeschikbaar, taal));
+      });
     } catch {
-      // Netwerk/parse fout → stille fallback naar browser
-      spreekViaBrowser(tekst);
-    }
-  }
-
-  function pauzeOfHervatBrowser() {
-    if (!window.speechSynthesis) return;
-    if (gepauzeerd) {
-      window.speechSynthesis.resume();
-      setGepauzeerd(false);
-    } else {
-      window.speechSynthesis.pause();
-      setGepauzeerd(true);
+      // Netwerk/parse fout → nette melding, GEEN Hollandse browserstem
+      setTtsLaden(false);
+      setSpreekt(false);
+      setFout(k(STR.stemNietBeschikbaar, taal));
     }
   }
 
@@ -375,16 +363,11 @@ function UitlegPaneel({ token, taal, toon = "deelnemer" }: { token: string; taal
   }
 
   function pauzeOfHervat() {
-    // Server-side audio (HTMLAudioElement)
+    // Uitsluitend server-side audio (HTMLAudioElement)
     if (audioRef.current) {
       const a = audioRef.current;
       if (gepauzeerd) { a.play(); setGepauzeerd(false); }
       else { a.pause(); setGepauzeerd(true); }
-      return;
-    }
-    // Browser-fallback (Web Speech API)
-    if (utteranceRef.current) {
-      pauzeOfHervatBrowser();
     }
   }
 

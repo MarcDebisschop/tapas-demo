@@ -14,6 +14,11 @@ import { bepaalRegio, kiesCoach, COACH_ROL, type RegioSleutel } from "./coach-re
 import { bouwGalerij, galerijLabels } from "./galerij";
 import { bouwModule, MODULE_IDS } from "./modules";
 import { bouwUitlegScript, VLAAMSE_STEM_PROMPT, type Toon } from "./uitleg";
+import {
+  getDeelnemerBibliotheek,
+  getDeelnemerPodcasts,
+  type Doelgroep,
+} from "./bibliotheek-deelnemer";
 import { normaliseerTaal } from "@shared/i18n";
 import {
   deelnemerLoginSchema,
@@ -700,6 +705,93 @@ export function registerDeelnemerRoutes(app: Express): void {
       res.setHeader("Content-Length", audio.length);
       res.setHeader("Cache-Control", "no-store");
       res.end(audio);
+    });
+  });
+
+  // =========================================================================
+  // GEPERSONALISEERDE BIBLIOTHEEK + PODCASTS voor DEELNEMERS (18+)
+  // Nieuwe feature (Strikte Werkregel 2). Adaptief aan het driver-/focusprofiel
+  // uit het meest recente generatorContract. Alleen voor professionals
+  // ("business") en studenten ("students"). Teens (< 18) krijgen 403.
+  // =========================================================================
+
+  // Helper: bepaal contract (meest recente voltooide afname) + doelgroep.
+  async function deelnemerContext(
+    token: string,
+  ): Promise<{ contract: string | null; doelgroep: Doelgroep } | null> {
+    const deelnemer = await storage.getDeelnemerByToken(token);
+    if (!deelnemer) return null;
+    const afnames = await storage.listAfnamesVoorDeelnemer(deelnemer.email);
+    const voltooid = afnames.filter((a) => a.status === "voltooid" && a.generatorContract);
+    const recentste = voltooid[0] ?? afnames[0] ?? null;
+    const contract = recentste?.generatorContract ?? null;
+
+    // ------------------------------------------------------------------
+    // Doelgroep-detectie — ROBUUST (fix definitief).
+    //
+    // Waarom niet afname.instrumentId (de kolom)? In de demo-/showcasedata
+    // is die kolom NULL voor ALLE deelnemers. Daardoor viel iedereen terug
+    // op "business" en werkte de 18+-gating niet.
+    //
+    // De betrouwbare bron is het veld `instrumentId` BINNENIN het
+    // generatorContract-JSON zelf (bv. "t4p-teens-kompas",
+    // "t4p-students-kompas", "t4p-business-kompas"). We gebruiken een
+    // includes/startsWith-check zodat kompas-varianten meetellen.
+    //
+    // Volgorde: teens (< 18) → gated; students (18+) → bibliotheek;
+    // al de rest (business/professionals) → bibliotheek.
+    // ------------------------------------------------------------------
+    let instrumentId = "";
+    if (contract) {
+      try {
+        const parsed = JSON.parse(contract);
+        instrumentId = String(parsed?.instrumentId ?? "").toLowerCase();
+      } catch {
+        instrumentId = "";
+      }
+    }
+    // Terugval op de kolom als het contract geen instrumentId bevat.
+    if (!instrumentId) {
+      instrumentId = String(
+        (recentste as any)?.instrumentId ??
+          (recentste as any)?.instrument ??
+          afnames[0]?.instrumentId ??
+          "",
+      ).toLowerCase();
+    }
+    const doelgroep: Doelgroep =
+      instrumentId.includes("teen") ? "teens" :
+      instrumentId.includes("student") ? "students" :
+      "business";
+    return { contract, doelgroep };
+  }
+
+  // GET /api/dashboard/:token/bibliotheek — persoonlijke bibliotheek (18+)
+  app.get("/api/dashboard/:token/bibliotheek", async (req, res) => {
+    const ctx = await deelnemerContext(req.params.token);
+    if (!ctx) return res.status(404).json({ error: "Dashboard niet gevonden" });
+    if (ctx.doelgroep === "teens") {
+      // 18+ gating: geen bibliotheek voor teens.
+      return res.json({ beschikbaar: false, doelgroep: ctx.doelgroep, items: [] });
+    }
+    res.json({
+      beschikbaar: true,
+      doelgroep: ctx.doelgroep,
+      items: getDeelnemerBibliotheek(ctx.contract, ctx.doelgroep),
+    });
+  });
+
+  // GET /api/dashboard/:token/podcasts — persoonlijke podcasts (18+)
+  app.get("/api/dashboard/:token/podcasts", async (req, res) => {
+    const ctx = await deelnemerContext(req.params.token);
+    if (!ctx) return res.status(404).json({ error: "Dashboard niet gevonden" });
+    if (ctx.doelgroep === "teens") {
+      return res.json({ beschikbaar: false, doelgroep: ctx.doelgroep, items: [] });
+    }
+    res.json({
+      beschikbaar: true,
+      doelgroep: ctx.doelgroep,
+      items: getDeelnemerPodcasts(ctx.contract, ctx.doelgroep),
     });
   });
 

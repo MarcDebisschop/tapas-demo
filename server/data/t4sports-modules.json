@@ -1,0 +1,162 @@
+{
+  "version": "1.0.0",
+  "modules": {
+    "M1": {
+      "id": "M1",
+      "naam": "Resilience & Coping Skills",
+      "subtitel": "Hoe ga jij om met tegenslag en druk?",
+      "beschrijving": "De ACSI-28 meet zeven psychologische copingvaardigheden die aantoonbaar samenhangen met sportprestatie. Gebaseerd op Smith, Schutz, Smoll & Ptacek (1995).",
+      "wetenschappelijkeBron": "Smith, R.E., Schutz, R.W., Smoll, F.L., & Ptacek, J.T. (1995). Development and validation of a multidimensional measure of sport-specific psychological skills: The Athletic Coping Skills Inventory-28. Journal of Sport & Exercise Psychology, 17(4), 379–398.",
+      "doi": "10.1123/jsep.17.4.379",
+      "instrument": "ACSI-28 (Athletic Coping Skills Inventory)",
+      "betrouwbaarheid": "Cronbach α: 0.83–0.91 per subschaal",
+      "afnameduur": "10–12 minuten",
+      "aantalItems": 28,
+      "schalen": [
+        { "id": "coping_adversity", "naam": "Omgaan met tegenslag", "items": [1,8,15,22] },
+        { "id": "peaking_pressure", "naam": "Presteren onder druk", "items": [2,9,16,23] },
+        { "id": "goal_setting", "naam": "Doel stellen & Mentale voorbereiding", "items": [3,10,17,24] },
+        { "id": "concentration", "naam": "Concentratie", "items": [4,11,18,25] },
+        { "id": "freedom_worry", "naam": "Loslaten van zorgen", "items": [5,12,19,26] },
+        { "id": "confidence", "naam": "Zelfvertrouwen & Prestatiemotivatie", "items": [6,13,20,27] },
+        { "id": "coachability", "naam": "Coachbaarheid", "items": [7,14,21,28] }
+      ],
+      "items": [
+        { "nr": 1, "tekst": "Na een fout of slechte prestatie herstel ik snel mijn focus.", "schaal": "coping_adversity", "reversed": false },
+        { "nr": 2, "tekst": "Wanneer de druk hoog is, presteer ik beter dan normaal.", "schaal": "peaking_pressure", "reversed": false },
+        { "nr": 3, "tekst": "Ik stel me concrete doelen voor elke training en wedstrijd.", "schaal": "goal_setting", "reversed": false },
+        { "nr": 4, "tekst": "Het lukt me om me te concentreren in afleidende situaties.", "schaal": "concentration", "reversed": false },
+        { "nr": 5, "tekst": "Ik maak me tijdens de wedstrijd geen zorgen over wat anderen denken.", "schaal": "freedom_worry", "reversed": false },
+        { "nr": 6, "tekst": "Ik geloof in mijzelf als het er echt op aankomt.", "schaal": "confidence", "reversed": false },
+        { "nr": 7, "tekst": "Ik sta open voor feedback van mijn coach, ook als het kritisch is.", "schaal": "coachability", "reversed": false },
+        { "nr": 8, "tekst": "Ik leer van fouten en blijf niet in negatieve gedachten hangen.", "schaal": "coping_adversity", "reversed": false },
+        { "nr": 9, "tekst": "Grote momenten geven me extra energie en vastberadenheid.", "schaal": "peaking_pressure", "reversed": false },
+        { "nr": 10, "tekst": "Voor elke wedstrijd bereid ik me mentaal voor op wat er kan komen.", "schaal": "goal_setting", "reversed": false },
+        { "nr": 11, "tekst": "Ik kan mijn focus terugvinden na een negatieve opmerking van een supporter.", "schaal": "concentration", "reversed": false },
+        { "nr": 12, "tekst": "Ik raak niet van de wijs door de druk van verwachtingen rondom mij.", "schaal": "freedom_worry", "reversed": false },
+        { "nr": 13, "tekst": "Wanneer ik het moeilijk heb, blijf ik geloven in mijn mogelijkheden.", "schaal": "confidence", "reversed": false },
+        { "nr": 14, "tekst": "Ik voer opdrachten van mijn coach uit, ook als ik het er niet mee eens ben.", "schaal": "coachability", "reversed": false },
+        { "nr": 15, "tekst": "Ik kan emoties van me afschudden en doorgaan na een tegenvaller.", "schaal": "coping_adversity", "reversed": false },
+        { "nr": 16, "tekst": "Hoe belangrijker de wedstrijd, hoe beter ik me voel en presteer.", "schaal": "peaking_pressure", "reversed": false },
+        { "nr": 17, "tekst": "Ik weet duidelijk wat ik wil bereiken in mijn sportcarrière.", "schaal": "goal_setting", "reversed": false },
+        { "nr": 18, "tekst": "In drukkende situaties blijf ik gefocust op de uitvoering.", "schaal": "concentration", "reversed": false },
+        { "nr": 19, "tekst": "Ik denk niet aan fouten die ik kan maken tijdens een wedstrijd.", "schaal": "freedom_worry", "reversed": false },
+        { "nr": 20, "tekst": "Ik ben ervan overtuigd dat ik mijn beste prestatie kan leveren als het nodig is.", "schaal": "confidence", "reversed": false },
+        { "nr": 21, "tekst": "Ik luister aandachtig naar de instructies van mijn coach.", "schaal": "coachability", "reversed": false },
+        { "nr": 22, "tekst": "Als het slecht gaat, schakel ik snel van negatief naar positief denken.", "schaal": "coping_adversity", "reversed": false },
+        { "nr": 23, "tekst": "Wedstrijddruk brengt het beste in mij naar boven.", "schaal": "peaking_pressure", "reversed": false },
+        { "nr": 24, "tekst": "Ik heb een duidelijk plan voor mentale voorbereiding voor elke prestatie.", "schaal": "goal_setting", "reversed": false },
+        { "nr": 25, "tekst": "Ik herstel mijn concentratie snel na een afleiding.", "schaal": "concentration", "reversed": false },
+        { "nr": 26, "tekst": "Ik maak me niet druk over de verwachtingen van anderen over mijn prestaties.", "schaal": "freedom_worry", "reversed": false },
+        { "nr": 27, "tekst": "Als ik twijfel, vind ik snel de weg terug naar zelfvertrouwen.", "schaal": "confidence", "reversed": false },
+        { "nr": 28, "tekst": "Ik zie coaching-feedback als een kans om te groeien.", "schaal": "coachability", "reversed": false }
+      ],
+      "antwoordOpties": [
+        { "waarde": 0, "label": "Bijna nooit" },
+        { "waarde": 1, "label": "Soms" },
+        { "waarde": 2, "label": "Vaak" },
+        { "waarde": 3, "label": "Bijna altijd" }
+      ],
+      "normen": {
+        "laag": { "min": 0, "max": 5, "label": "Aandachtspunt", "kleur": "#e74c3c", "omschrijving": "Deze vaardigheid verdient specifieke aandacht in coaching." },
+        "gemiddeld": { "min": 6, "max": 8, "label": "Gemiddeld", "kleur": "#f39c12", "omschrijving": "Functioneel maar met groeipotentieel." },
+        "goed": { "min": 9, "max": 10, "label": "Sterk", "kleur": "#C9A84C", "omschrijving": "Goed ontwikkelde vaardigheid. Onderhoud en verfijn." },
+        "uitstekend": { "min": 11, "max": 12, "label": "Uitzonderlijk", "kleur": "#2ecc71", "omschrijving": "Uitzonderlijk sterk. Gebruik als ankerpunt bij tegenslag." }
+      }
+    },
+    "M2": {
+      "id": "M2",
+      "naam": "Flow-State Profiel",
+      "subtitel": "In welke condities bereik jij jouw optimale prestatie?",
+      "beschrijving": "De DFS-2 en FSS-2 meten de dispositionele neiging tot flow en de feitelijke flow-beleving. Gebaseerd op Jackson & Eklund (2002). Flow is de toestand van volledig opgaan in een activiteit — het 'in the zone'-gevoel.",
+      "wetenschappelijkeBron": "Jackson, S.A., & Eklund, R.C. (2002). Assessing flow in physical activity: The Flow State Scale-2 and Dispositional Flow Scale-2. Journal of Sport & Exercise Psychology, 24(2), 133–150.",
+      "doi": "10.1123/jsep.24.2.133",
+      "instrument": "DFS-2 + FSS-2 (Flow State Scale)",
+      "betrouwbaarheid": "Cronbach α: 0.75–0.93 per subschaal; CFI = 0.97",
+      "afnameduur": "10–14 minuten",
+      "aantalItems": 18,
+      "schalen": [
+        { "id": "challenge_skill", "naam": "Uitdaging-Vaardigheid Balans", "items": [1,10] },
+        { "id": "action_awareness", "naam": "Automatisch Handelen", "items": [2,11] },
+        { "id": "clear_goals", "naam": "Heldere Doelen", "items": [3,12] },
+        { "id": "unambiguous_feedback", "naam": "Directe Feedback", "items": [4,13] },
+        { "id": "concentration", "naam": "Totale Concentratie", "items": [5,14] },
+        { "id": "sense_control", "naam": "Gevoel van Controle", "items": [6,15] },
+        { "id": "loss_selfconsciousness", "naam": "Verdwijnen van Zelfbewustzijn", "items": [7,16] },
+        { "id": "time_transformation", "naam": "Tijdsbeleving Verandert", "items": [8,17] },
+        { "id": "autotelic", "naam": "Intrinsiek Plezier", "items": [9,18] }
+      ],
+      "items": [
+        { "nr": 1, "tekst": "Het niveau van uitdaging en mijn vaardigheden liggen in balans.", "schaal": "challenge_skill", "reversed": false },
+        { "nr": 2, "tekst": "Mijn bewegingen en acties gaan automatisch, zonder nadenken.", "schaal": "action_awareness", "reversed": false },
+        { "nr": 3, "tekst": "Ik weet heel duidelijk wat ik wil bereiken.", "schaal": "clear_goals", "reversed": false },
+        { "nr": 4, "tekst": "Ik voel direct aan of mijn prestatie goed gaat of niet.", "schaal": "unambiguous_feedback", "reversed": false },
+        { "nr": 5, "tekst": "Ik ben volledig geconcentreerd op wat ik doe.", "schaal": "concentration", "reversed": false },
+        { "nr": 6, "tekst": "Ik voel een sterk gevoel van controle over wat ik doe.", "schaal": "sense_control", "reversed": false },
+        { "nr": 7, "tekst": "Ik maak me geen zorgen over wat anderen van mij denken.", "schaal": "loss_selfconsciousness", "reversed": false },
+        { "nr": 8, "tekst": "Mijn tijdsbeleving is anders dan normaal — tijd vliegt of staat stil.", "schaal": "time_transformation", "reversed": false },
+        { "nr": 9, "tekst": "De activiteit is op zichzelf belonend en ik doe het om de activiteit zelf.", "schaal": "autotelic", "reversed": false },
+        { "nr": 10, "tekst": "Ik voel me uitgedaagd op een niveau dat precies bij mijn capaciteiten past.", "schaal": "challenge_skill", "reversed": false },
+        { "nr": 11, "tekst": "Ik hoef niet na te denken over hoe ik bewegingen uitvoer.", "schaal": "action_awareness", "reversed": false },
+        { "nr": 12, "tekst": "Mijn doelen zijn helder en ik weet steeds wat ik moet doen.", "schaal": "clear_goals", "reversed": false },
+        { "nr": 13, "tekst": "Ik weet voortdurend hoe goed ik het doe.", "schaal": "unambiguous_feedback", "reversed": false },
+        { "nr": 14, "tekst": "Mijn aandacht is volledig bij de taak, niet bij andere dingen.", "schaal": "concentration", "reversed": false },
+        { "nr": 15, "tekst": "Ik heb het gevoel dat ik de situatie volledig in de hand heb.", "schaal": "sense_control", "reversed": false },
+        { "nr": 16, "tekst": "Ik ben me niet bewust van mezelf als persoon — ik ben gewoon aan het presteren.", "schaal": "loss_selfconsciousness", "reversed": false },
+        { "nr": 17, "tekst": "Ik merk dat de tijd anders lijkt dan normaal terwijl ik bezig ben.", "schaal": "time_transformation", "reversed": false },
+        { "nr": 18, "tekst": "Ik zou dit willen doen zelfs als er geen externe beloning tegenover staat.", "schaal": "autotelic", "reversed": false }
+      ],
+      "antwoordOpties": [
+        { "waarde": 1, "label": "Helemaal niet" },
+        { "waarde": 2, "label": "Zelden" },
+        { "waarde": 3, "label": "Soms" },
+        { "waarde": 4, "label": "Vaak" },
+        { "waarde": 5, "label": "Altijd" }
+      ],
+      "normen": {
+        "laag": { "min": 2, "max": 6, "label": "Weinig flow", "kleur": "#e74c3c", "omschrijving": "Deze dimensie wordt zelden ervaren. Verkennen met coach." },
+        "gemiddeld": { "min": 7, "max": 7, "label": "Periodieke flow", "kleur": "#f39c12", "omschrijving": "Af en toe aanwezig. Optimaliseer de condities." },
+        "goed": { "min": 8, "max": 9, "label": "Regelmatige flow", "kleur": "#C9A84C", "omschrijving": "Regelmatig aanwezig. Versterk de triggers." },
+        "uitstekend": { "min": 10, "max": 10, "label": "Diepe flow", "kleur": "#2ecc71", "omschrijving": "Diep en consistent. Bescherm deze toestand." }
+      }
+    },
+    "M3": {
+      "id": "M3",
+      "naam": "Atletische Identiteit",
+      "subtitel": "Hoe sterk definieer jij jezelf als atleet?",
+      "beschrijving": "De AIMS-7 meet in 7 items hoe sterk de sociale identiteit van de sporter verweven is met de sportrol. Gebaseerd op Brewer, Van Raalte & Linder (1993). Atletische identiteit is zowel een kracht als een risicofactor.",
+      "wetenschappelijkeBron": "Brewer, B.W., Van Raalte, J.L., & Linder, D.E. (1993). Athletic identity: Hercules' muscles or Achilles heel? International Journal of Sport Psychology, 24(2), 237–254.",
+      "instrument": "AIMS-7 (Athletic Identity Measurement Scale)",
+      "betrouwbaarheid": "Cronbach α: 0.81 (Brewer et al., 1993); CFI = 0.97",
+      "afnameduur": "3–5 minuten",
+      "aantalItems": 7,
+      "schalen": [
+        { "id": "atletische_identiteit", "naam": "Atletische Identiteit", "items": [1,2,3,4,5,6,7] }
+      ],
+      "items": [
+        { "nr": 1, "tekst": "Ik zie mezelf als atleet.", "schaal": "atletische_identiteit", "reversed": false },
+        { "nr": 2, "tekst": "Ik heb veel tijd en energie in mijn sport geïnvesteerd.", "schaal": "atletische_identiteit", "reversed": false },
+        { "nr": 3, "tekst": "Sport is het belangrijkste onderdeel van mijn leven.", "schaal": "atletische_identiteit", "reversed": false },
+        { "nr": 4, "tekst": "Ik voel me slecht als ik niet de kans krijg om te sporten.", "schaal": "atletische_identiteit", "reversed": false },
+        { "nr": 5, "tekst": "Sport is het enige waarvoor ik echt leef.", "schaal": "atletische_identiteit", "reversed": false },
+        { "nr": 6, "tekst": "Ik zou mezelf niet weten te beschrijven zonder mijn sportrol.", "schaal": "atletische_identiteit", "reversed": false },
+        { "nr": 7, "tekst": "Ik wil erkend worden als atleet door de mensen rondom mij.", "schaal": "atletische_identiteit", "reversed": false }
+      ],
+      "antwoordOpties": [
+        { "waarde": 1, "label": "Helemaal niet akkoord" },
+        { "waarde": 2, "label": "Niet akkoord" },
+        { "waarde": 3, "label": "Eerder niet akkoord" },
+        { "waarde": 4, "label": "Neutraal" },
+        { "waarde": 5, "label": "Eerder akkoord" },
+        { "waarde": 6, "label": "Akkoord" },
+        { "waarde": 7, "label": "Helemaal akkoord" }
+      ],
+      "normen": {
+        "laag": { "min": 7, "max": 20, "label": "Lage identiteit", "kleur": "#3498db", "omschrijving": "Sport speelt een beperkte rol in de zelfidentiteit. Verken motivatiebronnen." },
+        "gemiddeld": { "min": 21, "max": 31, "label": "Gebalanceerde identiteit", "kleur": "#2ecc71", "omschrijving": "Gezonde verhouding tussen sport en andere rollen. Sterke basis." },
+        "hoog": { "min": 32, "max": 42, "label": "Sterke identiteit", "kleur": "#C9A84C", "omschrijving": "Hoge sportidentiteit. Kracht voor prestatie, aandacht voor loopbaantransitie." },
+        "exclusief": { "min": 43, "max": 49, "label": "Exclusieve identiteit", "kleur": "#e74c3c", "omschrijving": "Bijna volledig gebonden aan sportrol. Risico bij blessure of pensionering." }
+      }
+    }
+  }
+}

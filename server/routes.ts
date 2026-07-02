@@ -12,6 +12,8 @@ import { registerToegangRoutes } from "./toegang/routes";
 import { registerDeelnemerRoutes } from "./routes-deelnemer";
 import { startCreditRecoveryJob } from "./credit-recovery";
 import { registerT4SportsRoutes } from "./t4sports/routes";
+import { registerT4SportsModuleRoutes } from "./t4sports/module-routes";
+import { registerCoachContactRoutes } from "./routes-coach-contact";
 
 // Domeinrouters (item 1.1, Fase 5)
 import { registerInstrumentRoutes } from "./routes/instrumenten";
@@ -24,6 +26,7 @@ import { registerDashboardRoutes } from "./routes/dashboard";
 import { registerT4RInlineRoutes } from "./routes/t4r";
 import { registerWebinarRoutes } from "./routes/webinars";
 import { registerInstrumentenCatalogusRoutes } from "./routes/instrumenten-catalogus";
+import { registerVragenlijstT4TeensRoutes } from "./routes/vragenlijst-t4teens";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -56,6 +59,9 @@ export async function registerRoutes(
 
   // --- Instrumentencatalogus (demo-overzicht + admin) ---
   registerInstrumentenCatalogusRoutes(app);
+
+  // --- T4Teens vragenlijst (override-aware endpoint voor afname) ---
+  registerVragenlijstT4TeensRoutes(app);
 
   // -------------------------------------------------------------------------
   // T4Recruitment — ingeplugde routes (eigen module-namespace).
@@ -90,6 +96,10 @@ export async function registerRoutes(
   // Extra routes: coaches, academy, mailbeheer, inzichtcentrum
   registerCoachesAcademyMailRoutes(app, db, storage);
 
+  // Publiek coach-contactformulier (NIEUW, aparte module — Regel 2).
+  // Hergebruikt coach_register.email (admin-beheerbaar); fallback info@tapascity.com.
+  registerCoachContactRoutes(app);
+
   // Extra routes: coach-login + Self-Training Module (STM)
   registerStmRoutes(app, storage);
 
@@ -100,6 +110,10 @@ export async function registerRoutes(
   // T4Sports — mental talent profiel voor atleten.
   // -------------------------------------------------------------------------
   registerT4SportsRoutes(app);
+
+  // T4Sports Extra Modules (M1/M2/M3) — ACSI-28, DFS-2/FSS-2, AIMS-7.
+  // Additief: raakt geen bestaande bestanden aan.
+  registerT4SportsModuleRoutes(app);
 
   // Credit-recovery job: verlopen afnames vrijgeven (item 1.6, 2026-06-30)
   startCreditRecoveryJob(6);

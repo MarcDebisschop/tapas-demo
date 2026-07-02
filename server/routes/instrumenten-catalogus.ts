@@ -116,6 +116,20 @@ const VERRIJKING: Record<string, {
     rapport: "T4Students talentpaspoort + jobdomein-gids",
     emoji: "🎓",
   },
+  // T4Sports — Mental Talent Profiel voor atleten
+  "t4sports": {
+    doelgroep: "Topsporters, mental coaches, sportpsychologen",
+    useCases: [
+      "Mentaal talentprofiel voor elite-atleten",
+      "Driver-analyse onder prestatiedruk",
+      "Talent-Route en foci in sporttaal",
+      "Modules: Resilience (M1), Flow-State (M2), Atletische Identiteit (M3)",
+    ],
+    outcome:
+      "Volledig T4Sports Mental Talent Profiel: talent-toegang, talent-route, drivers, energiestaat. Optionele modules M1/M2/M3.",
+    rapport: "T4Sports Profiel PDF (Deel 1 + Deel 2) + online dashboard",
+    emoji: "🏆",
+  },
   // 2MinScan — het snelle energieprofiel (individueel)
   "twominscan": {
     doelgroep: "Iedereen — als instap of aanvulling op een volledig profiel",
@@ -154,6 +168,7 @@ function vindVerrijking(id: string) {
   if (id.includes("business") || id === "tapas" || id === "t4p") return VERRIJKING["t4p-business"];
   if (id.includes("2min") || id.includes("twominscan")) return VERRIJKING["twominscan"];
   if (id.includes("stm") || id.includes("self")) return VERRIJKING["stm"];
+  if (id.includes("t4sports") || id.includes("sports")) return VERRIJKING["t4sports"];
   return null;
 }
 

@@ -546,14 +546,45 @@ function laadT4SportsModuleItems(): VraagItem[] {
   }
 }
 
+// ─── T4Sports Basis — 136 basisitems (Drivers, Talent-foci, Talent-versnellers) ────────────────
+// Bron: server/data/t4sports.json — identieke structuur als T4P Business Kompas
+// Loaders parallel aan laadT4PItems() — geen interpretatie, 1-op-1 extractie
+function laadT4SportsBasisItems(): VraagItem[] {
+  try {
+    const pad = join(process.cwd(), "server/data/t4sports.json");
+    const data = JSON.parse(readFileSync(pad, "utf-8"));
+    const items: VraagItem[] = [];
+    for (const section of (data.sections ?? []) as any[]) {
+      for (const block of (section.blocks ?? []) as any[]) {
+        const family: string = block.family ?? "";
+        for (const item of (block.items ?? []) as any[]) {
+          items.push({
+            itemId: item.id ?? `t4sports-b${block.blockIndex}-${item.pos}`,
+            instrument: "tapas-t4sports-basis",
+            family,
+            construct: item.construct ?? undefined,
+            tekst: { nl: (item.text?.nl ?? item.tekst?.nl ?? item.tekst ?? "") as string },
+            heeftOverride: false,
+          });
+        }
+      }
+    }
+    return items;
+  } catch (e) {
+    console.error("[QM] T4Sports basis laden mislukt:", e);
+    return [];
+  }
+}
+
 const INSTRUMENT_LOADERS: Record<string, () => VraagItem[]> = {
-  "tapas-t4p":          laadT4PItems,
-  "tapas-teamscan":     laadTeamscanItems,
-  "tapas-t4recruitment": laadT4RItems,
-  "tapas-2minscan":     laad2MinScanItems,
-  "tapas-t4students":   laadT4StudentsItems,
-  "tapas-t4teens":      laadT4TeensItems,
-  "tapas-t4sports":     laadT4SportsModuleItems,
+  "tapas-t4p":            laadT4PItems,
+  "tapas-teamscan":       laadTeamscanItems,
+  "tapas-t4recruitment":  laadT4RItems,
+  "tapas-2minscan":       laad2MinScanItems,
+  "tapas-t4students":     laadT4StudentsItems,
+  "tapas-t4teens":        laadT4TeensItems,
+  "tapas-t4sports":       laadT4SportsModuleItems,
+  "tapas-t4sports-basis": laadT4SportsBasisItems,
 };
 
 const BEKENDE_INSTRUMENTEN = Object.keys(INSTRUMENT_LOADERS);
@@ -687,4 +718,13 @@ export function getVraagTekst(instrument: string, itemId: string, taal: string, 
   const ov = overrides.get(itemId);
   if (ov && ov[taal]) return ov[taal];
   return origineel;
+}
+
+/**
+ * Exporteer de volledige override-map voor een instrument.
+ * Gebruik in afname-routes om item-teksten te patchen vóór verzending naar de client.
+ * Retourneert Map<itemId, Record<taal, tekst>>.
+ */
+export function getOverridesMap(instrument: string): Map<string, Record<string, string>> {
+  return getOverrides(instrument);
 }

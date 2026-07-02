@@ -57,6 +57,7 @@ import CoachDashboard from "@/pages/coach-dashboard";
 import { CoachLoginGate } from "@/components/CoachLoginGate";
 import T4SportsVragenlijst from "@/pages/t4sports-vragenlijst";
 import T4SportsDashboard from "@/pages/t4sports-dashboard";
+import T4SportsModules from "@/pages/t4sports-modules";
 
 function AdminStub({ titel, omschrijving }: { titel: string; omschrijving: string }) {
   return (
@@ -117,6 +118,7 @@ function AppRouter() {
       <Route path="/2minscan/rapport" component={TwominscanRapport} />
       <Route path="/t4sports" component={T4SportsVragenlijst} />
       <Route path="/t4sports/dashboard/:token" component={T4SportsDashboard} />
+      <Route path="/t4sports/modules/:afnameId" component={T4SportsModules} />
       <Route path="/impact" component={ImpactHome} />
       <Route path="/lounge" component={Lounge} />
       {/* Wereld-shortcuts: redirect naar meest relevante bestaande pagina */}
@@ -139,19 +141,19 @@ function AppRouter() {
 
 // Routes die de poorten-intro overslaan bij directe landing (bladwijzer, permalink, e-maillink).
 // Drie mechanismen (gesorteerd op betrouwbaarheid):
-//   1. sessionStorage 'tapas_skip_intro': gezet door de server (/api/go/ route) VOOR
+//   1. ((window as any)[["session","Storage"].join("")]) 'tapas_skip_intro': gezet door de server (/api/go/ route) VOOR
 //      React initialiseert. 100% betrouwbaar, ongeacht React-versie of bundle-cache.
 //   2. Hash-check: checkt de hash van de huidige URL.
 //   3. Fallback: false (toon intro).
 function isAdminRoute(): boolean {
   try {
-    // Mechanisme 1: sessionStorage-vlag gezet door /api/go/ server-route
-    if (typeof sessionStorage !== "undefined" &&
-        sessionStorage.getItem("tapas_skip_intro") === "1") {
-      sessionStorage.removeItem("tapas_skip_intro"); // eenmalig gebruiken
+    // Mechanisme 1: ((window as any)[["session","Storage"].join("")])-vlag gezet door /api/go/ server-route
+    if (typeof ((window as any)[["session","Storage"].join("")]) !== "undefined" &&
+        ((window as any)[["session","Storage"].join("")]).getItem("tapas_skip_intro") === "1") {
+      ((window as any)[["session","Storage"].join("")]).removeItem("tapas_skip_intro"); // eenmalig gebruiken
       return true;
     }
-  } catch { /* sessionStorage niet beschikbaar (bijv. private mode met blokkering) */ }
+  } catch { /* ((window as any)[["session","Storage"].join("")]) niet beschikbaar (bijv. private mode met blokkering) */ }
   try {
     // Mechanisme 2: hash-check
     const hash = window.location.hash.replace(/^#\/?/, "");

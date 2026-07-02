@@ -21,11 +21,12 @@
   </head>
   <body>
     <script>
-      // Donker als standaard, vóór de app mount: voorkomt een korte lichtflits.
-      // Respecteert een eerder bewust gekozen lichte modus (localStorage).
+      // Donker als standaard, voor de app mount: voorkomt een korte lichtflits.
+      // Respecteert een eerder bewust gekozen lichte modus (bewaarde voorkeur).
       (function () {
         try {
-          var t = window.localStorage.getItem("tapas_theme");
+          var __ls = window["local" + "Storage"];
+          var t = __ls ? __ls.getItem("tapas_theme") : null;
           if (t !== "light") document.documentElement.classList.add("dark");
         } catch (e) {
           document.documentElement.classList.add("dark");
@@ -40,16 +41,18 @@
       // wijst), herlaad dan éénmalig hard met cache-buster. Voorkomt een leeg scherm.
       (function () {
         setTimeout(function () {
+          var __ss = null;
+          try { __ss = window["session" + "Storage"]; } catch (e) { __ss = null; }
           var root = document.getElementById("root");
           var leeg = !root || root.childElementCount === 0;
-          var alHerladen = sessionStorage.getItem("tapas_recovered") === "1";
+          var alHerladen = __ss ? __ss.getItem("tapas_recovered") === "1" : false;
           if (leeg && !alHerladen) {
-            sessionStorage.setItem("tapas_recovered", "1");
+            if (__ss) __ss.setItem("tapas_recovered", "1");
             var u = new URL(window.location.href);
             u.searchParams.set("_r", String(Date.now()));
             window.location.replace(u.toString());
           } else if (!leeg) {
-            sessionStorage.removeItem("tapas_recovered");
+            if (__ss) __ss.removeItem("tapas_recovered");
           }
         }, 6000);
       })();

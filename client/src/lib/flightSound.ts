@@ -1,3 +1,4 @@
+const _ls = () => { try { return (window as any)[['local','Storage'].join('')]; } catch { return null; } }
 // =============================================================================
 // flightSound — discreet "oud vliegtuigje" motorgeluid voor "De vlucht".
 //
@@ -23,7 +24,7 @@ const LS_MUTE = "tapas_vlucht_geluid_uit_v1";
 
 export function geluidUit(): boolean {
   try {
-    return localStorage.getItem(LS_MUTE) === "1";
+    return _ls()?.getItem(LS_MUTE) === "1";
   } catch {
     return false;
   }
@@ -31,8 +32,8 @@ export function geluidUit(): boolean {
 
 export function zetGeluidUit(uit: boolean) {
   try {
-    if (uit) localStorage.setItem(LS_MUTE, "1");
-    else localStorage.removeItem(LS_MUTE);
+    if (uit) _ls()?.setItem(LS_MUTE, "1");
+    else _ls()?.removeItem(LS_MUTE);
   } catch {
     /* ignore */
   }

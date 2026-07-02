@@ -86,17 +86,19 @@ function WelkomScherm({
   onVolgende: () => void;
 }) {
   return (
-    <div className="min-h-screen" style={{ background: NAVY }}>
-      <div className="max-w-lg mx-auto px-6 py-12">
+    <div className="relative min-h-screen overflow-hidden" style={{ background: NAVY }}>
+      <SportBg opacity={0.04} />
+      <div className="relative z-10 max-w-lg mx-auto px-6 py-12">
         <div style={{ color: GOUD }} className="text-sm font-bold tracking-widest uppercase mb-6">
           T4Sports · Mental Talent Profiel
         </div>
         <h1 className="text-3xl font-extrabold text-white mb-3">
-          Ontdek je mentaal talent als atleet
+          Ken jezelf als atleet. Presteer vanuit wie je bent.
         </h1>
         <p className="text-blue-200 text-sm leading-relaxed mb-8">
-          Dit profiel brengt jouw drivers, talent-foci en versnellers in kaart — volledig in sporttaal.
-          Het is de basis voor mental coaching op maat. Eerlijk, wetenschappelijk onderbouwd, en voor jou.
+          T4Sports brengt jouw mentale architectuur in kaart: wat drijft jou, hoe presteren jouw talenten 
+          en wat versnelt jouw groei. Wetenschappelijk onderbouwd, volledig in sporttaal — voor atleten 
+          die willen winnen van zichzelf.
         </p>
 
         <div className="space-y-5">
@@ -216,8 +218,9 @@ function BaselineScherm({
   onTerug: () => void;
 }) {
   return (
-    <div className="min-h-screen" style={{ background: NAVY }}>
-      <div className="max-w-lg mx-auto px-6 py-12">
+    <div className="relative min-h-screen overflow-hidden" style={{ background: NAVY }}>
+      <SportBg opacity={0.04} />
+      <div className="relative z-10 max-w-lg mx-auto px-6 py-12">
         <div style={{ color: GOUD }} className="text-sm font-bold tracking-widest uppercase mb-6">
           T4Sports · Stap 1 van 4
         </div>
@@ -266,11 +269,83 @@ function BaselineScherm({
 }
 
 // ============================================================
-// Scherm 3: Vragenlijst (forced-choice)
+// SVG Achtergrond — atletiekbaan / bewegingstextuur
+// ============================================================
+function SportBg({ opacity = 0.07 }: { opacity?: number }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className="absolute inset-0 w-full h-full pointer-events-none select-none"
+      xmlns="http://www.w3.org/2000/svg"
+      preserveAspectRatio="xMidYMid slice"
+    >
+      <defs>
+        <pattern id="sportLines" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+          <line x1="0" y1="80" x2="80" y2="0" stroke="white" strokeWidth="0.5" />
+          <line x1="-20" y1="80" x2="60" y2="0" stroke="white" strokeWidth="0.3" />
+          <line x1="20" y1="80" x2="100" y2="0" stroke="white" strokeWidth="0.3" />
+          <ellipse cx="40" cy="40" rx="30" ry="18" stroke="white" strokeWidth="0.4" fill="none" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#sportLines)" opacity={opacity} />
+      <line x1="60%" y1="100%" x2="100%" y2="30%" stroke="#C9A84C" strokeWidth="1" opacity="0.15" />
+      <line x1="70%" y1="100%" x2="100%" y2="50%" stroke="#C9A84C" strokeWidth="0.5" opacity="0.1" />
+    </svg>
+  );
+}
+
+// ============================================================
+// Energie-selector — atleten-taal, compact
+// ============================================================
+const ENERGIE_LABELS: Record<number, string> = {
+  [-2]: "Dit vreet aan me",
+  [-1]: "Eerder belastend",
+  [0]: "Neutraal",
+  [1]: "Geeft me energie",
+  [2]: "Dit is mijn zone",
+};
+
+function EnergieSelector({
+  value,
+  onChange,
+  label,
+}: {
+  value: number | null;
+  onChange: (v: number) => void;
+  label: string;
+}) {
+  return (
+    <div className="mt-3 pt-3 border-t border-white/10">
+      <p className="text-white/60 text-xs mb-2">⚡ {label} — hoe voelt dit aan?</p>
+      <div className="flex flex-wrap gap-1.5">
+        {([-2, -1, 0, 1, 2] as const).map((v) => {
+          const active = value === v;
+          return (
+            <button
+              key={v}
+              onClick={() => onChange(v)}
+              className="rounded-full px-2.5 py-1 text-xs font-semibold border transition-all"
+              style={
+                active
+                  ? { background: GOUD, borderColor: GOUD, color: NAVY }
+                  : { borderColor: "rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.55)" }
+              }
+            >
+              {ENERGIE_LABELS[v]}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Scherm 3: Vragenlijst (forced-choice) — 2x2 grid
 // ============================================================
 function VragenlijstScherm({
   blocks,
-  energyOptions,
+  energyOptions: _energyOptions,
   answers,
   setAnswers,
   onVolgende,
@@ -288,6 +363,11 @@ function VragenlijstScherm({
   const stateKey = block ? `B${block.blockIndex}` : "";
   const cur = answers[stateKey] ?? emptyAnswer();
   const progress = blocks.length > 0 ? Math.round((idx / blocks.length) * 100) : 0;
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [idx]);
 
   function updateCur(patch: Partial<BlockAnswer>) {
     setAnswers((prev) => ({
@@ -298,25 +378,30 @@ function VragenlijstScherm({
 
   function selectMost(pos: string) {
     const cur2 = answers[stateKey] ?? emptyAnswer();
-    if (cur2.least === pos) return; // kan niet both zijn
-    updateCur({ most: pos });
+    if (cur2.least === pos) return;
+    const newItemEnergy = cur2.most === pos ? cur2.itemEnergy : { ...cur2.itemEnergy, most: null };
+    updateCur({ most: pos, itemEnergy: newItemEnergy });
   }
 
   function selectLeast(pos: string) {
     const cur2 = answers[stateKey] ?? emptyAnswer();
     if (cur2.most === pos) return;
-    updateCur({ least: pos });
+    const newItemEnergy = cur2.least === pos ? cur2.itemEnergy : { ...cur2.itemEnergy, least: null };
+    updateCur({ least: pos, itemEnergy: newItemEnergy });
   }
 
   const canNext = cur.most !== null && cur.least !== null;
 
   if (!block) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: NAVY }}>
-        <div className="text-white text-center">
-          <p className="text-xl font-bold">Vragenlijst voltooid!</p>
-          <Button onClick={onVolgende} className="mt-4" style={{ background: GOUD, color: NAVY }}>
-            Ga verder →
+      <div className="relative min-h-screen flex items-center justify-center overflow-hidden" style={{ background: NAVY }}>
+        <SportBg />
+        <div className="relative z-10 text-white text-center px-6">
+          <div style={{ color: GOUD }} className="text-5xl font-extrabold mb-4">✓</div>
+          <p className="text-2xl font-extrabold mb-2">Profiel bijna klaar!</p>
+          <p className="text-blue-200 text-sm mb-6">Je hebt alle situaties doorlopen. Nog één stap.</p>
+          <Button onClick={onVolgende} style={{ background: GOUD, color: NAVY }} className="font-bold px-8 py-3">
+            Afronden →
           </Button>
         </div>
       </div>
@@ -324,121 +409,185 @@ function VragenlijstScherm({
   }
 
   return (
-    <div className="min-h-screen" style={{ background: NAVY }}>
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        {/* Progress */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="flex-1 bg-white/10 rounded-full h-2">
+    <div
+      ref={containerRef}
+      className="relative min-h-screen overflow-y-auto"
+      style={{ background: NAVY }}
+    >
+      <SportBg opacity={0.05} />
+
+      <div className="relative z-10 max-w-3xl mx-auto px-4 py-6 sm:py-8">
+
+        {/* Progress bar */}
+        <div className="flex items-center gap-3 mb-5">
+          <div className="flex-1 bg-white/10 rounded-full h-1.5">
             <div
-              className="h-2 rounded-full transition-all"
+              className="h-1.5 rounded-full transition-all duration-500"
               style={{ width: `${progress}%`, background: GOUD }}
             />
           </div>
-          <span className="text-white/50 text-xs">{idx + 1}/{blocks.length}</span>
+          <span className="text-white/40 text-xs font-mono">{idx + 1} / {blocks.length}</span>
         </div>
 
-        <div style={{ color: GOUD }} className="text-xs font-bold tracking-widest uppercase mb-3">
-          Blok {idx + 1} · {block.family}
+        {/* Header — GEEN construct/family naam */}
+        <div className="mb-4">
+          <div style={{ color: GOUD }} className="text-xs font-extrabold tracking-widest uppercase mb-1">
+            Situatie {idx + 1}
+          </div>
+          <h2 className="text-white text-base font-semibold leading-snug">
+            Welke uitspraak herken je het meest als atleet?{" "}
+            <span style={{ color: GOUD }}>&#9650;</span>{" "}
+            En welke het minst?{" "}
+            <span className="text-white/50">&#9660;</span>
+          </h2>
         </div>
 
-        <h2 className="text-white text-lg font-bold mb-6">
-          Welke uitspraak herken je het meest? En het minst?
-        </h2>
+        {/* Instructie als keuze nog niet compleet */}
+        {(!cur.most || !cur.least) && (
+          <div className="rounded-xl border mb-4 px-4 py-2.5 text-xs" style={{ borderColor: `${GOUD}55`, background: `${GOUD}11`, color: GOUD }}>
+            {!cur.most && !cur.least
+              ? "Kies de uitspraak die jou het MEEST omschrijft — daarna de MINST herkenbare."
+              : !cur.most
+              ? "Kies nu welke uitspraak jou het MEEST omschrijft."
+              : "Kies nu welke uitspraak jou het MINST omschrijft."}
+          </div>
+        )}
 
-        <div className="space-y-3 mb-8">
+        {/* 2x2 grid van kaarten */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
           {block.items.map((item) => {
             const isMost = cur.most === item.pos;
             const isLeast = cur.least === item.pos;
+            const disabledMost = cur.least === item.pos;
+            const disabledLeast = cur.most === item.pos;
+
             return (
               <div
                 key={item.pos}
-                className="rounded-xl p-4 border transition-all"
+                className="rounded-2xl border transition-all duration-200 flex flex-col"
                 style={{
-                  background: isMost ? `${GOUD}22` : isLeast ? "#ffffff11" : "#ffffff08",
-                  borderColor: isMost ? GOUD : isLeast ? "#ffffff33" : "#ffffff11",
+                  background: isMost
+                    ? `linear-gradient(135deg, ${GOUD}28 0%, ${GOUD}10 100%)`
+                    : isLeast
+                    ? "rgba(255,255,255,0.07)"
+                    : "rgba(255,255,255,0.05)",
+                  borderColor: isMost ? GOUD : isLeast ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.1)",
+                  boxShadow: isMost ? `0 0 0 1px ${GOUD}60` : "none",
                 }}
               >
-                <p className="text-white text-sm leading-relaxed mb-3">{item.text}</p>
-                <div className="flex gap-2">
+                <div className="px-4 pt-4 pb-2 flex-1">
+                  <span
+                    className="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-extrabold mb-2"
+                    style={{
+                      background: isMost ? GOUD : isLeast ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.08)",
+                      color: isMost ? NAVY : "white",
+                    }}
+                  >
+                    {item.pos}
+                  </span>
+                  <p className="text-white text-sm leading-relaxed">{item.text}</p>
+
+                  {block.energyMode === "item" && isMost && (
+                    <EnergieSelector
+                      value={cur.itemEnergy.most}
+                      onChange={(v) => updateCur({ itemEnergy: { ...cur.itemEnergy, most: v } })}
+                      label="Meest herkend"
+                    />
+                  )}
+                  {block.energyMode === "item" && isLeast && (
+                    <EnergieSelector
+                      value={cur.itemEnergy.least}
+                      onChange={(v) => updateCur({ itemEnergy: { ...cur.itemEnergy, least: v } })}
+                      label="Minst herkend"
+                    />
+                  )}
+                </div>
+
+                <div className="px-4 pb-4 pt-2 flex gap-2">
                   <button
                     onClick={() => selectMost(item.pos)}
-                    disabled={cur.least === item.pos}
-                    className={`px-3 py-1 text-xs rounded-full font-bold transition-all border ${
+                    disabled={disabledMost}
+                    className="flex-1 rounded-xl py-2 text-xs font-extrabold tracking-wide border transition-all"
+                    style={
                       isMost
-                        ? "text-navy border-yellow-500"
-                        : "border-white/20 text-white/50 hover:border-yellow-400"
-                    }`}
-                    style={isMost ? { background: GOUD, color: NAVY } : {}}
+                        ? { background: GOUD, borderColor: GOUD, color: NAVY }
+                        : disabledMost
+                        ? { background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.2)", cursor: "not-allowed" }
+                        : { background: "transparent", borderColor: `${GOUD}80`, color: GOUD }
+                    }
                   >
-                    MEEST
+                    ▲ MEEST
                   </button>
                   <button
                     onClick={() => selectLeast(item.pos)}
-                    disabled={cur.most === item.pos}
-                    className={`px-3 py-1 text-xs rounded-full font-bold transition-all border ${
+                    disabled={disabledLeast}
+                    className="flex-1 rounded-xl py-2 text-xs font-extrabold tracking-wide border transition-all"
+                    style={
                       isLeast
-                        ? "bg-white/20 border-white/60 text-white"
-                        : "border-white/20 text-white/50 hover:border-white/40"
-                    }`}
+                        ? { background: "rgba(255,255,255,0.18)", borderColor: "rgba(255,255,255,0.5)", color: "white" }
+                        : disabledLeast
+                        ? { background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.2)", cursor: "not-allowed" }
+                        : { background: "transparent", borderColor: "rgba(255,255,255,0.3)", color: "rgba(255,255,255,0.65)" }
+                    }
                   >
-                    MINST
+                    ▼ MINST
                   </button>
                 </div>
-                {/* Energie voor item (drivers only) */}
-                {block.energyMode === "item" && isMost && (
-                  <EnergyRow
-                    options={energyOptions}
-                    value={cur.itemEnergy.most}
-                    onChange={(v) => updateCur({ itemEnergy: { ...cur.itemEnergy, most: v } })}
-                  />
-                )}
-                {block.energyMode === "item" && isLeast && (
-                  <EnergyRow
-                    options={energyOptions}
-                    value={cur.itemEnergy.least}
-                    onChange={(v) => updateCur({ itemEnergy: { ...cur.itemEnergy, least: v } })}
-                  />
-                )}
               </div>
             );
           })}
         </div>
 
-        {/* Block energie voor non-driver blokken */}
+        {/* Block energie (non-item mode) — pas zichtbaar als forced choice compleet */}
         {block.energyMode === "block" && canNext && (
-          <div className="bg-white/5 rounded-xl p-4 mb-6">
+          <div className="rounded-2xl border mb-5 px-5 py-4" style={{ borderColor: `${GOUD}40`, background: `${GOUD}10` }}>
+            <p style={{ color: GOUD }} className="text-xs font-extrabold tracking-wide uppercase mb-2">Energiemeting</p>
             <p className="text-blue-200 text-sm mb-3">Hoeveel energie geeft dit thema je als atleet?</p>
-            <EnergyRow
-              options={energyOptions}
+            <EnergieSelector
               value={cur.blockEnergy}
               onChange={(v) => updateCur({ blockEnergy: v })}
+              label="Dit thema"
             />
           </div>
         )}
 
+        {/* Navigatie — strikt geblokkeerd */}
         <div className="flex gap-3">
           <Button
             variant="outline"
-            onClick={() => {
-              if (idx > 0) setIdx(idx - 1);
-              else onTerug();
-            }}
-            className="border-white/20 text-white/70 hover:bg-white/10"
+            onClick={() => { if (idx > 0) setIdx(idx - 1); else onTerug(); }}
+            className="rounded-xl border-white/20 text-white/70 hover:bg-white/10 px-4"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <Button
             onClick={() => {
+              if (!canNext) return;
               if (idx < blocks.length - 1) setIdx(idx + 1);
               else onVolgende();
             }}
             disabled={!canNext}
-            className="flex-1 font-bold"
-            style={canNext ? { background: GOUD, color: NAVY } : {}}
+            className="flex-1 rounded-xl font-extrabold tracking-wide text-sm transition-all"
+            style={
+              canNext
+                ? { background: GOUD, color: NAVY }
+                : { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.3)", cursor: "not-allowed" }
+            }
           >
-            {idx < blocks.length - 1 ? "Volgende →" : "Klaar met vragenlijst →"}
+            {!canNext
+              ? "Maak je keuze eerst"
+              : idx < blocks.length - 1
+              ? "Volgende situatie →"
+              : "Vragenlijst afronden →"}
           </Button>
         </div>
+
+        {!canNext && (
+          <p className="text-center text-white/30 text-xs mt-3">
+            Kies één MEEST en één MINST om verder te gaan.
+          </p>
+        )}
+
       </div>
     </div>
   );
@@ -482,14 +631,16 @@ function VerbindingScherm({
   onTerug: () => void;
 }) {
   return (
-    <div className="min-h-screen" style={{ background: NAVY }}>
-      <div className="max-w-lg mx-auto px-6 py-12">
+    <div className="relative min-h-screen overflow-hidden" style={{ background: NAVY }}>
+      <SportBg opacity={0.04} />
+      <div className="relative z-10 max-w-lg mx-auto px-6 py-12">
         <div style={{ color: GOUD }} className="text-sm font-bold tracking-widest uppercase mb-6">
           T4Sports · Stap 3 van 4
         </div>
-        <h2 className="text-2xl font-extrabold text-white mb-4">Sportverbondenheid</h2>
+        <h2 className="text-2xl font-extrabold text-white mb-4">Jouw sportcontext</h2>
         <p className="text-blue-200 text-sm leading-relaxed mb-8">
-          Vier korte vragen over jouw verbinding met je sport en omgeving. Schaal van 0 tot 10.
+          Vier vragen over jouw huidige verbinding met je sport. Eerlijk antwoorden — er is geen goed of fout.
+          Schaal van 0 tot 10.
         </p>
 
         <div className="space-y-8">
@@ -544,11 +695,11 @@ function VoltooiingScherm({ naam }: { naam: string }) {
   return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: NAVY }}>
       <div className="text-center px-6">
-        <div style={{ color: GOUD }} className="text-5xl font-extrabold mb-4">✓</div>
-        <h2 className="text-2xl font-bold text-white mb-3">Je profiel wordt gegenereerd...</h2>
+        <div style={{ color: GOUD }} className="text-5xl font-extrabold mb-4">🏆</div>
+        <h2 className="text-2xl font-bold text-white mb-3">Profiel gereed, {naam.split(" ")[0] || "atleet"}.</h2>
         <p className="text-blue-200 text-sm">
-          Bedankt, {naam.split(" ")[0] || "atleet"}! Je T4Sports Mental Talent Profiel is klaar.
-          <br />Je kunt het bekijken via het dashboard-scherm.
+          Je T4Sports Mental Talent Profiel is aangemaakt.<br />
+          Bekijk je resultaten via het dashboard.
         </p>
       </div>
     </div>
@@ -585,13 +736,16 @@ export default function T4SportsVragenlijst() {
   const [afnameId, setAfnameId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Instrument ophalen
-  const { data: inst } = useQuery<T4SportsInstrument>({
+  // Instrument ophalen — retry: 2 voor cold-start sandbox; staleTime laag voor verse data
+  const { data: inst, isLoading: instLoading, isError: instError } = useQuery<T4SportsInstrument>({
     queryKey: ["/api/t4sports/instrument"],
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/t4sports/instrument?taal=nl");
       return res.json();
     },
+    retry: 2,
+    retryDelay: 1500,
+    staleTime: 5 * 60 * 1000,
   });
 
   const blocks: ClientBlock[] = inst?.blocks ?? [];
@@ -655,6 +809,35 @@ export default function T4SportsVragenlijst() {
     }
   }
 
+  // Guard: instrument nog niet geladen — toon laadscherm (b.v. sandbox cold-start)
+  if (instLoading && stap !== "welkom") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: NAVY }}>
+        <div className="h-10 w-10 rounded-full border-4 border-white/20 border-t-yellow-400 animate-spin" />
+        <p className="text-blue-200 text-sm">Instrument wordt geladen…</p>
+      </div>
+    );
+  }
+
+  // Guard: instrument kon niet geladen worden
+  if (instError && stap !== "welkom") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center" style={{ background: NAVY }}>
+        <p className="text-white text-lg font-bold">Kon vragenlijst niet laden</p>
+        <p className="text-blue-200 text-sm max-w-sm">
+          Er was een verbindingsfout. Controleer je verbinding en herlaad de pagina.
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-2 rounded-lg px-6 py-2.5 text-sm font-bold"
+          style={{ background: GOUD, color: NAVY }}
+        >
+          Herlaad pagina
+        </button>
+      </div>
+    );
+  }
+
   if (stap === "welkom") {
     return (
       <WelkomScherm
@@ -682,6 +865,15 @@ export default function T4SportsVragenlijst() {
   }
 
   if (stap === "vragenlijst") {
+    // Wacht op instrument als blocks nog leeg zijn (b.v. late API-respons)
+    if (blocks.length === 0 && instLoading) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center gap-4" style={{ background: NAVY }}>
+          <div className="h-10 w-10 rounded-full border-4 border-white/20 border-t-yellow-400 animate-spin" />
+          <p className="text-blue-200 text-sm">Vragen worden geladen…</p>
+        </div>
+      );
+    }
     return (
       <VragenlijstScherm
         blocks={blocks}

@@ -75,10 +75,16 @@ export default function Deel1() {
   const t = maakVertaler(taal);
 
   // Instrument in de taal van de afname ophalen.
+  // T4Teens gebruikt een eigen override-aware endpoint; andere instrumenten
+  // vallen terug op het standaard T4P Business endpoint.
+  const isT4Teens = afname?.instrumentId === "t4teens";
+  const instrumentEndpoint = isT4Teens
+    ? `/api/vragenlijst/tapas-t4teens?taal=${taal}`
+    : `/api/instrument?taal=${taal}`;
   const { data: inst, isLoading } = useQuery<ClientInstrument>({
-    queryKey: ["/api/instrument", taal],
+    queryKey: [isT4Teens ? "/api/vragenlijst/tapas-t4teens" : "/api/instrument", taal],
     queryFn: async () => {
-      const res = await apiRequest("GET", `/api/instrument?taal=${taal}`);
+      const res = await apiRequest("GET", instrumentEndpoint);
       return res.json();
     },
     enabled: !!afname,

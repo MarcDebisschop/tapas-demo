@@ -3,7 +3,7 @@
 // Kleurstijl: donker navy (#0D1B3E) + goud (#C9A84C) + wit.
 
 import { useState } from "react";
-import { useParams } from "wouter";
+import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -115,6 +115,49 @@ function ProfielKaart({ label, waarde }: { label: string; waarde: string }) {
     >
       <div className="text-xs uppercase tracking-widest mb-2" style={{ color: "#8aa8d0" }}>{label}</div>
       <div className="font-bold text-sm" style={{ color: GOUD }}>{waarde}</div>
+    </div>
+  );
+}
+
+// ============================================================
+// ExtraModulesKnop — navigeert naar module-selectie
+// ============================================================
+function ExtraModulesKnop({ rapportUrl }: { rapportUrl: string }) {
+  const [, navigate] = useLocation();
+
+  // Extraheer afname-id uit rapportUrl: /api/t4sports/afnames/{id}/rapport/html
+  const afnameId = rapportUrl.match(/\/afnames\/(\d+)\//)?.[1] ?? null;
+  if (!afnameId) return null;
+
+  return (
+    <div
+      className="rounded-2xl shadow-sm px-6 py-5"
+      style={{ background: "#162852", border: `2px solid ${GOUD}` }}
+    >
+      <div className="flex items-start gap-4">
+        <div
+          className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 text-xl"
+          style={{ background: `${GOUD}22`, border: `1px solid ${GOUD}` }}
+        >
+          🧠
+        </div>
+        <div className="flex-1">
+          <h2 className="font-bold text-base mb-1" style={{ color: GOUD }}>Extra Modules voor je Coach</h2>
+          <p className="text-sm mb-4" style={{ color: "#8aa8d0" }}>
+            Je coach kan optioneel diepere analyses toevoegen aan dit profiel:
+            <strong style={{ color: "#fff" }}> M1 Mentale Veerkracht</strong>,
+            <strong style={{ color: "#fff" }}> M2 Flow-State</strong> en/of
+            <strong style={{ color: "#fff" }}> M3 Atletische Identiteit</strong>.
+          </p>
+          <button
+            onClick={() => navigate(`/t4sports/modules/${afnameId}`)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-opacity hover:opacity-90"
+            style={{ background: GOUD, color: NAVY }}
+          >
+            ⊕ Extra modules toevoegen
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -302,6 +345,9 @@ export default function T4SportsDashboard() {
             </a>
           </div>
         </div>
+
+        {/* EXTRA MODULES — coach-only */}
+        <ExtraModulesKnop rapportUrl={data.rapportUrl} />
 
         {/* GESPROKEN UITLEG */}
         <div className="bg-white rounded-2xl shadow-sm px-6 py-5">
