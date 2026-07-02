@@ -107,6 +107,14 @@ async function buildAll() {
   await cp(path.join(root, "server", "tts.py"), path.join(root, "dist", "tts.py"), { force: true });
   console.log("tts.py gekopieerd naar dist/.");
 
+  // 6. BEWAKING VLAAMSE STEM — blokkeert de build als de stem-architectuur kapot is.
+  //    Draait de statische controles (geen speechSynthesis, Sulafat, VLAAMSE_STEM_PROMPT,
+  //    spawn-import, /api/tts-route, prompt-prepend, spawn-error-handler).
+  //    Bij een regressie faalt de build met exit-code 1 → geen kapotte deploy mogelijk.
+  console.log("bewaking Vlaamse stem controleren...");
+  execSync("node script/verify-vlaamse-stem.mjs", { cwd: root, stdio: "inherit" });
+  console.log("Vlaamse stem OK.");
+
   console.log("build complete.");
 }
 
