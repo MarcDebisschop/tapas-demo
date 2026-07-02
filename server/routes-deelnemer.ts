@@ -5,6 +5,7 @@
 // =============================================================================
 import type { Express } from "express";
 import { join } from "node:path";
+import { spawn } from "node:child_process";
 import { storage } from "./storage";
 import { ttsSidecarLive, TTS_SERVICE_URL } from "./sidecar-manager";
 import { bouwDashboardData } from "./dashboard";
@@ -694,6 +695,12 @@ export function registerDeelnemerRoutes(app: Express): void {
 
     py.stdout.on("data", (chunk: Buffer) => chunks.push(chunk));
     py.stderr.on("data", (d: Buffer) => console.error("[tts]", d.toString()));
+
+    // Vang een spawn-fout (bv. python3 ontbreekt) netjes op i.p.v. hangen.
+    py.on("error", (err) => {
+      console.error("[tts] spawn-fout:", err);
+      if (!res.headersSent) res.status(500).json({ error: "TTS mislukt (spawn)" });
+    });
 
     py.on("close", (code) => {
       if (code !== 0 || chunks.length === 0) {
