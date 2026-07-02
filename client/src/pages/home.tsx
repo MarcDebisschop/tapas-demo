@@ -29,11 +29,9 @@ import {
   TALEN,
   TAAL_NAMEN,
   TAAL_CODES,
-  STANDAARD_TAAL,
-  maakVertaler,
   normaliseerTaal,
-  type Taal,
 } from "@shared/i18n";
+import { useUiTaal } from "@/contexts/TaalContext";
 import { Rondleiding, startRondleiding } from "@/components/Rondleiding";
 
 // ---------------------------------------------------------------------------
@@ -84,6 +82,7 @@ function HeroKompas() {
 function LoungeWidget() {
   const [open, setOpen] = useState(false);
   const [, navigate] = useLocation();
+  const { t } = useUiTaal();
   const r = "hsl(var(--lounge))";
   return (
     <div className="mt-5">
@@ -110,15 +109,15 @@ function LoungeWidget() {
               className="font-mono text-[11px] uppercase tracking-[0.2em]"
               style={{ color: r }}
             >
-              Entry
+              {t("hp_lounge_entry")}
             </span>
             <span className="block font-serif text-xl font-semibold text-foreground sm:text-2xl">
-              TAPAS Lounge
+              {t("hp_lounge_titel")}
             </span>
           </span>
         </div>
         <p className="mx-auto mt-2 max-w-md text-center text-xs italic text-muted-foreground">
-          Een ontmoetingsplek voor alle deelnemers van dit platform.
+          {t("hp_lounge_subtitel")}
         </p>
       </button>
       {open && (
@@ -131,9 +130,7 @@ function LoungeWidget() {
           data-testid="lounge-melding"
         >
           <p className="mx-auto max-w-lg text-sm leading-relaxed text-muted-foreground">
-            Achter de twee werelden zitten bezielde mensen. De Lounge is de plek waar ze elkaar
-            ontmoeten — om te verstillen, te leren en samen te groeien. De deuren openen binnenkort
-            voor wie een TIP-card draagt.
+            {t("hp_lounge_body")}
           </p>
           <button
             type="button"
@@ -146,7 +143,7 @@ function LoungeWidget() {
               background: "hsl(var(--lounge)/0.10)",
             }}
           >
-            Werp alvast een blik naar binnen
+            {t("hp_lounge_cta")}
             <ArrowRight className="h-4 w-4" />
           </button>
         </div>
@@ -160,6 +157,7 @@ function LoungeWidget() {
 // NIET AANRAKEN
 // ---------------------------------------------------------------------------
 function AcademyLink() {
+  const { t } = useUiTaal();
   const goud = "hsl(var(--gold))";
   return (
     <div className="mt-4">
@@ -184,13 +182,13 @@ function AcademyLink() {
                 className="font-mono text-[11px] uppercase tracking-[0.2em]"
                 style={{ color: goud }}
               >
-                Open voor iedereen
+                {t("hp_acad_open")}
               </span>
               <span className="block font-serif text-xl font-semibold text-foreground sm:text-2xl">
-                TaPasAcademy
+                {t("hp_acad_titel")}
               </span>
               <p className="mt-1 max-w-md text-xs italic text-muted-foreground">
-                Opleidingen, accreditaties en het register van geaccrediteerde coaches.
+                {t("hp_acad_body")}
               </p>
             </div>
           </div>
@@ -219,29 +217,30 @@ interface PlatformTegel {
 }
 
 function PlatformOverzicht() {
+  const { t } = useUiTaal();
   const tegels: PlatformTegel[] = [
     {
-      label: "Werk & organisatie",
-      titel: "Professionele context",
-      omschrijving: "Instrumenten voor talent- en teamontwikkeling in de werkcontext.",
+      label: t("hp_tegel_werk_label"),
+      titel: t("hp_tegel_werk_titel"),
+      omschrijving: t("hp_tegel_werk_body"),
       href: "/werk",
       kleurVar: "--werk",
       icon: <Briefcase className="h-5 w-5" />,
       badges: ["T4P Business", "T4Recruitment", "Teamscan", "2MINSCAN", "Human Due Diligence", "Impact-roos", "T4Sports"],
     },
     {
-      label: "Studie",
-      titel: "Studie & oriëntatie",
-      omschrijving: "Instrumenten voor jongeren en studenten op weg naar hun talent.",
+      label: t("hp_tegel_studie_label"),
+      titel: t("hp_tegel_studie_titel"),
+      omschrijving: t("hp_tegel_studie_body"),
       href: "/studie",
       kleurVar: "--studie",
       icon: <BookOpen className="h-5 w-5" />,
       badges: ["T4Students", "T4Teens"],
     },
     {
-      label: "Open voor iedereen",
-      titel: "TaPasAcademy",
-      omschrijving: "Opleidingen, accreditaties en het register van geaccrediteerde coaches.",
+      label: t("hp_acad_open"),
+      titel: t("hp_acad_titel"),
+      omschrijving: t("hp_tegel_acad_body"),
       href: "/academy",
       kleurVar: "--gold",
       icon: <GraduationCap className="h-5 w-5" />,
@@ -253,13 +252,13 @@ function PlatformOverzicht() {
     <section className="mt-16 sm:mt-24">
       <div className="mx-auto max-w-2xl text-center">
         <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
-          Het platform in één oogopslag
+          {t("hp_ov_eyebrow")}
         </p>
         <h2 className="mt-3 font-serif text-2xl font-semibold tracking-tight text-foreground sm:text-[2rem] sm:leading-[1.2]">
-          Alles wat TaPas biedt
+          {t("hp_ov_titel")}
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
-          Eén coherent platform — voor elke levensfase, elke context, elke mens.
+          {t("hp_ov_intro")}
         </p>
       </div>
 
@@ -314,7 +313,7 @@ function PlatformOverzicht() {
               className="mt-auto pt-4 inline-flex items-center gap-1 text-xs font-semibold"
               style={{ color: `hsl(var(${tegel.kleurVar}))` }}
             >
-              Verken
+              {t("hp_ov_verken")}
               <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
             </span>
           </a>
@@ -330,8 +329,7 @@ function PlatformOverzicht() {
 // Alle bestaande blokken ongewijzigd
 // ---------------------------------------------------------------------------
 export default function Home() {
-  const [uiTaal, setUiTaal] = useState<Taal>(STANDAARD_TAAL);
-  const t = maakVertaler(uiTaal);
+  const { uiTaal, setUiTaal, t } = useUiTaal();
 
   return (
     <div className="min-h-[100dvh] bg-background">
@@ -362,21 +360,11 @@ export default function Home() {
               onClick={startRondleiding}
               data-testid="button-rondleiding"
               className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[hsl(var(--gold)/0.4)] px-2.5 text-sm font-medium text-[hsl(var(--gold))] transition hover:bg-[hsl(var(--gold)/0.08)]"
-              aria-label={
-                uiTaal === "fr" ? "Refaire le vol"
-                : uiTaal === "en" ? "Take the flight"
-                : uiTaal === "es" ? "Hacer el vuelo"
-                : uiTaal === "ru" ? "Совершить полёт"
-                : "Maak de vlucht"
-              }
+              aria-label={t("hp_nav_flight_label")}
             >
               <Plane className="h-4 w-4" />
               <span className="hidden sm:inline">
-                {uiTaal === "fr" ? "Le vol"
-                : uiTaal === "en" ? "The flight"
-                : uiTaal === "es" ? "El vuelo"
-                : uiTaal === "ru" ? "Полёт"
-                : "De vlucht"}
+                {t("hp_nav_flight_kort")}
               </span>
             </button>
             {/* Admin-knop: iets prominenter met label zichtbaar op sm+ */}
@@ -385,10 +373,10 @@ export default function Home() {
                 type="button"
                 data-testid="button-admin-home"
                 className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-secondary/50 px-3 text-sm font-medium text-foreground transition hover:bg-secondary hover:text-foreground"
-                aria-label="Admin"
+                aria-label={t("hp_nav_beheer")}
               >
                 <ShieldCheck className="h-4 w-4 text-accent" />
-                <span className="hidden sm:inline">Beheer</span>
+                <span className="hidden sm:inline">{t("hp_nav_beheer")}</span>
               </button>
             </Link>
           </div>
@@ -403,16 +391,15 @@ export default function Home() {
         <section className="grid items-center gap-8 sm:gap-10 lg:grid-cols-[1.4fr_1fr]">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.18em] text-accent">
-              Het TaPas-platform
+              {t("hp_hero_eyebrow")}
             </p>
             <h1 className="mt-4 font-serif text-[2.5rem] font-semibold leading-[1.08] tracking-tight text-foreground sm:text-[3.25rem]">
-              Zie mensen<br />
-              zoals ze <span className="text-accent">werkelijk</span> zijn.<br />
-              En breng ze in beweging.
+              {t("hp_hero_titel_r1")}<br />
+              {t("hp_hero_titel_r2_pre")}<span className="text-accent">{t("hp_hero_titel_r2_klem")}</span>{t("hp_hero_titel_r2_post")}<br />
+              {t("hp_hero_titel_r3")}
             </h1>
             <p className="mt-6 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Eén platform, één doordachte gedachtegang — voor het werk én voor de studie. Met
-              aandacht, zonder oordeel, en met respect voor wat ieder mens uniek maakt.
+              {t("hp_hero_intro")}
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button
@@ -421,12 +408,12 @@ export default function Home() {
                   document.getElementById("kies")?.scrollIntoView({ behavior: "smooth", block: "start" });
                 }}
               >
-                Kies je wereld
+                {t("hp_hero_cta_kies")}
                 <ArrowRight className="ml-1.5 h-4 w-4" />
               </Button>
               <Link href="/poort">
                 <Button variant="outline" data-testid="button-ik-ben-deelnemer">
-                  Ik ben deelnemer
+                  {t("hp_hero_cta_deelnemer")}
                 </Button>
               </Link>
             </div>
@@ -478,13 +465,13 @@ export default function Home() {
                   className="font-mono text-[11px] uppercase tracking-[0.2em]"
                   style={{ color: "hsl(var(--accent))" }}
                 >
-                  Demo beschikbaar
+                  {t("hp_t4s_demo")}
                 </span>
                 <span className="block font-serif text-xl font-semibold text-foreground sm:text-2xl">
                   T4Sports
                 </span>
                 <p className="mt-1 text-xs italic text-muted-foreground">
-                  Mentale coaching voor topsporters — drivers, foci en versnellers in sporttaal.
+                  {t("hp_t4s_body")}
                 </p>
               </div>
             </div>

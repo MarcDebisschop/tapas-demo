@@ -49,7 +49,17 @@ import {
   Sun,
   NotebookPen,
   Radio,
+  Languages,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { TALEN, TAAL_NAMEN, TAAL_CODES, normaliseerTaal } from "@shared/i18n";
+import { useUiTaal } from "@/contexts/TaalContext";
 
 // =============================================================================
 // CSS variabelen en kleur (verbatim uit bundle: const Xr="--lounge", or=...)
@@ -62,54 +72,36 @@ const LOUNGE_KLEUR = `hsl(var(${LOUNGE_VAR}))`;
 // icon-namen vervangen door geïmporteerde Lucide componenten
 // =============================================================================
 const KAMERS = [
-  { id: "stilte",        naam: "De Stilte Kamer",    eyebrow: "Verstillen",  korte: "Mediteren, ademen, gewoon er zijn.",             icon: Wind         },
-  { id: "studie",        naam: "De Studie Kamer",    eyebrow: "Verdiepen",   korte: "Bibliotheek, podcasts en de Meeting-Room.",       icon: BookOpen     },
-  { id: "muziek",        naam: "De Muziek Kamer",    eyebrow: "Beluisteren", korte: "Het TAPAS-lied en gekozen componisten.",          icon: Music2       },
-  { id: "webshop",       naam: "De Webshop",         eyebrow: "Meenemen",    korte: "Het boek Zichtbaar, kledij en het lied.",         icon: ShoppingBag  },
-  { id: "talentencafe",  naam: "Het Talentencafé",   eyebrow: "Ontmoeten",   korte: "Gesprekken aan thematische tafels.",              icon: Coffee       },
-  { id: "inspiratiewand",naam: "De Inspiratiewand",  eyebrow: "Herkennen",   korte: "Talentportretten van leden, opt-in.",             icon: Image        },
-  { id: "werkplaats",    naam: "De Werkplaats",      eyebrow: "Co-creëren",  korte: "Schrijven en creatieve expressie samen.",         icon: PenTool      },
-  { id: "reflectie",     naam: "De Reflectiekamer",  eyebrow: "Bezinnen",    korte: "Een strikt privé groeidagboek.",                  icon: NotebookPen  },
-  { id: "terras",        naam: "Het Buitenterras",   eyebrow: "Samenkomen",  korte: "Live sessies en seizoensmomenten.",               icon: Sun          },
+  { id: "stilte",         naam_key: "lounge_kamer_stilte_naam",         eyebrow_key: "lounge_kamer_stilte_eyebrow",         korte_key: "lounge_kamer_stilte_korte",         icon: Wind         },
+  { id: "studie",         naam_key: "lounge_kamer_studie_naam",         eyebrow_key: "lounge_kamer_studie_eyebrow",         korte_key: "lounge_kamer_studie_korte",         icon: BookOpen     },
+  { id: "muziek",         naam_key: "lounge_kamer_muziek_naam",         eyebrow_key: "lounge_kamer_muziek_eyebrow",         korte_key: "lounge_kamer_muziek_korte",         icon: Music2       },
+  { id: "webshop",        naam_key: "lounge_kamer_webshop_naam",        eyebrow_key: "lounge_kamer_webshop_eyebrow",        korte_key: "lounge_kamer_webshop_korte",        icon: ShoppingBag  },
+  { id: "talentencafe",   naam_key: "lounge_kamer_talentencafe_naam",   eyebrow_key: "lounge_kamer_talentencafe_eyebrow",   korte_key: "lounge_kamer_talentencafe_korte",   icon: Coffee       },
+  { id: "inspiratiewand", naam_key: "lounge_kamer_inspiratiewand_naam", eyebrow_key: "lounge_kamer_inspiratiewand_eyebrow", korte_key: "lounge_kamer_inspiratiewand_korte", icon: Image        },
+  { id: "werkplaats",     naam_key: "lounge_kamer_werkplaats_naam",     eyebrow_key: "lounge_kamer_werkplaats_eyebrow",     korte_key: "lounge_kamer_werkplaats_korte",     icon: PenTool      },
+  { id: "reflectie",      naam_key: "lounge_kamer_reflectie_naam",      eyebrow_key: "lounge_kamer_reflectie_eyebrow",      korte_key: "lounge_kamer_reflectie_korte",      icon: NotebookPen  },
+  { id: "terras",         naam_key: "lounge_kamer_terras_naam",         eyebrow_key: "lounge_kamer_terras_eyebrow",         korte_key: "lounge_kamer_terras_korte",         icon: Sun          },
 ];
-
-// Kamer-id → weergavenaam (verbatim uit bundle: const hHe={...})
-const KAMER_NAMEN: Record<string, string> = {
-  stilte:         "De Stilte Kamer",
-  studie:         "De Studie Kamer",
-  muziek:         "De Muziek Kamer",
-  webshop:        "De Webshop",
-  talentencafe:   "Het Talentencafé",
-  inspiratiewand: "De Inspiratiewand",
-  werkplaats:     "De Werkplaats",
-  reflectie:      "De Reflectiekamer",
-  terras:         "Het Buitenterras",
-};
 
 // =============================================================================
 // Adem oefeningen (verbatim uit bundle: const X$=[...])
 // =============================================================================
 const ADEM_OEFENINGEN = [
-  { naam: "Vierkant ademen",     omschrijving: "Vier tellen in, vier vasthouden, vier uit, vier rust. Voor helderheid.", in: 4, vast: 4, uit: 4, rust: 4 },
-  { naam: "Verlengde uitademing",omschrijving: "Vier in, zes uit. Kalmeert het zenuwstelsel.",                           in: 4, vast: 0, uit: 6, rust: 0 },
-  { naam: "Rustige golf",        omschrijving: "Vijf in, vijf uit. Een traag, gelijkmatig ritme.",                       in: 5, vast: 0, uit: 5, rust: 0 },
+  { naam_key: "lounge_adem_oef_vierkant_naam", omschr_key: "lounge_adem_oef_vierkant_omschr", in: 4, vast: 4, uit: 4, rust: 4 },
+  { naam_key: "lounge_adem_oef_verlengd_naam", omschr_key: "lounge_adem_oef_verlengd_omschr", in: 4, vast: 0, uit: 6, rust: 0 },
+  { naam_key: "lounge_adem_oef_golf_naam",     omschr_key: "lounge_adem_oef_golf_omschr",     in: 5, vast: 0, uit: 5, rust: 0 },
 ];
 
 // =============================================================================
 // Meditatie data (verbatim uit bundle: const Px={...})
 // =============================================================================
-const MEDITATIE = {
-  titel: "Even landen",
-  duur: "Ongeveer 5 minuten",
-  intro: "Een korte aankomst-meditatie om de drukte even te laten zakken. Lees rustig mee, of sluit je ogen en laat de zinnen na elke stap nawerken. Er is niets te bereiken — je mag gewoon hier zijn.",
-  stappen: [
-    { kop: "Aankomen",           tekst: "Zoek een houding waarin je een tijdje stil kunt zitten. Voeten op de grond, handen los in de schoot. Voel het gewicht van je lichaam dat door de stoel wordt gedragen. Je hoeft even nergens heen." },
-    { kop: "De adem volgen",     tekst: "Adem traag in door de neus, en laat de uitademing iets langer duren dan de inademing. Volg drie of vier ademhalingen, zonder ze te sturen. Merk hoe de adem vanzelf zijn eigen tempo vindt." },
-    { kop: "Het lichaam verkennen", tekst: "Laat je aandacht zacht langs je lichaam reizen — van je schouders, naar je armen, je buik, je benen. Waar je spanning voelt, hoef je niets te veranderen. Je merkt het enkel op, met een vriendelijke blik." },
-    { kop: "Een woord meenemen", tekst: "Kies in stilte één woord dat je vandaag goed kunt gebruiken — rust, ruimte, vertrouwen, of iets eigens. Laat het woord op de inademing meekomen, en op de uitademing zachtjes wegzakken." },
-    { kop: "Terugkeren",         tekst: "Breng je aandacht weer naar de ruimte om je heen. Beweeg je vingers, je schouders. Open je ogen wanneer je er klaar voor bent, en neem iets van deze rust mee naar wat er straks komt." },
-  ],
-};
+const MEDITATIE_STAP_KEYS = [
+  { kop_key: "lounge_meditatie_stap1_kop", tekst_key: "lounge_meditatie_stap1_tekst" },
+  { kop_key: "lounge_meditatie_stap2_kop", tekst_key: "lounge_meditatie_stap2_tekst" },
+  { kop_key: "lounge_meditatie_stap3_kop", tekst_key: "lounge_meditatie_stap3_tekst" },
+  { kop_key: "lounge_meditatie_stap4_kop", tekst_key: "lounge_meditatie_stap4_tekst" },
+  { kop_key: "lounge_meditatie_stap5_kop", tekst_key: "lounge_meditatie_stap5_tekst" },
+];
 
 // =============================================================================
 // Radio config (behouden uit vorige versie)
@@ -178,14 +170,61 @@ function LoungebBadge({ tekst }: { tekst: string }) {
 }
 
 // =============================================================================
+// WereldNav: taalkiezer (gedeeld/gepersisteerd) + terug-naar-voordeur
+// Exact patroon overgenomen van werk.tsx
+// =============================================================================
+function WereldNav() {
+  const [, navigate] = useLocation();
+  const { uiTaal, setUiTaal, t } = useUiTaal();
+
+  function handleTerug() {
+    navigate("/");
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <RadioKnop />
+      <Select value={uiTaal} onValueChange={(v) => setUiTaal(normaliseerTaal(v))}>
+        <SelectTrigger
+          className="h-9 w-auto gap-1.5 px-2.5"
+          data-testid="select-ui-taal"
+          aria-label={t("taal_kiezer_label")}
+        >
+          <Languages className="h-4 w-4 text-muted-foreground" />
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {TALEN.map((taal) => (
+            <SelectItem key={taal} value={taal} data-testid={`option-taal-${taal}`}>
+              {TAAL_CODES[taal]} · {TAAL_NAMEN[taal]}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <button
+        type="button"
+        onClick={handleTerug}
+        className="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 font-mono text-[13px] text-muted-foreground transition hover:text-foreground"
+        data-testid="button-voordeur"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        {t("wereld_nav_voordeur")}
+      </button>
+    </div>
+  );
+}
+
+// =============================================================================
 // Ademhaling animatie (verbatim uit bundle: function iHe)
 // =============================================================================
 function AdemhalingAnimatie({ oefening }: { oefening: typeof ADEM_OEFENINGEN[0] }) {
+  const { t } = useUiTaal();
+
   const stappen = [
-    { label: "Adem in",     sec: oefening.in   },
-    { label: "Houd vast",   sec: oefening.vast  },
-    { label: "Adem uit",    sec: oefening.uit   },
-    { label: "Rust",        sec: oefening.rust  },
+    { label: t("lounge_adem_in"),   labelKey: "lounge_adem_in",   sec: oefening.in   },
+    { label: t("lounge_adem_vast"), labelKey: "lounge_adem_vast", sec: oefening.vast  },
+    { label: t("lounge_adem_uit"),  labelKey: "lounge_adem_uit",  sec: oefening.uit   },
+    { label: t("lounge_adem_rust"), labelKey: "lounge_adem_rust", sec: oefening.rust  },
   ].filter((s) => s.sec > 0);
 
   const [actief, setActief] = useState(false);
@@ -196,7 +235,7 @@ function AdemhalingAnimatie({ oefening }: { oefening: typeof ADEM_OEFENINGEN[0] 
     setStapIdx(0);
     setSecOver(stappen[0].sec);
     setActief(false);
-  }, [oefening.naam]);
+  }, [oefening.naam_key]);
 
   useEffect(() => {
     if (!actief) return;
@@ -211,8 +250,8 @@ function AdemhalingAnimatie({ oefening }: { oefening: typeof ADEM_OEFENINGEN[0] 
   }, [actief, stapIdx]);
 
   const huidigeStp = stappen[stapIdx];
-  const isIn  = huidigeStp.label === "Adem in";
-  const isUit = huidigeStp.label === "Adem uit";
+  const isIn  = huidigeStp.labelKey === "lounge_adem_in";
+  const isUit = huidigeStp.labelKey === "lounge_adem_uit";
   const schaal = actief ? (isIn ? 1 : isUit ? 0.7 : stapIdx === 1 ? 1 : 0.7) : 0.78;
 
   return (
@@ -238,7 +277,7 @@ function AdemhalingAnimatie({ oefening }: { oefening: typeof ADEM_OEFENINGEN[0] 
         />
         <div className="relative text-center">
           <p className="font-serif text-xl font-semibold text-foreground">
-            {actief ? huidigeStp.label : "Klaar?"}
+            {actief ? huidigeStp.label : t("lounge_adem_klaar")}
           </p>
           {actief && (
             <p className="mt-1 font-mono text-3xl tabular-nums" style={{ color: LOUNGE_KLEUR }}>
@@ -255,7 +294,7 @@ function AdemhalingAnimatie({ oefening }: { oefening: typeof ADEM_OEFENINGEN[0] 
         style={{ color: LOUNGE_KLEUR, borderColor: `hsl(var(${LOUNGE_VAR})/0.5)`, background: `hsl(var(${LOUNGE_VAR})/0.10)` }}
       >
         {actief ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-        {actief ? "Pauzeer" : "Begin met ademen"}
+        {actief ? t("lounge_adem_pauzeer") : t("lounge_adem_begin")}
       </button>
     </div>
   );
@@ -265,6 +304,7 @@ function AdemhalingAnimatie({ oefening }: { oefening: typeof ADEM_OEFENINGEN[0] 
 // Meditatie audio speler (verbatim uit bundle: function aHe)
 // =============================================================================
 function MeditatieSPeler() {
+  const { t } = useUiTaal();
   const audioRef = useRef<HTMLAudioElement>(null);
   const [speelt, setSpeelt] = useState(false);
   const [tijd, setTijd] = useState(0);
@@ -304,14 +344,14 @@ function MeditatieSPeler() {
           data-testid="button-meditatie-muziek"
           className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-background transition hover:scale-105"
           style={{ background: LOUNGE_KLEUR }}
-          aria-label={speelt ? "Pauzeer de meditatieve klank" : "Speel de meditatieve klank"}
+          aria-label={speelt ? t("lounge_meditatie_muziek_pauzeer") : t("lounge_meditatie_muziek_speel")}
         >
           {speelt ? <Pause className="h-5 w-5" /> : <Play className="ml-0.5 h-5 w-5" />}
         </button>
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-2">
             <p className="truncate font-serif text-sm font-semibold text-foreground">
-              Klankschaal in C — zacht en eindeloos
+              {t("lounge_klankschaal_naam")}
             </p>
             <p className="font-mono text-[11px] tabular-nums text-muted-foreground">
               {formatTijd(tijd)} / {formatTijd(duur)}
@@ -324,7 +364,7 @@ function MeditatieSPeler() {
             />
           </div>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            Een warme drone die rustig blijft doorademen — zet hem zacht op de achtergrond.
+            {t("lounge_klankschaal_beschr")}
           </p>
         </div>
       </div>
@@ -336,40 +376,42 @@ function MeditatieSPeler() {
 // Stilte Kamer (verbatim uit bundle: function sHe)
 // =============================================================================
 function StilteKamer() {
-  const [oefening, setOefening] = useState(ADEM_OEFENINGEN[0]);
+  const { t } = useUiTaal();
+  const [oefeningIdx, setOefeningIdx] = useState(0);
+  const oefening = ADEM_OEFENINGEN[oefeningIdx];
   const [meditatieTonen, setMeditatieTonen] = useState(false);
 
   return (
     <div>
       <SectieHeader
-        eyebrow="Verstillen"
-        titel="De Stilte Kamer"
-        intro="Zachte tinten, gefilterd licht, een lage bank en een paar matjes op de vloer. De wereld dempt hier vanzelf. Niets moet — je mag mediteren, ademen, of gewoon even zijn."
+        eyebrow={t("lounge_stilte_eyebrow")}
+        titel={t("lounge_stilte_titel")}
+        intro={t("lounge_stilte_intro")}
       />
       <div className="mt-7 overflow-hidden rounded-2xl border border-border">
         <img
           src="/lounge/img/stiltekamer.jpg"
-          alt="De serene Stilte Kamer met linnen kussens en meditatiematjes."
+          alt={t("lounge_stilte_img_alt")}
           className="h-60 w-full object-cover sm:h-72"
           loading="lazy"
         />
       </div>
       <div className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_1fr]">
         <KaartContainer>
-          <Eyebrow>Adem mee</Eyebrow>
-          <h3 className="mt-1.5 font-serif text-xl font-semibold text-foreground">Een rustige ademhaling</h3>
+          <Eyebrow>{t("lounge_adem_eyebrow")}</Eyebrow>
+          <h3 className="mt-1.5 font-serif text-xl font-semibold text-foreground">{t("lounge_adem_titel")}</h3>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Kies een oefening en volg de cirkel. Laat de adem het tempo bepalen, niet andersom.
+            {t("lounge_adem_beschrijving")}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
-            {ADEM_OEFENINGEN.map((o) => {
-              const actief = o.naam === oefening.naam;
+            {ADEM_OEFENINGEN.map((o, idx) => {
+              const actief = idx === oefeningIdx;
               return (
                 <button
-                  key={o.naam}
+                  key={o.naam_key}
                   type="button"
-                  onClick={() => setOefening(o)}
-                  data-testid={`adem-${o.naam}`}
+                  onClick={() => setOefeningIdx(idx)}
+                  data-testid={`adem-${t(o.naam_key)}`}
                   className="rounded-full border px-3 py-1.5 text-xs font-medium transition"
                   style={
                     actief
@@ -377,21 +419,21 @@ function StilteKamer() {
                       : { borderColor: "hsl(var(--border))", color: "hsl(var(--muted-foreground))" }
                   }
                 >
-                  {o.naam}
+                  {t(o.naam_key)}
                 </button>
               );
             })}
           </div>
-          <p className="mt-3 text-xs italic leading-relaxed text-muted-foreground">{oefening.omschrijving}</p>
+          <p className="mt-3 text-xs italic leading-relaxed text-muted-foreground">{t(oefening.omschr_key)}</p>
           <div className="mt-5">
             <AdemhalingAnimatie oefening={oefening} />
           </div>
         </KaartContainer>
         <div className="space-y-4">
           <KaartContainer>
-            <Eyebrow>Mediteren</Eyebrow>
-            <h3 className="mt-1.5 font-serif text-xl font-semibold text-foreground">Een begeleid moment</h3>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{MEDITATIE.intro}</p>
+            <Eyebrow>{t("lounge_mediteer_eyebrow")}</Eyebrow>
+            <h3 className="mt-1.5 font-serif text-xl font-semibold text-foreground">{t("lounge_mediteer_titel")}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t("lounge_meditatie_intro")}</p>
             <div className="mt-4 rounded-xl border border-border bg-card/60 p-4">
               <MeditatieSPeler />
             </div>
@@ -403,23 +445,23 @@ function StilteKamer() {
               style={{ color: LOUNGE_KLEUR, borderColor: `hsl(var(${LOUNGE_VAR})/0.5)`, background: `hsl(var(${LOUNGE_VAR})/0.10)` }}
             >
               {meditatieTonen ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-              {meditatieTonen ? "Sluit de meditatie" : `Lees de meditatie — ${MEDITATIE.titel}`}
+              {meditatieTonen ? t("lounge_meditatie_knop_sluit") : `${t("lounge_meditatie_knop_lees")} — ${t("lounge_meditatie_titel")}`}
             </button>
             {meditatieTonen && (
               <div className="mt-4" data-testid="meditatie-stappen">
                 <p className="font-mono text-[11px] uppercase tracking-[0.14em]" style={{ color: LOUNGE_KLEUR }}>
-                  {MEDITATIE.titel} · {MEDITATIE.duur}
+                  {t("lounge_meditatie_titel")} · {t("lounge_meditatie_duur")}
                 </p>
                 <ol className="mt-3 space-y-3">
-                  {MEDITATIE.stappen.map((stap, i) => (
-                    <li key={stap.kop} className="rounded-xl border border-border bg-card/60 p-4">
+                  {MEDITATIE_STAP_KEYS.map((stap, i) => (
+                    <li key={stap.kop_key} className="rounded-xl border border-border bg-card/60 p-4">
                       <div className="flex items-baseline gap-2">
                         <span className="font-mono text-xs tabular-nums" style={{ color: LOUNGE_KLEUR }}>
                           {(i + 1).toString().padStart(2, "0")}
                         </span>
-                        <span className="font-serif text-base font-semibold text-foreground">{stap.kop}</span>
+                        <span className="font-serif text-base font-semibold text-foreground">{t(stap.kop_key)}</span>
                       </div>
-                      <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{stap.tekst}</p>
+                      <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{t(stap.tekst_key)}</p>
                     </li>
                   ))}
                 </ol>
@@ -427,10 +469,10 @@ function StilteKamer() {
             )}
           </KaartContainer>
           <KaartContainer>
-            <Eyebrow>Gewoon er zijn</Eyebrow>
-            <h3 className="mt-1.5 font-serif text-xl font-semibold text-foreground">Niets hoeft</h3>
+            <Eyebrow>{t("lounge_gewoon_eyebrow")}</Eyebrow>
+            <h3 className="mt-1.5 font-serif text-xl font-semibold text-foreground">{t("lounge_gewoon_titel")}</h3>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Soms is de mooiste oefening helemaal geen oefening. Blijf zitten zolang je wil. De Lounge wacht geduldig op je.
+              {t("lounge_gewoon_tekst")}
             </p>
           </KaartContainer>
         </div>
@@ -446,6 +488,7 @@ function StilteKamer() {
 function KamerKomTerug({ titel, eyebrow, intro, img, imgAlt }: {
   titel: string; eyebrow: string; intro: string; img?: string; imgAlt?: string;
 }) {
+  const { t } = useUiTaal();
   return (
     <div>
       <SectieHeader eyebrow={eyebrow} titel={titel} intro={intro} />
@@ -458,15 +501,13 @@ function KamerKomTerug({ titel, eyebrow, intro, img, imgAlt }: {
       {/* Demo inhoud — toegankelijk voor iedereen */}
       <div className="mt-8 space-y-6">
         <KaartContainer>
-          <Eyebrow>Wat je hier vindt</Eyebrow>
+          <Eyebrow>{t("lounge_kamer_kom_terug_wat_eyebrow")}</Eyebrow>
           <h3 className="mt-2 font-serif text-xl font-semibold text-foreground">{titel}</h3>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
             {intro}
           </p>
           <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-            In de volledige versie vind je hier exclusieve content, live events en een persoonlijke ruimte
-            die meegroeit met jouw talent-traject. Als TaPasCity-lid draag je een TIP-card die toegang
-            geeft tot alle kamers — en tot de mensen die er al aanwezig zijn.
+            {t("lounge_kamer_kom_terug_p2")}
           </p>
         </KaartContainer>
 
@@ -478,10 +519,9 @@ function KamerKomTerug({ titel, eyebrow, intro, img, imgAlt }: {
             background: `radial-gradient(120% 120% at 50% 0%, hsl(var(${LOUNGE_VAR})/0.10) 0%, hsl(var(--card)) 70%)`,
           }}
         >
-          <LoungebBadge tekst="TaPasCity-leden" />
+          <LoungebBadge tekst={t("lounge_kamer_tipascity_leden")} />
           <p className="mt-3 max-w-md mx-auto text-sm leading-relaxed text-muted-foreground">
-            Als lid van TaPasCity krijg je volledige toegang tot deze kamer via je persoonlijke TIP-card.
-            Ontdek het lidmaatschap via het <strong>Onthaal</strong>.
+            {t("lounge_kamer_lid_toegang")}
           </p>
         </div>
       </div>
@@ -495,23 +535,24 @@ function KamerKomTerug({ titel, eyebrow, intro, img, imgAlt }: {
 const MUZIEK_COMPOSITIES = [
   {
     naam: "Erik Satie",
-    context: "Stille, bijna mediterende pianominiaturen — rust als compositie.",
+    context_key: "lounge_satie_context",
     composities: [
-      { titel: "Gymnopédie No. 1",               beschrijving: "Een dromerige, sluimerende wals die de luisteraar meeneemt naar een tere, tijdloze stilte.",                                    url: "https://www.youtube.com/watch?v=q59H8q7Yo5Q" },
-      { titel: "Gymnopédies (complete, No. 1–3)", beschrijving: "De drie Gymnopédies als eenheid: een zachte, melancholische triptiek die rust en mijmering oproept.",                         url: "https://www.youtube.com/watch?v=aIo66AGh2J8" },
-      { titel: "Gnossienne No. 1",                beschrijving: "Een raadselachtig, schemerdragend stuk zonder maatstreep dat een mysterieuze, hypnotiserende sfeer oproept.",                  url: "https://www.youtube.com/watch?v=lqZehFAwoTM" },
-      { titel: "Gnossienne No. 3",                beschrijving: "Speels en tegelijk weemoedig, met een onverwacht harmonisch kleurenpalet dat de geest tot stilstand brengt.",                  url: "https://www.youtube.com/watch?v=gQtE401LA_o" },
+      { titel: "Gymnopédie No. 1",               beschrijving_key: "lounge_gymn1_beschr",   url: "https://www.youtube.com/watch?v=q59H8q7Yo5Q" },
+      { titel: "Gymnopédies (complete, No. 1–3)", beschrijving_key: "lounge_gymn123_beschr", url: "https://www.youtube.com/watch?v=aIo66AGh2J8" },
+      { titel: "Gnossienne No. 1",                beschrijving_key: "lounge_gnoss1_beschr",  url: "https://www.youtube.com/watch?v=lqZehFAwoTM" },
+      { titel: "Gnossienne No. 3",                beschrijving_key: "lounge_gnoss3_beschr",  url: "https://www.youtube.com/watch?v=gQtE401LA_o" },
     ],
   },
 ];
 
 const TAPAS_LIED_TEKST = [
-  { kop: "Refrein", regels: ["I am on my way,","not yet where I want to be —","but no longer where I didn't fit.","I fall forward, I don't give up.","What I do as if it's nothing saves someone's day.","I am visible. I am on my way."] },
-  { kop: "Vers 1",  regels: ["Stop a moment in the morning,","there's someone you don't know yet —","the person you could be today,","if you let them in.","Carry your doubts like a coat,","you're allowed to take it off when it grows heavy.","Beneath the lining breathes","a sentence that belongs only to you."] },
-  { kop: "Brug",    regels: ["And when you stumble — fall forward.","Don't write off the evening, write only this:","I am on my way.","Your talent is already there.","It was waiting for you.","Make yourself visible —","for yourself first, then the world."] },
+  { kop_key: "lounge_lied_kop_refrein", regels: ["I am on my way,","not yet where I want to be —","but no longer where I didn't fit.","I fall forward, I don't give up.","What I do as if it's nothing saves someone's day.","I am visible. I am on my way."] },
+  { kop_key: "lounge_lied_kop_vers1",   regels: ["Stop a moment in the morning,","there's someone you don't know yet —","the person you could be today,","if you let them in.","Carry your doubts like a coat,","you're allowed to take it off when it grows heavy.","Beneath the lining breathes","a sentence that belongs only to you."] },
+  { kop_key: "lounge_lied_kop_brug",    regels: ["And when you stumble — fall forward.","Don't write off the evening, write only this:","I am on my way.","Your talent is already there.","It was waiting for you.","Make yourself visible —","for yourself first, then the world."] },
 ];
 
 function MuziekKamer() {
+  const { t } = useUiTaal();
   const [liedTonen, setLiedTonen] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const [speelt, setSpeelt] = useState(false);
@@ -525,24 +566,24 @@ function MuziekKamer() {
   return (
     <div>
       <SectieHeader
-        eyebrow="Beluisteren"
-        titel="De Muziek Kamer"
-        intro="Klanken die de geest laten landen — van het TAPAS-lied tot zorgvuldig gekozen componisten. Zet het zacht op de achtergrond, of luister bewust."
+        eyebrow={t("lounge_muziek_eyebrow")}
+        titel={t("lounge_muziek_titel")}
+        intro={t("lounge_muziek_intro")}
       />
       <div className="mt-7 overflow-hidden rounded-2xl border border-border">
         <img
           src="/lounge/img/muziek.jpg"
-          alt="De Muziek Kamer met warme verlichting en een vleugelpiano."
+          alt={t("lounge_muziek_img_alt")}
           className="h-60 w-full object-cover sm:h-72"
           loading="lazy"
         />
       </div>
       <div className="mt-8 space-y-6">
         <KaartContainer>
-          <Eyebrow>Het TAPAS-lied</Eyebrow>
+          <Eyebrow>{t("lounge_tapas_lied_eyebrow")}</Eyebrow>
           <h3 className="mt-1.5 font-serif text-xl font-semibold text-foreground">On My Way — Zichtbaar</h3>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            Een lied over talentherkenning, zichtbaar worden en vooruitvallen. Gecomponeerd als anthem voor TaPasCity.
+            {t("lounge_tapas_lied_beschr")}
           </p>
           <div className="mt-4 flex items-center gap-3">
             <audio
@@ -556,7 +597,7 @@ function MuziekKamer() {
               onClick={toggle}
               className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-background transition hover:scale-105"
               style={{ background: LOUNGE_KLEUR }}
-              aria-label={speelt ? "Pauzeer" : "Speel On My Way"}
+              aria-label={speelt ? t("lounge_muziek_pauzeer_aria") : t("lounge_muziek_speel_aria")}
             >
               {speelt ? <Pause className="h-5 w-5" /> : <Play className="ml-0.5 h-5 w-5" />}
             </button>
@@ -571,15 +612,15 @@ function MuziekKamer() {
             className="mt-4 inline-flex items-center gap-2 text-sm font-medium transition"
             style={{ color: LOUNGE_KLEUR }}
           >
-            {liedTonen ? "Verberg de liedtekst" : "Lees de liedtekst"}
+            {liedTonen ? t("lounge_lied_verberg") : t("lounge_lied_lees")}
             <ArrowRight className="h-4 w-4" />
           </button>
           {liedTonen && (
             <div className="mt-4 space-y-4">
               {TAPAS_LIED_TEKST.map((sectie) => (
-                <div key={sectie.kop} className="rounded-xl border border-border bg-card/60 p-4">
+                <div key={sectie.kop_key} className="rounded-xl border border-border bg-card/60 p-4">
                   <p className="font-mono text-[11px] uppercase tracking-[0.14em]" style={{ color: LOUNGE_KLEUR }}>
-                    {sectie.kop}
+                    {t(sectie.kop_key)}
                   </p>
                   <div className="mt-2 space-y-0.5">
                     {sectie.regels.map((r, i) => (
@@ -594,7 +635,7 @@ function MuziekKamer() {
         {MUZIEK_COMPOSITIES.map((componist) => (
           <KaartContainer key={componist.naam}>
             <Eyebrow>{componist.naam}</Eyebrow>
-            <p className="mt-1 text-sm text-muted-foreground">{componist.context}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{t(componist.context_key)}</p>
             <div className="mt-4 space-y-3">
               {componist.composities.map((c) => (
                 <a
@@ -612,7 +653,7 @@ function MuziekKamer() {
                   </div>
                   <div>
                     <p className="font-serif text-sm font-semibold text-foreground">{c.titel}</p>
-                    <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{c.beschrijving}</p>
+                    <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{t(c.beschrijving_key)}</p>
                   </div>
                 </a>
               ))}
@@ -627,39 +668,41 @@ function MuziekKamer() {
 // =============================================================================
 // Webshop (verbatim uit bundle: function dHe — geïntegreerd met interesse form)
 // =============================================================================
-const WEBSHOP_PRODUCTEN = [
-  {
-    id: "tapas-business-kompas",
-    naam: "T4P Business Kompas",
-    prijs: "€ 249 per afname",
-    beschrijving: "Volledig talentprofiel met TaPas Kompas en optionele Coachatlas. Inclusief online afname en PDF-rapport.",
-    features: ["Individueel talentprofiel", "TaPas Kompas rapport", "Online afname & scoring", "PDF-rapport"],
-  },
-  {
-    id: "amelia-earhart",
-    naam: "Amelia Earhart Editie",
-    prijs: "€ 349 per afname",
-    premium: true,
-    beschrijving: "Het meest complete TaPas-profiel. Combineert T4P Business Kompas, T4Recruitment en 2MinScan in één traject.",
-    features: ["TaPas Kompas + Coachatlas", "T4Recruitment module", "2MinScan energieprofiel", "Persoonlijke debriefing", "Amelia Earhart certificaat", "Premium PDF-rapport", "Toegang tot het Observatorium", "Priority support"],
-  },
-  {
-    id: "t4recruitment",
-    naam: "T4Recruitment",
-    prijs: "€ 179 per afname",
-    beschrijving: "Rolprofiel en fit-analyse voor werving & selectie. Vergelijk kandidaten op talentniveau.",
-    features: ["Rolprofiel analyse", "Kandidaat fit-score", "Vergelijkingsrapport", "Recruiters dashboard"],
-  },
-  {
-    id: "teamscan",
-    naam: "TaPas Teamscan",
-    prijs: "Op aanvraag",
-    beschrijving: "Breng de talenten en dynamieken van je team in kaart. Inclusief teamrapport en facilitatiegids.",
-    features: ["Team talentoverzicht", "Teamdynamiek analyse", "Facilitatiegids", "Groepsrapport"],
-  },
-];
-
 function Webshop() {
+  const { t } = useUiTaal();
+
+  const WEBSHOP_PRODUCTEN = [
+    {
+      id: "tapas-business-kompas",
+      naam: t("lounge_ws_prod_kompas_naam"),
+      prijs: t("lounge_ws_prod_kompas_prijs"),
+      beschrijving: t("lounge_ws_prod_kompas_beschr"),
+      features: [t("lounge_ws_prod_kompas_f1"), t("lounge_ws_prod_kompas_f2"), t("lounge_ws_prod_kompas_f3"), t("lounge_ws_prod_kompas_f4")],
+    },
+    {
+      id: "amelia-earhart",
+      naam: t("lounge_ws_prod_amelia_naam"),
+      prijs: t("lounge_ws_prod_amelia_prijs"),
+      premium: true,
+      beschrijving: t("lounge_ws_prod_amelia_beschr"),
+      features: [t("lounge_ws_prod_amelia_f1"), t("lounge_ws_prod_amelia_f2"), t("lounge_ws_prod_amelia_f3"), t("lounge_ws_prod_amelia_f4"), t("lounge_ws_prod_amelia_f5"), t("lounge_ws_prod_amelia_f6"), t("lounge_ws_prod_amelia_f7"), t("lounge_ws_prod_amelia_f8")],
+    },
+    {
+      id: "t4recruitment",
+      naam: t("lounge_ws_prod_recr_naam"),
+      prijs: t("lounge_ws_prod_recr_prijs"),
+      beschrijving: t("lounge_ws_prod_recr_beschr"),
+      features: [t("lounge_ws_prod_recr_f1"), t("lounge_ws_prod_recr_f2"), t("lounge_ws_prod_recr_f3"), t("lounge_ws_prod_recr_f4")],
+    },
+    {
+      id: "teamscan",
+      naam: t("lounge_ws_prod_team_naam"),
+      prijs: t("lounge_ws_prod_team_prijs"),
+      beschrijving: t("lounge_ws_prod_team_beschr"),
+      features: [t("lounge_ws_prod_team_f1"), t("lounge_ws_prod_team_f2"), t("lounge_ws_prod_team_f3"), t("lounge_ws_prod_team_f4")],
+    },
+  ];
+
   const [geselecteerd, setGeselecteerd] = useState<string | null>(null);
   const [uitgevouwen, setUitgevouwen] = useState<string | null>(null);
   const [naam, setNaam] = useState("");
@@ -683,10 +726,10 @@ function Webshop() {
       if (res.ok) {
         setVerzondenOk(true);
       } else {
-        setFout("Er ging iets mis. Probeer het later opnieuw.");
+        setFout(t("lounge_ws_fout"));
       }
     } catch {
-      setFout("Er ging iets mis. Probeer het later opnieuw.");
+      setFout(t("lounge_ws_fout"));
     } finally {
       setBezig(false);
     }
@@ -695,14 +738,14 @@ function Webshop() {
   return (
     <div>
       <SectieHeader
-        eyebrow="Meenemen"
-        titel="De Webshop"
-        intro="Instrumenten, rapporten en licenties voor coaches, HR-professionals en organisaties die met talent willen werken."
+        eyebrow={t("lounge_webshop_eyebrow")}
+        titel={t("lounge_webshop_titel")}
+        intro={t("lounge_webshop_intro")}
       />
       <div className="mt-7 overflow-hidden rounded-2xl border border-border">
         <img
           src="/lounge/img/webshop.jpg"
-          alt="De TaPas Webshop."
+          alt={t("lounge_webshop_img_alt")}
           className="h-60 w-full object-cover sm:h-72"
           loading="lazy"
         />
@@ -731,7 +774,7 @@ function Webshop() {
               className="mt-3 inline-flex items-center gap-1 text-xs font-medium transition"
               style={{ color: LOUNGE_KLEUR }}
             >
-              {uitgevouwen === p.id ? "Verberg details" : "Bekijk details"}
+              {uitgevouwen === p.id ? t("lounge_ws_verberg_details") : t("lounge_ws_bekijk_details")}
               <ArrowRight className="h-3 w-3" />
             </button>
             {uitgevouwen === p.id && (
@@ -753,51 +796,51 @@ function Webshop() {
                   : { color: LOUNGE_KLEUR, borderColor: `hsl(var(${LOUNGE_VAR})/0.5)`, background: `hsl(var(${LOUNGE_VAR})/0.08)` }
               }
             >
-              {geselecteerd === p.id ? "Geselecteerd ✓" : "Interesse tonen"}
+              {geselecteerd === p.id ? t("lounge_ws_geselecteerd") : t("lounge_ws_interesse")}
             </button>
           </div>
         ))}
       </div>
       {geselecteerd && !verzondenOk && (
         <KaartContainer className="mt-8">
-          <Eyebrow>Interesse registreren</Eyebrow>
-          <h3 className="mt-1.5 font-serif text-xl font-semibold text-foreground">Laat je gegevens achter</h3>
+          <Eyebrow>{t("lounge_ws_form_eyebrow")}</Eyebrow>
+          <h3 className="mt-1.5 font-serif text-xl font-semibold text-foreground">{t("lounge_ws_form_titel")}</h3>
           <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            We nemen contact op met meer informatie over{" "}
+            {t("lounge_ws_form_intro")}{" "}
             <strong>{WEBSHOP_PRODUCTEN.find((p) => p.id === geselecteerd)?.naam}</strong>.
           </p>
           <form onSubmit={verstuur} className="mt-5 space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label className="block text-xs font-medium text-foreground mb-1">Naam</label>
+                <label className="block text-xs font-medium text-foreground mb-1">{t("lounge_ws_label_naam")}</label>
                 <input
                   value={naam}
                   onChange={(e) => setNaam(e.target.value)}
                   required
-                  placeholder="Jouw naam"
+                  placeholder={t("lounge_ws_placeholder_naam")}
                   className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1"
                   style={{ focusBorderColor: LOUNGE_KLEUR } as React.CSSProperties}
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-foreground mb-1">E-mail</label>
+                <label className="block text-xs font-medium text-foreground mb-1">{t("lounge_ws_label_email")}</label>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  placeholder="jij@voorbeeld.be"
+                  placeholder={t("lounge_ws_placeholder_email")}
                   className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1"
                 />
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-foreground mb-1">Bericht (optioneel)</label>
+              <label className="block text-xs font-medium text-foreground mb-1">{t("lounge_ws_label_bericht")}</label>
               <textarea
                 value={bericht}
                 onChange={(e) => setBericht(e.target.value)}
                 rows={3}
-                placeholder="Vertel ons meer over je situatie of vraag..."
+                placeholder={t("lounge_ws_placeholder_bericht")}
                 className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 resize-none"
               />
             </div>
@@ -808,7 +851,7 @@ function Webshop() {
               className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-semibold text-background transition hover:-translate-y-0.5 disabled:opacity-60"
               style={{ background: LOUNGE_KLEUR }}
             >
-              {bezig ? "Versturen..." : "Verstuur interesse"}
+              {bezig ? t("lounge_ws_versturen") : t("lounge_ws_verstuur_btn")}
               <ArrowRight className="h-4 w-4" />
             </button>
           </form>
@@ -818,11 +861,11 @@ function Webshop() {
         <KaartContainer className="mt-8">
           <div className="flex flex-col items-center py-6 text-center">
             <p className="font-mono text-[11px] uppercase tracking-[0.14em]" style={{ color: LOUNGE_KLEUR }}>
-              Ontvangen
+              {t("lounge_ws_ontvangen")}
             </p>
-            <h3 className="mt-2 font-serif text-xl font-semibold text-foreground">Bedankt voor je interesse!</h3>
+            <h3 className="mt-2 font-serif text-xl font-semibold text-foreground">{t("lounge_ws_bedankt_titel")}</h3>
             <p className="mt-2 max-w-md text-sm text-muted-foreground">
-              We nemen zo snel mogelijk contact met je op.
+              {t("lounge_ws_bedankt_tekst")}
             </p>
           </div>
         </KaartContainer>
@@ -837,25 +880,26 @@ function Webshop() {
 // Toont de Evarist Galois TIP-card als visueel voorbeeld + voordelen + CTA.
 // =============================================================================
 function TipCardTeaser({ gaaNaar }: { gaaNaar?: (id: string) => void }) {
+  const { t } = useUiTaal();
+
   const VOORDELEN = [
-    { icon: "✦", tekst: "Toegang tot alle kamers van de TaPas Lounge" },
-    { icon: "✦", tekst: "Persoonlijk TIP-card met jouw talentprofiel" },
-    { icon: "✦", tekst: "Deelname aan live sessies en het Talentencafé" },
-    { icon: "✦", tekst: "Verbinding met een gemeenschap van talent-bewuste mensen" },
-    { icon: "✦", tekst: "Zichtbaarheid op de Inspiratiewand (opt-in)" },
-    { icon: "✦", tekst: "Prioriteit bij nieuwe TaPas-modules en β-toegang" },
+    { icon: "✦", tekst: t("lounge_tipcard_voord1") },
+    { icon: "✦", tekst: t("lounge_tipcard_voord2") },
+    { icon: "✦", tekst: t("lounge_tipcard_voord3") },
+    { icon: "✦", tekst: t("lounge_tipcard_voord4") },
+    { icon: "✦", tekst: t("lounge_tipcard_voord5") },
+    { icon: "✦", tekst: t("lounge_tipcard_voord6") },
   ];
 
   return (
     <section className="mt-14">
       <div className="text-center">
-        <Eyebrow>Lidmaatschap</Eyebrow>
+        <Eyebrow>{t("lounge_tipcard_eyebrow")}</Eyebrow>
         <h2 className="mx-auto mt-2 max-w-xl font-serif text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-          Jouw TIP-card: de sleutel tot de Lounge
+          {t("lounge_tipcard_titel")}
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
-          TIP staat voor <strong>Talent In Passie</strong>. Elke TaPasCity-lid draagt een persoonlijke TIP-card
-          met zijn of haar talentprofiel — zichtbaar voor wie het wil delen, altijd als spiegel voor zichzelf.
+          {t("lounge_tipcard_intro")}
         </p>
       </div>
 
@@ -873,21 +917,21 @@ function TipCardTeaser({ gaaNaar }: { gaaNaar?: (id: string) => void }) {
           >
             <img
               src="/lounge/img/jester-card.png"
-              alt="Voorbeeld TIP-card: Evarist Galois — TaPas Jester"
+              alt={t("lounge_tipcard_kaart_alt")}
               className="w-full object-contain"
               loading="lazy"
             />
           </div>
           <p className="text-center text-xs text-muted-foreground max-w-xs">
-            Voorbeeldkaart: <em>Evarist Galois</em> — TaPas Jester · Talent In Passie
+            {t("lounge_tipcard_kaart_caption")}
           </p>
         </div>
 
         {/* Voordelen + CTA */}
         <div className="flex flex-col gap-5">
           <KaartContainer>
-            <Eyebrow>Wat je krijgt als lid</Eyebrow>
-            <h3 className="mt-2 font-serif text-xl font-semibold text-foreground">Alles wat de Lounge te bieden heeft</h3>
+            <Eyebrow>{t("lounge_tipcard_voord_eyebrow")}</Eyebrow>
+            <h3 className="mt-2 font-serif text-xl font-semibold text-foreground">{t("lounge_tipcard_voord_titel")}</h3>
             <ul className="mt-4 space-y-3">
               {VOORDELEN.map((v, i) => (
                 <li key={i} className="flex items-start gap-3 text-sm text-muted-foreground">
@@ -906,14 +950,12 @@ function TipCardTeaser({ gaaNaar }: { gaaNaar?: (id: string) => void }) {
               background: `radial-gradient(120% 120% at 50% 0%, hsl(var(${LOUNGE_VAR})/0.08) 0%, hsl(var(--card)) 70%)`,
             }}
           >
-            <Eyebrow>Word lid</Eyebrow>
+            <Eyebrow>{t("lounge_tipcard_wordlid_eyebrow")}</Eyebrow>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Lidmaatschap van TaPasCity is op uitnodiging. Je kunt je interesse registreren via
-              de <strong>Webshop</strong> of door contact op te nemen met een TaPas Jester in jouw netwerk.
+              {t("lounge_tipcard_wordlid_p1")}
             </p>
             <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Elke nieuwe TaPas-deelnemer ontvangt na hun traject een persoonlijke TIP-card. Die kaart
-              is meteen je toegangspas tot de Lounge.
+              {t("lounge_tipcard_wordlid_p2")}
             </p>
             <button
               type="button"
@@ -921,7 +963,7 @@ function TipCardTeaser({ gaaNaar }: { gaaNaar?: (id: string) => void }) {
               style={{ background: LOUNGE_KLEUR }}
               onClick={() => gaaNaar ? gaaNaar("webshop") : undefined}
             >
-              Bekijk de Webshop
+              {t("lounge_tipcard_wordlid_cta")}
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>
@@ -936,6 +978,7 @@ function TipCardTeaser({ gaaNaar }: { gaaNaar?: (id: string) => void }) {
 // Vereenvoudigd voor demo — geen live member data
 // =============================================================================
 function AanwezigenSectie() {
+  const { t } = useUiTaal();
   return (
     <div className="mt-5">
       <button
@@ -950,11 +993,11 @@ function AanwezigenSectie() {
         <div className="flex flex-wrap items-center gap-3">
           <LoungebBadge tekst="TaPasCity Live" />
           <p className="text-sm text-muted-foreground">
-            De Lounge is open. Leden zijn actief aanwezig.
+            {t("lounge_aanwezigen_live")}
           </p>
         </div>
         <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-          Word lid van TaPasCity om deel te nemen aan live sessies, de Talentencafé-gesprekken en de gemeenschap.
+          {t("lounge_aanwezigen_uitleg")}
         </p>
       </button>
     </div>
@@ -965,6 +1008,7 @@ function AanwezigenSectie() {
 // Radio knop (behouden uit vorige versie)
 // =============================================================================
 function RadioKnop() {
+  const { t } = useUiTaal();
   const audioRef = useRef<HTMLAudioElement>(null);
   const [speelt, setSpeelt] = useState(false);
   const [streamIdx, setStreamIdx] = useState(0);
@@ -1008,8 +1052,8 @@ function RadioKnop() {
       <button
         type="button"
         onClick={toggle}
-        aria-label={speelt ? "Stop lounge radio" : "Speel lounge radio"}
-        title={speelt ? "Radio stoppen" : "Lounge radio"}
+        aria-label={speelt ? t("lounge_radio_stop") : t("lounge_radio_speel")}
+        title={speelt ? t("lounge_radio_stoppen") : t("lounge_radio_speel")}
         className="grid h-8 w-8 place-items-center rounded-full border transition hover:scale-105"
         style={
           speelt
@@ -1027,13 +1071,14 @@ function RadioKnop() {
 // Onthaal — hero + kamer grid (verbatim uit bundle: function rHe)
 // =============================================================================
 function Onthaal({ gaaNaar, gaaNaarWebshop }: { gaaNaar: (id: string) => void; gaaNaarWebshop?: () => void }) {
+  const { t } = useUiTaal();
   return (
     <div>
       {/* Hero sectie — verbatim uit rHe */}
       <section className="relative overflow-hidden rounded-3xl border border-border">
         <img
           src="/lounge/img/onthaal.jpg"
-          alt="Het zuiderse onthaal van de TAPAS Lounge bij gouden licht."
+          alt={t("lounge_onthaal_img_alt")}
           className="h-[44vh] min-h-[280px] w-full object-cover sm:h-[56vh]"
           loading="eager"
         />
@@ -1046,24 +1091,24 @@ function Onthaal({ gaaNaar, gaaNaarWebshop }: { gaaNaar: (id: string) => void; g
           }}
         />
         <div className="absolute inset-x-0 bottom-0 p-6 sm:p-10">
-          <Eyebrow>Welkom in de Lounge</Eyebrow>
+          <Eyebrow>{t("lounge_onthaal_eyebrow")}</Eyebrow>
           <h1 className="mt-3 max-w-2xl font-serif text-3xl font-semibold leading-[1.1] tracking-tight text-foreground sm:text-[2.75rem]">
-            Hier ontmoeten de mensen achter de werelden elkaar.
+            {t("lounge_onthaal_titel")}
           </h1>
           <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-            Geen titels, geen diploma's, geen rollen — alleen mensen die vanuit hun talent willen bijdragen aan een betere wereld. Adem even uit. Je bent aangekomen.
+            {t("lounge_onthaal_intro")}
           </p>
         </div>
       </section>
 
       {/* Keuze sectie — verbatim uit rHe */}
       <section className="mt-10 text-center">
-        <Eyebrow>De keuze</Eyebrow>
+        <Eyebrow>{t("lounge_keuze_eyebrow")}</Eyebrow>
         <h2 className="mx-auto mt-2 max-w-xl font-serif text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-          Wil je verstillen, of anderen ontmoeten?
+          {t("lounge_keuze_titel")}
         </h2>
         <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
-          Beide horen hier thuis. Kies een kamer — je kunt altijd rustig verder dwalen naar een andere.
+          {t("lounge_keuze_intro")}
         </p>
       </section>
 
@@ -1090,12 +1135,12 @@ function Onthaal({ gaaNaar, gaaNaarWebshop }: { gaaNaar: (id: string) => void; g
                 <Icon className="h-5 w-5" />
               </div>
               <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.12em]" style={{ color: LOUNGE_KLEUR }}>
-                {kamer.eyebrow}
+                {t(kamer.eyebrow_key)}
               </p>
-              <h3 className="mt-1.5 font-serif text-xl font-semibold text-foreground">{kamer.naam}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{kamer.korte}</p>
+              <h3 className="mt-1.5 font-serif text-xl font-semibold text-foreground">{t(kamer.naam_key)}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{t(kamer.korte_key)}</p>
               <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: LOUNGE_KLEUR }}>
-                Ga naar binnen
+                {t("lounge_ga_naar_binnen")}
                 <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
               </span>
             </button>
@@ -1114,6 +1159,7 @@ function Onthaal({ gaaNaar, gaaNaarWebshop }: { gaaNaar: (id: string) => void; g
 // =============================================================================
 function LoungePagina() {
   const [, navigeer] = useLocation();
+  const { t } = useUiTaal();
   const [actieveKamer, setActieveKamer] = useState("onthaal");
   const topRef = useRef<HTMLDivElement>(null);
 
@@ -1137,23 +1183,23 @@ function LoungePagina() {
   // Render actieve kamer inhoud
   function renderKamer() {
     switch (actieveKamer) {
-      case "stilte":        return <StilteKamer />;
-      case "muziek":        return <MuziekKamer />;
-      case "webshop":       return <Webshop />;
-      case "studie":        return <KamerKomTerug titel="De Studie Kamer"    eyebrow="Verdiepen"  intro="Bibliotheek, podcasts en de Meeting-Room. Binnenkort beschikbaar voor leden."   img="/lounge/img/studiekamer.jpg"    imgAlt="De Studie Kamer" />;
-      case "talentencafe":  return <KamerKomTerug titel="Het Talentencafé"   eyebrow="Ontmoeten"  intro="Gesprekken aan thematische tafels. Binnenkort beschikbaar voor leden."           img="/lounge/img/talentencafe.jpg"   imgAlt="Het Talentencafé" />;
-      case "inspiratiewand":return <KamerKomTerug titel="De Inspiratiewand"  eyebrow="Herkennen"  intro="Talentportretten van leden, opt-in. Binnenkort beschikbaar voor leden."          img="/lounge/img/inspiratiewand.jpg" imgAlt="De Inspiratiewand" />;
-      case "werkplaats":    return <KamerKomTerug titel="De Werkplaats"      eyebrow="Co-creëren" intro="Schrijven en creatieve expressie samen. Binnenkort beschikbaar voor leden."      img="/lounge/img/werkplaats.jpg"     imgAlt="De Werkplaats" />;
-      case "reflectie":     return <KamerKomTerug titel="De Reflectiekamer"  eyebrow="Bezinnen"   intro="Een strikt privé groeidagboek. Binnenkort beschikbaar voor leden."               img="/lounge/img/reflectie.jpg"      imgAlt="De Reflectiekamer" />;
-      case "terras":        return <KamerKomTerug titel="Het Buitenterras"   eyebrow="Samenkomen" intro="Live sessies en seizoensmomenten. Binnenkort beschikbaar voor leden."            />;
-      default:              return <><Onthaal gaaNaar={gaaNaar} /><AanwezigenSectie /></>;
+      case "stilte":         return <StilteKamer />;
+      case "muziek":         return <MuziekKamer />;
+      case "webshop":        return <Webshop />;
+      case "studie":         return <KamerKomTerug titel={t("lounge_kamer_studie_naam")}         eyebrow={t("lounge_kamer_studie_eyebrow")}         intro={t("lounge_kamer_binnenkort_studie")}         img="/lounge/img/studiekamer.jpg"    imgAlt={t("lounge_studie_img_alt")} />;
+      case "talentencafe":   return <KamerKomTerug titel={t("lounge_kamer_talentencafe_naam")}   eyebrow={t("lounge_kamer_talentencafe_eyebrow")}   intro={t("lounge_kamer_binnenkort_talentencafe")}   img="/lounge/img/talentencafe.jpg"   imgAlt={t("lounge_talentencafe_img_alt")} />;
+      case "inspiratiewand": return <KamerKomTerug titel={t("lounge_kamer_inspiratiewand_naam")} eyebrow={t("lounge_kamer_inspiratiewand_eyebrow")} intro={t("lounge_kamer_binnenkort_inspiratiewand")} img="/lounge/img/inspiratiewand.jpg" imgAlt={t("lounge_inspiratiewand_img_alt")} />;
+      case "werkplaats":     return <KamerKomTerug titel={t("lounge_kamer_werkplaats_naam")}     eyebrow={t("lounge_kamer_werkplaats_eyebrow")}     intro={t("lounge_kamer_binnenkort_werkplaats")}     img="/lounge/img/werkplaats.jpg"     imgAlt={t("lounge_werkplaats_img_alt")} />;
+      case "reflectie":      return <KamerKomTerug titel={t("lounge_kamer_reflectie_naam")}      eyebrow={t("lounge_kamer_reflectie_eyebrow")}      intro={t("lounge_kamer_binnenkort_reflectie")}      img="/lounge/img/reflectie.jpg"      imgAlt={t("lounge_reflectie_img_alt")} />;
+      case "terras":         return <KamerKomTerug titel={t("lounge_kamer_terras_naam")}         eyebrow={t("lounge_kamer_terras_eyebrow")}         intro={t("lounge_kamer_binnenkort_terras")}         />;
+      default:               return <><Onthaal gaaNaar={gaaNaar} /><AanwezigenSectie /></>;
     }
   }
 
   return (
     <div className="lounge-pagina min-h-[100dvh] bg-background">
-      {/* AppHeader — verbatim: a.jsx(St,{}) */}
-      <AppHeader right={<RadioKnop />} />
+      {/* AppHeader — WereldNav vervangt RadioKnop zodat taalkiezer beschikbaar is */}
+      <AppHeader right={<WereldNav />} />
 
       <main className="relative mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
         {/* Achtergrond glow — verbatim uit pHe */}
@@ -1172,12 +1218,12 @@ function LoungePagina() {
             style={{ background: `hsl(var(${LOUNGE_VAR})/0.14)`, color: LOUNGE_KLEUR, borderColor: `hsl(var(${LOUNGE_VAR})/0.4)` }}
           >
             <Sparkles className="h-3.5 w-3.5" />
-            TAPAS Lounge
+            {t("lounge_breadcrumb")}
           </span>
           {actieveKamer !== "onthaal" && (
             <>
               <span className="text-muted-foreground">·</span>
-              <span className="text-sm font-medium text-foreground">{KAMER_NAMEN[actieveKamer]}</span>
+              <span className="text-sm font-medium text-foreground">{t(KAMERS.find((k) => k.id === actieveKamer)?.naam_key ?? "lounge_breadcrumb")}</span>
             </>
           )}
         </div>
@@ -1192,7 +1238,7 @@ function LoungePagina() {
               className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" />
-              Terug naar de voordeur
+              {t("lounge_nav_voordeur")}
             </button>
           ) : (
             <button
@@ -1202,7 +1248,7 @@ function LoungePagina() {
               className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" />
-              Terug naar het onthaal
+              {t("lounge_nav_onthaal")}
             </button>
           )}
         </div>
@@ -1221,10 +1267,10 @@ function LoungePagina() {
               style={{ color: LOUNGE_KLEUR, borderColor: `hsl(var(${LOUNGE_VAR})/0.5)`, background: `hsl(var(${LOUNGE_VAR})/0.10)` }}
             >
               <ArrowLeft className="h-4 w-4" />
-              Terug naar het onthaal
+              {t("lounge_nav_onthaal")}
             </button>
             <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-              Of dwaal verder
+              {t("lounge_of_dwaal_verder")}
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               {KAMERS.filter((k) => k.id !== actieveKamer).map((k) => (
@@ -1235,7 +1281,7 @@ function LoungePagina() {
                   data-testid={`spring-${k.id}`}
                   className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:text-foreground"
                 >
-                  {k.naam}
+                  {t(k.naam_key)}
                 </button>
               ))}
             </div>
@@ -1245,7 +1291,7 @@ function LoungePagina() {
         {/* Footer — verbatim uit pHe */}
         <footer className="mt-12 border-t border-border pt-6">
           <p className="text-center text-xs leading-relaxed text-muted-foreground">
-            TAPAS Lounge · de ontmoetingsplek boven de twee werelden · met aandacht, zonder oordeel
+            {t("lounge_footer")}
           </p>
         </footer>
       </main>

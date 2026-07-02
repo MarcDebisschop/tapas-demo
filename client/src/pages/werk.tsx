@@ -10,16 +10,29 @@
 import { useLocation, Link } from "wouter";
 import { AppHeader } from "@/components/Brand";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   ArrowLeft,
   ArrowRight,
   CircleUserRound,
   Compass,
+  Languages,
   Users,
 } from "lucide-react";
+import { TALEN, TAAL_NAMEN, TAAL_CODES, normaliseerTaal } from "@shared/i18n";
+import { useUiTaal } from "@/contexts/TaalContext";
 
-// Mm — WereldNav (verbatim from bundle: taal-indicator + terug-naar-voordeur)
+// Mm — WereldNav: taalkiezer (gedeeld/gepersisteerd) + terug-naar-voordeur
+// Voorheen toonde dit een statische "NL"-indicator; nu een echte taalkiezer
+// die de gedeelde UI-taal aanstuurt, zodat de switch ook hier werkt.
 function WereldNav() {
   const [, navigate] = useLocation();
+  const { uiTaal, setUiTaal, t } = useUiTaal();
 
   function handleTerug() {
     navigate("/");
@@ -27,13 +40,23 @@ function WereldNav() {
 
   return (
     <div className="flex items-center gap-2">
-      <span
-        className="select-none px-2 py-1.5 font-mono text-[13px] text-muted-foreground"
-        data-testid="lang-indicator"
-        aria-label="Taal: Nederlands"
-      >
-        NL
-      </span>
+      <Select value={uiTaal} onValueChange={(v) => setUiTaal(normaliseerTaal(v))}>
+        <SelectTrigger
+          className="h-9 w-auto gap-1.5 px-2.5"
+          data-testid="select-ui-taal"
+          aria-label={t("taal_kiezer_label")}
+        >
+          <Languages className="h-4 w-4 text-muted-foreground" />
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {TALEN.map((taal) => (
+            <SelectItem key={taal} value={taal} data-testid={`option-taal-${taal}`}>
+              {TAAL_CODES[taal]} · {TAAL_NAMEN[taal]}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <button
         type="button"
         onClick={handleTerug}
@@ -41,7 +64,7 @@ function WereldNav() {
         data-testid="button-voordeur"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
-        Voordeur
+        {t("wereld_nav_voordeur")}
       </button>
     </div>
   );
@@ -106,38 +129,36 @@ function RolKaart({
   );
 }
 
-// E8e[werk] data (exact uit bundle)
-const werkData = {
-  slug: "werk",
-  kleurVar: "--werk",
-  badge: "Wereld — werk & organisatie",
-  eyebrow: "Werk & organisatie",
-  titel: "Mobiliseer je talent op het werk",
-  intro:
-    "Koel, helder en stabiel. Hier wordt talent herkend en geleid — voor wie mensen begeleidt én voor wie zelf op verkenning gaat.",
-  begeleider: {
-    eyebrow: "Voor begeleiders & organisaties",
-    titel: "Bouw, verstuur & begeleid",
-    body: "Nodig medewerkers uit, volg de voortgang en lees rapporten — individueel, in teams en op organisatieniveau. Alles in één veilige, meertalige beheeromgeving.",
-    href: "/voor-begeleiders",
-    cta: "Naar de beheeromgeving",
-    icon: Users,
-  },
-  deelnemer: {
-    eyebrow: "Voor deelnemers",
-    titel: "Je TaPas verkennen op een veilige plek",
-    body: "Een heldere, laagdrempelige weg naar je eigen profiel. Neem rustig de tijd — je bent op je plek, en je bent al onderweg.",
-    href: "/voor-deelnemers",
-    cta: "Naar de poort",
-    icon: CircleUserRound,
-  },
-};
-
 // T8e component (exact uit bundle) — wereld-pagina voor /werk
+// Teksten via gedeelde i18n (t); structuur (kleur, href, icoon) blijft lokaal.
 export default function Werk() {
   const [, navigate] = useLocation();
-  const r = werkData;
-  const kleur = `hsl(var(${r.kleurVar}))`;
+  const { t } = useUiTaal();
+  const kleurVar = "--werk";
+  const kleur = `hsl(var(${kleurVar}))`;
+  const r = {
+    kleurVar,
+    badge: t("werk_badge"),
+    eyebrow: t("werk_eyebrow"),
+    titel: t("werk_titel"),
+    intro: t("werk_intro"),
+    begeleider: {
+      eyebrow: t("werk_beg_eyebrow"),
+      titel: t("werk_beg_titel"),
+      body: t("werk_beg_body"),
+      href: "/voor-begeleiders",
+      cta: t("werk_beg_cta"),
+      icon: Users,
+    },
+    deelnemer: {
+      eyebrow: t("werk_deel_eyebrow"),
+      titel: t("werk_deel_titel"),
+      body: t("werk_deel_body"),
+      href: "/voor-deelnemers",
+      cta: t("werk_deel_cta"),
+      icon: CircleUserRound,
+    },
+  };
 
   return (
     <div className="wereld-pagina min-h-[100dvh] bg-background">
@@ -189,10 +210,10 @@ export default function Werk() {
             className="font-mono text-xs uppercase tracking-[0.16em]"
             style={{ color: kleur }}
           >
-            Kies je ingang
+            {t("werk_kies_ingang")}
           </p>
           <h2 className="mt-2 font-serif text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            Begeleid je, of verken je zelf?
+            {t("werk_kies_vraag")}
           </h2>
         </div>
 
@@ -210,13 +231,13 @@ export default function Werk() {
           className="mt-10 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
-          Terug naar de voordeur
+          {t("werk_terug_voordeur")}
         </button>
 
         {/* Footer */}
         <footer className="mt-12 border-t border-border pt-6">
           <p className="text-center text-xs leading-relaxed text-muted-foreground">
-            TaPas-platform · {r.eyebrow} · dezelfde routes, dezelfde zorg
+            TaPas-platform · {r.eyebrow} · {t("werk_footer_note")}
           </p>
         </footer>
       </main>

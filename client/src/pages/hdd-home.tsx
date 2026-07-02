@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ArrowRight, Compass, Layers, GitBranch } from "lucide-react";
+import { useUiTaal } from "@/contexts/TaalContext";
 
 /**
  * Human Due Diligence — facilitatorscherm (vlaggenschip-traject).
@@ -84,6 +85,7 @@ function FaseKaart(props: {
 }
 
 export default function HddHome() {
+  const { t: n } = useUiTaal();
   const { data: trajecten } = useQuery<Traject[]>({ queryKey: ["/api/hdd/trajecten"] });
   const [boardNaam, setBoardNaam] = useState("");
   const [orgLabel, setOrgLabel] = useState("");
@@ -118,22 +120,20 @@ export default function HddHome() {
             marginBottom: 8,
           }}
         >
-          Vlaggenschip-instrument
+          {n("hdd_eyebrow")}
         </div>
-        <h1 style={{ color: INK, fontSize: 30, margin: "0 0 6px" }}>Human Due Diligence</h1>
+        <h1 style={{ color: INK, fontSize: 30, margin: "0 0 6px" }}>{n("hdd_titel")}</h1>
         <p style={{ color: SUB, fontSize: 16, maxWidth: 680, lineHeight: 1.55 }}>
-          Een gefaseerde, wetenschappelijk onderbouwde diagnose van het menselijk kapitaal van
-          een board. Eén team, dezelfde mensen, door twee fasen heen — met een Go/No-Go-scharnier
-          dat bepaalt of er onder de motorkap gekeken moet worden.
+          {n("hdd_intro")}
         </p>
 
         {/* Fasen-overzicht */}
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "stretch", marginTop: 24 }}>
           <FaseKaart
-            nr="Fase 1 · Verkenning"
-            titel="Teamfoto + energiebalans"
+            nr={n("hdd_fase1_nr")}
+            titel={n("hdd_fase1_titel")}
             instrumenten="TaPas Teamscan + 2MINSCAN"
-            uitleg="Twee links per board member. Levert de teamdynamiek (Lencioni 6-laags), de energiebalans en de risicosignalen."
+            uitleg={n("hdd_fase1_uitleg")}
             icoon={<Layers className="h-4 w-4" />}
           />
           <div
@@ -151,17 +151,17 @@ export default function HddHome() {
           >
             <GitBranch className="h-5 w-5" style={{ color: ACCENT, marginBottom: 8 }} />
             <div style={{ color: INK, fontSize: 13, fontWeight: 700, textAlign: "center" }}>
-              Go / No-Go
+              {n("hdd_gonogo_titel")}
             </div>
             <div style={{ color: SUB, fontSize: 11, textAlign: "center", marginTop: 2 }}>
-              "Onder de motorkap?"
+              {n("hdd_gonogo_sub")}
             </div>
           </div>
           <FaseKaart
-            nr="Fase 2 · Diepteanalyse"
-            titel="Talent, drivers & cognitie"
+            nr={n("hdd_fase2_nr")}
+            titel={n("hdd_fase2_titel")}
             instrumenten="T4P Business Kompas (per lid)"
-            uitleg="Talentkaart, driverpatroon en het geaggregeerde cognitieve profiel (Elliott Jaques-indicatie), SWOT en roladviezen."
+            uitleg={n("hdd_fase2_uitleg")}
             icoon={<Compass className="h-4 w-4" />}
           />
         </div>
@@ -184,7 +184,7 @@ export default function HddHome() {
                 fontWeight: 600,
               }}
             >
-              Bekijk het Engelstalige vlaggenschiprapport (Investor &amp; Team)
+              {n("hdd_rapport_link")}
               <ArrowRight className="h-4 w-4" />
             </a>
           </Link>
@@ -200,35 +200,35 @@ export default function HddHome() {
             marginTop: 24,
           }}
         >
-          <h2 style={{ color: INK, fontSize: 18, marginTop: 0 }}>Nieuw board-traject</h2>
+          <h2 style={{ color: INK, fontSize: 18, marginTop: 0 }}>{n("hdd_nieuw_titel")}</h2>
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-end" }}>
             <div style={{ flex: "1 1 220px" }}>
-              <Label>Board / team</Label>
+              <Label>{n("hdd_board_label")}</Label>
               <Input
                 value={boardNaam}
                 onChange={(e) => setBoardNaam(e.target.value)}
-                placeholder="bv. Directieteam Acme NV"
+                placeholder={n("hdd_board_ph")}
                 data-testid="input-board-naam"
               />
             </div>
             <div style={{ flex: "1 1 180px" }}>
-              <Label>Organisatie (optioneel)</Label>
+              <Label>{n("hdd_org_label")}</Label>
               <Input
                 value={orgLabel}
                 onChange={(e) => setOrgLabel(e.target.value)}
-                placeholder="bv. Acme NV"
+                placeholder={n("hdd_org_ph")}
                 data-testid="input-org-label"
               />
             </div>
             <div style={{ flex: "0 1 200px" }}>
-              <Label>Context</Label>
+              <Label>{n("hdd_context_label")}</Label>
               <Select value={context} onValueChange={setContext}>
                 <SelectTrigger data-testid="select-context">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="self-screening">Matuur team — self-screening</SelectItem>
-                  <SelectItem value="ma">M&amp;A — overname</SelectItem>
+                  <SelectItem value="self-screening">{n("hdd_context_self")}</SelectItem>
+                  <SelectItem value="ma">{n("hdd_context_ma")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -237,16 +237,16 @@ export default function HddHome() {
               disabled={!boardNaam.trim() || maak.isPending}
               data-testid="button-maak-traject"
             >
-              Traject starten <ArrowRight className="ml-1 h-4 w-4" />
+              {n("hdd_start_btn")} <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
         </div>
 
         {/* Lopende trajecten */}
         <div style={{ marginTop: 28 }}>
-          <h2 style={{ color: INK, fontSize: 18 }}>Lopende trajecten</h2>
+          <h2 style={{ color: INK, fontSize: 18 }}>{n("hdd_lopend_titel")}</h2>
           {(!trajecten || trajecten.length === 0) && (
-            <p style={{ color: SUB, fontSize: 14 }}>Nog geen trajecten. Start hierboven een board-traject.</p>
+            <p style={{ color: SUB, fontSize: 14 }}>{n("hdd_leeg")}</p>
           )}
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {trajecten?.map((tr) => (
@@ -268,7 +268,7 @@ export default function HddHome() {
                     <div style={{ color: INK, fontSize: 15, fontWeight: 600 }}>{tr.boardNaam}</div>
                     <div style={{ color: SUB, fontSize: 12 }}>
                       {tr.orgLabel ? `${tr.orgLabel} · ` : ""}
-                      {tr.context === "ma" ? "M&A-overname" : "Self-screening"} · status: {tr.status}
+                      {tr.context === "ma" ? n("hdd_ctx_ma_kort") : n("hdd_ctx_self_kort")} · {n("hdd_status_prefix")} {tr.status}
                     </div>
                   </div>
                   <ArrowRight className="h-4 w-4" style={{ color: ACCENT }} />

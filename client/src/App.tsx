@@ -59,6 +59,7 @@ import T4SportsVragenlijst from "@/pages/t4sports-vragenlijst";
 import T4SportsDashboard from "@/pages/t4sports-dashboard";
 import T4SportsModules from "@/pages/t4sports-modules";
 import ScrollNaarBoven from "@/components/ScrollNaarBoven";
+import { TaalProvider } from "@/contexts/TaalContext";
 
 function AdminStub({ titel, omschrijving }: { titel: string; omschrijving: string }) {
   return (
@@ -192,6 +193,7 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
+          <TaalProvider>
           <TooltipProvider>
             <Toaster />
             {!introDone && (
@@ -223,6 +225,7 @@ function App() {
               </Router>
             )}
           </TooltipProvider>
+          </TaalProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>

@@ -13,6 +13,13 @@ import { useLocation, Link } from "wouter";
 import { AppHeader } from "@/components/Brand";
 import { Button } from "@/components/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   ClipboardList,
   Send,
   TrendingUp,
@@ -29,17 +36,21 @@ import {
   ShieldCheck,
   ArrowRight,
   UserSearch,
+  Languages,
 } from "lucide-react";
+import { TALEN, TAAL_NAMEN, TAAL_CODES, normaliseerTaal } from "@shared/i18n";
+import { useUiTaal } from "@/contexts/TaalContext";
 
 // --studie CSS variable (verbatim: tf / Cm / Bm = "--studie", Wo/qa/cs/Ql = hsl(var(...)))
 const STUDIE_VAR = "--studie";
 const cs = `hsl(var(${STUDIE_VAR}))`;
 
 // =============================================================================
-// WereldNav (wp) — verbatim from bundle: taal-indicator + terug-naar-voordeur
+// WereldNav (wp) — taalkiezer (gedeeld/gepersisteerd) + terug-naar-voordeur
 // =============================================================================
 function WereldNav() {
   const [, navigate] = useLocation();
+  const { uiTaal, setUiTaal, t } = useUiTaal();
 
   function handleTerug() {
     navigate("/");
@@ -47,13 +58,23 @@ function WereldNav() {
 
   return (
     <div className="flex items-center gap-2">
-      <span
-        className="select-none px-2 py-1.5 font-mono text-[13px] text-muted-foreground"
-        data-testid="lang-indicator"
-        aria-label="Taal: Nederlands"
-      >
-        NL
-      </span>
+      <Select value={uiTaal} onValueChange={(v) => setUiTaal(normaliseerTaal(v))}>
+        <SelectTrigger
+          className="h-9 w-auto gap-1.5 px-2.5"
+          data-testid="select-ui-taal"
+          aria-label={t("taal_kiezer_label")}
+        >
+          <Languages className="h-4 w-4 text-muted-foreground" />
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {TALEN.map((taal) => (
+            <SelectItem key={taal} value={taal} data-testid={`option-taal-${taal}`}>
+              {TAAL_CODES[taal]} · {TAAL_NAMEN[taal]}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <button
         type="button"
         onClick={handleTerug}
@@ -61,7 +82,7 @@ function WereldNav() {
         data-testid="button-voordeur"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
-        Voordeur
+        {t("wereld_nav_voordeur")}
       </button>
     </div>
   );
@@ -115,31 +136,33 @@ function StudieKompasSVG() {
 // =============================================================================
 // J8e — rolkaart data for /studie main (verbatim)
 // =============================================================================
-const rolkaartData = [
-  {
-    eyebrow: "Voor scholen & begeleiders",
-    titel: "Begeleid, verstuur & volg",
-    body: "Nodig leerlingen en studenten uit, volg hun verkenning en lees hun studiekompas — individueel en per klas. Breng waar nodig ook je team en leiding in kaart.",
-    href: "/studie/scholen",
-    cta: "Naar de beheeromgeving",
-    icon: GraduationCap,
-    testid: "rolkaart-scholen",
-  },
-  {
-    eyebrow: "Voor leerlingen & studenten",
-    titel: "Ontdek welke koers bij je talent past",
-    body: "Een rustige, uitnodigende weg naar je eigen studiekompas. Geen druk, geen oordeel — alleen aandacht voor wat jou doet schitteren.",
-    href: "/studie/leerlingen",
-    cta: "Start jouw verkenning",
-    icon: CircleUserRound,
-    testid: "rolkaart-leerlingen",
-  },
-];
+function getRolkaartData(t: (k: string) => string) {
+  return [
+    {
+      eyebrow: t("studie_rol_scholen_eyebrow"),
+      titel: t("studie_rol_scholen_titel"),
+      body: t("studie_rol_scholen_body"),
+      href: "/studie/scholen",
+      cta: t("studie_rol_scholen_cta"),
+      icon: GraduationCap,
+      testid: "rolkaart-scholen",
+    },
+    {
+      eyebrow: t("studie_rol_leerlingen_eyebrow"),
+      titel: t("studie_rol_leerlingen_titel"),
+      body: t("studie_rol_leerlingen_body"),
+      href: "/studie/leerlingen",
+      cta: t("studie_rol_leerlingen_cta"),
+      icon: CircleUserRound,
+      testid: "rolkaart-leerlingen",
+    },
+  ];
+}
 
 // =============================================================================
 // Z8e — rolkaart component (verbatim)
 // =============================================================================
-function Rolkaart({ rol }: { rol: typeof rolkaartData[0] }) {
+function Rolkaart({ rol }: { rol: ReturnType<typeof getRolkaartData>[0] }) {
   const Icon = rol.icon;
   return (
     <Link href={rol.href}>
@@ -178,6 +201,8 @@ function Rolkaart({ rol }: { rol: typeof rolkaartData[0] }) {
 // =============================================================================
 export default function Studie() {
   const [, navigate] = useLocation();
+  const { t } = useUiTaal();
+  const rolkaartData = getRolkaartData(t);
 
   return (
     <div className="wereld-pagina min-h-[100dvh] bg-background">
@@ -202,20 +227,20 @@ export default function Studie() {
           }}
         >
           <Compass className="h-3.5 w-3.5" />
-          Wereld — studie
+          {t("studie_badge")}
         </span>
 
         {/* hero grid */}
         <div className="mt-5 grid items-center gap-8 lg:grid-cols-[1.4fr_1fr]">
           <div>
             <p className="font-mono text-xs uppercase tracking-[0.16em]" style={{ color: cs }}>
-              Studie
+              {t("studie_eyebrow")}
             </p>
             <h1 className="mt-3 font-serif text-3xl font-semibold leading-[1.1] tracking-tight text-foreground sm:text-[2.75rem]">
-              Mobiliseer je talent in je studie
+              {t("studie_titel")}
             </h1>
             <p className="mt-4 max-w-xl text-base leading-relaxed text-muted-foreground">
-              Warm, sereen en uitnodigend. Hier wordt talent ontdekt en gevormd — voor wie jongeren begeleidt én voor wie zelf zijn studiekoers zoekt.
+              {t("studie_intro")}
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Button
@@ -224,14 +249,14 @@ export default function Studie() {
                 style={{ background: cs, color: "#1a1a1a" }}
               >
                 <Heart className="mr-1.5 h-4 w-4" />
-                Ik ben leerling of student
+                {t("studie_btn_leerling")}
               </Button>
               <Button
                 variant="outline"
                 data-testid="button-start-school"
                 onClick={() => navigate("/studie/scholen")}
               >
-                Ik begeleid een school
+                {t("studie_btn_school")}
               </Button>
             </div>
           </div>
@@ -244,10 +269,10 @@ export default function Studie() {
         <section className="mt-12">
           <div className="mx-auto max-w-2xl text-center">
             <p className="font-mono text-xs uppercase tracking-[0.16em]" style={{ color: cs }}>
-              Kies je ingang
+              {t("studie_kies_ingang")}
             </p>
             <h2 className="mt-2 font-serif text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-              Begeleid je, of verken je zelf?
+              {t("studie_kies_vraag")}
             </h2>
           </div>
           <div className="mt-7 grid gap-5 sm:grid-cols-2">
@@ -275,14 +300,14 @@ export default function Studie() {
                     <Sparkles className="h-5 w-5" aria-hidden="true" />
                   </div>
                   <p className="font-mono text-xs uppercase tracking-[0.16em]" style={{ color: cs }}>
-                    De instrumenten
+                    {t("studie_instr_eyebrow")}
                   </p>
                 </div>
                 <h3 className="mt-3 font-serif text-xl font-semibold text-foreground sm:text-2xl">
-                  Eén kompas per vraag
+                  {t("studie_instr_titel")}
                 </h3>
                 <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-                  Het studiekompas voor leerlingen en studenten, plus de instrumenten voor teams en leiding binnen de school — telkens tegen het onderwijs-tarief.
+                  {t("studie_instr_body")}
                 </p>
               </div>
               <Button
@@ -291,7 +316,7 @@ export default function Studie() {
                 onClick={() => navigate("/studie/instrumenten")}
                 className="shrink-0"
               >
-                Bekijk de instrumenten
+                {t("studie_instr_cta")}
                 <ArrowRight className="ml-1.5 h-4 w-4" />
               </Button>
             </div>
@@ -307,7 +332,7 @@ export default function Studie() {
             <div className="flex items-start gap-3">
               <Building2 className="mt-0.5 h-5 w-5 shrink-0" style={{ color: cs }} aria-hidden="true" />
               <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
-                Een school is meer dan haar leerlingen. Binnen dezelfde omgeving breng je ook lerarenteams en directie in kaart, geef je elke jongere vooraf de keuze om mee te doen, en blijven alle gegevens binnen je eigen schoolomgeving.
+                {t("studie_school_context")}
               </p>
             </div>
           </div>
@@ -321,14 +346,14 @@ export default function Studie() {
           className="mt-10 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
-          Terug naar de voordeur
+          {t("studie_terug_voordeur")}
         </button>
 
         {/* footer */}
         <footer className="mt-12 border-t border-border pt-6">
           <p className="flex items-center justify-center gap-2 text-center text-xs leading-relaxed text-muted-foreground">
             <Compass className="h-3.5 w-3.5" style={{ color: cs }} aria-hidden="true" />
-            TaPas-platform · Studie · dezelfde routes, dezelfde zorg
+            TaPas-platform · {t("studie_eyebrow")} · {t("studie_footer_note")}
           </p>
         </footer>
       </main>
@@ -340,57 +365,64 @@ export default function Studie() {
 // tze — scholen stappen data (verbatim)
 // Icons: kV=ClipboardList, db=Send, RP=ChartLine→TrendingUp
 // =============================================================================
-const scholenStappen = [
-  {
-    icon: ClipboardList,
-    titel: "Richt je school in",
-    body: "Maak je schoolomgeving aan en bepaal wie begeleidt. Eén veilige, meertalige beheeromgeving voor je hele team.",
-  },
-  {
-    icon: Send,
-    titel: "Nodig leerlingen uit",
-    body: "Per leerling of per klas, met een persoonlijke link. Iedere jongere geeft eerst zelf toestemming — consent vooraf.",
-  },
-  {
-    icon: TrendingUp,
-    titel: "Volg en lees mee",
-    body: "Volg de voortgang en lees elk studiekompas — individueel en per klas — zodra het klaar is.",
-  },
-];
+function getScholenStappen(t: (k: string) => string) {
+  return [
+    {
+      icon: ClipboardList,
+      titel: t("studie_sc_stap1_titel"),
+      body: t("studie_sc_stap1_body"),
+    },
+    {
+      icon: Send,
+      titel: t("studie_sc_stap2_titel"),
+      body: t("studie_sc_stap2_body"),
+    },
+    {
+      icon: TrendingUp,
+      titel: t("studie_sc_stap3_titel"),
+      body: t("studie_sc_stap3_body"),
+    },
+  ];
+}
 
 // =============================================================================
 // nze — scholen instrumenten data (verbatim)
 // Icons: Lu=GraduationCap, Su=Users, Ug=Building2
 // =============================================================================
-const scholenInstrumenten = [
-  {
-    icon: GraduationCap,
-    eyebrow: "Leerlingen & studenten",
-    titel: "Het studiekompas",
-    body: "T4Students en T4Teens begeleiden jongeren naar een studiekeuze die bij hun talent past — als rustige verkenning, niet als test.",
-    chips: ["T4Students", "T4Teens"],
-  },
-  {
-    icon: Users,
-    eyebrow: "Lerarenteams & vakgroepen",
-    titel: "Sterkere teams",
-    body: "Laat een vakgroep of lerarenteam zichzelf in kaart brengen: hoe vullen talenten elkaar aan, waar zit de energie, waar de spanning.",
-    chips: ["TaPas Teamscan", "T4P Business Kompas"],
-  },
-  {
-    icon: Building2,
-    eyebrow: "Directie & schoolleiding",
-    titel: "Leiding in beeld",
-    body: "Ook een directie of schoolleiding kan individueel of als team gescand worden — binnen dezelfde schoolcontext en tegen het onderwijs-tarief.",
-    chips: ["T4P Business Kompas", "T4Recruitment"],
-  },
-];
+function getScholenInstrumenten(t: (k: string) => string) {
+  return [
+    {
+      icon: GraduationCap,
+      eyebrow: t("studie_sc_inst1_eyebrow"),
+      titel: t("studie_sc_inst1_titel"),
+      body: t("studie_sc_inst1_body"),
+      chips: ["T4Students", "T4Teens"],
+    },
+    {
+      icon: Users,
+      eyebrow: t("studie_sc_inst2_eyebrow"),
+      titel: t("studie_sc_inst2_titel"),
+      body: t("studie_sc_inst2_body"),
+      chips: ["TaPas Teamscan", "T4P Business Kompas"],
+    },
+    {
+      icon: Building2,
+      eyebrow: t("studie_sc_inst3_eyebrow"),
+      titel: t("studie_sc_inst3_titel"),
+      body: t("studie_sc_inst3_body"),
+      chips: ["T4P Business Kompas", "T4Recruitment"],
+    },
+  ];
+}
 
 // =============================================================================
 // rze — /studie/scholen component (verbatim)
 // =============================================================================
 export function StudieScholenPagina() {
   const [, navigate] = useLocation();
+  const { t } = useUiTaal();
+  const scholenStappen = getScholenStappen(t);
+  const scholenInstrumenten = getScholenInstrumenten(t);
 
   return (
     <div className="wereld-pagina min-h-[100dvh] bg-background">
@@ -415,14 +447,14 @@ export function StudieScholenPagina() {
           }}
         >
           <GraduationCap className="h-3.5 w-3.5" />
-          Studie — voor scholen &amp; begeleiders
+          {t("studie_sc_badge")}
         </span>
 
         <h1 className="mt-4 font-serif text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-          Begeleid, verstuur &amp; volg
+          {t("studie_sc_titel")}
         </h1>
         <p className="mt-3 max-w-2xl text-base leading-relaxed text-muted-foreground">
-          Nodig leerlingen en studenten uit, volg hun verkenning en lees hun studiekompas — individueel en per klas. En waar nodig breng je ook je eigen team en leiding in kaart. Alles in één veilige, meertalige beheeromgeving.
+          {t("studie_sc_intro")}
         </p>
 
         {/* CTA buttons */}
@@ -432,13 +464,13 @@ export function StudieScholenPagina() {
               data-testid="button-naar-beheer"
               style={{ background: cs, color: "#1a1a1a" }}
             >
-              Naar de beheeromgeving
+              {t("studie_sc_cta_beheer")}
               <ArrowRight className="ml-1.5 h-4 w-4" />
             </Button>
           </Link>
           <Link href="/studie/instrumenten">
             <Button variant="outline" data-testid="button-bekijk-instrumenten">
-              Bekijk de instrumenten
+              {t("studie_sc_cta_instr")}
             </Button>
           </Link>
         </div>
@@ -447,10 +479,10 @@ export function StudieScholenPagina() {
         <section className="mt-14">
           <div className="mx-auto max-w-xl text-center">
             <p className="font-mono text-xs uppercase tracking-[0.16em]" style={{ color: cs }}>
-              Zo richt je het in
+              {t("studie_sc_stap_eyebrow")}
             </p>
             <h2 className="mt-2 font-serif text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-              Van inrichten tot inzicht
+              {t("studie_sc_stap_titel")}
             </h2>
           </div>
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -484,13 +516,13 @@ export function StudieScholenPagina() {
         <section className="mt-14">
           <div className="mx-auto max-w-2xl text-center">
             <p className="font-mono text-xs uppercase tracking-[0.16em]" style={{ color: cs }}>
-              In de schoolcontext
+              {t("studie_sc_instr_eyebrow")}
             </p>
             <h2 className="mt-2 font-serif text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-              Niet alleen leerlingen
+              {t("studie_sc_instr_titel")}
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Een school is meer dan haar leerlingen. Binnen dezelfde omgeving breng je ook teams en leiding in kaart — telkens tegen het onderwijs-tarief.
+              {t("studie_sc_instr_intro")}
             </p>
           </div>
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -542,7 +574,7 @@ export function StudieScholenPagina() {
             <div className="flex items-start gap-3">
               <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" style={{ color: cs }} aria-hidden="true" />
               <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
-                Elke jongere geeft vooraf toestemming, alle scoring gebeurt op de server en je gegevens blijven binnen je eigen schoolomgeving. Meertalig, GDPR-conform en met respect voor wat elke leerling uniek maakt.
+                {t("studie_sc_privacy")}
               </p>
             </div>
           </div>
@@ -556,14 +588,14 @@ export function StudieScholenPagina() {
           className="mt-12 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
-          Terug naar de studie-wereld
+          {t("studie_sc_terug")}
         </button>
 
         {/* footer */}
         <footer className="mt-12 border-t border-border pt-6">
           <p className="flex items-center justify-center gap-2 text-center text-xs leading-relaxed text-muted-foreground">
             <Compass className="h-3.5 w-3.5" style={{ color: cs }} aria-hidden="true" />
-            TaPas-platform · Studie voor scholen &amp; begeleiders · dezelfde routes, dezelfde zorg
+            TaPas-platform · {t("studie_sc_footer")}
           </p>
         </footer>
       </main>
@@ -575,57 +607,63 @@ export function StudieScholenPagina() {
 // aze — leerlingen stappen data (verbatim)
 // Icons: TV=Heart, As=Compass, Sse=Route
 // =============================================================================
-const leerlingenStappen = [
-  {
-    nr: "1",
-    icon: Heart,
-    titel: "Je komt rustig binnen",
-    body: "Via de poort of een persoonlijke uitnodiging van je school. Je geeft eerst zelf je toestemming — niets gebeurt zonder dat.",
-  },
-  {
-    nr: "2",
-    icon: Compass,
-    titel: "Je verkent op je eigen tempo",
-    body: "Een vragenlijst in twee delen, in je eigen taal. Geen goede of foute antwoorden — alleen wat bij jou past.",
-  },
-  {
-    nr: "3",
-    icon: Route,
-    titel: "Je ontdekt je studiekompas",
-    body: "Een persoonlijk rapport dat laat zien waar je talent zit, wat je energie geeft, en welke richtingen daarbij passen.",
-  },
-];
+function getLeerlingenStappen(t: (k: string) => string) {
+  return [
+    {
+      nr: "1",
+      icon: Heart,
+      titel: t("studie_ll_stap1_titel"),
+      body: t("studie_ll_stap1_body"),
+    },
+    {
+      nr: "2",
+      icon: Compass,
+      titel: t("studie_ll_stap2_titel"),
+      body: t("studie_ll_stap2_body"),
+    },
+    {
+      nr: "3",
+      icon: Route,
+      titel: t("studie_ll_stap3_titel"),
+      body: t("studie_ll_stap3_body"),
+    },
+  ];
+}
 
 // =============================================================================
 // sze — leerlingen kompas inhoud data (verbatim)
 // Icons: ma=Sparkles, ub=Lightbulb, Sse=Route
 // =============================================================================
-const leerlingenKompass = [
-  {
-    icon: Sparkles,
-    titel: "Waar je talent zit",
-    body: "De foci en versnellers die jou typeren — niet als etiket, maar als startpunt voor je keuze.",
-  },
-  {
-    icon: Lightbulb,
-    titel: "Wat je energie geeft",
-    body: "Waar je vanzelf naartoe beweegt en waar je juist energie verliest, zodat je koers ook vol te houden is.",
-  },
-  {
-    icon: Route,
-    titel: "Welke richtingen passen",
-    body: "Studierichtingen en domeinen die aansluiten bij wie je bent — als inspiratie, niet als voorschrift.",
-  },
-];
+function getLeerlingenKompass(t: (k: string) => string) {
+  return [
+    {
+      icon: Sparkles,
+      titel: t("studie_ll_komp1_titel"),
+      body: t("studie_ll_komp1_body"),
+    },
+    {
+      icon: Lightbulb,
+      titel: t("studie_ll_komp2_titel"),
+      body: t("studie_ll_komp2_body"),
+    },
+    {
+      icon: Route,
+      titel: t("studie_ll_komp3_titel"),
+      body: t("studie_ll_komp3_body"),
+    },
+  ];
+}
 
 // =============================================================================
 // oze — leerlingen niet-beloftes list (verbatim)
 // =============================================================================
-const leerlingenNietBeloftes = [
-  "Geen test die je laat slagen of zakken.",
-  "Geen oordeel over wie je bent of wat je kunt.",
-  "Geen voorspelling die vastligt — jij houdt de koers.",
-];
+function getLeerlingenNietBeloftes(t: (k: string) => string) {
+  return [
+    t("studie_ll_niet1"),
+    t("studie_ll_niet2"),
+    t("studie_ll_niet3"),
+  ];
+}
 
 // =============================================================================
 // ize — leerlingen kompas SVG (verbatim — identical to Y8e but different width/height)
@@ -677,6 +715,10 @@ function LeerlingenKompasSVG() {
 // =============================================================================
 export function StudieLeerlingenPagina() {
   const [, navigate] = useLocation();
+  const { t } = useUiTaal();
+  const leerlingenStappen = getLeerlingenStappen(t);
+  const leerlingenKompass = getLeerlingenKompass(t);
+  const leerlingenNietBeloftes = getLeerlingenNietBeloftes(t);
 
   return (
     <div className="wereld-pagina min-h-[100dvh] bg-background">
@@ -701,14 +743,14 @@ export function StudieLeerlingenPagina() {
           }}
         >
           <Compass className="h-3.5 w-3.5" />
-          Studie — voor leerlingen &amp; studenten
+          {t("studie_ll_badge")}
         </span>
 
         <h1 className="mt-4 font-serif text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-          Ontdek welke koers bij je talent past
+          {t("studie_ll_titel")}
         </h1>
         <p className="mt-3 max-w-2xl text-base leading-relaxed text-muted-foreground">
-          Een rustige, uitnodigende weg naar je eigen studiekompas. Geen druk, geen oordeel — alleen aandacht voor wat jou doet schitteren.
+          {t("studie_ll_intro")}
         </p>
 
         {/* welcome card + kompas svg */}
@@ -718,10 +760,10 @@ export function StudieLeerlingenPagina() {
             style={{ borderLeftColor: cs }}
           >
             <h3 className="font-serif text-xl font-semibold text-foreground sm:text-2xl">
-              Welkom. Hier komt jouw koers in beeld.
+              {t("studie_ll_welkom_titel")}
             </h3>
             <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground sm:text-base">
-              Kiezen wat je wil studeren is groot. Hier helpen we je niet door te zeggen wat je moet doen, maar door te laten zien wie je bent. Neem rustig de tijd — je bent op je plek, en je bent al onderweg.
+              {t("studie_ll_welkom_body")}
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <a href="/t4teens/">
@@ -729,13 +771,13 @@ export function StudieLeerlingenPagina() {
                   data-testid="button-start-verkenning"
                   style={{ background: cs, color: "#1a1a1a" }}
                 >
-                  Start jouw verkenning
+                  {t("studie_ll_btn_start")}
                   <ArrowRight className="ml-1.5 h-4 w-4" />
                 </Button>
               </a>
               <Link href="/poort/teens">
                 <Button variant="outline" data-testid="button-heb-code">
-                  Ik heb een code
+                  {t("studie_ll_btn_code")}
                 </Button>
               </Link>
             </div>
@@ -749,13 +791,13 @@ export function StudieLeerlingenPagina() {
         <section className="mt-14">
           <div className="mx-auto max-w-xl text-center">
             <p className="font-mono text-xs uppercase tracking-[0.16em]" style={{ color: cs }}>
-              Zo werkt het
+              {t("studie_ll_stap_eyebrow")}
             </p>
             <h2 className="mt-2 font-serif text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-              Drie rustige stappen
+              {t("studie_ll_stap_titel")}
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Meer hoef je niet te onthouden.
+              {t("studie_ll_stap_hint")}
             </p>
           </div>
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -789,13 +831,13 @@ export function StudieLeerlingenPagina() {
         <section className="mt-14">
           <div className="mx-auto max-w-2xl text-center">
             <p className="font-mono text-xs uppercase tracking-[0.16em]" style={{ color: cs }}>
-              Je studiekompas
+              {t("studie_ll_komp_eyebrow")}
             </p>
             <h2 className="mt-2 font-serif text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-              Wat je aan het eind in handen hebt
+              {t("studie_ll_komp_titel")}
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              Geen cijfer en geen etiket, maar een rustig, persoonlijk beeld dat je helpt kiezen — op jouw manier.
+              {t("studie_ll_komp_intro")}
             </p>
           </div>
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
@@ -819,7 +861,7 @@ export function StudieLeerlingenPagina() {
           {/* niet-beloftes */}
           <div className="mx-auto mt-8 max-w-2xl rounded-2xl border border-border bg-card/60 p-6">
             <p className="font-mono text-xs uppercase tracking-[0.16em]" style={{ color: cs }}>
-              En net zo belangrijk
+              {t("studie_ll_niet_eyebrow")}
             </p>
             <ul className="mt-3 space-y-2">
               {leerlingenNietBeloftes.map((item) => (
@@ -835,7 +877,7 @@ export function StudieLeerlingenPagina() {
           </div>
 
           <p className="mx-auto mt-6 max-w-xl text-center text-sm italic text-muted-foreground">
-            Alles veilig, meertalig en met serverzijdige scoring. Je gegevens blijven van jou.
+            {t("studie_ll_veilig")}
           </p>
         </section>
 
@@ -846,13 +888,13 @@ export function StudieLeerlingenPagina() {
             style={{ borderLeftColor: cs }}
           >
             <p className="font-mono text-xs uppercase tracking-[0.16em]" style={{ color: cs }}>
-              Klaar om te beginnen?
+              {t("studie_ll_cta_eyebrow")}
             </p>
             <h3 className="mt-3 font-serif text-xl font-semibold text-foreground">
-              Start meteen jouw verkenning
+              {t("studie_ll_cta_titel")}
             </h3>
             <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
-              Een paar korte vragen, ongeveer tien minuten. Geen toets, geen oordeel — alleen aandacht voor wat jou doet schitteren.
+              {t("studie_ll_cta_body")}
             </p>
             <button
               type="button"
@@ -862,7 +904,7 @@ export function StudieLeerlingenPagina() {
               style={{ background: cs }}
             >
               <Sparkles className="h-4 w-4" />
-              Start mijn verkenning
+              {t("studie_ll_cta_knop")}
               <ArrowRight className="h-4 w-4" />
             </button>
           </div>
@@ -876,13 +918,13 @@ export function StudieLeerlingenPagina() {
           className="mt-12 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
-          Terug naar de studie-wereld
+          {t("studie_ll_terug")}
         </button>
 
         {/* footer */}
         <footer className="mt-12 border-t border-border pt-6">
           <p className="text-center text-xs leading-relaxed text-muted-foreground">
-            TaPas-platform · Studie voor leerlingen &amp; studenten · zelfde flow, serene indeling
+            TaPas-platform · {t("studie_ll_footer")}
           </p>
         </footer>
       </main>
@@ -893,44 +935,48 @@ export function StudieLeerlingenPagina() {
 // =============================================================================
 // cze — instrumenten voor leerlingen data (verbatim)
 // =============================================================================
-const instrLeerlingen = [
-  {
-    naam: "T4Students",
-    eyebrow: "Studiekompas",
-    body: "Voor de laatste jaren secundair en de instroom in het hoger onderwijs. Een rustige verkenning die laat zien waar talent zit en welke studierichtingen daarbij aansluiten.",
-    voorwie: "Leerlingen & studenten (16+)",
-  },
-  {
-    naam: "T4Teens",
-    eyebrow: "Studiekompas",
-    body: "De jongere tegenhanger, met taal en tempo op maat van tieners. Een eerste, voorzichtige momentopname van talent en interesse — nooit een oordeel of voorspelling.",
-    voorwie: "Jongere leerlingen",
-  },
-];
+function getInstrLeerlingen(t: (k: string) => string) {
+  return [
+    {
+      naam: "T4Students",
+      eyebrow: t("studie_in_inst_t4s_eyebrow"),
+      body: t("studie_in_inst_t4s_body"),
+      voorwie: t("studie_in_inst_t4s_voorwie"),
+    },
+    {
+      naam: "T4Teens",
+      eyebrow: t("studie_in_inst_t4t_eyebrow"),
+      body: t("studie_in_inst_t4t_body"),
+      voorwie: t("studie_in_inst_t4t_voorwie"),
+    },
+  ];
+}
 
 // =============================================================================
 // uze — instrumenten voor teams & leiding data (verbatim)
 // =============================================================================
-const instrTeams = [
-  {
-    naam: "TaPas Teamscan",
-    eyebrow: "Teams in beeld",
-    body: "Laat een vakgroep of lerarenteam zichzelf in kaart brengen: hoe vullen talenten elkaar aan, waar zit de energie, waar de spanning.",
-    voorwie: "Lerarenteams & vakgroepen",
-  },
-  {
-    naam: "T4P Business Kompas",
-    eyebrow: "Individueel talent",
-    body: "Het volwassen talentprofiel voor wie in de school een leidende of dragende rol vervult — individueel inzicht in talent, motivatie en energie.",
-    voorwie: "Directie & teamleden",
-  },
-  {
-    naam: "T4Recruitment",
-    eyebrow: "Aanwerving",
-    body: "Een gesloten kring bouwt samen één rolprofiel, bijvoorbeeld bij het aanstellen van een nieuwe directie of coördinator.",
-    voorwie: "Schoolbestuur & selectiecommissie",
-  },
-];
+function getInstrTeams(t: (k: string) => string) {
+  return [
+    {
+      naam: "TaPas Teamscan",
+      eyebrow: t("studie_in_inst_ts_eyebrow"),
+      body: t("studie_in_inst_ts_body"),
+      voorwie: t("studie_in_inst_ts_voorwie"),
+    },
+    {
+      naam: "T4P Business Kompas",
+      eyebrow: t("studie_in_inst_t4p_eyebrow"),
+      body: t("studie_in_inst_t4p_body"),
+      voorwie: t("studie_in_inst_t4p_voorwie"),
+    },
+    {
+      naam: "T4Recruitment",
+      eyebrow: t("studie_in_inst_t4r_eyebrow"),
+      body: t("studie_in_inst_t4r_body"),
+      voorwie: t("studie_in_inst_t4r_voorwie"),
+    },
+  ];
+}
 
 // =============================================================================
 // x$ — instrument card component (verbatim)
@@ -959,6 +1005,9 @@ function InstrumentCard({ inst }: { inst: { naam: string; eyebrow: string; body:
 // =============================================================================
 export function StudieInstrumentenPagina() {
   const [, navigate] = useLocation();
+  const { t } = useUiTaal();
+  const instrLeerlingen = getInstrLeerlingen(t);
+  const instrTeams = getInstrTeams(t);
 
   return (
     <div className="wereld-pagina min-h-[100dvh] bg-background">
@@ -983,14 +1032,14 @@ export function StudieInstrumentenPagina() {
           }}
         >
           <Compass className="h-3.5 w-3.5" />
-          Studie — de instrumenten
+          {t("studie_in_badge")}
         </span>
 
         <h1 className="mt-4 font-serif text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-          Eén kompas per vraag
+          {t("studie_in_titel")}
         </h1>
         <p className="mt-3 max-w-2xl text-base leading-relaxed text-muted-foreground">
-          Voor de jongere is er het studiekompas. Voor de school eromheen — teams en leiding — zijn er de instrumenten uit de werk-wereld, hier ingezet tegen het onderwijs-tarief.
+          {t("studie_in_intro")}
         </p>
 
         {/* leerlingen instrumenten */}
@@ -1004,10 +1053,10 @@ export function StudieInstrumentenPagina() {
             </div>
             <div>
               <p className="font-mono text-xs uppercase tracking-[0.16em]" style={{ color: cs }}>
-                Voor leerlingen &amp; studenten
+                {t("studie_in_ll_eyebrow")}
               </p>
               <h2 className="font-serif text-2xl font-semibold tracking-tight text-foreground">
-                Het studiekompas
+                {t("studie_in_ll_titel")}
               </h2>
             </div>
           </div>
@@ -1029,15 +1078,15 @@ export function StudieInstrumentenPagina() {
             </div>
             <div>
               <p className="font-mono text-xs uppercase tracking-[0.16em]" style={{ color: cs }}>
-                Voor teams &amp; leiding
+                {t("studie_in_teams_eyebrow")}
               </p>
               <h2 className="font-serif text-2xl font-semibold tracking-tight text-foreground">
-                De school eromheen
+                {t("studie_in_teams_titel")}
               </h2>
             </div>
           </div>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-            Een school is meer dan haar leerlingen. Dezelfde instrumenten die organisaties gebruiken, staan ook hier klaar — binnen je eigen schoolomgeving en tegen het onderwijs-tarief.
+            {t("studie_in_teams_body")}
           </p>
           <div className="mt-6 grid gap-4 sm:grid-cols-3">
             {instrTeams.map((inst) => (
@@ -1055,7 +1104,7 @@ export function StudieInstrumentenPagina() {
             <div className="flex items-start gap-3">
               <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" style={{ color: cs }} aria-hidden="true" />
               <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">
-                Elk instrument vertrekt van talent, niet van een oordeel. Alle scoring gebeurt op de server, elke deelnemer geeft vooraf toestemming en je gegevens blijven binnen je eigen schoolomgeving. Meertalig en GDPR-conform.
+                {t("studie_in_privacy")}
               </p>
             </div>
           </div>
@@ -1069,7 +1118,7 @@ export function StudieInstrumentenPagina() {
             style={{ background: cs, color: "#1a1a1a" }}
           >
             <Sparkles className="mr-1.5 h-4 w-4" />
-            Aan de slag als school
+            {t("studie_in_btn_scholen")}
           </Button>
           <Button
             variant="outline"
@@ -1077,7 +1126,7 @@ export function StudieInstrumentenPagina() {
             onClick={() => navigate("/studie/leerlingen")}
           >
             <Users className="mr-1.5 h-4 w-4" />
-            Ik ben leerling of student
+            {t("studie_in_btn_leerlingen")}
           </Button>
         </div>
 
@@ -1089,14 +1138,14 @@ export function StudieInstrumentenPagina() {
           className="mt-10 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" />
-          Terug naar de studie-wereld
+          {t("studie_in_terug")}
         </button>
 
         {/* footer */}
         <footer className="mt-12 border-t border-border pt-6">
           <p className="flex items-center justify-center gap-2 text-center text-xs leading-relaxed text-muted-foreground">
             <Compass className="h-3.5 w-3.5" style={{ color: cs }} aria-hidden="true" />
-            TaPas-platform · Studie-instrumenten · talent eerst, altijd sereen
+            TaPas-platform · {t("studie_in_footer")}
           </p>
         </footer>
       </main>
