@@ -78,6 +78,22 @@ function CoachAvatar({ naam, fotoPad }: { naam: string; fotoPad?: string }) {
   );
 }
 
+// -----------------------------------------------------------------------
+// Foto-overrides voor de docentensectie (op verzoek Marc, 2026-07):
+// Rembrandt-portretten blijven UITSLUITEND in de Galerij der Jesters.
+// In de docentenlijst tonen we een gewone zwart-wit foto i.p.v. het
+// geschilderde Rembrandt-portret. We wijzigen GEEN serverdata: we mappen
+// enkel het bekende Rembrandt-bronpad naar de bestaande B&W-asset (Regel 2).
+// -----------------------------------------------------------------------
+const DOCENT_FOTO_BW_OVERRIDE: Record<string, string> = {
+  "/academy/docent-leen.jpg": "/coaches-lijst/leen-bw.jpg",
+};
+
+function docentFotoBw(url?: string): string | undefined {
+  if (!url) return url;
+  return DOCENT_FOTO_BW_OVERRIDE[url] ?? url;
+}
+
 // Sessie-label helper
 function sessieLabel(sessie: any, t: (s: string) => string): string {
   const format =
@@ -400,7 +416,7 @@ export default function Academy() {
                   <CardContent className="flex flex-1 flex-col p-5">
                     {doc.fotoPad && (
                       <img
-                        src={doc.fotoPad}
+                        src={docentFotoBw(doc.fotoPad)}
                         alt={doc.naam}
                         className="aspect-square w-full rounded-lg object-cover"
                         loading="lazy"
@@ -417,49 +433,18 @@ export default function Academy() {
           <p className="academy-meta mt-4 text-xs leading-relaxed" data-testid="text-docenten-voet">{n("acad_doc_voet")}</p>
         </section>
 
-        {/* Register sectie (coaches) */}
+        {/* Register sectie (coaches) — verwijst naar de volledige coach-pagina (één bron van waarheid) */}
         <section className="mt-16 sm:mt-20" data-testid="section-register">
           <h2 className="academy-kop text-xl font-semibold tracking-tight sm:text-2xl">{n("acad_register_titel")}</h2>
-          <p className="academy-tekst mt-3 max-w-2xl text-sm leading-relaxed sm:text-base">{n("acad_register_body")}</p>
-          {coaches.length === 0 ? (
-            <Card className="academy-kaart academy-binnenkort mt-6" data-testid="card-register-binnenkort">
-              <CardContent className="flex flex-col items-center justify-center gap-3 px-6 py-12 text-center">
-                <div className="academy-icoon flex h-12 w-12 items-center justify-center rounded-full">
-                  <Users className="h-6 w-6" />
-                </div>
-                <p className="academy-tekst text-sm font-medium">{n("acad_register_binnenkort")}</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {coaches.map((coach: any) => (
-                <Card key={coach.id} className="academy-kaart flex flex-col" data-testid={`card-coach-${coach.id}`}>
-                  <CardContent className="flex flex-1 flex-col p-5">
-                    <CoachAvatar naam={coach.naam} fotoPad={coach.fotoUrl} />
-                    <h3 className="academy-kaart-kop mt-4 text-base font-semibold">{coach.naam}</h3>
-                    {coach.opleidingTitel && <p className="academy-meta mt-1 text-xs">{coach.opleidingTitel}</p>}
-                    {coach.plaats && <p className="academy-meta mt-0.5 text-xs">{coach.plaats}</p>}
-                    {coach.instrumenten?.length > 0 && (
-                      <div className="mt-3">
-                        <p className="academy-meta text-xs font-medium">{n("acad_register_accreditaties")}:</p>
-                        <div className="mt-1 flex flex-wrap gap-1.5">
-                          {coach.instrumenten.map((inst: any) => (
-                            <span
-                              key={inst.id}
-                              className="academy-badge rounded-full px-2.5 py-0.5 text-xs"
-                              data-testid={`badge-instrument-${coach.id}-${inst.id}`}
-                            >
-                              {inst.naam}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+          <p className="academy-tekst mt-3 max-w-2xl text-sm leading-relaxed sm:text-base">{n("acad_register_verwijs_body")}</p>
+          <div className="mt-6">
+            <Link href="/coaches">
+              <Button className="academy-cta-primary" data-testid="button-register-naar-coaches">
+                {n("acad_register_verwijs_cta")}
+                <ChevronRight className="ml-1.5 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
         </section>
 
         {/* Vraag / contact sectie */}
