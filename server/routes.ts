@@ -3,6 +3,8 @@ import { createServer } from "node:http";
 import type { Server } from "node:http";
 import { db, storage } from "./storage";
 import { buildQuestionManagerRoutes } from "./question-manager";
+import { buildGidsManagerRoutes } from "./gids-manager";
+import { registerGidsPdfRoutes } from "./gids/routes";
 import { registerCoachesAcademyMailRoutes } from "./routes-coaches-academy-mail";
 import { registerStmRoutes } from "./routes-stm";
 import { registerT4RRoutes } from "./t4r/routes";
@@ -87,6 +89,13 @@ export async function registerRoutes(
   // Question Manager — prior-beheerder beheert stellingen van alle instrumenten.
   // -------------------------------------------------------------------------
   buildQuestionManagerRoutes(app);
+
+  // -------------------------------------------------------------------------
+  // De Instrumentengids — tekst-overrides (prior) + publieke PDF-downloads.
+  // Nieuwe modules (Regel 2): raken geen bestaand bestand aan.
+  // -------------------------------------------------------------------------
+  buildGidsManagerRoutes(app);
+  registerGidsPdfRoutes(app);
 
   // -------------------------------------------------------------------------
   // Webshop — interesse-registratie.

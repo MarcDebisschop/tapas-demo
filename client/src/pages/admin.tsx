@@ -34,7 +34,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Afname, OrganisatieMetSaldo } from "@/lib/types";
-import { Copy, Check, Send, UserPlus, Bell, Languages, Settings2, ChartColumn, GraduationCap, Mail, KeyRound, Users, CreditCard, BarChart2, Building2, ArrowRight } from "lucide-react";
+import { Copy, Check, Send, UserPlus, Bell, Languages, Settings2, ChartColumn, GraduationCap, Mail, KeyRound, Users, CreditCard, BarChart2, Building2, ArrowRight, Layers } from "lucide-react";
 import { LegeStaat } from "@/components/LegeStaat";
 import {
   TALEN,
@@ -46,6 +46,7 @@ import {
   normaliseerTaal,
   type Taal,
 } from "@shared/i18n";
+import { useUiTaal } from "@/contexts/TaalContext";
 
 // Statuslabels per taal — gebonden aan de admin-interfacetaal.
 const STATUS_LABEL: Record<Taal, Record<string, string>> = {
@@ -121,8 +122,7 @@ export default function Admin() {
   const { toast } = useToast();
 
   // Admin-interfacetaal = losse voorkeur (React-state, geen localStorage), zonder data-impact.
-  const [uiTaal, setUiTaal] = useState<Taal>(STANDAARD_TAAL);
-  const t = maakVertaler(uiTaal);
+  const { uiTaal, setUiTaal, t } = useUiTaal();
 
   const { data, isLoading } = useQuery<Afname[]>({ queryKey: ["/api/admin/afnames"] });
   const { data: organisaties } = useQuery<OrganisatieMetSaldo[]>({ queryKey: ["/api/organisaties"] });
@@ -374,6 +374,13 @@ export default function Admin() {
                 <Link href="/admin/vraagbeheer">
                   <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-vraagbeheer">
                     <Settings2 className="h-3.5 w-3.5 shrink-0" /> Vraagbeheer
+                  </a>
+                </Link>
+              )}
+              {isPrior && (
+                <Link href="/admin/instrumentengids">
+                  <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-instrumentengids">
+                    <Layers className="h-3.5 w-3.5 shrink-0" /> Instrumentengids
                   </a>
                 </Link>
               )}

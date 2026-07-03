@@ -35,6 +35,9 @@ import TwominscanRapport from "@/pages/twominscan-rapport";
 import ImpactHome from "@/pages/impact-home";
 import Lounge from "@/pages/lounge";
 import AdminVraagbeheer from "@/pages/admin-vraagbeheer";
+import Instrumenten from "@/pages/instrumenten";
+import Brochure from "@/pages/brochure";
+import AdminInstrumentengids from "@/pages/admin-instrumentengids";
 import { AdminLoginGate } from "@/components/AdminLoginGate";
 import { Redirect } from "wouter";
 import Studie, { StudieScholenPagina, StudieLeerlingenPagina, StudieInstrumentenPagina } from "@/pages/studie";
@@ -91,6 +94,7 @@ function AppRouter() {
       <Route path="/admin/credits">{() => <AdminLoginGate><AdminCredits /></AdminLoginGate>}</Route>
       <Route path="/admin/toegang">{() => <AdminLoginGate><AdminToegang /></AdminLoginGate>}</Route>
       <Route path="/admin/vraagbeheer">{() => <AdminLoginGate><AdminVraagbeheer /></AdminLoginGate>}</Route>
+      <Route path="/admin/instrumentengids">{() => <AdminLoginGate><AdminInstrumentengids /></AdminLoginGate>}</Route>
       <Route path="/admin/coaches">{() => <AdminLoginGate><AdminCoaches /></AdminLoginGate>}</Route>
       <Route path="/admin/inzichten">{() => <AdminLoginGate><AdminInzichten /></AdminLoginGate>}</Route>
       <Route path="/admin/academy">{() => <AdminLoginGate><AdminAcademy /></AdminLoginGate>}</Route>
@@ -129,6 +133,9 @@ function AppRouter() {
       <Route path="/studie/leerlingen" component={StudieLeerlingenPagina} />
       <Route path="/studie/instrumenten" component={StudieInstrumentenPagina} />
       <Route path="/studie" component={Studie} />
+      {/* De Instrumentengids — brochure vóór de indexpagina (specificiteit) */}
+      <Route path="/instrumenten/brochure" component={Brochure} />
+      <Route path="/instrumenten" component={Instrumenten} />
       <Route path="/voor-deelnemers">{() => <Redirect to="/mijn" />}</Route>
       <Route path="/voor-begeleiders" component={VoorBegeleiders} />
       {/* Cijferslot — toegangsschil voor het persoonlijk dashboard (drie skins) */}

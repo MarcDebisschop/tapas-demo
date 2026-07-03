@@ -24,6 +24,7 @@ import {
   ClipboardList,
   UserCheck,
   Dumbbell,
+  Layers,
 } from "lucide-react";
 import {
   TALEN,
@@ -214,6 +215,8 @@ interface PlatformTegel {
   kleurVar: string;
   icon: React.ReactNode;
   badges: string[];
+  /** true = neutrale duo-tegel (werk→studie gradient) i.p.v. één kleurVar. */
+  duo?: boolean;
 }
 
 function PlatformOverzicht() {
@@ -246,6 +249,17 @@ function PlatformOverzicht() {
       icon: <GraduationCap className="h-5 w-5" />,
       badges: ["TaPas Jester", "Accreditaties", "Coaches"],
     },
+    {
+      label: "De Instrumentengids",
+      titel: "Alle instrumenten",
+      omschrijving:
+        "Eén overzicht van alle TaPas-instrumenten — voor business én onderwijs. Filter op toepassing en download fiches of de volledige brochure.",
+      href: "/instrumenten",
+      kleurVar: "--werk",
+      icon: <Layers className="h-5 w-5" />,
+      badges: ["Overzicht", "Fiches (PDF)", "Brochure"],
+      duo: true,
+    },
   ];
 
   return (
@@ -262,16 +276,28 @@ function PlatformOverzicht() {
         </p>
       </div>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-3">
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {tegels.map((tegel) => (
           <a
             key={tegel.href}
             href={`#${tegel.href}`}
             className="group relative flex flex-col overflow-hidden rounded-2xl border border-t-[3px] border-border p-6 transition hover:-translate-y-1"
-            style={{
-              borderTopColor: `hsl(var(${tegel.kleurVar}))`,
-              background: `radial-gradient(120% 95% at 100% 0%, hsl(var(${tegel.kleurVar})/0.12) 0%, hsl(var(--card)) 65%)`,
-            }}
+            style={
+              tegel.duo
+                ? {
+                    borderTopWidth: 3,
+                    borderTopStyle: "solid",
+                    borderImageSlice: 1,
+                    borderImageSource:
+                      "linear-gradient(90deg, hsl(var(--werk)) 0%, hsl(var(--werk)) 50%, hsl(var(--studie)) 50%, hsl(var(--studie)) 100%)",
+                    background:
+                      "radial-gradient(120% 95% at 100% 0%, hsl(var(--studie)/0.10) 0%, hsl(var(--werk)/0.10) 45%, hsl(var(--card)) 70%)",
+                  }
+                : {
+                    borderTopColor: `hsl(var(${tegel.kleurVar}))`,
+                    background: `radial-gradient(120% 95% at 100% 0%, hsl(var(${tegel.kleurVar})/0.12) 0%, hsl(var(--card)) 65%)`,
+                  }
+            }
           >
             <span
               className="grid h-9 w-9 place-items-center rounded-xl"
