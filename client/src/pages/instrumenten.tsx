@@ -279,7 +279,10 @@ function FilterBalk({ actief, setActief }: { actief: Filter; setActief: (f: Filt
               aan
                 ? {
                     background: o.kleur ?? "hsl(var(--foreground))",
-                    color: "white",
+                    // Bij de gekleurde pillen (teal/amber) is witte tekst leesbaar;
+                    // bij de neutrale foreground-pil zou wit-op-wit onleesbaar zijn,
+                    // dus gebruiken we daar de contrastkleur --background.
+                    color: o.kleur ? "white" : "hsl(var(--background))",
                     borderColor: o.kleur ?? "hsl(var(--foreground))",
                   }
                 : {
