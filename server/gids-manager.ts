@@ -25,7 +25,7 @@
  */
 
 import type { Express, Request, Response } from "express";
-import { db, storage } from "./storage";
+import { db, storage, sqlite as rawSqlite } from "./storage";
 
 // Toegestane velden — whitelist zodat de admin nooit een willekeurige kolom kan zetten.
 const TOEGESTANE_VELDEN = new Set([
@@ -38,9 +38,19 @@ const TOEGESTANE_VELDEN = new Set([
 
 const TOEGESTANE_TALEN = new Set(["nl", "fr", "en", "es", "ru"]);
 
-// ─── SQLite-handle (identiek aan question-manager.ts) ────────────────────────
+// ─── SQLite-handle ───────────────────────────────────────────────────────────
+// storage.ts exporteert de raw better-sqlite3-handle als named export `sqlite`
+// (regel: `export { sqlite }`). Dat is de betrouwbare bron. We vallen daarnaast
+// terug op drizzle's interne client ($client) en de oude _db/storage.sqlite-
+// varianten, puur als extra vangnet.
 function getSqlite(): any {
-  return (db as any)._db ?? (storage as any).sqlite ?? null;
+  return (
+    rawSqlite ??
+    (db as any)?.$client ??
+    (db as any)?._db ??
+    (storage as any)?.sqlite ??
+    null
+  );
 }
 
 // ─── Prior-check middleware (identiek aan question-manager.ts) ───────────────
