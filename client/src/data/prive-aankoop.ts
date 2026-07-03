@@ -29,6 +29,7 @@ export const PRIVE_AANKOOP: Record<string, PriveAankoopConfig> = {
   "impact-roos": { koopbaar: false, prijsId: "" },
   t4recruitment: { koopbaar: false, prijsId: "" },
   t4sports: { koopbaar: false, prijsId: "" },
+  "tapas-teamscan": { koopbaar: false, prijsId: "" },
 };
 
 export function priveAankoopVoor(id: string): PriveAankoopConfig | undefined {
