@@ -39,6 +39,8 @@ import Instrumenten from "@/pages/instrumenten";
 import Brochure from "@/pages/brochure";
 import AdminInstrumentengids from "@/pages/admin-instrumentengids";
 import { AdminLoginGate } from "@/components/AdminLoginGate";
+import Koop from "@/pages/koop";
+import AdminPrijzen from "@/pages/admin-prijzen";
 import { Redirect } from "wouter";
 import Studie, { StudieScholenPagina, StudieLeerlingenPagina, StudieInstrumentenPagina } from "@/pages/studie";
 import Werk from "@/pages/werk";
@@ -102,6 +104,7 @@ function AppRouter() {
       <Route path="/admin/kwaliteit">{() => <AdminLoginGate><AdminKwaliteit /></AdminLoginGate>}</Route>
       <Route path="/admin/stm">{() => <AdminLoginGate><Stm /></AdminLoginGate>}</Route>
       <Route path="/admin/webinars">{() => <AdminLoginGate><Webinars /></AdminLoginGate>}</Route>
+      <Route path="/admin/prijzen">{() => <AdminLoginGate><AdminPrijzen /></AdminLoginGate>}</Route>
       <Route path="/coaches" component={Coaches} />
       <Route path="/academy/jester" component={AcademyJester} />
       <Route path="/academy" component={Academy} />
@@ -136,6 +139,8 @@ function AppRouter() {
       {/* De Instrumentengids — brochure vóór de indexpagina (specificiteit) */}
       <Route path="/instrumenten/brochure" component={Brochure} />
       <Route path="/instrumenten" component={Instrumenten} />
+      {/* Privé-aankoopflow voor particulieren (nieuw — Regel 2). */}
+      <Route path="/koop/:instrument" component={Koop} />
       <Route path="/voor-deelnemers">{() => <Redirect to="/mijn" />}</Route>
       <Route path="/voor-begeleiders" component={VoorBegeleiders} />
       {/* Cijferslot — toegangsschil voor het persoonlijk dashboard (drie skins) */}

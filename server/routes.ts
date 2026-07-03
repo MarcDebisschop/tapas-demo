@@ -16,6 +16,7 @@ import { startCreditRecoveryJob } from "./credit-recovery";
 import { registerT4SportsRoutes } from "./t4sports/routes";
 import { registerT4SportsModuleRoutes } from "./t4sports/module-routes";
 import { registerCoachContactRoutes } from "./routes-coach-contact";
+import { registerPriveAankoopRoutes } from "./prive-aankoop/routes";
 
 // Domeinrouters (item 1.1, Fase 5)
 import { registerInstrumentRoutes } from "./routes/instrumenten";
@@ -123,6 +124,12 @@ export async function registerRoutes(
   // T4Sports Extra Modules (M1/M2/M3) — ACSI-28, DFS-2/FSS-2, AIMS-7.
   // Additief: raakt geen bestaande bestanden aan.
   registerT4SportsModuleRoutes(app);
+
+  // -------------------------------------------------------------------------
+  // Privé-aankoopflow (particulieren) + admin-beheerbare prijzen-store.
+  // Nieuwe module (Regel 2): eigen bestanden, hergebruikt factuur/Peppol-engine.
+  // -------------------------------------------------------------------------
+  registerPriveAankoopRoutes(app);
 
   // Credit-recovery job: verlopen afnames vrijgeven (item 1.6, 2026-06-30)
   startCreditRecoveryJob(6);

@@ -43,6 +43,11 @@ import {
   type GidsInstrument,
   type Orientatie,
 } from "@/data/instrumentengids";
+// Privé-aankoop-configuratie (apart bestand — Regel 2): bepaalt of een
+// instrument een "Koop & start"-knop, een "op aanvraag"-badge of het
+// bestaande gedrag krijgt.
+import { priveAankoopVoor } from "@/data/prive-aankoop";
+import { Lock, ShoppingCart } from "lucide-react";
 
 // --- CSS-variabelen (hergebruik bestaande platformkleuren, NIET wijzigen) ---
 const WERK_VAR = "--werk";
@@ -235,15 +240,48 @@ function GidsKaart({
 
       {/* acties */}
       <div className="mt-4 flex flex-wrap gap-2">
-        <Button
-          size="sm"
-          className="gap-1.5"
-          style={{ background: accent, color: "white" }}
-          onClick={() => navigate(instr.start.route)}
-        >
-          {instr.start.label}
-          <ArrowRight className="h-3.5 w-3.5" />
-        </Button>
+        {(() => {
+          const pa = priveAankoopVoor(instr.id);
+          // Privé koopbaar → "Koop & start"-knop naar #/koop/:prijsId.
+          if (pa?.koopbaar) {
+            return (
+              <Button
+                size="sm"
+                className="gap-1.5"
+                style={{ background: accent, color: "white" }}
+                onClick={() => navigate(`/koop/${pa.prijsId}`)}
+                data-testid={`button-koop-${instr.id}`}
+              >
+                <ShoppingCart className="h-3.5 w-3.5" />
+                Koop &amp; start
+              </Button>
+            );
+          }
+          // Enkel via organisatie / op aanvraag → neutrale badge, geen knop.
+          if (pa && !pa.koopbaar) {
+            return (
+              <span
+                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-muted/50 px-3 py-1.5 text-xs font-medium text-muted-foreground"
+                data-testid={`badge-op-aanvraag-${instr.id}`}
+              >
+                <Lock className="h-3.5 w-3.5" />
+                Enkel via je organisatie / op aanvraag
+              </span>
+            );
+          }
+          // Geen config → ongewijzigd bestaand gedrag.
+          return (
+            <Button
+              size="sm"
+              className="gap-1.5"
+              style={{ background: accent, color: "white" }}
+              onClick={() => navigate(instr.start.route)}
+            >
+              {instr.start.label}
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
+          );
+        })()}
         <a
           href={`/api/instrumentengids/${instr.id}/fiche.pdf?taal=nl`}
           target="_blank"
