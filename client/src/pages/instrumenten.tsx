@@ -310,11 +310,22 @@ export default function Instrumenten() {
     queryKey: ["/api/gids"],
   });
 
+  // Sommige catalogus-id's wijken licht af van de gids-id's (bv. de
+  // catalogus gebruikt "t4p-business-kompas", de gids "t4p-business").
+  // Deze alias-map koppelt de gids-id aan de juiste catalogus-id zodat
+  // beschrijving/doelgroep uit de catalogus correct mee-mergen.
+  const CATALOG_ALIAS: Record<string, string> = {
+    "t4p-business": "t4p-business-kompas",
+  };
+
   const catalogById = useMemo(() => {
     const m = new Map<string, CatalogusItem>();
     (catalogus ?? []).forEach((c) => m.set(c.id, c));
     return m;
   }, [catalogus]);
+
+  const catalogVoor = (gidsId: string) =>
+    catalogById.get(gidsId) ?? catalogById.get(CATALOG_ALIAS[gidsId] ?? "");
 
   const zichtbaar = useMemo(
     () =>
@@ -383,7 +394,7 @@ export default function Instrumenten() {
             <GidsKaart
               key={instr.id}
               instr={instr}
-              catalog={catalogById.get(instr.id)}
+              catalog={catalogVoor(instr.id)}
               overrides={overrides}
             />
           ))}
