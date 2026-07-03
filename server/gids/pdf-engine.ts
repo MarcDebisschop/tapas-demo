@@ -40,22 +40,25 @@ import {
 // ---- Gids-specifiek palet (exact uit het platform) ----
 export const WERK = "#22808c"; // business — hsl(192 60% 34%)
 export const STUDIE = "#b47318"; // education — hsl(34 68% 42%)
+export const SPORT = "#f0611e"; // sport — hsl(20 88% 50%), energiek/atletisch oranje
 export const BODYCOL = "#283238";
 export const SURFACE = "#f7f8f9";
 export const SURFACE2 = "#eef3f4";
 export const PAPER = "#ffffff";
 
-export type Orientatie = "business" | "education" | "beide";
+export type Orientatie = "business" | "education" | "beide" | "sport";
 
 export function kleurVoor(o: Orientatie): string {
   if (o === "business") return WERK;
   if (o === "education") return STUDIE;
+  if (o === "sport") return SPORT; // eigen sportieve categorie
   return GOLD; // "beide" krijgt de neutrale/gouden merk-accent als primaire tint
 }
 
 export function orientatieLabelPdf(o: Orientatie): string {
   if (o === "business") return "BUSINESS";
   if (o === "education") return "EDUCATION";
+  if (o === "sport") return "SPORT";
   return "BUSINESS & EDUCATION";
 }
 

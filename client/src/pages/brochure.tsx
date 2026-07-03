@@ -22,6 +22,8 @@ import {
 
 const werkKleur = "hsl(var(--werk))";
 const studieKleur = "hsl(var(--studie))";
+// T4Sports = eigen categorie: energiek, atletisch oranje (vaste tint, geen CSS-var).
+const sportKleur = "hsl(20 88% 50%)";
 
 type GidsOverrides = Record<string, Record<string, Record<string, string>>>;
 
@@ -39,6 +41,7 @@ function metOverride(
 function accentVoor(o: Orientatie): string {
   if (o === "business") return werkKleur;
   if (o === "education") return studieKleur;
+  if (o === "sport") return sportKleur;
   return werkKleur;
 }
 
@@ -67,10 +70,17 @@ const GROEP_META: Omit<Groep, "instrumenten">[] = [
   },
   {
     orientatie: "education",
-    titel: "Voor onderwijs & sport",
-    kicker: "Studiekeuze, jongeren & atleten",
+    titel: "Voor onderwijs",
+    kicker: "Studiekeuze & jongeren",
     intro:
-      "Afgestemd op leerlingen, studenten en atleten — met leeftijdsspecifieke taal en focus op studiekeuze, loopbaanstart en mentaal talent onder druk.",
+      "Afgestemd op leerlingen en studenten — met leeftijdsspecifieke taal en focus op studiekeuze, talentherkenning en loopbaanstart.",
+  },
+  {
+    orientatie: "sport",
+    titel: "Voor sport",
+    kicker: "Mentale coaching bij sporters",
+    intro:
+      "Specifiek voor mentale begeleiding van atleten — talent, drivers en energie vertaald naar sporttaal, met focus op veerkracht, flow en atletische identiteit onder prestatiedruk.",
   },
 ];
 

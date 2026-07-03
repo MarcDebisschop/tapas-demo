@@ -77,11 +77,19 @@ function bouwGroepen(taal: string): Groep[] {
     },
     {
       orientatie: "education",
-      titel: "Voor onderwijs & sport",
-      kicker: "Studiekeuze, jongeren & atleten",
+      titel: "Voor onderwijs",
+      kicker: "Studiekeuze & jongeren",
       intro:
-        "Afgestemd op leerlingen, studenten en atleten — met leeftijdsspecifieke taal en focus op studiekeuze, loopbaanstart en mentaal talent onder druk.",
+        "Afgestemd op leerlingen en studenten — met leeftijdsspecifieke taal en focus op studiekeuze, talentherkenning en loopbaanstart.",
       instrumenten: per("education"),
+    },
+    {
+      orientatie: "sport",
+      titel: "Voor sport",
+      kicker: "Mentale coaching bij sporters",
+      intro:
+        "Specifiek voor mentale begeleiding van atleten — talent, drivers en energie vertaald naar sporttaal, met focus op veerkracht, flow en atletische identiteit onder prestatiedruk.",
+      instrumenten: per("sport"),
     },
   ];
 }
@@ -202,7 +210,7 @@ export async function genereerBrochurePdf(taal = "nl"): Promise<Buffer> {
     { after: 8 }
   );
   L.paragraph(
-    "De instrumenten zijn gegroepeerd naar toepassing — universeel inzetbaar (business én onderwijs), specifiek business, of specifiek onderwijs & sport. Elke groep opent met een korte introductie.",
+    "De instrumenten zijn gegroepeerd naar toepassing — universeel inzetbaar (business én onderwijs), specifiek business, specifiek onderwijs, of specifiek sport. Elke groep opent met een korte introductie.",
     { after: 14 }
   );
 

@@ -13,7 +13,7 @@
 // PDF-routes toegepast via pasOverrideToe() uit ../gids-manager.
 // =============================================================================
 
-export type Orientatie = "business" | "education" | "beide";
+export type Orientatie = "business" | "education" | "beide" | "sport";
 
 export interface GidsStart {
   label: string;
@@ -142,7 +142,7 @@ export const INSTRUMENTENGIDS: GidsInstrument[] = [
   {
     id: "t4sports",
     naam: "T4Sports",
-    orientatie: "education",
+    orientatie: "sport",
     eyebrow: "Sport · mentaal talent",
     omschrijving:
       "Het Mental Talent Profiel voor atleten: talent-toegang, talent-route, drivers en energiestaat vertaald naar sporttaal, met optionele verdiepende modules.",

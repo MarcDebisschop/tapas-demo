@@ -21,7 +21,7 @@
 // overschrijven via /api/gids (server/gids-manager.ts). Deze file is de DEFAULT.
 // =============================================================================
 
-export type Orientatie = "business" | "education" | "beide";
+export type Orientatie = "business" | "education" | "beide" | "sport";
 
 export interface GidsStart {
   /** Knoplabel, bv. "Start de scan" of "Vraag een traject aan". */
@@ -66,7 +66,9 @@ export interface GidsInstrument {
 // orientatie-verdeling (bevestigd door Marc, 3 juli 2026):
 //   beide     = T4P Business Kompas, 2MinScan, TaPas Teamscan, Impact-roos
 //   business  = T4Recruitment, Human Due Diligence
-//   education = T4Sports, T4Teens, T4Students
+//   education = T4Teens, T4Students
+//   sport     = T4Sports  (mentale coaching bij sporters — eigen categorie,
+//               energiek-oranje accent; bevestigd door Marc, 3 juli 2026)
 // -----------------------------------------------------------------------------
 export const INSTRUMENTENGIDS: GidsInstrument[] = [
   {
@@ -177,7 +179,7 @@ export const INSTRUMENTENGIDS: GidsInstrument[] = [
   {
     id: "t4sports",
     naam: "T4Sports",
-    orientatie: "education",
+    orientatie: "sport",
     eyebrow: "Sport · mentaal talent",
     omschrijving:
       "Het Mental Talent Profiel voor atleten: talent-toegang, talent-route, drivers en energiestaat vertaald naar sporttaal, met optionele verdiepende modules.",
@@ -240,6 +242,10 @@ export function orientatieKleurVar(o: Orientatie): { primair: string; secundair?
       return { primair: "--werk" };
     case "education":
       return { primair: "--studie" };
+    case "sport":
+      // Eigen sportieve categorie — energiek oranje (geen bestaande CSS-var,
+      // wordt in de pagina/PDF als vaste hsl/hex-tint gezet).
+      return { primair: "--sport" };
     case "beide":
       // Duo: links werk (business), rechts studie (education) — gesplitste rand.
       return { primair: "--werk", secundair: "--studie" };
@@ -253,6 +259,8 @@ export function orientatieLabel(o: Orientatie): string {
       return "Business";
     case "education":
       return "Education";
+    case "sport":
+      return "Sport";
     case "beide":
       return "Business & Education";
   }

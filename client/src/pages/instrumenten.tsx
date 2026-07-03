@@ -49,6 +49,10 @@ const WERK_VAR = "--werk";
 const STUDIE_VAR = "--studie";
 const werkKleur = `hsl(var(${WERK_VAR}))`;
 const studieKleur = `hsl(var(${STUDIE_VAR}))`;
+// T4Sports = eigen categorie: energiek, atletisch oranje. Geen bestaande
+// CSS-variabele (index.css blijft ongewijzigd) — vaste hsl-tint die zowel in
+// light als dark voldoende contrast houdt naast teal (werk) en amber (studie).
+const sportKleur = "hsl(20 88% 50%)";
 
 // Lucide-icoonnaam (string in de data) → component
 const ICONEN: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
@@ -63,7 +67,7 @@ const ICONEN: Record<string, React.ComponentType<{ className?: string; style?: R
   GraduationCap,
 };
 
-type Filter = "alles" | "business" | "education" | "beide";
+type Filter = "alles" | "business" | "education" | "beide" | "sport";
 
 // Override-shape uit /api/gids: { [id]: { [veld]: { [taal]: tekst } } }
 type GidsOverrides = Record<string, Record<string, Record<string, string>>>;
@@ -96,6 +100,7 @@ function metOverride(
 function orientatieKleur(o: Orientatie): string {
   if (o === "business") return werkKleur;
   if (o === "education") return studieKleur;
+  if (o === "sport") return sportKleur;
   return werkKleur; // "beide": primaire tekst-accent = werk (rand is gesplitst)
 }
 
@@ -263,6 +268,7 @@ function FilterBalk({ actief, setActief }: { actief: Filter; setActief: (f: Filt
     { key: "beide", label: "Business & Education" },
     { key: "business", label: "Business", kleur: werkKleur },
     { key: "education", label: "Education", kleur: studieKleur },
+    { key: "sport", label: "Sport", kleur: sportKleur },
   ];
   return (
     <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filter op oriëntatie">
