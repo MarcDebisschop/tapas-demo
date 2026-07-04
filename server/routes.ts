@@ -18,6 +18,7 @@ import { registerT4SportsModuleRoutes } from "./t4sports/module-routes";
 import { registerCoachContactRoutes } from "./routes-coach-contact";
 import { registerPriveAankoopRoutes } from "./prive-aankoop/routes";
 import { registerBulkImportRoutes } from "./bulk-import/routes";
+import { registerT4OrganizationsRoutes } from "./t4organizations/routes";
 
 // Domeinrouters (item 1.1, Fase 5)
 import { registerInstrumentRoutes } from "./routes/instrumenten";
@@ -76,6 +77,12 @@ export async function registerRoutes(
   // TaPas Teamscan — collaboratief reflectie-/ontwikkelinstrument (Lencioni).
   // -------------------------------------------------------------------------
   registerTeamscanRoutes(app);
+
+  // -------------------------------------------------------------------------
+  // TaPas 4 Organizations (T4O) — organisatie-talentprofiel via drie ringen
+  // (leiding/medewerker/stakeholder). Nieuwe module (Regel 2): eigen bestanden.
+  // -------------------------------------------------------------------------
+  registerT4OrganizationsRoutes(app);
 
   // -------------------------------------------------------------------------
   // Human Due Diligence — vlaggenschip-traject (journey).

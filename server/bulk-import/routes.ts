@@ -25,6 +25,8 @@ import { afnames, type Afname } from "@shared/schema";
 import { getTemplate, alleTemplates, TEMPLATES } from "./templates";
 import { templateAlsBuffer, parseUpload, type ParseFout } from "./excel";
 import { verstuurUitnodiging, isSimulatiemodus } from "./mailer";
+import { t4oStorage } from "../t4organizations/storage";
+import { T4O_GROEPEN, type T4OGroep } from "../t4organizations/schema";
 
 // ---------------------------------------------------------------------------
 // Admin-sessiecheck (zelfde patroon als de rest van het platform).
@@ -205,6 +207,84 @@ function bouwPreview(
   return preview;
 }
 
+// ---------------------------------------------------------------------------
+// T4O-verwerking: maakt één organisatie-afname (sessie) aan en per geldige rij
+// een respondent in de juiste ring. Anoniem model: geen credits, geen afname-
+// record; de deelnemer vult in via een persoonlijke #/t4o/r/:token-link.
+// Mail wordt enkel verstuurd wanneer er een (optioneel) e-mailadres is.
+// ---------------------------------------------------------------------------
+async function verwerkT4O(
+  req: Request,
+  res: Response,
+  titel: string,
+  rijen: { rij: number; waarden: Record<string, string> }[],
+  fouten: ParseFout[],
+  origin: string,
+): Promise<Response> {
+  const foutRijen = new Set(fouten.filter((f) => f.rij > 0).map((f) => f.rij));
+
+  // Organisatienaam voor de sessie: expliciete orgNaam wint, anders de
+  // meegestuurde bestandsnaam, anders een datumgebaseerde fallback.
+  const orgNaam =
+    (typeof req.body?.orgNaam === "string" && req.body.orgNaam.trim()) ||
+    (typeof req.body?.bestandsnaam === "string" && req.body.bestandsnaam.trim()) ||
+    `Bulk-import ${new Date().toLocaleDateString("nl-BE")}`;
+  const orgLabel = typeof req.body?.orgLabel === "string" ? req.body.orgLabel.trim() : "";
+
+  const sessie = t4oStorage.maakSessie({ orgNaam, orgLabel });
+
+  const resultaten: Array<{
+    rij: number;
+    email: string;
+    status: "ok" | "fout";
+    link: string | null;
+    mailStatus: "verstuurd" | "gesimuleerd" | "fout" | "-";
+    melding: string;
+  }> = [];
+
+  for (const r of rijen) {
+    const email = r.waarden.email ?? "";
+    if (foutRijen.has(r.rij)) {
+      const meldingen = fouten.filter((f) => f.rij === r.rij).map((f) => `${f.kolom}: ${f.melding}`);
+      resultaten.push({ rij: r.rij, email, status: "fout", link: null, mailStatus: "-", melding: meldingen.join(" | ") || "Ongeldige rij." });
+      continue;
+    }
+
+    const groep = r.waarden.groep as T4OGroep;
+    if (!T4O_GROEPEN.includes(groep)) {
+      resultaten.push({ rij: r.rij, email, status: "fout", link: null, mailStatus: "-", melding: `Ongeldige ring/groep '${r.waarden.groep}'.` });
+      continue;
+    }
+
+    const respondent = t4oStorage.maakRespondent(sessie.id, groep);
+    const link = origin ? `${origin}#/t4o/r/${respondent.token}` : `#/t4o/r/${respondent.token}`;
+
+    let mailStatus: "verstuurd" | "gesimuleerd" | "fout" | "-" = "-";
+    let melding = "Respondent aangemaakt.";
+    if (email) {
+      const naam = volledigeNaam(r.waarden);
+      const mail = await verstuurUitnodiging({ naar: email, taal: r.waarden.taal || "nl", naam, link, instrument: titel, from: null });
+      mailStatus = mail.status;
+      melding = mail.melding ?? (mail.gesimuleerd ? "Mail gesimuleerd (SMTP niet geconfigureerd)." : "Uitnodiging verstuurd.");
+    }
+
+    resultaten.push({ rij: r.rij, email, status: "ok", link, mailStatus, melding });
+  }
+
+  const aantalOk = resultaten.filter((r) => r.status === "ok").length;
+  return res.json({
+    instrumentId: "t4o",
+    simulatiemodus: isSimulatiemodus(),
+    sessieId: sessie.id,
+    sessieLink: origin ? `${origin}#/t4o/sessie/${sessie.id}` : `#/t4o/sessie/${sessie.id}`,
+    totaal: rijen.length,
+    aantalOk,
+    aantalOvergeslagen: 0,
+    aantalFout: resultaten.filter((r) => r.status === "fout").length,
+    resultaten,
+  });
+}
+
 // ===========================================================================
 export function registerBulkImportRoutes(app: Express): void {
   zorgAfzenderTabel();
@@ -295,6 +375,16 @@ export function registerBulkImportRoutes(app: Express): void {
     const kopFout = fouten.find((f) => f.rij === 0);
     if (kopFout) {
       return res.status(422).json({ error: "Kolomkoppen komen niet overeen met de template.", fouten });
+    }
+
+    // -----------------------------------------------------------------------
+    // T4O-organisatiescan: eigen verwerking (geen afname/credit-model). Elke
+    // rij wordt een respondent in één nieuwe organisatie-afname; de ring komt
+    // uit de kolom 'Ring/Groep'. Retourneert persoonlijke #/t4o/r/:token-links.
+    // -----------------------------------------------------------------------
+    if (instrumentId === "t4o") {
+      const t4oOrigin = typeof req.body?.origin === "string" ? req.body.origin.replace(/\/+$/, "") : "";
+      return verwerkT4O(req, res, tpl.titel, rijen, fouten, t4oOrigin);
     }
 
     // Bepaal geldige rijen (rijen zonder validatiefout).

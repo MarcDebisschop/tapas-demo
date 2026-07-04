@@ -110,6 +110,24 @@ export const TEMPLATES: Record<string, InstrumentTemplate> = {
       { kolom: "Team/Afdeling", sleutel: "team", verplicht: false, hint: "Team of afdeling binnen het traject (optioneel)" },
     ],
   },
+  t4o: {
+    instrumentId: "t4o",
+    titel: "TaPas 4 Organizations (organisatiescan)",
+    instructie:
+      "Organisatie-talentprofiel via drie ringen. De kolom 'Ring/Groep' is " +
+      "VERPLICHT en bepaalt vanuit welke ring de respondent invult: leiding, " +
+      "medewerker of stakeholder. Alle respondenten worden in één organisatie-" +
+      "afname geplaatst; elke rij levert een persoonlijke invullink op.",
+    // Keuze: e-mail is voor T4O NIET verplicht (respondenten vullen anoniem in
+    // via een persoonlijke link). De ring/groep is daarentegen wél verplicht,
+    // omdat die de ring-specifieke vragenset selecteert.
+    velden: [
+      { kolom: "Ring/Groep", sleutel: "groep", verplicht: true, hint: "leiding, medewerker of stakeholder — VERPLICHT" },
+      { kolom: "Voornaam", sleutel: "voornaam", verplicht: false, hint: "Voornaam van de respondent (optioneel)" },
+      { kolom: "Achternaam", sleutel: "achternaam", verplicht: false, hint: "Achternaam van de respondent (optioneel)" },
+      { kolom: "E-mail", sleutel: "email", verplicht: false, hint: "Geldig e-mailadres (optioneel — invulling is anoniem)" },
+    ],
+  },
 };
 
 export function getTemplate(instrumentId: string): InstrumentTemplate | undefined {

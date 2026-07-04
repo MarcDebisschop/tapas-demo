@@ -124,6 +124,23 @@ export const INSTRUMENTENGIDS: GidsInstrument[] = [
     icoon: "Users",
   },
   {
+    id: "t4o",
+    naam: "TaPas 4 Organizations",
+    orientatie: "business",
+    eyebrow: "Organisatie · collectief",
+    omschrijving:
+      "Een organisatie-talentprofiel dat het emergente talent van een hele organisatie in kaart brengt via een afname in drie ringen — leiding, medewerkers en externe stakeholders — samengevoegd tot één beeld.",
+    beantwoordt:
+      "Wie is deze organisatie in essentie? Waar ligt haar collectieve talent en energie? Waar wringt het tussen hoe de leiding, de medewerkers en de buitenwereld haar zien?",
+    gebruik:
+      "Om de identiteit en het vermogen van een organisatie bespreekbaar te maken, spanningsvelden tussen ringen zichtbaar te maken en gerichte organisatieontwikkeling te sturen.",
+    doelgroep: "Organisaties, directieteams, organisatiecoaches en -adviseurs.",
+    start: { label: "Open T4Organizations", route: "/t4o", direct: false },
+    rapportTeaser:
+      "Een organisatierapport met identiteitskern, energie- en vermogensprofiel, spanningsvelden tussen de ringen en concrete ontwikkelaanbevelingen.",
+    icoon: "Building2",
+  },
+  {
     id: "impact-roos",
     naam: "Impact-roos",
     orientatie: "beide",

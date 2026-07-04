@@ -28,6 +28,9 @@ import T4RDeelnemer from "@/pages/t4r-deelnemer";
 import TeamscanHome from "@/pages/teamscan-home";
 import TeamscanSessie from "@/pages/teamscan-sessie";
 import TeamscanDeelnemer from "@/pages/teamscan-deelnemer";
+import T4OHome from "@/pages/t4o-home";
+import T4OSessie from "@/pages/t4o-sessie";
+import T4ODeelnemer from "@/pages/t4o-deelnemer";
 import TwominscanAfname from "@/pages/twominscan-afname";
 import HddHome from "@/pages/hdd-home";
 import HddRapport from "@/pages/hdd-rapport";
@@ -123,6 +126,10 @@ function AppRouter() {
       <Route path="/teamscan" component={TeamscanHome} />
       <Route path="/teamscan/sessie/:id" component={TeamscanSessie} />
       <Route path="/teamscan/r/:token" component={TeamscanDeelnemer} />
+      {/* TaPas 4 Organizations (T4O) — nieuw, parallel aan teamscan (Regel 2). */}
+      <Route path="/t4o" component={T4OHome} />
+      <Route path="/t4o/sessie/:id" component={T4OSessie} />
+      <Route path="/t4o/r/:token" component={T4ODeelnemer} />
       <Route path="/2minscan" component={TwominscanAfname} />
       <Route path="/hdd" component={HddHome} />
       <Route path="/hdd/rapport" component={HddRapport} />
@@ -181,6 +188,7 @@ function isAdminRoute(): boolean {
       hash.startsWith("afname/") ||
       hash.startsWith("t4r") ||
       hash.startsWith("teamscan") ||
+      hash.startsWith("t4o") ||
       hash.startsWith("r/")
     );
   } catch {

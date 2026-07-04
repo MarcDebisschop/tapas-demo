@@ -45,7 +45,7 @@ export function genereerTemplateWorkbook(tpl: InstrumentTemplate): XLSX.WorkBook
 
   // Sheet 1: "Deelnemers" — kolomkoppen + 1 voorbeeldrij.
   const koppen = tpl.velden.map((v) => v.kolom);
-  const voorbeeld = tpl.velden.map((v) => voorbeeldWaarde(v));
+  const voorbeeld = tpl.velden.map((v) => voorbeeldWaarde(v, tpl));
   const dataSheet = XLSX.utils.aoa_to_sheet([koppen, voorbeeld]);
   // Kolombreedtes voor leesbaarheid.
   dataSheet["!cols"] = tpl.velden.map((v) => ({ wch: Math.max(v.kolom.length + 2, 18) }));
@@ -75,7 +75,14 @@ export function templateAlsBuffer(tpl: InstrumentTemplate): Buffer {
   return XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
 }
 
-function voorbeeldWaarde(v: VeldDef): string {
+// T4O-ringen (organisatiescan): de kolom 'Ring/Groep' moet exact één van deze
+// waarden bevatten. Bewust hier gedefinieerd zodat excel.ts geen server-module
+// (schema.ts) hoeft te importeren.
+const T4O_RINGEN = ["leiding", "medewerker", "stakeholder"] as const;
+
+function voorbeeldWaarde(v: VeldDef, tpl: InstrumentTemplate): string {
+  // Voor de T4O-organisatiescan is 'groep' een ring met vaste waarden.
+  if (v.sleutel === "groep" && tpl.instrumentId === "t4o") return "leiding";
   switch (v.sleutel) {
     case "voornaam":
       return "Jan";
@@ -177,11 +184,24 @@ export function parseUpload(data: Buffer, tpl: InstrumentTemplate): ParseResulta
         fouten.push({ rij: dataRijNr, kolom: v.kolom, melding: `Taal '${val}' is ongeldig. Gebruik: ${GELDIGE_TALEN.join(", ")}.` });
         rijHeeftFout = true;
       }
+      // T4O-ringvalidatie: 'groep' moet leiding/medewerker/stakeholder zijn.
+      if (v.sleutel === "groep" && tpl.instrumentId === "t4o") {
+        if (!(T4O_RINGEN as readonly string[]).includes(val.toLowerCase())) {
+          fouten.push({ rij: dataRijNr, kolom: v.kolom, melding: `Ring/Groep '${val}' is ongeldig. Gebruik: ${T4O_RINGEN.join(", ")}.` });
+          rijHeeftFout = true;
+        }
+      }
     }
 
-    // Normaliseer taal (default nl) voor geldige rijen.
-    if (waarden.taal === "") waarden.taal = STANDAARD_TAAL;
-    else waarden.taal = waarden.taal.toLowerCase();
+    // Normaliseer de T4O-ring naar kleine letters voor geldige rijen.
+    if (tpl.instrumentId === "t4o" && waarden.groep) waarden.groep = waarden.groep.toLowerCase();
+
+    // Normaliseer taal (default nl) voor geldige rijen. Enkel wanneer het
+    // template een taal-veld heeft (T4O heeft er geen → waarden.taal undefined).
+    if (waarden.taal !== undefined) {
+      if (waarden.taal === "") waarden.taal = STANDAARD_TAAL;
+      else waarden.taal = waarden.taal.toLowerCase();
+    }
 
     // Ook rijen met fouten toevoegen aan de preview zodat de UI ze kan tonen;
     // de verwerk-stap slaat foutrijen over.
