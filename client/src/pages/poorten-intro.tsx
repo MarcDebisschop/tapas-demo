@@ -46,11 +46,11 @@ function clamp01(e: number) {
 }
 
 // ─── Condens-tekst: 4 regels onder elkaar, gecentreerd ───────────────────────
-// De mist condenseert tot deze 4 regels (spelling letterlijk: "Welcom"). Eén
+// De mist condenseert tot deze 4 regels. Eén
 // gedeelde helper garandeert dat de particle-sampling (berekenDeeltjes) en de
 // glow-fillText (teken-lus) EXACT dezelfde regels op dezelfde posities/font
 // tekenen, zodat de glow met de particle-vorm overeenkomt.
-const WELKOM_REGELS = ["Welcom", "in", "TaPas", "City"];
+const WELKOM_REGELS = ["Welcome", "in", "TaPas", "City"];
 const WELKOM_REGELHOOGTE = 1.12; // × fontgrootte
 
 function tekenWelkomRegels(
