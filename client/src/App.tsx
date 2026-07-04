@@ -41,6 +41,7 @@ import AdminInstrumentengids from "@/pages/admin-instrumentengids";
 import { AdminLoginGate } from "@/components/AdminLoginGate";
 import Koop from "@/pages/koop";
 import AdminPrijzen from "@/pages/admin-prijzen";
+import AdminBulkImport from "@/pages/admin-bulk-import";
 import { Redirect } from "wouter";
 import Studie, { StudieScholenPagina, StudieLeerlingenPagina, StudieInstrumentenPagina } from "@/pages/studie";
 import Werk from "@/pages/werk";
@@ -105,6 +106,7 @@ function AppRouter() {
       <Route path="/admin/stm">{() => <AdminLoginGate><Stm /></AdminLoginGate>}</Route>
       <Route path="/admin/webinars">{() => <AdminLoginGate><Webinars /></AdminLoginGate>}</Route>
       <Route path="/admin/prijzen">{() => <AdminLoginGate><AdminPrijzen /></AdminLoginGate>}</Route>
+      <Route path="/admin/bulk-import">{() => <AdminLoginGate><AdminBulkImport /></AdminLoginGate>}</Route>
       <Route path="/coaches" component={Coaches} />
       <Route path="/academy/jester" component={AcademyJester} />
       <Route path="/academy" component={Academy} />

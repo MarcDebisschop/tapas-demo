@@ -17,6 +17,7 @@ import { registerT4SportsRoutes } from "./t4sports/routes";
 import { registerT4SportsModuleRoutes } from "./t4sports/module-routes";
 import { registerCoachContactRoutes } from "./routes-coach-contact";
 import { registerPriveAankoopRoutes } from "./prive-aankoop/routes";
+import { registerBulkImportRoutes } from "./bulk-import/routes";
 
 // Domeinrouters (item 1.1, Fase 5)
 import { registerInstrumentRoutes } from "./routes/instrumenten";
@@ -130,6 +131,12 @@ export async function registerRoutes(
   // Nieuwe module (Regel 2): eigen bestanden, hergebruikt factuur/Peppol-engine.
   // -------------------------------------------------------------------------
   registerPriveAankoopRoutes(app);
+
+  // -------------------------------------------------------------------------
+  // Bulk-import via Excel/CSV (meerdere instrumenten). Nieuwe module (Regel 2):
+  // eigen bestanden, hergebruikt de bestaande uitnodig-/creditlogica.
+  // -------------------------------------------------------------------------
+  registerBulkImportRoutes(app);
 
   // Credit-recovery job: verlopen afnames vrijgeven (item 1.6, 2026-06-30)
   startCreditRecoveryJob(6);
