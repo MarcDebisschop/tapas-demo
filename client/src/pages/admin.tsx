@@ -406,6 +406,11 @@ export default function Admin() {
               <span className="text-sm font-semibold text-foreground">Organisatie</span>
             </div>
             <div className="mt-4 flex flex-col gap-1.5">
+              <Link href="/t4o">
+                <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-t4o">
+                  <Building2 className="h-3.5 w-3.5 shrink-0" /> TaPas 4 Organizations
+                </a>
+              </Link>
               <Link href="/admin/academy">
                 <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-academy-beheer">
                   <GraduationCap className="h-3.5 w-3.5 shrink-0" /> Academy
