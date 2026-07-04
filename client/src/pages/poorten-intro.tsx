@@ -45,6 +45,30 @@ function clamp01(e: number) {
   return e < 0 ? 0 : e > 1 ? 1 : e;
 }
 
+// ─── Condens-tekst: 4 regels onder elkaar, gecentreerd ───────────────────────
+// De mist condenseert tot deze 4 regels (spelling letterlijk: "Welcom"). Eén
+// gedeelde helper garandeert dat de particle-sampling (berekenDeeltjes) en de
+// glow-fillText (teken-lus) EXACT dezelfde regels op dezelfde posities/font
+// tekenen, zodat de glow met de particle-vorm overeenkomt.
+const WELKOM_REGELS = ["Welcom", "in", "TaPas", "City"];
+const WELKOM_REGELHOOGTE = 1.12; // × fontgrootte
+
+function tekenWelkomRegels(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  fs: number,
+) {
+  ctx.font = `600 ${fs}px "Playfair Display", Georgia, serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const regelH = fs * WELKOM_REGELHOOGTE;
+  const startY = cy - ((WELKOM_REGELS.length - 1) * regelH) / 2;
+  WELKOM_REGELS.forEach((regel, i) => {
+    ctx.fillText(regel, cx, startY + i * regelH);
+  });
+}
+
 // ─── Intro-teksten in de gepersisteerde UI-taal ──────────────────────────────
 // De poorten-intro mount vóór de TaalProvider/router, dus we lezen de bewaarde
 // taalkeuze rechtstreeks uit localStorage (sleutel tapas_ui_taal). Bij een eerste
@@ -471,17 +495,27 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
       if (!tijdelijkCtx) return;
 
       const maxBreedte = Math.min(breedte * 0.62, 760);
-      lettertypeGrootte = Math.max(64, Math.min(maxBreedte / 3, 200));
-      const fs = lettertypeGrootte;
 
       tijdelijkCanvas.width = breedte;
       tijdelijkCanvas.height = hoogte;
+
+      // 4 regels onder elkaar — start vanuit de originele grootte en verklein
+      // zodat de langste regel binnen maxBreedte past én het 4-regelblok
+      // verticaal past. lettertypeGrootte wordt hergebruikt door de glow-lus.
+      let fs = Math.max(64, Math.min(maxBreedte / 3, 200));
+      tijdelijkCtx.font = `600 ${fs}px "Playfair Display", Georgia, serif`;
+      const langsteRegel = Math.max(
+        ...WELKOM_REGELS.map((r) => tijdelijkCtx.measureText(r).width),
+      );
+      if (langsteRegel > maxBreedte) fs *= maxBreedte / langsteRegel;
+      const maxBlokHoogte = hoogte * 0.66;
+      const blokHoogte = WELKOM_REGELS.length * fs * WELKOM_REGELHOOGTE;
+      if (blokHoogte > maxBlokHoogte) fs *= maxBlokHoogte / blokHoogte;
+      lettertypeGrootte = fs;
+
       tijdelijkCtx.clearRect(0, 0, breedte, hoogte);
       tijdelijkCtx.fillStyle = "#fff";
-      tijdelijkCtx.textAlign = "center";
-      tijdelijkCtx.textBaseline = "middle";
-      tijdelijkCtx.font = `600 ${fs}px "Playfair Display", Georgia, serif`;
-      tijdelijkCtx.fillText("TaPas", breedte / 2, hoogte * 0.5);
+      tekenWelkomRegels(tijdelijkCtx, breedte / 2, hoogte * 0.5, fs);
 
       const pixelData = tijdelijkCtx.getImageData(0, 0, breedte, hoogte).data;
       const stap = breedte < 520 ? 6 : 5;
@@ -682,15 +716,13 @@ export default function PoortenIntro({ onComplete }: PoortenIntroProps) {
           if (condensFactor > 0.01) {
             const fs = lettertypeGrootte;
             ctxTekst.globalCompositeOperation = "lighter";
-            ctxTekst.textAlign = "center";
-            ctxTekst.textBaseline = "middle";
-            ctxTekst.font = `600 ${fs}px "Playfair Display", Georgia, serif`;
             // glow shadow (exact origineel)
             ctxTekst.shadowColor = "rgba(247, 222, 176, 0.85)";
             ctxTekst.shadowBlur = 26 * condensFactor;
             const tekstVulAlpha = tekstAlpha * condensFactor * 0.82;
             ctxTekst.fillStyle = `rgba(236, 214, 176, ${tekstVulAlpha})`;
-            ctxTekst.fillText("TaPas", breedte / 2, hoogte * 0.5);
+            // identieke 4 regels op dezelfde posities als de particle-sampling
+            tekenWelkomRegels(ctxTekst, breedte / 2, hoogte * 0.5, fs);
             ctxTekst.shadowBlur = 0;
           }
 
