@@ -4,6 +4,7 @@ import { insertT4OSessieSchema, GROEP_NAAR_RING, T4O_GROEPEN, type T4OGroep } fr
 import { t4oInstrument, itemsVoorRing, verplichteItemIdsVoorRing } from "./instrument";
 import { scoorOrganisatie } from "./scoring";
 import { renderT4ORapport } from "./rapport";
+import { seedBishop } from "./seed";
 
 /**
  * TaPas 4 Organizations — routes (prefix /api/t4o/...).
@@ -17,6 +18,9 @@ import { renderT4ORapport } from "./rapport";
 const MIN_VOOR_RAPPORT = 3;
 
 export function registerT4OrganizationsRoutes(app: Express): void {
+  // Demonstratie-afname "Bishop & Bishop" idempotent seeden bij startup.
+  seedBishop();
+
   // ---- Sessies -------------------------------------------------------------
   app.get("/api/t4o/sessies", (_req, res) => {
     res.json(storage.alleSessies());
