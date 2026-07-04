@@ -74,6 +74,7 @@ const INSTRUMENTEN = [
   { id: "tapas-t4teens", naam: "T4Teens", beschrijving: "Vonk-instrument (25 items: energie, drivers, versnellers, foci, interesse, betekenis)" },
   { id: "tapas-t4sports", naam: "T4Sports Modules", beschrijving: "M1 ACSI-28 (28 items) · M2 DFS-2/FSS-2 (18 items) · M3 AIMS-7 (7 items)" },
   { id: "tapas-t4sports-basis", naam: "T4Sports Basisvragen", beschrijving: "136 basisitems: Drivers (10 blokken) · Talent-foci (10 blokken) · Talent-versnellers (14 blokken)" },
+  { id: "tapas-t4organizations", naam: "T4Organizations", beschrijving: "3-ringen organisatiescan: nulmeting + i1–i55 (identiteit, energie, teamklimaat, sensing/seizing/transforming, exploitatie/exploratie, handtekening)" },
 ];
 
 // ─── Item-kaart ───────────────────────────────────────────────────────────────

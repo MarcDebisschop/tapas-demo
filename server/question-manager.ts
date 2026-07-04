@@ -30,6 +30,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { storage, db } from "./storage";
 import { MODULES as T4R_MODULES } from "./t4r/library";
+import { t4oInstrument } from "./t4organizations/instrument";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -576,6 +577,37 @@ function laadT4SportsBasisItems(): VraagItem[] {
   }
 }
 
+// ─── TaPas 4 Organizations — 3-ringen organisatie-instrument ─────────────────
+// Bron: server/t4organizations/instrument.ts (t4oInstrument.items).
+// Geen interpretatie, geen duplicatie — de autoritatieve itembron wordt
+// rechtstreeks hergebruikt (Regel 1 + Regel 4). Elk item is meertalig via de
+// override-tabel bewerkbaar; de originele prompt staat enkel in het nl-veld.
+// family = niveau + ring-samenstelling; construct = dimensie (vermogen).
+const T4O_RING_LABEL: Record<string, string> = {
+  binnen: "R1 leiding",
+  midden: "R2 medewerkers",
+  buiten: "R3 stakeholders",
+};
+
+function laadT4OrganizationsItems(): VraagItem[] {
+  try {
+    return t4oInstrument.items.map((it) => {
+      const ringen = (it.rings ?? []).map((r) => T4O_RING_LABEL[r] ?? r).join(" · ");
+      return {
+        itemId: it.id,
+        instrument: "tapas-t4organizations",
+        family: `${it.niveau} — ${ringen}`,
+        construct: it.dimensie,
+        tekst: { nl: it.prompt?.nl ?? "" },
+        heeftOverride: false,
+      } as VraagItem;
+    });
+  } catch (e) {
+    console.error("[QM] T4Organizations items laden mislukt:", e);
+    return [];
+  }
+}
+
 const INSTRUMENT_LOADERS: Record<string, () => VraagItem[]> = {
   "tapas-t4p":            laadT4PItems,
   "tapas-teamscan":       laadTeamscanItems,
@@ -585,6 +617,7 @@ const INSTRUMENT_LOADERS: Record<string, () => VraagItem[]> = {
   "tapas-t4teens":        laadT4TeensItems,
   "tapas-t4sports":       laadT4SportsModuleItems,
   "tapas-t4sports-basis": laadT4SportsBasisItems,
+  "tapas-t4organizations": laadT4OrganizationsItems,
 };
 
 const BEKENDE_INSTRUMENTEN = Object.keys(INSTRUMENT_LOADERS);
