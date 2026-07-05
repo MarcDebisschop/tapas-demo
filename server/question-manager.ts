@@ -659,6 +659,14 @@ const INSTRUMENT_LOADERS: Record<string, () => VraagItem[]> = {
 
 const BEKENDE_INSTRUMENTEN = Object.keys(INSTRUMENT_LOADERS);
 
+// Additief (T4Students-rapportgenerator): geeft de itembank van een instrument
+// terug via de bestaande loaders. Bestaand gedrag ongewijzigd — enkel een
+// lees-helper zodat nieuwe modules de items niet hoeven te dupliceren.
+export function laadInstrumentItems(instrument: string): VraagItem[] {
+  const loader = INSTRUMENT_LOADERS[instrument];
+  return loader ? loader() : [];
+}
+
 // ─── Route builder ────────────────────────────────────────────────────────────
 
 export function buildQuestionManagerRoutes(app: any) {
