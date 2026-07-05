@@ -21,6 +21,7 @@ import { registerPriveAankoopRoutes } from "./prive-aankoop/routes";
 import { registerBulkImportRoutes } from "./bulk-import/routes";
 import { registerT4OrganizationsRoutes } from "./t4organizations/routes";
 import { registerDriverScanRoutes } from "./driverscan/routes";
+import { buildInstrumentBeschikbaarheidRoutes } from "./instrument-beschikbaarheid";
 
 // Domeinrouters (item 1.1, Fase 5)
 import { registerInstrumentRoutes } from "./routes/instrumenten";
@@ -113,6 +114,12 @@ export async function registerRoutes(
   // Nieuwe module (Regel 2): eigen bestand, raakt geen bestaand rapportpad aan.
   // -------------------------------------------------------------------------
   buildDuidingManagerRoutes(app);
+
+  // -------------------------------------------------------------------------
+  // Instrument-beschikbaarheid — prior-beheerder geeft instrumenten vrij
+  // (default UIT). Nieuwe module (Regel 2): eigen bestand, additief.
+  // -------------------------------------------------------------------------
+  buildInstrumentBeschikbaarheidRoutes(app);
 
   // -------------------------------------------------------------------------
   // De Instrumentengids — tekst-overrides (prior) + publieke PDF-downloads.

@@ -40,6 +40,7 @@ import ImpactHome from "@/pages/impact-home";
 import Lounge from "@/pages/lounge";
 import AdminVraagbeheer from "@/pages/admin-vraagbeheer";
 import AdminDuidingbeheer from "@/pages/admin-duidingbeheer";
+import AdminBeschikbaarheid from "@/pages/admin-beschikbaarheid";
 import Instrumenten from "@/pages/instrumenten";
 import Brochure from "@/pages/brochure";
 import AdminInstrumentengids from "@/pages/admin-instrumentengids";
@@ -103,6 +104,7 @@ function AppRouter() {
       <Route path="/admin/toegang">{() => <AdminLoginGate><AdminToegang /></AdminLoginGate>}</Route>
       <Route path="/admin/vraagbeheer">{() => <AdminLoginGate><AdminVraagbeheer /></AdminLoginGate>}</Route>
       <Route path="/admin/duidingbeheer">{() => <AdminLoginGate><AdminDuidingbeheer /></AdminLoginGate>}</Route>
+      <Route path="/admin/beschikbaarheid">{() => <AdminLoginGate><AdminBeschikbaarheid /></AdminLoginGate>}</Route>
       <Route path="/admin/instrumentengids">{() => <AdminLoginGate><AdminInstrumentengids /></AdminLoginGate>}</Route>
       <Route path="/admin/coaches">{() => <AdminLoginGate><AdminCoaches /></AdminLoginGate>}</Route>
       <Route path="/admin/inzichten">{() => <AdminLoginGate><AdminInzichten /></AdminLoginGate>}</Route>

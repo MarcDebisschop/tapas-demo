@@ -189,7 +189,8 @@ function vindVerrijking(id: string) {
 
 export function registerInstrumentenCatalogusRoutes(app: Express): void {
   app.get("/api/instrumenten/catalogus", (_req, res) => {
-    const basis = instrumentSamenvattingen();
+    const basis = instrumentSamenvattingen()
+      .filter((c) => c.instrumentId !== "driverscan" && c.instrumentId !== "tapas-driverscan");
     const catalogus = basis.map((inst) => {
       const verr = vindVerrijking(inst.instrumentId);
       return {
@@ -217,14 +218,6 @@ export function registerInstrumentenCatalogusRoutes(app: Express): void {
         beschrijving: "Energetisch gedragsprofiel in professionele context — 15-pagina PDF, 5 talen.",
         creditCost: 0,
         ...VERRIJKING["twominscan"],
-      },
-      {
-        id: "driverscan",
-        naam: "Driver-scan",
-        flowType: "individual" as const,
-        beschrijving: "5 Kahler-drivers via forced-choice — kort visueel PDF-rapport, 5 talen.",
-        creditCost: 0,
-        ...VERRIJKING["driverscan"],
       },
       {
         id: "stm",

@@ -107,23 +107,6 @@ export const INSTRUMENTENGIDS: GidsInstrument[] = [
     icoon: "Zap",
   },
   {
-    id: "driverscan",
-    naam: "Driver-scan",
-    orientatie: "beide",
-    eyebrow: "Drivers · forced-choice",
-    omschrijving:
-      "Brengt de volgorde van je 5 Kahler-drivers in beeld via exact dezelfde gevalideerde forced-choice blokken als het T4P Business Kompas, met een kort visueel PDF-rapport.",
-    beantwoordt:
-      "Welke onbewuste drivers sturen mijn gedrag, en in welke volgorde? Welke driver zit het sterkst 'aan het stuur', en wanneer wordt diezelfde driver een rem óf een gaspedaal?",
-    gebruik:
-      "Als kort, visueel gespreksvertrekpunt vóór een coachtraject en om bewustzijn te scheppen over de rem- of gaspedaalwerking van elke driver per context.",
-    doelgroep: "Professionals en coaches die de onbewuste drivers achter gedrag willen kennen.",
-    start: { label: "Start de Driver-scan", route: "/driverscan", direct: true },
-    rapportTeaser:
-      "Een kort visueel rapport (1–2 pagina's) met je gerangschikte driver-volgorde, net-score en energie per driver, plus per driver de rem/gaspedaal-duiding — in 5 talen.",
-    icoon: "SlidersHorizontal",
-  },
-  {
     id: "tapas-teamscan",
     naam: "TaPas Teamscan",
     orientatie: "beide",

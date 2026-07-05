@@ -20,6 +20,20 @@ import { getVraagTekst } from "../question-manager";
 import { buildMainScores, type Responses } from "../scoring";
 import { renderDriverScanPdf, type DriverScanRow } from "./rapport-pdf";
 import { DRIVER_KEYS, veiligeTaal, type DriverKey } from "./duiding";
+import { isInstrumentBeschikbaar } from "../instrument-beschikbaarheid";
+
+// Poort: de Driver-scan is pas afneembaar wanneer een prior-beheerder ze heeft
+// vrijgegeven (default UIT). Een ingelogde beheerder (adminId in sessie) mag
+// ALTIJD, zodat testen mogelijk blijft terwijl de vlag UIT staat. Retourneert
+// true wanneer de aanvraag geblokkeerd is (en verstuurt dan de 403).
+function driverScanGeblokkeerd(req: Request, res: Response): boolean {
+  if (isInstrumentBeschikbaar("tapas-driverscan")) return false;
+  if ((req.session as any)?.adminId) return false;
+  res.status(403).json({
+    error: "De Driver-scan is momenteel niet vrijgegeven. Neem contact op met je begeleider.",
+  });
+  return true;
+}
 
 const TALEN = new Set(["nl", "fr", "en", "es", "ru"]);
 const DRIVERKEY_SET = new Set<string>(DRIVER_KEYS);
@@ -111,6 +125,7 @@ export function registerDriverScanRoutes(app: Express): void {
   // De 10 driver-blokken voor de afname.
   app.get("/api/driverscan/blocks", (req: Request, res: Response) => {
     try {
+      if (driverScanGeblokkeerd(req, res)) return;
       res.json(clientBlokken(kiesTaal(req)));
     } catch (err) {
       res.status(500).json({
@@ -123,6 +138,7 @@ export function registerDriverScanRoutes(app: Express): void {
   // Scoor de antwoorden → gerangschikte drivers (net + avgEnergy).
   app.post("/api/driverscan/score", (req: Request, res: Response) => {
     try {
+      if (driverScanGeblokkeerd(req, res)) return;
       const drivers = scoorDrivers(req.body?.responses ?? req.body);
       res.json({ drivers });
     } catch (err) {
@@ -136,6 +152,7 @@ export function registerDriverScanRoutes(app: Express): void {
   // Genereer het korte visuele PDF-rapport (5 talen).
   app.post("/api/driverscan/rapport.pdf", async (req: Request, res: Response) => {
     try {
+      if (driverScanGeblokkeerd(req, res)) return;
       const taal = veiligeTaal(String(req.body?.taal ?? "nl"));
       const drivers = scoorDrivers(req.body?.responses ?? req.body);
       if (drivers.length === 0) {
