@@ -36,6 +36,7 @@ import {
   ArrowRight,
   UserSearch,
   Layers,
+  SlidersHorizontal,
 } from "lucide-react";
 import {
   INSTRUMENTENGIDS,
@@ -70,6 +71,7 @@ const ICONEN: Record<string, React.ComponentType<{ className?: string; style?: R
   Trophy,
   Backpack,
   GraduationCap,
+  SlidersHorizontal,
 };
 
 type Filter = "alles" | "business" | "education" | "beide" | "sport";

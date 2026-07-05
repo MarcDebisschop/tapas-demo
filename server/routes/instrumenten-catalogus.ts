@@ -130,19 +130,33 @@ const VERRIJKING: Record<string, {
     rapport: "T4Sports Profiel PDF (Deel 1 + Deel 2) + online dashboard",
     emoji: "🏆",
   },
-  // 2MinScan — het snelle energieprofiel (individueel)
+  // 2MinScan — energetisch gedragsprofiel (individueel)
   "twominscan": {
-    doelgroep: "Iedereen — als instap of aanvulling op een volledig profiel",
+    doelgroep: "Professionals die hun energetisch gedragsprofiel in een werkcontext willen kennen",
     useCases: [
-      "Snelle energiescan vóór een coachgesprek",
-      "Teamcheck: wie is op dit moment in zijn kracht?",
-      "Onboarding-tool bij nieuwe medewerkers",
-      "Zelfcheck voor drukke periodes",
+      "Energetisch gedragsprofiel in een professionele context",
+      "Inzicht in waar de professionele energie zit en hoe ze zich vertaalt naar gedrag",
+      "Verdiepend vertrekpunt voor een coachtraject",
+      "Meertalige afname en rapportage binnen één team",
     ],
     outcome:
-      "2-minuten energieprofiel: één visuele score die aangeeft waar de professionele energie nu zit. Geen uitgebreide rapportage — ideaal als instap.",
-    rapport: "Energiekaart (inline, geen PDF)",
+      "Energetisch gedragsprofiel in professionele context: een uitgewerkt 15-pagina \"Energetisch Gedragsprofiel\"-rapport in 5 talen (NL/FR/EN/ES/RU).",
+    rapport: "Energetisch Gedragsprofiel PDF (15 pagina's, 5 talen)",
     emoji: "⚡",
+  },
+  // Driver-scan — 5 Kahler-drivers via forced-choice (individueel)
+  "driverscan": {
+    doelgroep: "Professionals en coaches die de onbewuste drivers achter gedrag willen kennen",
+    useCases: [
+      "De volgorde van de 5 Kahler-drivers in beeld brengen",
+      "Zien welke driver het sterkst 'aan het stuur' zit onder druk",
+      "Begrijpen wanneer eenzelfde driver een rem óf een gaspedaal wordt",
+      "Kort, visueel gespreksvertrekpunt vóór een coachtraject",
+    ],
+    outcome:
+      "Gerangschikte driver-volgorde (net-score + energie per driver) met per driver de rem/gaspedaal-duiding, afhankelijk van de context. Meet via exact dezelfde forced-choice blokken als T4P Business.",
+    rapport: "Kort visueel Driver-scan PDF (1–2 pagina's, forced-choice, 5 talen)",
+    emoji: "🎚️",
   },
   // STM — Self-Training Module (voor coaches)
   "stm": {
@@ -166,6 +180,7 @@ function vindVerrijking(id: string) {
   if (VERRIJKING[id]) return VERRIJKING[id];
   // Aliassen
   if (id.includes("business") || id === "tapas" || id === "t4p") return VERRIJKING["t4p-business"];
+  if (id.includes("driverscan") || id.includes("driver-scan")) return VERRIJKING["driverscan"];
   if (id.includes("2min") || id.includes("twominscan")) return VERRIJKING["twominscan"];
   if (id.includes("stm") || id.includes("self")) return VERRIJKING["stm"];
   if (id.includes("t4sports") || id.includes("sports")) return VERRIJKING["t4sports"];
@@ -199,9 +214,17 @@ export function registerInstrumentenCatalogusRoutes(app: Express): void {
         id: "twominscan",
         naam: "2MinScan",
         flowType: "individual" as const,
-        beschrijving: "Snelle 2-minuten energiescan.",
+        beschrijving: "Energetisch gedragsprofiel in professionele context — 15-pagina PDF, 5 talen.",
         creditCost: 0,
         ...VERRIJKING["twominscan"],
+      },
+      {
+        id: "driverscan",
+        naam: "Driver-scan",
+        flowType: "individual" as const,
+        beschrijving: "5 Kahler-drivers via forced-choice — kort visueel PDF-rapport, 5 talen.",
+        creditCost: 0,
+        ...VERRIJKING["driverscan"],
       },
       {
         id: "stm",

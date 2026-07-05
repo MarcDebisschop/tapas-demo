@@ -20,6 +20,7 @@ import { registerCoachContactRoutes } from "./routes-coach-contact";
 import { registerPriveAankoopRoutes } from "./prive-aankoop/routes";
 import { registerBulkImportRoutes } from "./bulk-import/routes";
 import { registerT4OrganizationsRoutes } from "./t4organizations/routes";
+import { registerDriverScanRoutes } from "./driverscan/routes";
 
 // Domeinrouters (item 1.1, Fase 5)
 import { registerInstrumentRoutes } from "./routes/instrumenten";
@@ -84,6 +85,13 @@ export async function registerRoutes(
   // (leiding/medewerker/stakeholder). Nieuwe module (Regel 2): eigen bestanden.
   // -------------------------------------------------------------------------
   registerT4OrganizationsRoutes(app);
+
+  // -------------------------------------------------------------------------
+  // Driver-scan — 5 Kahler-drivers via de 10 T4P forced-choice blokken.
+  // Nieuwe module (Regel 2): eigen bestanden; hergebruikt buildMainScores
+  // ONGEWIJZIGD; raakt geen bestaand afname- of rapportpad aan.
+  // -------------------------------------------------------------------------
+  registerDriverScanRoutes(app);
 
   // -------------------------------------------------------------------------
   // Human Due Diligence — vlaggenschip-traject (journey).

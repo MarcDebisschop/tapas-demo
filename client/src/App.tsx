@@ -32,6 +32,7 @@ import T4OHome from "@/pages/t4o-home";
 import T4OSessie from "@/pages/t4o-sessie";
 import T4ODeelnemer from "@/pages/t4o-deelnemer";
 import TwominscanAfname from "@/pages/twominscan-afname";
+import DriverScanAfname from "@/pages/driverscan-afname";
 import HddHome from "@/pages/hdd-home";
 import HddRapport from "@/pages/hdd-rapport";
 import TwominscanRapport from "@/pages/twominscan-rapport";
@@ -133,6 +134,7 @@ function AppRouter() {
       <Route path="/t4o/sessie/:id" component={T4OSessie} />
       <Route path="/t4o/r/:token" component={T4ODeelnemer} />
       <Route path="/2minscan" component={TwominscanAfname} />
+      <Route path="/driverscan" component={DriverScanAfname} />
       <Route path="/hdd" component={HddHome} />
       <Route path="/hdd/rapport" component={HddRapport} />
       <Route path="/2minscan/rapport" component={TwominscanRapport} />

@@ -93,18 +93,35 @@ export const INSTRUMENTENGIDS: GidsInstrument[] = [
     id: "twominscan",
     naam: "2MinScan",
     orientatie: "beide",
-    eyebrow: "Snelscan · energie",
+    eyebrow: "Energetisch gedragsprofiel",
     omschrijving:
-      "De snelle energiescan: in twee minuten een visuele indicatie van waar de professionele energie op dit moment zit. Ideaal als instap of check-in.",
+      "Het energetisch gedragsprofiel in een professionele context: brengt in kaart hoe je energie zich vertaalt naar gedrag op het werk, met een uitgewerkt rapport in 5 talen.",
     beantwoordt:
-      "Waar zit mijn energie nu? Sta ik op dit moment in mijn kracht, of vraagt iets aandacht? Een momentopname, geen diepteprofiel.",
+      "Hoe vertaalt mijn energie zich naar mijn gedrag in een werkcontext? Waar zit mijn energetische kracht, en hoe uit die zich zichtbaar?",
     gebruik:
-      "Als laagdrempelige instap vóór een coachgesprek, als teamcheck, als onboarding-tool of als periodieke zelfcheck in drukke periodes.",
-    doelgroep: "Iedereen — als instap of aanvulling op een volledig profiel.",
+      "Als vertrekpunt voor een coachgesprek of ontwikkeltraject, en als gedeeld, meertalig beeld binnen een team.",
+    doelgroep: "Professionals die hun energetisch gedragsprofiel in een werkcontext willen kennen.",
     start: { label: "Start de 2MinScan", route: "/2minscan", direct: true },
     rapportTeaser:
-      "Een directe energiekaart met één heldere score die aangeeft waar de professionele energie nu zit — inline, zonder wachttijd.",
+      "Een uitgewerkt 15-pagina \"Energetisch Gedragsprofiel\"-rapport, beschikbaar in 5 talen (NL/FR/EN/ES/RU).",
     icoon: "Zap",
+  },
+  {
+    id: "driverscan",
+    naam: "Driver-scan",
+    orientatie: "beide",
+    eyebrow: "Drivers · forced-choice",
+    omschrijving:
+      "Brengt de volgorde van je 5 Kahler-drivers in beeld via exact dezelfde gevalideerde forced-choice blokken als het T4P Business Kompas, met een kort visueel PDF-rapport.",
+    beantwoordt:
+      "Welke onbewuste drivers sturen mijn gedrag, en in welke volgorde? Welke driver zit het sterkst 'aan het stuur', en wanneer wordt diezelfde driver een rem óf een gaspedaal?",
+    gebruik:
+      "Als kort, visueel gespreksvertrekpunt vóór een coachtraject en om bewustzijn te scheppen over de rem- of gaspedaalwerking van elke driver per context.",
+    doelgroep: "Professionals en coaches die de onbewuste drivers achter gedrag willen kennen.",
+    start: { label: "Start de Driver-scan", route: "/driverscan", direct: true },
+    rapportTeaser:
+      "Een kort visueel rapport (1–2 pagina's) met je gerangschikte driver-volgorde, net-score en energie per driver, plus per driver de rem/gaspedaal-duiding — in 5 talen.",
+    icoon: "SlidersHorizontal",
   },
   {
     id: "tapas-teamscan",

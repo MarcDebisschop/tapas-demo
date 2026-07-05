@@ -13,7 +13,7 @@
  *   tapas-t4p          → server/data/instrument.json       (T4P Business Kompas)
  *   tapas-teamscan     → server/teamscan/itembank.json      (TaPas Teamscan)
  *   tapas-t4recruitment→ server/t4r/library.ts              (T4Recruitment)
- *   tapas-2minscan     → interne definitie (EG-gedragscode) (2MinScan)
+ *   tapas-driverscan   → server/data/instrument.json (10 forced-choice driver-blokken) (Driver-scan / Kahler-drivers)
  *   tapas-t4students   → interne definitie (studiekompas)   (T4Students)
  *   tapas-t4sports     → server/data/t4sports-modules.json  (T4Sports M1/M2/M3)
  *
@@ -216,57 +216,94 @@ function laadT4RItems(): VraagItem[] {
 }
 
 /**
- * 2MinScan — energetisch gedragsprofiel (EG-code instrument).
- * Structuur: 5 drivers × 5 stellingen + 1 open vraag + 1 energiebalans = 27 items.
- * Geen apart JSON-bestand — definities zijn normatief vastgelegd in het functioneel
- * ontwerp en worden hier als bevroren constante bijgehouden.
- * family = driver-naam, construct = EG-cluster
+ * Driver-scan — Kahler-drivers via forced-choice (Route 1).
+ *
+ * De Driver-scan meet de 5 Kahler-drivers via EXACT dezelfde gevalideerde
+ * forced-choice driver-blokken als het T4P Business Kompas: de 10 blokken met
+ * family "Drivers" (blockIndex 0..9) uit server/data/instrument.json. Het
+ * vraagbeheer laadt daarom die LIVE forced-choice items (loader hieronder) —
+ * volledig losgekoppeld van de "2MINSCAN"-naam.
+ *
+ * ── GEARCHIVEERD, NIET IN GEBRUIK ──────────────────────────────────────────
+ * De onderstaande 27 Likert-items waren de oorspronkelijke stellingen-variant.
+ * Route 1 gebruikt ze NIET (de Driver-scan neemt de T4P forced-choice blokken
+ * af). Ze blijven hier enkel als bevroren, uitgeschakelde referentie bewaard.
+ * De teksten zijn LETTERLIJK behouden (Werkprotocol Regel 4 — spelling nooit
+ * corrigeren). Geen enkele loader of route verwijst nog naar deze constante.
+ * family = driver-naam, construct = cluster.
  */
-const TWOMINSCAN_ITEMS_DEF: { id: string; driver: string; cluster: string; tekst: string }[] = [
+const ARCHIVED_DRIVERSCAN_LIKERT_ITEMS_DEF: { id: string; driver: string; cluster: string; tekst: string }[] = [
   // Be Strong
-  { id: "EG-BS-1", driver: "Be Strong", cluster: "Standvastigheid", tekst: "Ik draag mijn verantwoordelijkheid en manage mijn werk grotendeels autonoom." },
-  { id: "EG-BS-2", driver: "Be Strong", cluster: "Kalmte onder druk", tekst: "Ik blijf emotioneel stabiel en kalm, ook in stressvolle situaties." },
-  { id: "EG-BS-3", driver: "Be Strong", cluster: "Rationaliteit", tekst: "Ik redeneer rationeel en laat me niet snel meedragen door emoties." },
-  { id: "EG-BS-4", driver: "Be Strong", cluster: "Controle", tekst: "Ik houd het overzicht en voel me ongemakkelijk als anderen alles bepalen." },
-  { id: "EG-BS-5", driver: "Be Strong", cluster: "Zelfstandigheid", tekst: "Ik prefereer zelf beslissingen te nemen boven afhankelijkheid van anderen." },
+  { id: "DRV-BS-1", driver: "Be Strong", cluster: "Standvastigheid", tekst: "Ik draag mijn verantwoordelijkheid en manage mijn werk grotendeels autonoom." },
+  { id: "DRV-BS-2", driver: "Be Strong", cluster: "Kalmte onder druk", tekst: "Ik blijf emotioneel stabiel en kalm, ook in stressvolle situaties." },
+  { id: "DRV-BS-3", driver: "Be Strong", cluster: "Rationaliteit", tekst: "Ik redeneer rationeel en laat me niet snel meedragen door emoties." },
+  { id: "DRV-BS-4", driver: "Be Strong", cluster: "Controle", tekst: "Ik houd het overzicht en voel me ongemakkelijk als anderen alles bepalen." },
+  { id: "DRV-BS-5", driver: "Be Strong", cluster: "Zelfstandigheid", tekst: "Ik prefereer zelf beslissingen te nemen boven afhankelijkheid van anderen." },
   // Be Perfect
-  { id: "EG-BP-1", driver: "Be Perfect", cluster: "Nauwkeurigheid", tekst: "Ik werk nauwkeurig en wil dat alles tot in de puntjes klopt." },
-  { id: "EG-BP-2", driver: "Be Perfect", cluster: "Kwaliteitsbewustzijn", tekst: "Ik merk afwijkingen van de gewenste kwaliteit onmiddellijk op." },
-  { id: "EG-BP-3", driver: "Be Perfect", cluster: "Grondigheid", tekst: "Ik ga goed door informatie heen en lever grondig en volledig werk af." },
-  { id: "EG-BP-4", driver: "Be Perfect", cluster: "Zelfkritiek", tekst: "Ik houd hoge standaarden aan voor mezelf en word onrustig als ik ze niet haal." },
-  { id: "EG-BP-5", driver: "Be Perfect", cluster: "Precisie", tekst: "Ik neem de tijd om het goed te doen, ook als anderen snelheid verwachten." },
+  { id: "DRV-BP-1", driver: "Be Perfect", cluster: "Nauwkeurigheid", tekst: "Ik werk nauwkeurig en wil dat alles tot in de puntjes klopt." },
+  { id: "DRV-BP-2", driver: "Be Perfect", cluster: "Kwaliteitsbewustzijn", tekst: "Ik merk afwijkingen van de gewenste kwaliteit onmiddellijk op." },
+  { id: "DRV-BP-3", driver: "Be Perfect", cluster: "Grondigheid", tekst: "Ik ga goed door informatie heen en lever grondig en volledig werk af." },
+  { id: "DRV-BP-4", driver: "Be Perfect", cluster: "Zelfkritiek", tekst: "Ik houd hoge standaarden aan voor mezelf en word onrustig als ik ze niet haal." },
+  { id: "DRV-BP-5", driver: "Be Perfect", cluster: "Precisie", tekst: "Ik neem de tijd om het goed te doen, ook als anderen snelheid verwachten." },
   // Hurry Up
-  { id: "EG-HU-1", driver: "Hurry Up", cluster: "Multitasking", tekst: "Ik beheer meerdere taken tegelijk en vind daarin een meerwaarde." },
-  { id: "EG-HU-2", driver: "Hurry Up", cluster: "Werktempo", tekst: "Ik werk snel en productief, ook onder tijdsdruk." },
-  { id: "EG-HU-3", driver: "Hurry Up", cluster: "Momentum", tekst: "Ik ga liever snel vooruit dan lang te wachten op perfectie." },
-  { id: "EG-HU-4", driver: "Hurry Up", cluster: "Activatienood", tekst: "Ik heb een hoog activatieniveau nodig om op mijn best te functioneren." },
-  { id: "EG-HU-5", driver: "Hurry Up", cluster: "Actiegerichtheid", tekst: "Rust voelt voor mij onproductief; ik wil altijd bezig zijn." },
+  { id: "DRV-HU-1", driver: "Hurry Up", cluster: "Multitasking", tekst: "Ik beheer meerdere taken tegelijk en vind daarin een meerwaarde." },
+  { id: "DRV-HU-2", driver: "Hurry Up", cluster: "Werktempo", tekst: "Ik werk snel en productief, ook onder tijdsdruk." },
+  { id: "DRV-HU-3", driver: "Hurry Up", cluster: "Momentum", tekst: "Ik ga liever snel vooruit dan lang te wachten op perfectie." },
+  { id: "DRV-HU-4", driver: "Hurry Up", cluster: "Activatienood", tekst: "Ik heb een hoog activatieniveau nodig om op mijn best te functioneren." },
+  { id: "DRV-HU-5", driver: "Hurry Up", cluster: "Actiegerichtheid", tekst: "Rust voelt voor mij onproductief; ik wil altijd bezig zijn." },
   // Try Hard
-  { id: "EG-TH-1", driver: "Try Hard", cluster: "Prestatiedrang", tekst: "Ik stel hoge doelen en zet me voluit in om ze te bereiken." },
-  { id: "EG-TH-2", driver: "Try Hard", cluster: "Bewijsdrang", tekst: "Ik voel me aangedreven om mijn waarde te bewijzen in uitdagende situaties." },
-  { id: "EG-TH-3", driver: "Try Hard", cluster: "Volharding", tekst: "Ik geef niet snel op en blijf doorzetten tot het gewenste resultaat er is." },
-  { id: "EG-TH-4", driver: "Try Hard", cluster: "Uitdagingsdrang", tekst: "Ik gedij het best in veeleisende omgevingen waar ik mezelf moet overstijgen." },
-  { id: "EG-TH-5", driver: "Try Hard", cluster: "Ambitie", tekst: "Succes en erkenning voor mijn inzet zijn voor mij een sterke motor." },
+  { id: "DRV-TH-1", driver: "Try Hard", cluster: "Prestatiedrang", tekst: "Ik stel hoge doelen en zet me voluit in om ze te bereiken." },
+  { id: "DRV-TH-2", driver: "Try Hard", cluster: "Bewijsdrang", tekst: "Ik voel me aangedreven om mijn waarde te bewijzen in uitdagende situaties." },
+  { id: "DRV-TH-3", driver: "Try Hard", cluster: "Volharding", tekst: "Ik geef niet snel op en blijf doorzetten tot het gewenste resultaat er is." },
+  { id: "DRV-TH-4", driver: "Try Hard", cluster: "Uitdagingsdrang", tekst: "Ik gedij het best in veeleisende omgevingen waar ik mezelf moet overstijgen." },
+  { id: "DRV-TH-5", driver: "Try Hard", cluster: "Ambitie", tekst: "Succes en erkenning voor mijn inzet zijn voor mij een sterke motor." },
   // Please Others
-  { id: "EG-PO-1", driver: "Please Others", cluster: "Dienstbaarheid", tekst: "Ik ben sterk gericht op de noden en wensen van anderen." },
-  { id: "EG-PO-2", driver: "Please Others", cluster: "Harmonie", tekst: "Ik zoek actief naar aanvaarding en wil disharmonie vermijden." },
-  { id: "EG-PO-3", driver: "Please Others", cluster: "Diplomatisch", tekst: "Ik formuleer feedback op een manier die anderen kan aanvaarden." },
-  { id: "EG-PO-4", driver: "Please Others", cluster: "Empathie", tekst: "Ik voel snel aan hoe anderen zich voelen en pas mijn gedrag daarop aan." },
-  { id: "EG-PO-5", driver: "Please Others", cluster: "Aanpassingsbereidheid", tekst: "Ik pas mijn werkstijl aan anderen aan om samenwerking te bevorderen." },
+  { id: "DRV-PO-1", driver: "Please Others", cluster: "Dienstbaarheid", tekst: "Ik ben sterk gericht op de noden en wensen van anderen." },
+  { id: "DRV-PO-2", driver: "Please Others", cluster: "Harmonie", tekst: "Ik zoek actief naar aanvaarding en wil disharmonie vermijden." },
+  { id: "DRV-PO-3", driver: "Please Others", cluster: "Diplomatisch", tekst: "Ik formuleer feedback op een manier die anderen kan aanvaarden." },
+  { id: "DRV-PO-4", driver: "Please Others", cluster: "Empathie", tekst: "Ik voel snel aan hoe anderen zich voelen en pas mijn gedrag daarop aan." },
+  { id: "DRV-PO-5", driver: "Please Others", cluster: "Aanpassingsbereidheid", tekst: "Ik pas mijn werkstijl aan anderen aan om samenwerking te bevorderen." },
   // Energiebalans (open)
-  { id: "EG-OPN-1", driver: "Energiebalans", cluster: "Open reflectie", tekst: "Welke activiteiten of werksituaties geven jou structureel energie? (open vraag)" },
-  { id: "EG-OPN-2", driver: "Energiebalans", cluster: "Open reflectie", tekst: "Welke activiteiten of werksituaties kosten jou structureel energie? (open vraag)" },
+  { id: "DRV-OPN-1", driver: "Energiebalans", cluster: "Open reflectie", tekst: "Welke activiteiten of werksituaties geven jou structureel energie? (open vraag)" },
+  { id: "DRV-OPN-2", driver: "Energiebalans", cluster: "Open reflectie", tekst: "Welke activiteiten of werksituaties kosten jou structureel energie? (open vraag)" },
 ];
+// Onderdrukt "unused"-waarschuwingen: bewust bewaarde, uitgeschakelde referentie.
+void ARCHIVED_DRIVERSCAN_LIKERT_ITEMS_DEF;
 
-function laad2MinScanItems(): VraagItem[] {
-  return TWOMINSCAN_ITEMS_DEF.map((d) => ({
-    itemId: d.id,
-    instrument: "tapas-2minscan",
-    family: d.driver,
-    construct: d.cluster,
-    tekst: { nl: d.tekst },
-    heeftOverride: false,
-  }));
+/**
+ * Driver-scan loader — leest de 10 forced-choice driver-blokken (family
+ * "Drivers", blockIndex 0..9) uit server/data/instrument.json. Dit zijn exact
+ * de items die de Driver-scan-afname toont en die buildMainScores scoort;
+ * daarmee is het vraagbeheer consistent met de effectieve afname.
+ * family = "Drivers", construct = driver-naam, itemId = het instrument-item-ID.
+ */
+function laadDriverScanItems(): VraagItem[] {
+  try {
+    const pad = join(process.cwd(), "server/data/instrument.json");
+    const data = JSON.parse(readFileSync(pad, "utf-8"));
+    const main = (data.sections ?? []).find((s: any) => s.sectionId === "main");
+    const items: VraagItem[] = [];
+    for (const block of (main?.blocks ?? []) as any[]) {
+      if (block.family !== "Drivers") continue;
+      for (const item of (block.items ?? []) as any[]) {
+        const tekst: Record<string, string> = {};
+        if (typeof item.text === "string") tekst.nl = item.text;
+        else Object.assign(tekst, item.text ?? {});
+        items.push({
+          itemId: item.id ?? `${block.blockIndex}-${item.pos}`,
+          instrument: "tapas-driverscan",
+          family: item.family ?? "Drivers",
+          construct: item.construct,
+          tekst,
+          heeftOverride: false,
+        });
+      }
+    }
+    return items;
+  } catch (e) {
+    console.error("[QM] Fout bij laden Driver-scan items:", e);
+    return [];
+  }
 }
 
 /**
@@ -612,7 +649,7 @@ const INSTRUMENT_LOADERS: Record<string, () => VraagItem[]> = {
   "tapas-t4p":            laadT4PItems,
   "tapas-teamscan":       laadTeamscanItems,
   "tapas-t4recruitment":  laadT4RItems,
-  "tapas-2minscan":       laad2MinScanItems,
+  "tapas-driverscan":     laadDriverScanItems,
   "tapas-t4students":     laadT4StudentsItems,
   "tapas-t4teens":        laadT4TeensItems,
   "tapas-t4sports":       laadT4SportsModuleItems,
