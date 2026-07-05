@@ -54,6 +54,7 @@ import { eq, desc, and } from "drizzle-orm";
 import { existsSync, readFileSync } from "fs";
 import { resolve } from "path";
 import { bouwRapportInhoud, renderRapportHtml } from "./rapportgenerator";
+import { genereerAiDuiding, isLiveDuidingAan, DUIDING_INSTRUMENT } from "./duiding-manager";
 
 // -----------------------------------------------------------------------------
 // Database-pad: ROBUUST oplossen.
@@ -2286,8 +2287,28 @@ export class DatabaseStorage implements IStorage {
       throw new CreditError("Afname is nog niet voltooid; er is geen contract om een rapport uit te genereren");
     }
     const contract = JSON.parse(afname.generatorContract);
-    const inhoud = bouwRapportInhoud(contract, variant);
-    const html = renderRapportHtml(inhoud);
+    let inhoud = bouwRapportInhoud(contract, variant);
+    let html = renderRapportHtml(inhoud);
+
+    // --- Additief (T4P-pilot): LIVE AI-duiding op het ECHTE afname-pad. De
+    //     statische inhoud/html hierboven blijft de default én meteen de fallback.
+    //     Enkel wanneer live-duiding AAN staat en het instrument T4P is, proberen we
+    //     de prozateksten te verrijken. Faalt de AI (traag/geen key/fout/guardrail),
+    //     dan behouden we de statische bouwRapportInhoud-tekst — een afname blokkeert
+    //     nooit. De cijfers/tabellen (uit scoring.ts) blijven altijd ongemoeid.
+    //     Spiegelt server/repositories/rapporten.ts:44-60. ---
+    try {
+      if (contract?.instrumentId === DUIDING_INSTRUMENT && isLiveDuidingAan()) {
+        const verrijkt = await genereerAiDuiding(inhoud, contract);
+        if (verrijkt) {
+          inhoud = verrijkt;
+          html = renderRapportHtml(verrijkt);
+        }
+      }
+    } catch {
+      // stil terugvallen op de statische inhoud/html (fallback naar bouwRapportInhoud)
+    }
+
     const now = new Date().toISOString();
     return db
       .insert(rapporten)

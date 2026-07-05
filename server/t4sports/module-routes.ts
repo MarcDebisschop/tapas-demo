@@ -18,6 +18,7 @@ import { z } from "zod";
 import Database from "better-sqlite3";
 import { resolve } from "path";
 import { storage } from "../storage";
+import { verrijkT4SportsRapport } from "../duiding-manager";
 import { scoreModule, getModuleDefinitie, getAlleModuleIds } from "./module-scoring";
 import type { ModuleAntwoord, ModuleResultaat } from "./module-scoring";
 
@@ -220,11 +221,16 @@ export function registerT4SportsModuleRoutes(app: Express): void {
     const moduleResultaten = haalModuleResultatenOp(id);
 
     const { genereerT4SportsRapportCompleet } = await import("./rapport-compleet");
-    const html = genereerT4SportsRapportCompleet(
+    let html = genereerT4SportsRapportCompleet(
       afname.generatorContract,
       moduleResultaten,
       "nl"
     );
+    // Additief: stille AI-duiding (enkel als live-vlag t4sports AAN). Faalt → statische html.
+    try {
+      const contract = JSON.parse(afname.generatorContract);
+      html = await verrijkT4SportsRapport(html, contract);
+    } catch { /* fallback op statische html */ }
 
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.send(html);
@@ -246,11 +252,15 @@ export function registerT4SportsModuleRoutes(app: Express): void {
     const moduleResultaten = haalModuleResultatenOp(id);
 
     const { genereerT4SportsRapportCompleet } = await import("./rapport-compleet");
-    const html = genereerT4SportsRapportCompleet(
+    let html = genereerT4SportsRapportCompleet(
       afname.generatorContract,
       moduleResultaten,
       "nl"
     );
+    try {
+      const contract = JSON.parse(afname.generatorContract);
+      html = await verrijkT4SportsRapport(html, contract);
+    } catch { /* fallback op statische html */ }
 
     const naam = (() => {
       try {

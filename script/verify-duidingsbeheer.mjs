@@ -101,6 +101,52 @@ check(
   !!dm && !/from ["']\.\/scoring["']/.test(dm),
 );
 
+// -- Garantie 6: T4Sports-duidinglaag (ADDITIEF) — zelfde veiligheidsgaranties --
+// De T4Sports-laag voegt een EXTRA duidingssectie toe aan de statische HTML. Ze
+// moet (a) bestaan, (b) stil terugvallen op de originele HTML, (c) een regie-prompt
+// hebben die cijfers verbiedt, en (d) concept-ankers zonder verzonnen getallen.
+check(
+  "duiding-manager.ts exporteert verrijkT4SportsRapport (T4Sports AI-pad)",
+  !!dm && /export async function verrijkT4SportsRapport/.test(dm),
+);
+check(
+  "duiding-manager.ts definieert T4SPORTS_INSTRUMENT",
+  !!dm && /T4SPORTS_INSTRUMENT\s*=\s*["']t4sports["']/.test(dm),
+);
+check(
+  "duiding-manager.ts heeft CONCEPT_ANKERS_T4SPORTS + regie-prompt (5 talen)",
+  !!dm && /CONCEPT_ANKERS_T4SPORTS/.test(dm) && /CONCEPT_REGIE_PROMPT_T4SPORTS/.test(dm),
+);
+check(
+  "verrijkT4SportsRapport valt stil terug op de originele HTML (return html)",
+  !!dm && /export async function verrijkT4SportsRapport[\s\S]*?\breturn html\b/.test(dm),
+  "faalt de AI, dan moet de originele statische HTML ongewijzigd terugkomen",
+);
+// Guardrail: de T4Sports regie-prompt verbiedt óók het bijverzinnen van cijfers.
+{
+  const m = dm && dm.match(/const CONCEPT_REGIE_PROMPT_T4SPORTS[\s\S]*?\n};/);
+  const blok = m ? m[0] : "";
+  check(
+    "T4Sports regie-prompt verbiedt verzonnen getallen ('verzin' + 'geen getallen')",
+    !!blok && /verzin/i.test(blok) && /geen getallen/i.test(blok),
+    "de T4Sports regie-prompt moet het model verbieden getallen/feiten bij te verzinnen",
+  );
+}
+// Statische 'geen verzonnen getallen'-check: de concept-anker-teksten zelf bevatten
+// geen cijfers. We inspecteren enkel de OBJECT-BODY (na de openende { ), zodat de
+// '4' in de identifier T4SPORTS niet meetelt.
+{
+  const m = dm && dm.match(/const CONCEPT_ANKERS_T4SPORTS[^{]*\{([\s\S]*?)\n};/);
+  let body = m ? m[1] : "";
+  // Strip regelcommentaar zodat toelichtende cijfers in commentaar niet meetellen.
+  body = body.replace(/\/\/[^\n]*/g, "");
+  check(
+    "T4Sports concept-ankers bevatten geen verzonnen getallen (geen cijfers)",
+    !!m && !/[0-9]/.test(body),
+    "concept-anker-teksten mogen geen cijfers bevatten — cijfers komen enkel uit het contract",
+  );
+}
+
 // -- Optioneel: live rooktest van de AI-call ----------------------------------
 if (process.argv.includes("--live")) {
   const key = (process.env.GEMINI_API_KEY ?? "").trim();

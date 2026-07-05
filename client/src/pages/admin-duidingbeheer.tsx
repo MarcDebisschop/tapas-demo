@@ -188,18 +188,43 @@ function TekstKaart({
 
 // ─── Hoofdpagina ──────────────────────────────────────────────────────────────
 
+const DEFAULT_INSTRUMENT = "t4p-business-kompas";
+
 export default function AdminDuidingbeheer() {
   const [taal, setTaal] = useState<Taal>("nl");
+  const [instrument, setInstrument] = useState<string>(DEFAULT_INSTRUMENT);
+  const [instrumenten, setInstrumenten] = useState<{ id: string; label: string }[]>([]);
   const [data, setData] = useState<DuidingData | null>(null);
   const [loading, setLoading] = useState(false);
   const [fout, setFout] = useState<string | null>(null);
   const [ankersOpen, setAnkersOpen] = useState(true);
 
+  // Query-suffix voor de instrument-parameter (default t4p = backwards compat).
+  const instQuery = `?instrument=${encodeURIComponent(instrument)}`;
+  // Scope-encoding voor de audit-log (spiegel van scopeVoor op de server).
+  const scopedScope = useCallback(
+    (base: string) => (instrument === DEFAULT_INSTRUMENT ? base : `${base}:${instrument}`),
+    [instrument],
+  );
+
+  // Beheerbare instrumenten eenmalig ophalen (voor de selector).
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch(`/api/admin/duidingbeheer/instrumenten`);
+        if (r.ok) {
+          const d = await r.json();
+          if (Array.isArray(d.instrumenten) && d.instrumenten.length) setInstrumenten(d.instrumenten);
+        }
+      } catch {}
+    })();
+  }, []);
+
   const laad = useCallback(async () => {
     setLoading(true);
     setFout(null);
     try {
-      const r = await fetch(`/api/admin/duidingbeheer/${taal}`);
+      const r = await fetch(`/api/admin/duidingbeheer/${taal}${instQuery}`);
       if (!r.ok) {
         const e = await r.json();
         setFout(e.error ?? "Fout bij laden.");
@@ -211,12 +236,12 @@ export default function AdminDuidingbeheer() {
     } finally {
       setLoading(false);
     }
-  }, [taal]);
+  }, [taal, instQuery]);
 
-  useEffect(() => { laad(); }, [taal]);
+  useEffect(() => { laad(); }, [taal, instrument]);
 
   async function zetLive(aan: boolean) {
-    await fetch(`/api/admin/duidingbeheer/config/live`, {
+    await fetch(`/api/admin/duidingbeheer/config/live${instQuery}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ aan }),
@@ -225,7 +250,7 @@ export default function AdminDuidingbeheer() {
   }
 
   async function saveRegie(tekst: string) {
-    await fetch(`/api/admin/duidingbeheer/regie-prompt/${taal}`, {
+    await fetch(`/api/admin/duidingbeheer/regie-prompt/${taal}${instQuery}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tekst }),
@@ -234,12 +259,12 @@ export default function AdminDuidingbeheer() {
   }
 
   async function resetRegie() {
-    await fetch(`/api/admin/duidingbeheer/regie-prompt/${taal}`, { method: "DELETE" });
+    await fetch(`/api/admin/duidingbeheer/regie-prompt/${taal}${instQuery}`, { method: "DELETE" });
     await laad();
   }
 
   async function saveAnker(dimensie: string, tekst: string) {
-    await fetch(`/api/admin/duidingbeheer/anker/${encodeURIComponent(dimensie)}/${taal}`, {
+    await fetch(`/api/admin/duidingbeheer/anker/${encodeURIComponent(dimensie)}/${taal}${instQuery}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tekst }),
@@ -248,7 +273,7 @@ export default function AdminDuidingbeheer() {
   }
 
   async function resetAnker(dimensie: string) {
-    await fetch(`/api/admin/duidingbeheer/anker/${encodeURIComponent(dimensie)}/${taal}`, { method: "DELETE" });
+    await fetch(`/api/admin/duidingbeheer/anker/${encodeURIComponent(dimensie)}/${taal}${instQuery}`, { method: "DELETE" });
     await laad();
   }
 
@@ -291,6 +316,25 @@ export default function AdminDuidingbeheer() {
             voor prior-beheerders.
           </p>
         </div>
+
+        {/* Instrument-kiezer (additief; default = T4P Business Kompas) */}
+        {instrumenten.length > 1 && (
+          <div className="flex flex-wrap items-center gap-2 mb-6">
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider mr-1">Instrument</span>
+            {instrumenten.map((it) => (
+              <button
+                key={it.id}
+                type="button"
+                onClick={() => setInstrument(it.id)}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
+                  instrument === it.id ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground hover:bg-accent/20"
+                }`}
+              >
+                {it.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Aan/uit-schakelaar */}
         {data && (
@@ -366,7 +410,7 @@ export default function AdminDuidingbeheer() {
                 tekst={data.regiePrompt.tekst}
                 origineel={data.regiePrompt.origineel}
                 heeftOverride={data.regiePrompt.heeftOverride}
-                logKey={{ scope: "regie-prompt", dimensie: "__algemeen__" }}
+                logKey={{ scope: scopedScope("regie-prompt"), dimensie: "__algemeen__" }}
                 onSave={saveRegie}
                 onReset={resetRegie}
               />
@@ -393,7 +437,7 @@ export default function AdminDuidingbeheer() {
                       tekst={a.tekst}
                       origineel={a.origineel}
                       heeftOverride={a.heeftOverride}
-                      logKey={{ scope: "anker", dimensie: a.dimensie }}
+                      logKey={{ scope: scopedScope("anker"), dimensie: a.dimensie }}
                       onSave={(tekst) => saveAnker(a.dimensie, tekst)}
                       onReset={() => resetAnker(a.dimensie)}
                     />

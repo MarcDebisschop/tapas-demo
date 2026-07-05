@@ -10,6 +10,7 @@ import { getDescriptor } from "../registry";
 import { buildT4SportsContract } from "./scoring";
 import type { BlockResponse } from "./scoring";
 import { genereerT4SportsRapport } from "./rapport";
+import { verrijkT4SportsRapport } from "../duiding-manager";
 import { bouwT4SportsUitlegScript } from "./uitleg";
 import { bouwT4SportsChatProfiel } from "./chat";
 import { getAthleteBibliotheek, getAthletePodcasts } from "./bibliotheek";
@@ -260,7 +261,9 @@ export function registerT4SportsRoutes(app: Express): void {
       return res.status(400).json({ error: "Ongeldig contract" });
     }
 
-    const html = genereerT4SportsRapport(contract, a.taal);
+    let html = genereerT4SportsRapport(contract, a.taal);
+    // Additief: stille AI-duiding (enkel als live-vlag t4sports AAN). Faalt → statische html.
+    try { html = await verrijkT4SportsRapport(html, contract); } catch { /* fallback op statische html */ }
     res.json({ html, afnameId: id, naam: a.name });
   });
 
@@ -295,7 +298,8 @@ export function registerT4SportsRoutes(app: Express): void {
       return res.status(400).send("Ongeldig contract");
     }
 
-    const html = genereerT4SportsRapport(contract, a.taal);
+    let html = genereerT4SportsRapport(contract, a.taal);
+    try { html = await verrijkT4SportsRapport(html, contract); } catch { /* fallback op statische html */ }
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.send(html);
   });
@@ -314,7 +318,8 @@ export function registerT4SportsRoutes(app: Express): void {
       return res.status(400).send("Ongeldig contract");
     }
 
-    const html = genereerT4SportsRapport(contract, a.taal);
+    let html = genereerT4SportsRapport(contract, a.taal);
+    try { html = await verrijkT4SportsRapport(html, contract); } catch { /* fallback op statische html */ }
     const veiligNaam = (a.name || "atleet")
       .normalize("NFKD")
       .replace(/[^\w\s-]/g, "")
