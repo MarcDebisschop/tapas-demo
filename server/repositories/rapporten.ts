@@ -13,6 +13,7 @@ import type { Rapport, Afname } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 import { db } from "../storage";
 import { bouwRapportInhoud, renderRapportHtml } from "../rapportgenerator";
+import { genereerAiDuiding, isLiveDuidingAan, DUIDING_INSTRUMENT } from "../duiding-manager";
 
 export class RapportError extends Error {
   constructor(message: string) {
@@ -37,8 +38,27 @@ export async function genereerRapport(
     );
   }
   const contract = JSON.parse(afname.generatorContract);
-  const inhoud = bouwRapportInhoud(contract, variant);
-  const html = renderRapportHtml(inhoud);
+  let inhoud = bouwRapportInhoud(contract, variant);
+  let html = renderRapportHtml(inhoud);
+
+  // --- Additief (T4P-pilot): LIVE AI-duiding. De statische inhoud/html hierboven
+  //     blijft de default én meteen de fallback. Enkel wanneer live-duiding AAN
+  //     staat en het instrument T4P is, proberen we de prozateksten te verrijken.
+  //     Faalt de AI (traag/geen key/fout/guardrail), dan behouden we de statische
+  //     bouwRapportInhoud-tekst — een afname blokkeert nooit. De cijfers/tabellen
+  //     (uit scoring.ts) blijven in alle gevallen ongemoeid. ---
+  try {
+    if (contract?.instrumentId === DUIDING_INSTRUMENT && isLiveDuidingAan()) {
+      const verrijkt = await genereerAiDuiding(inhoud, contract);
+      if (verrijkt) {
+        inhoud = verrijkt;
+        html = renderRapportHtml(verrijkt);
+      }
+    }
+  } catch {
+    // stil terugvallen op de statische inhoud/html (fallback naar bouwRapportInhoud)
+  }
+
   const now = new Date().toISOString();
   return db
     .insert(rapporten)

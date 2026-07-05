@@ -34,7 +34,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Afname, OrganisatieMetSaldo } from "@/lib/types";
-import { Copy, Check, Send, UserPlus, Bell, Languages, Settings2, ChartColumn, GraduationCap, Mail, KeyRound, Users, CreditCard, BarChart2, Building2, ArrowRight, Layers, Euro, FileSpreadsheet } from "lucide-react";
+import { Copy, Check, Send, UserPlus, Bell, Languages, Settings2, ChartColumn, GraduationCap, Mail, KeyRound, Users, CreditCard, BarChart2, Building2, ArrowRight, Layers, Euro, FileSpreadsheet, Sparkles } from "lucide-react";
 import { LegeStaat } from "@/components/LegeStaat";
 import {
   TALEN,
@@ -384,6 +384,13 @@ export default function Admin() {
                 <Link href="/admin/vraagbeheer">
                   <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-vraagbeheer">
                     <Settings2 className="h-3.5 w-3.5 shrink-0" /> Vraagbeheer
+                  </a>
+                </Link>
+              )}
+              {isPrior && (
+                <Link href="/admin/duidingbeheer">
+                  <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-duidingbeheer">
+                    <Sparkles className="h-3.5 w-3.5 shrink-0" /> Duidingsbeheer
                   </a>
                 </Link>
               )}

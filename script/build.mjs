@@ -115,6 +115,13 @@ async function buildAll() {
   execSync("node script/verify-vlaamse-stem.mjs", { cwd: root, stdio: "inherit" });
   console.log("Vlaamse stem OK.");
 
+  // 7. BEWAKING DUIDINGSBEHEER — blokkeert de build als de LIVE AI-duidinglaag
+  //    onveilig wordt (regie-prompt zonder "verzin ge"-grens, ontbrekende
+  //    fallback naar bouwRapportInhoud, of TaPas-Beeld dat als anker lekt).
+  console.log("bewaking duidingsbeheer controleren...");
+  execSync("node script/verify-duidingsbeheer.mjs", { cwd: root, stdio: "inherit" });
+  console.log("Duidingsbeheer OK.");
+
   console.log("build complete.");
 }
 

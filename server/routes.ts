@@ -3,6 +3,7 @@ import { createServer } from "node:http";
 import type { Server } from "node:http";
 import { db, storage } from "./storage";
 import { buildQuestionManagerRoutes } from "./question-manager";
+import { buildDuidingManagerRoutes } from "./duiding-manager";
 import { buildGidsManagerRoutes } from "./gids-manager";
 import { registerGidsPdfRoutes } from "./gids/routes";
 import { registerCoachesAcademyMailRoutes } from "./routes-coaches-academy-mail";
@@ -98,6 +99,12 @@ export async function registerRoutes(
   // Question Manager — prior-beheerder beheert stellingen van alle instrumenten.
   // -------------------------------------------------------------------------
   buildQuestionManagerRoutes(app);
+
+  // -------------------------------------------------------------------------
+  // Duiding Manager — prior-beheerder beheert de LIVE AI-duidinglaag (T4P-pilot).
+  // Nieuwe module (Regel 2): eigen bestand, raakt geen bestaand rapportpad aan.
+  // -------------------------------------------------------------------------
+  buildDuidingManagerRoutes(app);
 
   // -------------------------------------------------------------------------
   // De Instrumentengids — tekst-overrides (prior) + publieke PDF-downloads.
