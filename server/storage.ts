@@ -54,6 +54,7 @@ import { eq, desc, and } from "drizzle-orm";
 import { existsSync, readFileSync } from "fs";
 import { resolve } from "path";
 import { bouwRapportInhoud, renderRapportHtml } from "./rapportgenerator";
+import { bouwT4StudentsRapport, renderT4StudentsHtml } from "./t4students/rapport";
 import { genereerAiDuiding, isLiveDuidingAan, DUIDING_INSTRUMENT } from "./duiding-manager";
 
 // -----------------------------------------------------------------------------
@@ -2287,8 +2288,20 @@ export class DatabaseStorage implements IStorage {
       throw new CreditError("Afname is nog niet voltooid; er is geen contract om een rapport uit te genereren");
     }
     const contract = JSON.parse(afname.generatorContract);
-    let inhoud = bouwRapportInhoud(contract, variant);
-    let html = renderRapportHtml(inhoud);
+    let inhoud: any;
+    let html: string;
+
+    // --- Additief (T4Students): eigen inhoud/HTML-tak op basis van instrumentId.
+    //     Het bestaande T4P/kompas-pad blijft de default; enkel wanneer het
+    //     contract instrumentId "t4students" draagt, gebruiken we de eigen
+    //     T4Students-rapportbouwer. Geen wijziging aan het T4P-gedrag. ---
+    if (contract?.instrumentId === "t4students") {
+      inhoud = bouwT4StudentsRapport(contract);
+      html = renderT4StudentsHtml(inhoud);
+    } else {
+      inhoud = bouwRapportInhoud(contract, variant);
+      html = renderRapportHtml(inhoud);
+    }
 
     // --- Additief (T4P-pilot): LIVE AI-duiding op het ECHTE afname-pad. De
     //     statische inhoud/html hierboven blijft de default én meteen de fallback.

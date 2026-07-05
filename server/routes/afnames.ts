@@ -33,6 +33,7 @@ import {
   bewaartermijnSchema,
 } from "@shared/schema";
 import { buildGeneratorContract } from "../scoring";
+import { buildT4StudentsContract } from "../t4students/scoring";
 import { z } from "zod";
 
 // Genereert een leesbare respondentCode op basis van naam + jaar + volgnummer.
@@ -289,18 +290,41 @@ export function registerAfnameRoutes(app: Express): void {
     const responses = JSON.parse(a.mainResponses);
 
     // Server-side scoring + generatie van het bevroren A3-contract.
-    const contract = buildGeneratorContract({
-      respondentCode: a.respondentCode,
-      name: a.name,
-      company: a.company,
-      role: a.role,
-      consentScope: a.consentScope,
-      consentTimestamp: a.consentTimestamp,
-      responses,
-      baseline: a.baselineEnergy,
-      connection,
-      taal: a.taal,
-    });
+    // Additief (T4Students): een T4Students-afname krijgt een eigen contract met
+    // instrumentId "t4students". Het T4P-pad (en elk ander instrument) blijft
+    // volledig ongewijzigd via buildGeneratorContract.
+    let contract: any;
+    if (a.instrumentId === "t4students") {
+      // Open reflectie-antwoorden reizen optioneel additief mee in de request.
+      const reflectie =
+        req.body && typeof req.body.reflectie === "object" && req.body.reflectie
+          ? (req.body.reflectie as Record<string, string>)
+          : null;
+      contract = buildT4StudentsContract({
+        respondentCode: a.respondentCode,
+        name: a.name,
+        company: a.company,
+        role: a.role,
+        consentScope: a.consentScope,
+        consentTimestamp: a.consentTimestamp,
+        responses,
+        reflectie,
+        taal: a.taal,
+      });
+    } else {
+      contract = buildGeneratorContract({
+        respondentCode: a.respondentCode,
+        name: a.name,
+        company: a.company,
+        role: a.role,
+        consentScope: a.consentScope,
+        consentTimestamp: a.consentTimestamp,
+        responses,
+        baseline: a.baselineEnergy,
+        connection,
+        taal: a.taal,
+      });
+    }
 
     let updated = await storage.updateAfname(id, {
       connectionAnswers: JSON.stringify(connection),
