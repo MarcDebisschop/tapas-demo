@@ -60,6 +60,7 @@ import {
 } from "@/components/ui/select";
 import { TALEN, TAAL_NAMEN, TAAL_CODES, normaliseerTaal } from "@shared/i18n";
 import { useUiTaal } from "@/contexts/TaalContext";
+import TerrasWebinars from "@/components/TerrasWebinars";
 
 // =============================================================================
 // CSS variabelen en kleur (verbatim uit bundle: const Xr="--lounge", or=...)
@@ -1191,7 +1192,7 @@ function LoungePagina() {
       case "inspiratiewand": return <KamerKomTerug titel={t("lounge_kamer_inspiratiewand_naam")} eyebrow={t("lounge_kamer_inspiratiewand_eyebrow")} intro={t("lounge_kamer_binnenkort_inspiratiewand")} img="/lounge/img/inspiratiewand.jpg" imgAlt={t("lounge_inspiratiewand_img_alt")} />;
       case "werkplaats":     return <KamerKomTerug titel={t("lounge_kamer_werkplaats_naam")}     eyebrow={t("lounge_kamer_werkplaats_eyebrow")}     intro={t("lounge_kamer_binnenkort_werkplaats")}     img="/lounge/img/werkplaats.jpg"     imgAlt={t("lounge_werkplaats_img_alt")} />;
       case "reflectie":      return <KamerKomTerug titel={t("lounge_kamer_reflectie_naam")}      eyebrow={t("lounge_kamer_reflectie_eyebrow")}      intro={t("lounge_kamer_binnenkort_reflectie")}      img="/lounge/img/reflectie.jpg"      imgAlt={t("lounge_reflectie_img_alt")} />;
-      case "terras":         return <KamerKomTerug titel={t("lounge_kamer_terras_naam")}         eyebrow={t("lounge_kamer_terras_eyebrow")}         intro={t("lounge_kamer_binnenkort_terras")}         />;
+      case "terras":         return <TerrasWebinars />;
       default:               return <><Onthaal gaaNaar={gaaNaar} /><AanwezigenSectie /></>;
     }
   }
