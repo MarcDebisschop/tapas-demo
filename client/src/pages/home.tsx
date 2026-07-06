@@ -86,7 +86,7 @@ function LoungeWidget() {
   const { t } = useUiTaal();
   const r = "hsl(var(--lounge))";
   return (
-    <div className="mt-5">
+    <div data-tour="lounge" className="mt-5 scroll-mt-24">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -263,7 +263,7 @@ function PlatformOverzicht() {
   ];
 
   return (
-    <section className="mt-16 sm:mt-24">
+    <section data-tour="werelden" className="mt-16 scroll-mt-24 sm:mt-24">
       <div className="mx-auto max-w-2xl text-center">
         <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
           {t("hp_ov_eyebrow")}
@@ -420,7 +420,7 @@ export default function Home() {
             <p className="font-mono text-xs uppercase tracking-[0.18em] text-accent">
               {t("hp_hero_eyebrow")}
             </p>
-            <h1 className="mt-4 font-serif text-[2.5rem] font-semibold leading-[1.08] tracking-tight text-foreground sm:text-[3.25rem]">
+            <h1 data-tour="missie" className="mt-4 font-serif text-[2.5rem] font-semibold leading-[1.08] tracking-tight text-foreground sm:text-[3.25rem]">
               {t("hp_hero_titel_r1")}<br />
               {t("hp_hero_titel_r2_pre")}<span className="text-accent">{t("hp_hero_titel_r2_klem")}</span>{t("hp_hero_titel_r2_post")}<br />
               {t("hp_hero_titel_r3")}
@@ -475,7 +475,7 @@ export default function Home() {
           <a
             href="#/t4sports"
             data-testid="link-t4sports-demo"
-            data-tour="keten"
+            data-tour="t4sports"
             className="group flex items-center justify-between rounded-2xl border border-dashed p-5 transition hover:-translate-y-0.5"
             style={{
               borderColor: "hsl(var(--accent)/0.45)",
