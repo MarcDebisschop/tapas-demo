@@ -398,6 +398,7 @@ export default function Home() {
               <button
                 type="button"
                 data-testid="button-admin-home"
+                data-tour="admin-cta"
                 className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-secondary/50 px-3 text-sm font-medium text-foreground transition hover:bg-secondary hover:text-foreground"
                 aria-label={t("hp_nav_beheer")}
               >
@@ -430,6 +431,7 @@ export default function Home() {
             <div className="mt-8 flex flex-wrap gap-3">
               <Button
                 data-testid="button-kies-ingang"
+                data-tour="start-cta"
                 onClick={() => {
                   document.getElementById("kies")?.scrollIntoView({ behavior: "smooth", block: "start" });
                 }}
@@ -458,7 +460,7 @@ export default function Home() {
         {/* KIES JE WERELD — blok "Waar wil je je talent mobiliseren?"        */}
         {/* op verzoek van Marc definitief verwijderd (behoud Lounge/Academy) */}
         {/* ---------------------------------------------------------------- */}
-        <section id="kies" className="mt-16 scroll-mt-24 sm:mt-24">
+        <section id="kies" data-tour="suite" className="mt-16 scroll-mt-24 sm:mt-24">
           {/* Lounge-uitnodiging — exact Kme() uit ZIP-8 bundle — NIET AANRAKEN */}
           <LoungeWidget />
 
@@ -473,6 +475,7 @@ export default function Home() {
           <a
             href="#/t4sports"
             data-testid="link-t4sports-demo"
+            data-tour="keten"
             className="group flex items-center justify-between rounded-2xl border border-dashed p-5 transition hover:-translate-y-0.5"
             style={{
               borderColor: "hsl(var(--accent)/0.45)",

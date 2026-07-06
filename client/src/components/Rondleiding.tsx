@@ -214,8 +214,22 @@ export function Rondleiding({ taal, autoStart = true }: Props) {
       window.setTimeout(() => {
         const r = meet(e.anchor);
         if (r) {
-          vorigRectRef.current = rect;
+          // Bij de eerste etappe is er nog geen vorige spotlight: geef het
+          // vliegtuig een startpunt buiten beeld (linksonder) zodat het
+          // zichtbaar naar binnen vliegt i.p.v. stil te blijven staan.
+          vorigRectRef.current =
+            rect ??
+            ({
+              top: (typeof window !== "undefined" ? window.innerHeight : 800) + 60,
+              left: -80,
+              width: 0,
+              height: 0,
+            } as Rect);
           setRect(r);
+        } else {
+          // Anker bestaat (nog) niet in de DOM: sla deze etappe over zodat de
+          // vlucht niet blijft hangen, i.p.v. vast te lopen op één punt.
+          setIdx((i) => (i < ETAPPES.length - 1 ? i + 1 : i));
         }
       }, reduce ? 0 : 320);
     },
