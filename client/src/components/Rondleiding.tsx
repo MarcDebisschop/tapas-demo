@@ -537,6 +537,33 @@ export function Rondleiding({ taal, autoStart = true }: Props) {
             )}
           </svg>
 
+          {/* Vliegtuig dat ECHT langs de gouden boog vliegt (per etappe opnieuw) */}
+          {p0 && p1 && (
+            reduce ? (
+              // prefers-reduced-motion: geen beweging, vliegtuig statisch op eindpunt
+              <div
+                aria-hidden
+                className="pointer-events-none absolute text-[hsl(var(--gold))]"
+                style={{ left: p1.x, top: p1.y, transform: "translate(-50%, -50%)" }}
+              >
+                <Plane className="h-6 w-6 rotate-45 drop-shadow" />
+              </div>
+            ) : boog ? (
+              <motion.div
+                key={`vlieg-${idx}`}
+                aria-hidden
+                className="pointer-events-none absolute left-0 top-0 text-[hsl(var(--gold))]"
+                style={{ offsetPath: `path('${boog}')`, offsetRotate: "auto" } as any}
+                initial={{ offsetDistance: "0%" } as any}
+                animate={{ offsetDistance: "100%" } as any}
+                transition={{ duration: 0.9, ease: "easeInOut" }}
+              >
+                {/* rotate-45 richt de neus (lucide Plane wijst naar rechtsboven) langs de vliegrichting */}
+                <Plane className="h-6 w-6 rotate-45 drop-shadow" />
+              </motion.div>
+            ) : null
+          )}
+
           {/* klikvanger om de spotlight heen (sluit niet, voorkomt per ongeluk klikken) */}
           <div className="absolute inset-0" onClick={(ev) => ev.stopPropagation()} />
 
@@ -644,21 +671,18 @@ export function Rondleiding({ taal, autoStart = true }: Props) {
               initial={reduce ? { opacity: 0 } : { opacity: 0, y: 20, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ type: "spring", stiffness: 200, damping: 22 }}
-              className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-card-border bg-card shadow-2xl"
+              className="relative w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl border border-card-border bg-card shadow-2xl"
             >
               {/* gouden haarlijn bovenaan */}
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[hsl(var(--gold))] to-transparent" />
 
-              {/* Eilandkaart */}
-              <div className="relative w-full overflow-hidden" style={{ maxHeight: 280 }}>
+              {/* Eilandkaart — volledig zichtbaar (drivers, talent-foci, versnellers, inner why) */}
+              <div className="relative w-full bg-card">
                 <img
                   src="/island/tapas-island-kaart.jpg"
                   alt="Tapas Island kaart"
-                  className="w-full object-cover object-top"
-                  style={{ maxHeight: 280 }}
+                  className="mx-auto block w-full max-h-[70vh] object-contain"
                 />
-                {/* zachte vervaag-overgang naar de kaartinhoud */}
-                <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-card to-transparent" />
               </div>
 
               {/* Bericht van Amelia */}
