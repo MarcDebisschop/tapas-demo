@@ -87,6 +87,9 @@ export interface Organisatie {
   postcode: string | null;
   gemeente: string | null;
   land: string;
+  huisstijlLogo: string | null;
+  huisstijlKleur: string | null;
+  huisstijlFooter: string | null;
   createdAt: string;
 }
 
@@ -125,6 +128,8 @@ export interface BillerEntiteit {
   peppolId: string | null;
   iban: string | null;
   logo: string | null;
+  huisstijlKleur: string;
+  factuurFooter: string | null;
   factuurPrefix: string;
   btwTarief: number;
   geldigVan: string;
@@ -168,6 +173,8 @@ export interface Factuur {
   kanaal: "peppol" | "pdf";
   peppolStatus: string;
   factuurdatum: string;
+  betaalstatus: "betaald" | "openstaand" | "vervallen";
+  vervaldatum: string | null;
   createdAt: string;
 }
 

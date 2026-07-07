@@ -200,6 +200,9 @@ export const billerEntiteiten = sqliteTable("biller_entiteiten", {
   peppolId: text("peppol_id"),
   iban: text("iban"),
   logo: text("logo"),
+  // Huisstijl (additief): accentkleur + vrije footertekst voor de visuele factuur.
+  huisstijlKleur: text("huisstijl_kleur").notNull().default("#b08b3f"),
+  factuurFooter: text("factuur_footer"),
   factuurPrefix: text("factuur_prefix").notNull().default("INV"),
   btwTarief: integer("btw_tarief").notNull().default(21),
   geldigVan: text("geldig_van").notNull(),
@@ -235,6 +238,11 @@ export const organisaties = sqliteTable("organisaties", {
   postcode: text("postcode"),
   gemeente: text("gemeente"),
   land: text("land").notNull().default("België"),
+  // Huisstijl-override (additief, alle nullable): wint van de biller-huisstijl
+  // op documenten van/voor deze organisatie.
+  huisstijlLogo: text("huisstijl_logo"),
+  huisstijlKleur: text("huisstijl_kleur"),
+  huisstijlFooter: text("huisstijl_footer"),
   createdAt: text("created_at").notNull(),
 });
 
@@ -374,9 +382,38 @@ export const facturen = sqliteTable("facturen", {
   peppolStatus: text("peppol_status").notNull().default("n.v.t."),
   peppolDocument: text("peppol_document"), // provider-neutrale UBL-payload (JSON)
   factuurdatum: text("factuurdatum").notNull(),
+  // Betaalstatus (additief): 'betaald' | 'openstaand' | 'vervallen'. Default
+  // "betaald" want bestaande facturen ontstaan post-betaling. vervaldatum is
+  // optioneel (ISO-datum); een openstaande factuur met vervaldatum < vandaag
+  // wordt afgeleid als "vervallen".
+  betaalstatus: text("betaalstatus").notNull().default("betaald"),
+  vervaldatum: text("vervaldatum"),
   createdAt: text("created_at").notNull(),
 });
 export type Factuur = typeof facturen.$inferSelect;
+
+// Payload: betaalstatus van een factuur handmatig wijzigen.
+export const betaalstatusSchema = z.object({
+  betaalstatus: z.enum(["betaald", "openstaand", "vervallen"]),
+  vervaldatum: z.string().optional().nullable(),
+});
+export type BetaalstatusUpdate = z.infer<typeof betaalstatusSchema>;
+
+// Payload: huisstijl van een biller wijzigen.
+export const billerHuisstijlSchema = z.object({
+  logo: z.string().optional().nullable(),
+  huisstijlKleur: z.string().optional(),
+  factuurFooter: z.string().optional().nullable(),
+});
+export type BillerHuisstijlUpdate = z.infer<typeof billerHuisstijlSchema>;
+
+// Payload: huisstijl-override van een organisatie wijzigen.
+export const organisatieHuisstijlSchema = z.object({
+  huisstijlLogo: z.string().optional().nullable(),
+  huisstijlKleur: z.string().optional().nullable(),
+  huisstijlFooter: z.string().optional().nullable(),
+});
+export type OrganisatieHuisstijlUpdate = z.infer<typeof organisatieHuisstijlSchema>;
 
 // Een rapport = een afgewerkt TaPas-document, afgeleid van het bevroren
 // generator-contract van een voltooide afname. variant: 'kompas' | 'coachatlas'

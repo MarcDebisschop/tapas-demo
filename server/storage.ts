@@ -145,6 +145,8 @@ sqlite.exec(`
     peppol_id TEXT,
     iban TEXT,
     logo TEXT,
+    huisstijl_kleur TEXT NOT NULL DEFAULT '#b08b3f',
+    factuur_footer TEXT,
     factuur_prefix TEXT NOT NULL DEFAULT 'INV',
     btw_tarief INTEGER NOT NULL DEFAULT 21,
     geldig_van TEXT NOT NULL,
@@ -168,6 +170,9 @@ sqlite.exec(`
     postcode TEXT,
     gemeente TEXT,
     land TEXT NOT NULL DEFAULT 'België',
+    huisstijl_logo TEXT,
+    huisstijl_kleur TEXT,
+    huisstijl_footer TEXT,
     created_at TEXT NOT NULL
   );
 
@@ -228,6 +233,8 @@ sqlite.exec(`
     peppol_status TEXT NOT NULL DEFAULT 'n.v.t.',
     peppol_document TEXT,
     factuurdatum TEXT NOT NULL,
+    betaalstatus TEXT NOT NULL DEFAULT 'betaald',
+    vervaldatum TEXT,
     created_at TEXT NOT NULL
   );
 
@@ -436,6 +443,40 @@ try {
   const heeft = (n: string) => cols.some((c) => c.name === n);
   const add = (sql: string) => { try { sqlite.exec(sql); } catch { /* bestaat al */ } };
   if (!heeft("pdf_base64")) add(`ALTER TABLE rapporten ADD COLUMN pdf_base64 TEXT;`);
+} catch {
+  // negeerbaar in nieuwe databases
+}
+
+// Migratie (facturatie-uitbreiding): betaalstatus + vervaldatum op facturen.
+try {
+  const cols = sqlite.prepare(`PRAGMA table_info(facturen)`).all() as Array<{ name: string }>;
+  const heeft = (n: string) => cols.some((c) => c.name === n);
+  const add = (sql: string) => { try { sqlite.exec(sql); } catch { /* bestaat al */ } };
+  if (!heeft("betaalstatus")) add(`ALTER TABLE facturen ADD COLUMN betaalstatus TEXT NOT NULL DEFAULT 'betaald';`);
+  if (!heeft("vervaldatum")) add(`ALTER TABLE facturen ADD COLUMN vervaldatum TEXT;`);
+} catch {
+  // negeerbaar in nieuwe databases
+}
+
+// Migratie (facturatie-uitbreiding): huisstijl op billers.
+try {
+  const cols = sqlite.prepare(`PRAGMA table_info(biller_entiteiten)`).all() as Array<{ name: string }>;
+  const heeft = (n: string) => cols.some((c) => c.name === n);
+  const add = (sql: string) => { try { sqlite.exec(sql); } catch { /* bestaat al */ } };
+  if (!heeft("huisstijl_kleur")) add(`ALTER TABLE biller_entiteiten ADD COLUMN huisstijl_kleur TEXT NOT NULL DEFAULT '#b08b3f';`);
+  if (!heeft("factuur_footer")) add(`ALTER TABLE biller_entiteiten ADD COLUMN factuur_footer TEXT;`);
+} catch {
+  // negeerbaar in nieuwe databases
+}
+
+// Migratie (facturatie-uitbreiding): huisstijl-override op organisaties.
+try {
+  const cols = sqlite.prepare(`PRAGMA table_info(organisaties)`).all() as Array<{ name: string }>;
+  const heeft = (n: string) => cols.some((c) => c.name === n);
+  const add = (sql: string) => { try { sqlite.exec(sql); } catch { /* bestaat al */ } };
+  if (!heeft("huisstijl_logo")) add(`ALTER TABLE organisaties ADD COLUMN huisstijl_logo TEXT;`);
+  if (!heeft("huisstijl_kleur")) add(`ALTER TABLE organisaties ADD COLUMN huisstijl_kleur TEXT;`);
+  if (!heeft("huisstijl_footer")) add(`ALTER TABLE organisaties ADD COLUMN huisstijl_footer TEXT;`);
 } catch {
   // negeerbaar in nieuwe databases
 }
@@ -1520,6 +1561,10 @@ export interface IStorage {
   // Facturen (Fase C2-C3)
   getFactuur(id: number): Promise<Factuur | undefined>;
   listFacturen(organisatieId?: number): Promise<Factuur[]>;
+  // Facturatie-uitbreiding: betaalstatus + huisstijl
+  updateFactuurBetaalstatus(id: number, betaalstatus: string, vervaldatum?: string | null): Promise<Factuur | undefined>;
+  updateBillerHuisstijl(id: number, data: { logo?: string | null; huisstijlKleur?: string; factuurFooter?: string | null }): Promise<BillerEntiteit | undefined>;
+  updateOrganisatieHuisstijl(id: number, data: { huisstijlLogo?: string | null; huisstijlKleur?: string | null; huisstijlFooter?: string | null }): Promise<Organisatie | undefined>;
 
   // Rapporten (Fase C3)
   genereerRapport(afnameId: number, variant: "kompas" | "coachatlas"): Promise<Rapport>;
@@ -2275,6 +2320,51 @@ export class DatabaseStorage implements IStorage {
         .all();
     }
     return db.select().from(facturen).orderBy(desc(facturen.id)).all();
+  }
+
+  // Facturatie-uitbreiding: betaalstatus handmatig wijzigen (betaald/openstaand/
+  // vervallen). vervaldatum optioneel (ISO-datum). Facturen zijn boekhoudkundig
+  // onveranderlijk qua bedragen; enkel de betaalopvolging mag muteren.
+  async updateFactuurBetaalstatus(
+    id: number,
+    betaalstatus: string,
+    vervaldatum?: string | null
+  ): Promise<Factuur | undefined> {
+    const bestaand = await this.getFactuur(id);
+    if (!bestaand) return undefined;
+    const set: Partial<typeof facturen.$inferInsert> = { betaalstatus };
+    if (vervaldatum !== undefined) set.vervaldatum = vervaldatum;
+    return db.update(facturen).set(set).where(eq(facturen.id, id)).returning().get();
+  }
+
+  // Facturatie-uitbreiding: huisstijl van een biller bijwerken.
+  async updateBillerHuisstijl(
+    id: number,
+    data: { logo?: string | null; huisstijlKleur?: string; factuurFooter?: string | null }
+  ): Promise<BillerEntiteit | undefined> {
+    const bestaand = db.select().from(billerEntiteiten).where(eq(billerEntiteiten.id, id)).get();
+    if (!bestaand) return undefined;
+    const set: Partial<typeof billerEntiteiten.$inferInsert> = {};
+    if (data.logo !== undefined) set.logo = data.logo;
+    if (data.huisstijlKleur !== undefined) set.huisstijlKleur = data.huisstijlKleur;
+    if (data.factuurFooter !== undefined) set.factuurFooter = data.factuurFooter;
+    if (Object.keys(set).length === 0) return bestaand;
+    return db.update(billerEntiteiten).set(set).where(eq(billerEntiteiten.id, id)).returning().get();
+  }
+
+  // Facturatie-uitbreiding: huisstijl-override van een organisatie bijwerken.
+  async updateOrganisatieHuisstijl(
+    id: number,
+    data: { huisstijlLogo?: string | null; huisstijlKleur?: string | null; huisstijlFooter?: string | null }
+  ): Promise<Organisatie | undefined> {
+    const bestaand = await this.getOrganisatie(id);
+    if (!bestaand) return undefined;
+    const set: Partial<typeof organisaties.$inferInsert> = {};
+    if (data.huisstijlLogo !== undefined) set.huisstijlLogo = data.huisstijlLogo;
+    if (data.huisstijlKleur !== undefined) set.huisstijlKleur = data.huisstijlKleur;
+    if (data.huisstijlFooter !== undefined) set.huisstijlFooter = data.huisstijlFooter;
+    if (Object.keys(set).length === 0) return bestaand;
+    return db.update(organisaties).set(set).where(eq(organisaties.id, id)).returning().get();
   }
 
   // --- Rapporten (Fase C3) -------------------------------------------------

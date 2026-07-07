@@ -552,13 +552,47 @@ function GrootboekTab() {
 // ---------------------------------------------------------------------------
 const FACTUUR_API_BASE = (() => { const _s = "__PORT_5000__"; return _s.startsWith("__") ? "" : "/" + _s; })();
 
+// Facturatie-uitbreiding: effectieve betaalstatus (openstaand + vervaldatum in
+// het verleden ⇒ vervallen) + badge-styling per status.
+function effectieveBetaalstatus(f: Factuur): "betaald" | "openstaand" | "vervallen" {
+  if (f.betaalstatus === "openstaand" && f.vervaldatum) {
+    const v = new Date(f.vervaldatum);
+    if (!isNaN(v.getTime()) && v.getTime() < Date.now()) return "vervallen";
+  }
+  return f.betaalstatus;
+}
+const BETAALSTATUS_LABEL: Record<string, string> = {
+  betaald: "Betaald",
+  openstaand: "Openstaand",
+  vervallen: "Vervallen",
+};
+const BETAALSTATUS_STYLE: Record<string, string> = {
+  betaald: "bg-emerald-500/15 text-emerald-600 border-emerald-500/25",
+  openstaand: "bg-amber-500/15 text-amber-600 border-amber-500/25",
+  vervallen: "bg-red-500/15 text-red-600 border-red-500/25",
+};
+
 function FacturenTab() {
   const { toast } = useToast();
   const { data: facturen, isLoading } = useQuery<Factuur[]>({ queryKey: ["/api/facturen"] });
   const { data: orgs } = useQuery<OrganisatieMetSaldo[]>({ queryKey: ["/api/organisaties"] });
   const { data: creditnotas } = useQuery<Array<{ id: number; factuurId: number; creditnotanummer: string }>>({ queryKey: ["/api/creditnotas"] });
+  const [statusFilter, setStatusFilter] = useState<string>("alle");
   const orgNaam = (id: number) => orgs?.find((o) => o.id === id)?.naam ?? `#${id}`;
   const cnVoor = (factuurId: number) => creditnotas?.find((c) => c.factuurId === factuurId);
+  const gefilterd = (facturen ?? []).filter(
+    (f) => statusFilter === "alle" || effectieveBetaalstatus(f) === statusFilter
+  );
+  async function zetBetaalstatus(factuurId: number, betaalstatus: string) {
+    try {
+      const r = await apiRequest("PATCH", `/api/facturen/${factuurId}/betaalstatus`, { betaalstatus }).then((x) => x.json());
+      if (r?.error) throw new Error(r.error);
+      queryClient.invalidateQueries({ queryKey: ["/api/facturen"] });
+      toast({ title: "Betaalstatus bijgewerkt", description: BETAALSTATUS_LABEL[betaalstatus] ?? betaalstatus });
+    } catch (e: any) {
+      toast({ title: "Wijzigen mislukt", description: e?.message ?? "Onbekende fout", variant: "destructive" });
+    }
+  }
   async function maakCreditnota(factuurId: number) {
     const reden = window.prompt("Reden voor de creditnota?", "Correctie / terugbetaling");
     if (reden == null) return;
@@ -588,68 +622,119 @@ function FacturenTab() {
             Nog geen facturen. Facturen worden automatisch aangemaakt bij een geslaagde online betaling.
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Factuurnummer</TableHead>
-                <TableHead>Organisatie</TableHead>
-                <TableHead className="hidden sm:table-cell">Datum</TableHead>
-                <TableHead className="text-right">Bedrag incl. btw</TableHead>
-                <TableHead>Kanaal</TableHead>
-                <TableHead className="text-right">UBL</TableHead>
-                <TableHead className="text-right">Creditnota</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {facturen.map((f) => (
-                <TableRow key={f.id} data-testid={`row-factuur-${f.id}`}>
-                  <TableCell className="font-medium text-foreground" data-testid={`text-factuurnummer-${f.id}`}>
-                    {f.factuurnummer}
-                  </TableCell>
-                  <TableCell className="text-foreground">{orgNaam(f.organisatieId)}</TableCell>
-                  <TableCell className="hidden sm:table-cell whitespace-nowrap text-muted-foreground">
-                    {dt(f.factuurdatum)}
-                  </TableCell>
-                  <TableCell className="text-right font-medium tabular-nums text-foreground">
-                    {euro(f.bedragInclBtw / 100)}
-                  </TableCell>
-                  <TableCell>
-                    {f.kanaal === "peppol" ? (
-                      <Badge variant="outline" className="bg-accent/15 text-accent border-accent/20" data-testid={`badge-kanaal-${f.id}`}>
-                        Peppol
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="bg-muted text-foreground border-border" data-testid={`badge-kanaal-${f.id}`}>
-                        PDF
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <a
-                      href={`${FACTUUR_API_BASE}/api/facturen/${f.id}/peppol.json`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-sm text-accent underline-offset-2 hover:underline"
-                      data-testid={`link-peppol-${f.id}`}
-                    >
-                      UBL JSON
-                    </a>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {cnVoor(f.id) ? (
-                      <Badge variant="outline" className="bg-muted text-foreground border-border" data-testid={`badge-creditnota-${f.id}`}>
-                        {cnVoor(f.id)!.creditnotanummer}
-                      </Badge>
-                    ) : (
-                      <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => maakCreditnota(f.id)} data-testid={`button-creditnota-${f.id}`}>
-                        <FileText className="mr-1 h-3.5 w-3.5" />Crediteren
-                      </Button>
-                    )}
-                  </TableCell>
+          <>
+            <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+              <span className="text-xs text-muted-foreground">{gefilterd.length} van {facturen.length} facturen</span>
+              <div className="w-48">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="h-8 text-xs" data-testid="select-betaalstatus-filter">
+                    <SelectValue placeholder="Betaalstatus" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="alle">Alle betaalstatussen</SelectItem>
+                    <SelectItem value="betaald">Betaald</SelectItem>
+                    <SelectItem value="openstaand">Openstaand</SelectItem>
+                    <SelectItem value="vervallen">Vervallen</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Factuurnummer</TableHead>
+                  <TableHead>Organisatie</TableHead>
+                  <TableHead className="hidden sm:table-cell">Datum</TableHead>
+                  <TableHead className="hidden md:table-cell">Vervaldatum</TableHead>
+                  <TableHead className="text-right">Bedrag incl. btw</TableHead>
+                  <TableHead>Betaalstatus</TableHead>
+                  <TableHead>Kanaal</TableHead>
+                  <TableHead className="text-right">Document</TableHead>
+                  <TableHead className="text-right">Creditnota</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {gefilterd.map((f) => {
+                  const status = effectieveBetaalstatus(f);
+                  return (
+                  <TableRow key={f.id} data-testid={`row-factuur-${f.id}`}>
+                    <TableCell className="font-medium text-foreground" data-testid={`text-factuurnummer-${f.id}`}>
+                      {f.factuurnummer}
+                    </TableCell>
+                    <TableCell className="text-foreground">{orgNaam(f.organisatieId)}</TableCell>
+                    <TableCell className="hidden sm:table-cell whitespace-nowrap text-muted-foreground">
+                      {dt(f.factuurdatum)}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell whitespace-nowrap text-muted-foreground" data-testid={`text-vervaldatum-${f.id}`}>
+                      {f.vervaldatum ? new Date(f.vervaldatum).toLocaleDateString("nl-BE", { dateStyle: "short" }) : "—"}
+                    </TableCell>
+                    <TableCell className="text-right font-medium tabular-nums text-foreground">
+                      {euro(f.bedragInclBtw / 100)}
+                    </TableCell>
+                    <TableCell>
+                      <Select value={status} onValueChange={(v) => zetBetaalstatus(f.id, v)}>
+                        <SelectTrigger className="h-7 w-auto gap-1.5 border-0 bg-transparent p-0 shadow-none focus:ring-0" data-testid={`select-betaalstatus-${f.id}`}>
+                          <Badge variant="outline" className={BETAALSTATUS_STYLE[status]} data-testid={`badge-betaalstatus-${f.id}`}>
+                            {BETAALSTATUS_LABEL[status]}
+                          </Badge>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="betaald">Betaald</SelectItem>
+                          <SelectItem value="openstaand">Openstaand</SelectItem>
+                          <SelectItem value="vervallen">Vervallen</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      {f.kanaal === "peppol" ? (
+                        <Badge variant="outline" className="bg-accent/15 text-accent border-accent/20" data-testid={`badge-kanaal-${f.id}`}>
+                          Peppol
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-muted text-foreground border-border" data-testid={`badge-kanaal-${f.id}`}>
+                          PDF
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-3">
+                        <a
+                          href={`${FACTUUR_API_BASE}/api/facturen/${f.id}/pdf`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm text-accent underline-offset-2 hover:underline"
+                          data-testid={`link-pdf-${f.id}`}
+                        >
+                          PDF
+                        </a>
+                        <a
+                          href={`${FACTUUR_API_BASE}/api/facturen/${f.id}/peppol.json`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm text-muted-foreground underline-offset-2 hover:underline"
+                          data-testid={`link-peppol-${f.id}`}
+                        >
+                          UBL JSON
+                        </a>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {cnVoor(f.id) ? (
+                        <Badge variant="outline" className="bg-muted text-foreground border-border" data-testid={`badge-creditnota-${f.id}`}>
+                          {cnVoor(f.id)!.creditnotanummer}
+                        </Badge>
+                      ) : (
+                        <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => maakCreditnota(f.id)} data-testid={`button-creditnota-${f.id}`}>
+                          <FileText className="mr-1 h-3.5 w-3.5" />Crediteren
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </>
         )}
       </CardContent>
     </Card>

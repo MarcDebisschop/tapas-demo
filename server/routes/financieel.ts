@@ -45,8 +45,22 @@ import {
   overdrachtSchema,
   startBetalingSchema,
   creditnotaSchema,
+  betaalstatusSchema,
+  billerHuisstijlSchema,
+  organisatieHuisstijlSchema,
 } from "@shared/schema";
 import { isTalentFocusConstruct } from "@shared/talent-constructs";
+import { renderFactuurPdf } from "../facturen/factuur-pdf";
+
+// Facturatie-uitbreiding: leid de effectieve betaalstatus af. Een 'openstaande'
+// factuur met een vervaldatum die vóór vandaag ligt, geldt als 'vervallen'.
+function effectieveBetaalstatus(betaalstatus: string, vervaldatum?: string | null): string {
+  if (betaalstatus === "openstaand" && vervaldatum) {
+    const v = new Date(vervaldatum);
+    if (!isNaN(v.getTime()) && v.getTime() < Date.now()) return "vervallen";
+  }
+  return betaalstatus;
+}
 
 // Helper: bepaal het aantal credits uit pakket of expliciet aantal.
 function creditsUitPayload(pakketId?: string, credits?: number): number | null {
@@ -245,6 +259,32 @@ export function registerFinancieelRoutes(app: Express): void {
     res.json(b);
   });
 
+  // -------------------------------------------------------------------------
+  // Facturatie-uitbreiding — huisstijl per biller (logo, kleur, footer)
+  // -------------------------------------------------------------------------
+  app.put("/api/billers/:id/huisstijl", async (req, res) => {
+    const parsed = billerHuisstijlSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
+    }
+    const b = await storage.updateBillerHuisstijl(Number(req.params.id), parsed.data);
+    if (!b) return res.status(404).json({ error: "Biller niet gevonden" });
+    res.json(b);
+  });
+
+  // -------------------------------------------------------------------------
+  // Facturatie-uitbreiding — huisstijl-override per organisatie
+  // -------------------------------------------------------------------------
+  app.put("/api/organisaties/:id/huisstijl", async (req, res) => {
+    const parsed = organisatieHuisstijlSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
+    }
+    const o = await storage.updateOrganisatieHuisstijl(Number(req.params.id), parsed.data);
+    if (!o) return res.status(404).json({ error: "Organisatie niet gevonden" });
+    res.json(o);
+  });
+
   // =========================================================================
   // Fase C2 — Betaalintegratie (Mollie) & credits opladen via betaling
   // =========================================================================
@@ -326,6 +366,75 @@ export function registerFinancieelRoutes(app: Express): void {
     res.setHeader("Content-Type", "application/json");
     res.setHeader("Content-Disposition", `attachment; filename="${f.factuurnummer}_peppol.json"`);
     res.send(f.peppolDocument);
+  });
+
+  // -------------------------------------------------------------------------
+  // Facturatie-uitbreiding — betaalstatus handmatig wijzigen
+  // -------------------------------------------------------------------------
+  app.patch("/api/facturen/:id/betaalstatus", async (req, res) => {
+    const parsed = betaalstatusSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
+    }
+    const id = Number(req.params.id);
+    const f = await storage.updateFactuurBetaalstatus(
+      id,
+      parsed.data.betaalstatus,
+      parsed.data.vervaldatum ?? undefined
+    );
+    if (!f) return res.status(404).json({ error: "Factuur niet gevonden" });
+    res.json(f);
+  });
+
+  // -------------------------------------------------------------------------
+  // Facturatie-uitbreiding — visuele PDF-factuur (huisstijl toegepast)
+  // -------------------------------------------------------------------------
+  app.get("/api/facturen/:id/pdf", async (req, res) => {
+    const f = await storage.getFactuur(Number(req.params.id));
+    if (!f) return res.status(404).json({ error: "Factuur niet gevonden" });
+
+    // Snapshots (bevroren) voor de partij-gegevens; live biller/org voor huisstijl.
+    let billerSnap: any = {};
+    let klantSnap: any = {};
+    let regels: any[] = [];
+    try { billerSnap = JSON.parse(f.billerSnapshot); } catch { /* leeg */ }
+    try { klantSnap = JSON.parse(f.klantSnapshot); } catch { /* leeg */ }
+    try { regels = JSON.parse(f.regels); } catch { /* leeg */ }
+
+    const billers = await storage.listBillers();
+    const biller = billers.find((b) => b.id === f.billerEntiteitId);
+    const org = await storage.getOrganisatie(f.organisatieId);
+
+    // Huisstijl-resolutie: org-override wint van biller; fallback = biller-default.
+    const kleur = org?.huisstijlKleur || biller?.huisstijlKleur || "#b08b3f";
+    const logo = org?.huisstijlLogo || biller?.logo || null;
+    const footer = org?.huisstijlFooter || biller?.factuurFooter || null;
+
+    try {
+      const pdf = await renderFactuurPdf({
+        factuurnummer: f.factuurnummer,
+        factuurdatum: f.factuurdatum,
+        vervaldatum: f.vervaldatum,
+        betaalstatus: effectieveBetaalstatus(f.betaalstatus, f.vervaldatum),
+        munt: f.munt,
+        biller: { ...billerSnap, iban: biller?.iban ?? billerSnap.iban ?? null },
+        klant: klantSnap,
+        regels,
+        bedragExclBtw: f.bedragExclBtw,
+        btwBedrag: f.btwBedrag,
+        bedragInclBtw: f.bedragInclBtw,
+        huisstijl: { kleur, logo, footer },
+      });
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `inline; filename="${f.factuurnummer}.pdf"`);
+      res.setHeader("Content-Length", String(pdf.length));
+      res.end(pdf);
+    } catch (err) {
+      res.status(500).json({
+        error: "PDF-generatie mislukt",
+        detail: err instanceof Error ? err.message : String(err),
+      });
+    }
   });
 
   // =========================================================================
