@@ -481,6 +481,39 @@ try {
   // negeerbaar in nieuwe databases
 }
 
+// Facturatie-uitbreiding (demo-backfill): op bestaande databases waar de vier
+// demo-facturen nog op de onaangeroerde default staan (betaalstatus 'betaald'
+// zonder vervaldatum), zet een gevarieerde status + vervaldatum zodat de
+// badges en het statusfilter meteen gevuld tonen. Idempotent en niet-
+// destructief: draait enkel wanneer ALLE vier nog op de default staan, zodat
+// een handmatige wijziging door de beheerder nooit wordt overschreven.
+try {
+  const cols = sqlite.prepare(`PRAGMA table_info(facturen)`).all() as Array<{ name: string }>;
+  const heeftStatus = cols.some((c) => c.name === "betaalstatus") && cols.some((c) => c.name === "vervaldatum");
+  if (heeftStatus) {
+    const demoNrs = ["2BQ-2025-0001", "2BQ-2026-0002", "2BQ-2025-0003", "2BQ-2025-0004"];
+    const rows = sqlite
+      .prepare(
+        `SELECT factuurnummer, betaalstatus, vervaldatum FROM facturen
+         WHERE factuurnummer IN (${demoNrs.map(() => "?").join(",")})`
+      )
+      .all(...demoNrs) as Array<{ factuurnummer: string; betaalstatus: string; vervaldatum: string | null }>;
+    const allesDefault =
+      rows.length === demoNrs.length &&
+      rows.every((r) => r.betaalstatus === "betaald" && (r.vervaldatum === null || r.vervaldatum === ""));
+    if (allesDefault) {
+      const zet = sqlite.prepare(`UPDATE facturen SET betaalstatus = ?, vervaldatum = ? WHERE factuurnummer = ?`);
+      zet.run("betaald",    "2025-10-31", "2BQ-2025-0001");
+      zet.run("openstaand", "2026-08-01", "2BQ-2026-0002");
+      zet.run("betaald",    "2025-12-31", "2BQ-2025-0003");
+      zet.run("vervallen",  "2025-10-15", "2BQ-2025-0004");
+      console.log("[tapas] Demo-facturen: gevarieerde betaalstatus + vervaldatum ingesteld (backfill).");
+    }
+  }
+} catch {
+  // negeerbaar in nieuwe databases
+}
+
 // Migratie voor bestaande Fase B-databases: voeg organisatie_id toe indien afwezig.
 try {
   const cols = sqlite.prepare(`PRAGMA table_info(afnames)`).all() as Array<{ name: string }>;
@@ -1172,6 +1205,19 @@ seedLana();
         mkRegel("TaPas credits \u2014 Team 100", 100, 50000),
         50000, 10500, 60500, "2025-09-15", "2025-09-15T08:05:00.000Z");
     }
+
+    // Facturatie-uitbreiding (demo): geef de vier demo-facturen een
+    // gevarieerde betaalstatus + vervaldatum zodat het overzicht, de
+    // gekleurde badges en het statusfilter meteen gevuld tonen.
+    // Additief \u2014 raakt de INSERT niet aan; louter een status-set.
+    const demoStatus = sqlite.prepare(
+      `UPDATE facturen SET betaalstatus = ?, vervaldatum = ? WHERE factuurnummer = ?`
+    );
+    // 2 betaald, 1 openstaand (nog geldig), 1 vervallen (vervaldatum verlopen).
+    demoStatus.run("betaald",    "2025-10-31", "2BQ-2025-0001");
+    demoStatus.run("openstaand", "2026-08-01", "2BQ-2026-0002");
+    demoStatus.run("betaald",    "2025-12-31", "2BQ-2025-0003");
+    demoStatus.run("vervallen",  "2025-10-15", "2BQ-2025-0004");
 
     // -----------------------------------------------------------------------
     // Licenties (T4Recruitment losse verkoop)
