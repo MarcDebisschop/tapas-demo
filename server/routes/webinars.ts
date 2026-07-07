@@ -22,9 +22,11 @@
 import type { Express } from "express";
 
 // ---------------------------------------------------------------------------
-// Demo seed-data (2 webinars zoals Marc ze kende)
+// Demo seed-data — professionele demo voor het TaPas talent-assessment /
+// coaching platform. Dezelfde WEBINARS-bron voedt zowel de admin-tab
+// (GET /api/webinars) als de Lounge "buitenterras" (GET /api/webinars/mijn).
 // ---------------------------------------------------------------------------
-let webinarId = 3;
+let webinarId = 8;
 
 const WEBINARS: any[] = [
   {
@@ -36,6 +38,7 @@ const WEBINARS: any[] = [
     status: "gepland",
     thema: "T4P Business Kompas",
     instrument: "T4P Business Kompas",
+    spreker: "Marc Debisschop",
     beschrijving:
       "Een interactieve sessie waarbij coaches en HR-professionals leren hoe ze de TaPas-profielen vertalen naar concrete teamgesprekken, loopbaanbegeleiding en selectieprocedures.",
     ingeschreven: 12,
@@ -51,17 +54,82 @@ const WEBINARS: any[] = [
     status: "gepland",
     thema: "Drivers & coaching",
     instrument: "T4P Business Kompas",
+    spreker: "Sofie Vermeulen",
     beschrijving:
       "Verdiepingssessie over de vijf drivers (Kahler-model) in de coachpraktijk: hoe herken je de actieve driver bij een coachee, en hoe zet je de driver om van rem naar gaspedaal?",
     ingeschreven: 8,
     aanwezig: 0,
     gemRating: null,
   },
+  {
+    id: 3,
+    titel: "Het assessmentrapport lezen met de kandidaat",
+    datum: "2026-10-23T18:30:00.000Z",
+    duur_minuten: 60,
+    type: "must",
+    status: "gepland",
+    thema: "Rapportage & feedback",
+    instrument: "T4P Business Kompas",
+    spreker: "Karel Janssens",
+    beschrijving:
+      "Hoe voer je een constructief terugkoppelgesprek op basis van een TaPas-rapport? Praktische gespreksstructuur, valkuilen en oefeningen om resultaten begrijpelijk en motiverend te brengen.",
+    ingeschreven: 15,
+    aanwezig: 0,
+    gemRating: null,
+  },
+  {
+    id: 4,
+    titel: "Teamdynamiek in kaart — samenstelling en complementariteit",
+    datum: "2026-11-13T19:00:00.000Z",
+    duur_minuten: 90,
+    type: "facultatief",
+    status: "gepland",
+    thema: "Teams & samenwerking",
+    instrument: "T4P Teamscan",
+    spreker: "Ann Peeters",
+    beschrijving:
+      "Van individueel profiel naar teamprofiel: leer hoe complementaire talenten en drivers de samenwerking versterken, en hoe je spanningsvelden bespreekbaar maakt tijdens een teamsessie.",
+    ingeschreven: 6,
+    aanwezig: 0,
+    gemRating: null,
+  },
+  {
+    id: 5,
+    titel: "Loopbaanbegeleiding met TaPas — van talent naar richting",
+    datum: "2026-11-27T18:30:00.000Z",
+    duur_minuten: 75,
+    type: "facultatief",
+    status: "gepland",
+    thema: "Loopbaan & ontwikkeling",
+    instrument: "T4P Business Kompas",
+    spreker: "Tom De Clercq",
+    beschrijving:
+      "Praktijkgerichte sessie over het inzetten van talentprofielen in loopbaan- en outplacementtrajecten: reflectieoefeningen, keuzegesprekken en het opstellen van een ontwikkelplan.",
+    ingeschreven: 9,
+    aanwezig: 0,
+    gemRating: null,
+  },
+  {
+    id: 6,
+    titel: "Practitioner Q&A — jouw casussen, live besproken",
+    datum: "2026-07-07T17:00:00.000Z",
+    duur_minuten: 45,
+    type: "facultatief",
+    status: "live",
+    thema: "Intervisie",
+    instrument: "",
+    spreker: "Marc Debisschop",
+    beschrijving:
+      "Maandelijkse live intervisie voor gecertificeerde practitioners: breng je eigen coach- of assessmentcasus in en krijg directe feedback van collega's en het TaPas-team.",
+    ingeschreven: 18,
+    aanwezig: 7,
+    gemRating: null,
+  },
 ];
 
 const ARCHIEF: any[] = [
   {
-    id: 0,
+    id: 101,
     titel: "Introductie TaPas-methodologie",
     datum: "2026-05-15T18:30:00.000Z",
     duur_minuten: 60,
@@ -69,10 +137,58 @@ const ARCHIEF: any[] = [
     status: "afgerond",
     thema: "Methodologie",
     instrument: "",
+    spreker: "Marc Debisschop",
     beschrijving: "Introductiesessie: wat is TaPas, hoe werkt het model en wie zijn de gebruikers?",
     ingeschreven: 24,
     aanwezig: 21,
     gemRating: 4.6,
+    kijkers_totaal: 21,
+    gem_kijktijd_min: 54,
+    rating_gemiddeld: 4.6,
+    rating_count: 18,
+    opname_url: "https://vimeo.com/tapas/introductie-methodologie",
+  },
+  {
+    id: 102,
+    titel: "Van talent naar prestatie — de wetenschappelijke basis",
+    datum: "2026-06-12T18:30:00.000Z",
+    duur_minuten: 75,
+    type: "must",
+    status: "afgerond",
+    thema: "Onderbouwing & validiteit",
+    instrument: "T4P Business Kompas",
+    spreker: "Dr. Ann Peeters",
+    beschrijving:
+      "Achtergrondsessie over de psychometrische onderbouwing van de TaPas-instrumenten: betrouwbaarheid, validiteit en verantwoord gebruik in selectie- en ontwikkelcontexten.",
+    ingeschreven: 31,
+    aanwezig: 27,
+    gemRating: 4.8,
+    kijkers_totaal: 27,
+    gem_kijktijd_min: 68,
+    rating_gemiddeld: 4.8,
+    rating_count: 22,
+    opname_url: "https://vimeo.com/tapas/wetenschappelijke-basis",
+  },
+  {
+    id: 103,
+    titel: "Feedback geven die blijft hangen",
+    datum: "2026-06-26T18:30:00.000Z",
+    duur_minuten: 60,
+    type: "facultatief",
+    status: "afgerond",
+    thema: "Rapportage & feedback",
+    instrument: "",
+    spreker: "Sofie Vermeulen",
+    beschrijving:
+      "Praktische technieken om assessmentfeedback helder, respectvol en actiegericht te brengen — met rollenspel en concrete voorbeeldformuleringen.",
+    ingeschreven: 19,
+    aanwezig: 16,
+    gemRating: 4.5,
+    kijkers_totaal: 16,
+    gem_kijktijd_min: 51,
+    rating_gemiddeld: 4.5,
+    rating_count: 13,
+    opname_url: "https://vimeo.com/tapas/feedback-die-blijft-hangen",
   },
 ];
 
@@ -84,34 +200,37 @@ let topics: any[] = [];
 
 export function registerWebinarRoutes(app: Express): void {
   // Alle webinars — admin-overzicht
+  // Envelope { webinars } zoals de client (webinars.tsx / TerrasWebinars.tsx) leest.
   app.get("/api/webinars", (_req, res) => {
-    res.json([...WEBINARS, ...ARCHIEF]);
+    res.json({ webinars: [...WEBINARS, ...ARCHIEF] });
   });
 
-  // Komende webinars — deelnemersview
+  // Komende webinars — deelnemers- en Lounge-terrasview
   app.get("/api/webinars/mijn", (_req, res) => {
     const nu = new Date().toISOString();
-    res.json(WEBINARS.filter((w) => w.datum > nu || w.status === "gepland" || w.status === "live"));
+    res.json({
+      webinars: WEBINARS.filter((w) => w.datum > nu || w.status === "gepland" || w.status === "live"),
+    });
   });
 
   // Archief + zoekfilter
   app.get("/api/webinars/archief", (req, res) => {
     const q = (req.query.q as string ?? "").toLowerCase().trim();
     const lijst = [...ARCHIEF, ...WEBINARS.filter((w) => w.status === "afgerond")];
-    if (!q) return res.json(lijst);
-    res.json(
-      lijst.filter(
+    if (!q) return res.json({ webinars: lijst });
+    res.json({
+      webinars: lijst.filter(
         (w) =>
           w.titel.toLowerCase().includes(q) ||
           (w.thema ?? "").toLowerCase().includes(q) ||
           (w.beschrijving ?? "").toLowerCase().includes(q),
       ),
-    );
+    });
   });
 
   // Topic-voorstellen van practitioners
   app.get("/api/webinars/mijn-topics", (_req, res) => {
-    res.json(topics);
+    res.json({ topics });
   });
 
   // Webinar aanmaken (admin)
