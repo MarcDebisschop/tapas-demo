@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   AlertTriangle, CheckCircle, TrendingUp, TrendingDown,
   Users, BarChart2, Mail, RefreshCw, Settings, FileText, ChevronLeft,
+  GraduationCap, Check, Circle,
 } from "lucide-react";
 
 const API_BASE = (() => { const _s = "__PORT_5000__"; return _s.startsWith("__") ? "" : "/" + _s; })();
@@ -84,6 +85,14 @@ export default function AdminKwaliteit() {
     mutationFn: (id: number) =>
       apiRequest("POST", `${API_BASE}/api/kwaliteit/${id}/herbereken?jaar=${jaar}`).then(r => r.json()),
     onSuccess: () => refetch(),
+  });
+
+  // STM-modulevoortgang van de geselecteerde practitioner (lazy — enkel bij
+  // geopend detailpaneel). Read-only, gekeyd op dezelfde beheerder_id.
+  const stmVoortgangQuery = useQuery({
+    queryKey: ["/api/admin/stm-voortgang", geselecteerd],
+    queryFn: () => apiRequest("GET", `${API_BASE}/api/admin/stm-voortgang/${geselecteerd}`).then(r => r.json()),
+    enabled: geselecteerd !== null,
   });
 
   if (isLoading) return (
@@ -401,6 +410,84 @@ export default function AdminKwaliteit() {
                   )}
                 </div>
               </div>
+              {/* STM-modulevoortgang (additief) — per-practitioner voltooiing
+                  van de 4 STM-lagen op basis van afgeronde STM-sessies. */}
+              <div className="mt-6 pt-6" style={{ borderTop: "1px solid #e8e4dc" }}>
+                <h3 style={{ color: "#14213d", fontWeight: 600, marginBottom: 4 }}>
+                  <GraduationCap className="inline w-4 h-4 mr-1" style={{ color: "#1a5fa8" }} /> STM-modulevoortgang
+                </h3>
+                <p style={{ color: "#7a7468", fontSize: 12, marginBottom: 12 }}>
+                  Zelf-trainingsmodule — voltooiing van de 4 kennislagen op basis van afgeronde STM-sessies.
+                </p>
+                {stmVoortgangQuery.isLoading ? (
+                  <p style={{ color: "#7a7468", fontSize: 13 }}>STM-voortgang laden…</p>
+                ) : !stmVoortgangQuery.data?.voortgang ? (
+                  <p style={{ color: "#7a7468", fontSize: 13 }}>Kon STM-voortgang niet laden.</p>
+                ) : (() => {
+                  const v = stmVoortgangQuery.data.voortgang;
+                  return (
+                    <div>
+                      {/* Samenvatting */}
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        <span style={{ background: "#eef3fb", color: "#1a5fa8", borderRadius: 6, padding: "4px 10px", fontSize: 12, fontWeight: 600 }}>
+                          {v.lagen_op_niveau}/{v.lagen_totaal} lagen op niveau
+                        </span>
+                        <span style={{ background: "#f4f1ec", color: "#14213d", borderRadius: 6, padding: "4px 10px", fontSize: 12 }}>
+                          {v.sessies_afgerond} STM-{v.sessies_afgerond === 1 ? "sessie" : "sessies"} afgerond
+                        </span>
+                        <span style={{ background: "#f4f1ec", color: "#7a7468", borderRadius: 6, padding: "4px 10px", fontSize: 12 }}>
+                          Laatste sessie: {formateerDatum(v.laatste_sessie)}
+                        </span>
+                      </div>
+
+                      {v.sessies_afgerond === 0 ? (
+                        <p style={{ color: "#7a7468", fontSize: 13 }}>Nog geen afgeronde STM-sessies voor deze practitioner.</p>
+                      ) : (
+                        <div className="grid gap-2">
+                          {v.lagen.map((l: any) => (
+                            <div key={l.laag} className="flex items-center gap-3" style={{ background: "#faf8f4", borderRadius: 6, padding: "8px 12px" }}>
+                              {l.gehaald
+                                ? <Check className="w-4 h-4 flex-shrink-0" style={{ color: "#2E7D5A" }} />
+                                : <Circle className="w-4 h-4 flex-shrink-0" style={{ color: "#b8b2a7" }} />}
+                              <div style={{ minWidth: 150 }}>
+                                <div style={{ fontSize: 13, fontWeight: 600, color: "#14213d" }}>Laag {l.laag} — {l.label}</div>
+                                <div style={{ fontSize: 11, color: l.gehaald ? "#2E7D5A" : "#8B6914" }}>{l.gehaald ? "Gehaald" : "Open"}</div>
+                              </div>
+                              <div className="flex-1" style={{ minWidth: 90 }}>
+                                <div style={{ background: "#e8e4dc", borderRadius: 4, height: 8, overflow: "hidden" }}>
+                                  <div style={{
+                                    background: l.gem_score === null ? "#e8e4dc" : l.gehaald ? "#2E7D5A" : "#8B6914",
+                                    width: `${Math.round((l.gem_score ?? 0) * 100)}%`, height: "100%", borderRadius: 4,
+                                  }} />
+                                </div>
+                              </div>
+                              <div style={{ width: 44, textAlign: "right", fontSize: 13, fontWeight: 700, color: "#14213d" }}>
+                                {l.gem_score === null ? "—" : `${Math.round(l.gem_score * 100)}%`}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Curriculumcontext: de 5 thema's. Per-thema-voltooiing wordt
+                          niet per sessie opgeslagen — daarom louter als context. */}
+                      <div className="mt-3">
+                        <p style={{ color: "#7a7468", fontSize: 11, marginBottom: 6 }}>
+                          Thema's in het STM-curriculum (voortgang wordt op laagniveau gemeten, niet per thema):
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {v.themas.map((t: string) => (
+                            <span key={t} style={{ background: "#f4f1ec", color: "#7a7468", borderRadius: 999, padding: "2px 10px", fontSize: 11, border: "1px solid #e8e4dc" }}>
+                              {t}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
               {opgeSel.override_reden ? (
                 <div className="mt-4" style={{ background: "#f4f1ec", borderRadius: 6, padding: "10px 14px", fontSize: 13, color: "#14213d" }}>
                   <strong>Statuut-toelichting:</strong> {opgeSel.override_reden}

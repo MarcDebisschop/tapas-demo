@@ -8,6 +8,7 @@ import { buildGidsManagerRoutes } from "./gids-manager";
 import { registerGidsPdfRoutes } from "./gids/routes";
 import { registerCoachesAcademyMailRoutes } from "./routes-coaches-academy-mail";
 import { registerStmRoutes } from "./routes-stm";
+import { registerAdminStmVoortgangRoutes } from "./admin-stm-voortgang";
 import { registerT4RRoutes } from "./t4r/routes";
 import { registerTeamscanRoutes } from "./teamscan/routes";
 import { registerHddRoutes } from "./hdd/routes";
@@ -142,6 +143,9 @@ export async function registerRoutes(
 
   // Extra routes: coach-login + Self-Training Module (STM)
   registerStmRoutes(app, storage);
+
+  // Admin: per-practitioner STM-modulevoortgang (read-only, additief)
+  registerAdminStmVoortgangRoutes(app);
 
   // Deelnemer-domeinrouter: login, magic-link, dashboard, TTS (NP-2 fix 2026-06-30)
   registerDeelnemerRoutes(app);
