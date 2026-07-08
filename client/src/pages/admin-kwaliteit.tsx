@@ -28,6 +28,13 @@ function statusKleur(status: string) {
   return map[status] || "bg-gray-100 text-gray-600";
 }
 
+function formateerDatum(iso: string | null | undefined) {
+  if (!iso) return "Geen afname";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("nl-BE", { day: "2-digit", month: "short", year: "numeric" });
+}
+
 function statusLabel(status: string) {
   const map: Record<string, string> = {
     actief: "Op schema",
@@ -177,7 +184,7 @@ export default function AdminKwaliteit() {
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ background: "#f4f1ec", borderBottom: "1px solid #e8e4dc" }}>
-                    {["Naam", "Afnames", "Norm", "Verwacht", "Progressie", "Status", "Alerts", "Acties"].map(h => (
+                    {["Naam", "Afnames", "Norm", "Verwacht", "Progressie", "Status", "Laatste activiteit", "Aandacht", "Alerts", "Acties"].map(h => (
                       <th key={h} style={{ padding: "10px 12px", color: "#14213d", fontWeight: 600, textAlign: "left", fontSize: 12 }}>{h}</th>
                     ))}
                   </tr>
@@ -209,6 +216,26 @@ export default function AdminKwaliteit() {
                         <span className={`px-2 py-1 rounded text-xs font-medium ${statusKleur(p.status_berekend)}`}>
                           {statusLabel(p.status_berekend)}
                         </span>
+                      </td>
+                      <td style={{ padding: "10px 12px", color: "#7a7468", fontSize: 12, whiteSpace: "nowrap" }}>
+                        {formateerDatum(p.laatste_activiteit)}
+                      </td>
+                      <td style={{ padding: "10px 12px" }}>
+                        <div className="flex gap-1 flex-wrap">
+                          {(p.ontbrekende_info?.length ?? 0) > 0 ? (
+                            <span className="text-xs bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded" title="Ontbrekende info">
+                              {p.ontbrekende_info.length} ontbrekend
+                            </span>
+                          ) : null}
+                          {(p.open_vragen?.length ?? 0) > 0 ? (
+                            <span className="text-xs bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded" title="Open vragen">
+                              {p.open_vragen.length} open vraag
+                            </span>
+                          ) : null}
+                          {(p.ontbrekende_info?.length ?? 0) === 0 && (p.open_vragen?.length ?? 0) === 0 ? (
+                            <span style={{ color: "#b8b2a7", fontSize: 12 }}>—</span>
+                          ) : null}
+                        </div>
                       </td>
                       <td style={{ padding: "10px 12px" }}>
                         <div className="flex gap-1">
@@ -331,9 +358,54 @@ export default function AdminKwaliteit() {
                       <div style={{ color: "#7a7468", fontSize: 11 }}>Voorspelling einde jaar</div>
                       <div style={{ color: "#14213d", fontWeight: 700 }}>{opgeSel.voorspelling_einde_jaar}</div>
                     </div>
+                    <div style={{ background: "#f4f1ec", borderRadius: 6, padding: "8px 12px", gridColumn: "span 2" }}>
+                      <div style={{ color: "#7a7468", fontSize: 11 }}>Laatste activiteit</div>
+                      <div style={{ color: "#14213d", fontWeight: 700 }}>{formateerDatum(opgeSel.laatste_activiteit)}</div>
+                    </div>
                   </div>
                 </div>
               </div>
+
+              {/* Ontbrekende info + open kwaliteitsvragen (Ronde 40) */}
+              <div className="grid md:grid-cols-2 gap-6 mt-6 pt-6" style={{ borderTop: "1px solid #e8e4dc" }}>
+                <div>
+                  <h3 style={{ color: "#14213d", fontWeight: 600, marginBottom: 8 }}>
+                    <AlertTriangle className="inline w-4 h-4 mr-1" style={{ color: "#8B6914" }} /> Ontbrekende info
+                  </h3>
+                  {(opgeSel.ontbrekende_info?.length ?? 0) === 0 ? (
+                    <p style={{ color: "#7a7468", fontSize: 13 }}>Geen openstaande punten — dossier volledig.</p>
+                  ) : (
+                    <ul style={{ margin: 0, paddingLeft: 0, listStyle: "none" }}>
+                      {opgeSel.ontbrekende_info.map((n: any) => (
+                        <li key={n.id} style={{ fontSize: 13, color: "#14213d", padding: "6px 10px", background: "#fdf6e8", borderLeft: "3px solid #8B6914", borderRadius: 4, marginBottom: 6 }}>
+                          {n.tekst}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <div>
+                  <h3 style={{ color: "#14213d", fontWeight: 600, marginBottom: 8 }}>
+                    <FileText className="inline w-4 h-4 mr-1" style={{ color: "#7a39bb" }} /> Open kwaliteitsvragen
+                  </h3>
+                  {(opgeSel.open_vragen?.length ?? 0) === 0 ? (
+                    <p style={{ color: "#7a7468", fontSize: 13 }}>Geen openstaande vragen.</p>
+                  ) : (
+                    <ul style={{ margin: 0, paddingLeft: 0, listStyle: "none" }}>
+                      {opgeSel.open_vragen.map((n: any) => (
+                        <li key={n.id} style={{ fontSize: 13, color: "#14213d", padding: "6px 10px", background: "#f5eefc", borderLeft: "3px solid #7a39bb", borderRadius: 4, marginBottom: 6 }}>
+                          {n.tekst}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+              {opgeSel.override_reden ? (
+                <div className="mt-4" style={{ background: "#f4f1ec", borderRadius: 6, padding: "10px 14px", fontSize: 13, color: "#14213d" }}>
+                  <strong>Statuut-toelichting:</strong> {opgeSel.override_reden}
+                </div>
+              ) : null}
             </CardContent>
           </Card>
         )}

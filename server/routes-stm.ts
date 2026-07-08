@@ -21,6 +21,7 @@
 
 import type { Express, Request, Response } from "express";
 import { stmSessieOpslagen, type StmSessieRecord } from "./stm-storage";
+import { kwaliteitOpslag, seedDemoKwaliteit } from "./kwaliteit-storage";
 
 // ---------------------------------------------------------------------------
 // Type-definities
@@ -828,12 +829,24 @@ export function registerStmRoutes(app: Express, storage: any): void {
     });
   });
 
-  // ── Kwaliteitsmonitor: in-memory status per beheerder ─────────────────────
-  // Statusoverrides en alerts worden in-memory bijgehouden (geen DB-migratie).
+  // ── Kwaliteitsmonitor: SQLite-persistent per beheerder (Ronde 40) ──────────
+  // Was: in-memory Maps (R37) — reset bij server-restart.
+  // Nu:  kwaliteit_normen / kwaliteit_overrides / kwaliteit_alerts /
+  //      kwaliteit_maillog / kwaliteit_notities in data.db (kwaliteit-storage.ts).
+  //      Overleeft server-herstarts; ontbrekende info + open vragen zitten nu
+  //      ook in het datamodel.
 
-  const kwaliteitOverrides = new Map<number, { status?: string; norm?: number }>();
-  const alertSentFlags = new Map<number, { trap1?: boolean; trap2?: boolean; trap3?: boolean }>();
-  const mailLog: Array<{ beheerderId: number; trap: number; verstuurdAt: string; email: string; naam: string }> = [];
+  // Idempotente demo-seed: realistische afname-historiek zodat het dashboard
+  // in de publieke read-only demo een geloofwaardig, gevarieerd beeld toont
+  // (systeemgap 3). Doet niets als er al afgeronde sessies bestaan.
+  try {
+    const seedRes = seedDemoKwaliteit();
+    if (seedRes.geseed) {
+      console.log(`[kwaliteit-demo-seed] ${seedRes.sessies} afname-sessies + ${seedRes.notities} notities geseed.`);
+    }
+  } catch (e) {
+    console.warn("[kwaliteit-demo-seed] overgeslagen:", (e as Error)?.message);
+  }
 
   // ── Extra practitioners: geaccrediteerde coaches (niet-beheerder) ───────────
   // ID-reeks 1001+ om nooit te botsen met echte beheerder-ID's.
@@ -877,14 +890,14 @@ export function registerStmRoutes(app: Express, storage: any): void {
     const jaarSessies = alleAfgerond
       .filter(s => s?.afgerond_at && s.afgerond_at.startsWith(String(now.getFullYear())));
 
-    const norm = kwaliteitOverrides.get(beheerderId)?.norm ?? 12;
+    const norm = kwaliteitOpslag.getNorm(beheerderId) ?? 12;
     const afnames_count = jaarSessies.length;
     const verwacht = Math.round((dagenVerstreken / dagenTotaal) * norm);
     const progressie_pct = norm > 0 ? Math.round((afnames_count / norm) * 100) : 0;
     const gemVsVerwacht = verwacht > 0 ? afnames_count / verwacht : 1;
 
     let status_berekend: string;
-    const override = kwaliteitOverrides.get(beheerderId)?.status;
+    const override = kwaliteitOpslag.getOverride(beheerderId)?.status;
     if (override && ["opgeschort", "uitzondering"].includes(override)) {
       status_berekend = override;
     } else if (progressie_pct >= 100) {
@@ -914,13 +927,29 @@ export function registerStmRoutes(app: Express, storage: any): void {
       ];
       const practitioners = allePractitioners.map((b) => {
         const stats = berekenKwaliteitsStatus(b.id);
-        const alerts = alertSentFlags.get(b.id) || {};
+        const alerts = kwaliteitOpslag.getAlerts(b.id);
+        // Laatste activiteit: nieuwste afgeronde sessie (indien aanwezig).
+        const historiek = stmSessieOpslagen.historiek(b.id);
+        const laatste_activiteit = historiek.length > 0 ? historiek[0].afgerond_at : null;
+        // Ontbrekende info + open vragen (nu in datamodel).
+        const notities = kwaliteitOpslag.getNotities(b.id);
+        const ontbrekende_info = notities
+          .filter((n) => n.soort === "ontbrekend" && !n.opgelost)
+          .map((n) => ({ id: n.id, tekst: n.tekst }));
+        const open_vragen = notities
+          .filter((n) => n.soort === "open_vraag" && !n.opgelost)
+          .map((n) => ({ id: n.id, tekst: n.tekst }));
+        const override = kwaliteitOpslag.getOverride(b.id);
         return {
           beheerder_id: b.id, naam: b.naam, email: b.email,
           ...stats,
-          alert_trap1_sent: alerts.trap1 ?? false,
-          alert_trap2_sent: alerts.trap2 ?? false,
-          alert_trap3_sent: alerts.trap3 ?? false,
+          override_reden: override?.reden ?? null,
+          laatste_activiteit,
+          ontbrekende_info,
+          open_vragen,
+          alert_trap1_sent: alerts.trap1,
+          alert_trap2_sent: alerts.trap2,
+          alert_trap3_sent: alerts.trap3,
         };
       });
       res.json({ practitioners });
@@ -936,8 +965,7 @@ export function registerStmRoutes(app: Express, storage: any): void {
     const id = Number(req.params.id);
     const norm = Number(req.body?.norm);
     if (!norm || norm < 1 || norm > 500) return res.status(400).json({ error: "Ongeldige norm." });
-    const bestaand = kwaliteitOverrides.get(id) || {};
-    kwaliteitOverrides.set(id, { ...bestaand, norm });
+    kwaliteitOpslag.setNorm(id, norm);
     res.json({ ok: true, norm });
   });
 
@@ -949,20 +977,24 @@ export function registerStmRoutes(app: Express, storage: any): void {
     const trap = Number(req.body?.trap);
     if (![1, 2, 3].includes(trap)) return res.status(400).json({ error: "Ongeldige trap." });
     try {
+      // Practitioner kan een DB-beheerder zijn OF een extra practitioner (1001+).
+      let naam: string; let email: string;
       const beheerder = await storage.getBeheerder(id);
-      if (!beheerder) return res.status(404).json({ error: "Practitioner niet gevonden." });
-      mailLog.push({ beheerderId: id, trap, verstuurdAt: new Date().toISOString(), email: beheerder.email, naam: beheerder.naam });
-      const flags = alertSentFlags.get(id) || {};
-      if (trap === 1) flags.trap1 = true;
-      if (trap === 2) flags.trap2 = true;
-      if (trap === 3) flags.trap3 = true;
-      alertSentFlags.set(id, flags);
+      if (beheerder) {
+        naam = beheerder.naam; email = beheerder.email;
+      } else {
+        const extra = EXTRA_PRACTITIONERS.find((p) => p.id === id);
+        if (!extra) return res.status(404).json({ error: "Practitioner niet gevonden." });
+        naam = extra.naam; email = extra.email;
+      }
+      kwaliteitOpslag.logMail({ beheerderId: id, trap, verstuurdAt: new Date().toISOString(), email, naam });
+      kwaliteitOpslag.setAlertTrap(id, trap as 1 | 2 | 3);
       const trapLabels: Record<number, string> = {
         1: "Intern signaal (geen mail naar practitioner)",
         2: "E-mail verstuurd naar practitioner",
         3: "Escalatie — fondateur op de hoogte gebracht",
       };
-      res.json({ ok: true, bericht: trapLabels[trap], email: beheerder.email });
+      res.json({ ok: true, bericht: trapLabels[trap], email });
     } catch (e) {
       res.status(500).json({ error: "Alert kon niet verstuurd worden." });
     }
@@ -975,11 +1007,11 @@ export function registerStmRoutes(app: Express, storage: any): void {
     const id = Number(req.params.id);
     const actie = req.body?.actie as string;
     if (!["opschorten", "uitzondering", "herstel"].includes(actie)) return res.status(400).json({ error: "Ongeldige actie." });
-    const bestaand = kwaliteitOverrides.get(id) || {};
+    const reden = typeof req.body?.reden === "string" ? req.body.reden : undefined;
     if (actie === "herstel") {
-      kwaliteitOverrides.set(id, { ...bestaand, status: undefined });
+      kwaliteitOpslag.setOverride(id, null);
     } else {
-      kwaliteitOverrides.set(id, { ...bestaand, status: actie === "opschorten" ? "opgeschort" : "uitzondering" });
+      kwaliteitOpslag.setOverride(id, actie === "opschorten" ? "opgeschort" : "uitzondering", reden);
     }
     res.json({ ok: true, actie });
   });
@@ -1017,10 +1049,42 @@ export function registerStmRoutes(app: Express, storage: any): void {
         jaar: new Date().getFullYear(),
         samenvatting: { totaal_practitioners, op_schema, norm_gehaald, achterstand_licht, achterstand_zwaar },
         practitioners,
-        mail_log: mailLog.slice(-20),
+        mail_log: kwaliteitOpslag.laatsteMails(20),
       });
     } catch (e) {
       res.status(500).json({ error: "Rapport kon niet gegenereerd worden." });
     }
+  });
+
+  // ── Notities: ontbrekende info + open kwaliteitsvragen (Ronde 40) ──────────
+
+  // GET /api/kwaliteit/:id/notities — alle notities van een practitioner
+  app.get("/api/kwaliteit/:id/notities", (req: Request, res: Response) => {
+    const s = (req.session as any);
+    if (!s?.adminId) return res.status(401).json({ error: "Geen toegang." });
+    const id = Number(req.params.id);
+    res.json({ notities: kwaliteitOpslag.getNotities(id) });
+  });
+
+  // POST /api/kwaliteit/:id/notitie — nieuwe ontbrekende-info of open vraag
+  app.post("/api/kwaliteit/:id/notitie", (req: Request, res: Response) => {
+    const s = (req.session as any);
+    if (!s?.adminId) return res.status(401).json({ error: "Geen toegang." });
+    const id = Number(req.params.id);
+    const soort = req.body?.soort === "open_vraag" ? "open_vraag" : "ontbrekend";
+    const tekst = typeof req.body?.tekst === "string" ? req.body.tekst.trim() : "";
+    if (!tekst) return res.status(400).json({ error: "Tekst is verplicht." });
+    const notitieId = kwaliteitOpslag.voegNotitieToe(id, soort, tekst);
+    res.json({ ok: true, id: notitieId });
+  });
+
+  // PUT /api/kwaliteit/notitie/:notitieId — markeren als (on)opgelost
+  app.put("/api/kwaliteit/notitie/:notitieId", (req: Request, res: Response) => {
+    const s = (req.session as any);
+    if (!s?.adminId) return res.status(401).json({ error: "Geen toegang." });
+    const notitieId = Number(req.params.notitieId);
+    const opgelost = req.body?.opgelost === true || req.body?.opgelost === "true";
+    kwaliteitOpslag.zetNotitieOpgelost(notitieId, opgelost);
+    res.json({ ok: true, opgelost });
   });
 }
