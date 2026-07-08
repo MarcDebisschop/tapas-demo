@@ -154,56 +154,6 @@ function LoungeWidget() {
 }
 
 // ---------------------------------------------------------------------------
-// AcademyLink — uitnodiging naar TaPasAcademy, zichtbaar voor iedereen
-// NIET AANRAKEN
-// ---------------------------------------------------------------------------
-function AcademyLink() {
-  const { t } = useUiTaal();
-  const goud = "hsl(var(--gold))";
-  return (
-    <div className="mt-4">
-      <Link href="/academy">
-        <a
-          data-testid="link-naar-academy"
-          className="group flex items-center justify-between rounded-2xl border border-dashed p-5 transition hover:-translate-y-0.5"
-          style={{
-            borderColor: "hsl(var(--gold)/0.45)",
-            background: "radial-gradient(120% 140% at 8% 0%, hsl(var(--gold)/0.10) 0%, hsl(var(--card)) 70%)",
-          }}
-        >
-          <div className="flex items-center gap-3">
-            <span
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-xl"
-              style={{ background: "hsl(var(--gold)/0.16)", color: goud }}
-            >
-              <GraduationCap className="h-5 w-5" />
-            </span>
-            <div>
-              <span
-                className="font-mono text-[11px] uppercase tracking-[0.2em]"
-                style={{ color: goud }}
-              >
-                {t("hp_acad_open")}
-              </span>
-              <span className="block font-serif text-xl font-semibold text-foreground sm:text-2xl">
-                {t("hp_acad_titel")}
-              </span>
-              <p className="mt-1 max-w-md text-xs italic text-muted-foreground">
-                {t("hp_acad_body")}
-              </p>
-            </div>
-          </div>
-          <ArrowRight
-            className="h-5 w-5 shrink-0 transition group-hover:translate-x-0.5"
-            style={{ color: goud }}
-          />
-        </a>
-      </Link>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // PlatformOverzicht — Zone C: visuele voorstelling van het volledige platform
 // NIEUW in R32 — informatieve tegels, geen instrumenten-navigatie
 // ---------------------------------------------------------------------------
@@ -463,9 +413,6 @@ export default function Home() {
         <section id="kies" data-tour="suite" className="mt-16 scroll-mt-24 sm:mt-24">
           {/* Lounge-uitnodiging — exact Kme() uit ZIP-8 bundle — NIET AANRAKEN */}
           <LoungeWidget />
-
-          {/* Academy-link — zichtbaar voor iedereen — NIET AANRAKEN */}
-          <AcademyLink />
         </section>
 
         {/* ---------------------------------------------------------------- */}
