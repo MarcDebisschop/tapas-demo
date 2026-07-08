@@ -255,6 +255,13 @@ function UitlegPaneel({ token, taal, toon = "deelnemer" }: { token: string; taal
 
   // Server-side audio (Sulafat — Vlaamse stem, altijd dezelfde ongeacht browser/taal)
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // Monotone volgnummer + abort-controller om overlap te voorkomen.
+  // Elke nieuwe voorleesactie (start / volgende / vorige / opnieuw afspelen)
+  // verhoogt spreekSeqRef. Een async /api/tts-fetch die daarna nog resolveert
+  // hoort bij een ouder volgnummer en mag NIET meer afspelen. De abort-controller
+  // breekt bovendien de nog-lopende fetch af. Zo klinkt er nooit meer dan één stem.
+  const spreekSeqRef = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
 
   const status = useQuery<UitlegResponse>({
     queryKey: ["/api/dashboard", token, "uitleg", toon],
@@ -306,8 +313,19 @@ function UitlegPaneel({ token, taal, toon = "deelnemer" }: { token: string; taal
   // Bij falen tonen we een nette melding — nooit een verkeerde stem.
 
   function stopSpraak() {
+    // Verhoog het volgnummer: elke reeds lopende fetch/audio hoort nu bij het
+    // verleden en mag niet meer afspelen.
+    spreekSeqRef.current += 1;
+    // Breek een eventueel nog-lopende /api/tts-fetch af.
+    if (abortRef.current) { abortRef.current.abort(); abortRef.current = null; }
     const a = audioRef.current;
-    if (a) { a.pause(); a.src = ""; }
+    if (a) {
+      a.pause();
+      a.onended = null;
+      a.onerror = null;
+      try { a.currentTime = 0; } catch {}
+      a.src = "";
+    }
     audioRef.current = null;
     setSpreekt(false);
     setGepauzeerd(false);
@@ -316,6 +334,10 @@ function UitlegPaneel({ token, taal, toon = "deelnemer" }: { token: string; taal
 
   async function spreek(tekst: string) {
     stopSpraak();
+    // Leg het volgnummer van DEZE voorleesactie vast na de stop-reset.
+    const seq = spreekSeqRef.current;
+    const controller = new AbortController();
+    abortRef.current = controller;
     setFout(null);
     setTtsLaden(true);
     try {
@@ -324,7 +346,10 @@ function UitlegPaneel({ token, taal, toon = "deelnemer" }: { token: string; taal
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tekst }),
         credentials: "include",
+        signal: controller.signal,
       });
+      // Verouderd verzoek? Dan is er intussen een nieuwe actie gestart → niet afspelen.
+      if (seq !== spreekSeqRef.current) return;
       if (!res.ok) {
         // Server-TTS niet beschikbaar → nette melding, GEEN Hollandse browserstem
         setTtsLaden(false);
@@ -333,24 +358,33 @@ function UitlegPaneel({ token, taal, toon = "deelnemer" }: { token: string; taal
         return;
       }
       const blob = await res.blob();
+      // Nogmaals controleren: tussen fetch en blob() kan er opnieuw genavigeerd zijn.
+      if (seq !== spreekSeqRef.current) return;
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
       audioRef.current = audio;
-      audio.onended = () => { setSpreekt(false); setGepauzeerd(false); URL.revokeObjectURL(url); };
+      audio.onended = () => {
+        if (seq !== spreekSeqRef.current) { URL.revokeObjectURL(url); return; }
+        setSpreekt(false); setGepauzeerd(false); URL.revokeObjectURL(url);
+      };
       audio.onerror = () => {
+        URL.revokeObjectURL(url);
+        if (seq !== spreekSeqRef.current) return;
         setSpreekt(false);
         setGepauzeerd(false);
         setTtsLaden(false);
         setFout(k(STR.stemNietBeschikbaar, taal));
-        URL.revokeObjectURL(url);
       };
       setTtsLaden(false);
       setSpreekt(true);
       audio.play().catch(() => {
+        if (seq !== spreekSeqRef.current) return;
         setSpreekt(false);
         setFout(k(STR.stemNietBeschikbaar, taal));
       });
-    } catch {
+    } catch (e) {
+      // Afgebroken fetch (AbortController) → stil negeren, geen foutmelding.
+      if ((e as any)?.name === "AbortError" || seq !== spreekSeqRef.current) return;
       // Netwerk/parse fout → nette melding, GEEN Hollandse browserstem
       setTtsLaden(false);
       setSpreekt(false);
