@@ -95,6 +95,19 @@ export default function AdminKwaliteit() {
     enabled: geselecteerd !== null,
   });
 
+  // Compacte STM-voortgang voor ALLE practitioners in de tabel (batch, één
+  // request). Hergebruikt dezelfde admin-endpoint; de ids komen uit het
+  // dashboard zodat we de practitioner-enumeratie niet dupliceren.
+  const stmIds = ((data?.practitioners || []) as any[]).map((p) => p.beheerder_id);
+  const stmBatchQuery = useQuery({
+    queryKey: ["/api/admin/stm-voortgang-batch", stmIds.join(",")],
+    queryFn: () => apiRequest("GET", `${API_BASE}/api/admin/stm-voortgang?ids=${stmIds.join(",")}`).then(r => r.json()),
+    enabled: stmIds.length > 0,
+  });
+  const stmPerId = new Map<number, any>(
+    ((stmBatchQuery.data?.items || []) as any[]).map((it) => [it.id, it])
+  );
+
   if (isLoading) return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: "#f4f1ec" }}>
       <div className="text-center">
@@ -193,7 +206,7 @@ export default function AdminKwaliteit() {
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ background: "#f4f1ec", borderBottom: "1px solid #e8e4dc" }}>
-                    {["Naam", "Afnames", "Norm", "Verwacht", "Progressie", "Status", "Laatste activiteit", "Aandacht", "Alerts", "Acties"].map(h => (
+                    {["Naam", "Afnames", "Norm", "Verwacht", "Progressie", "Status", "Laatste activiteit", "Aandacht", "STM", "Alerts", "Acties"].map(h => (
                       <th key={h} style={{ padding: "10px 12px", color: "#14213d", fontWeight: 600, textAlign: "left", fontSize: 12 }}>{h}</th>
                     ))}
                   </tr>
@@ -245,6 +258,27 @@ export default function AdminKwaliteit() {
                             <span style={{ color: "#b8b2a7", fontSize: 12 }}>—</span>
                           ) : null}
                         </div>
+                      </td>
+                      <td style={{ padding: "10px 12px" }}>
+                        {(() => {
+                          const stm = stmPerId.get(p.beheerder_id);
+                          if (!stm || stm.sessies_afgerond === 0) {
+                            return <span style={{ color: "#b8b2a7", fontSize: 12 }} title="Geen afgeronde STM-sessies">—</span>;
+                          }
+                          const op = stm.lagen_op_niveau;
+                          const tot = stm.lagen_totaal;
+                          const vol = op >= tot;
+                          const kleur = vol ? { bg: "#dff3e8", fg: "#2E7D5A" } : { bg: "#fbf1d9", fg: "#8B6914" };
+                          return (
+                            <span
+                              className="px-1.5 py-0.5 rounded text-xs font-semibold"
+                              style={{ background: kleur.bg, color: kleur.fg, whiteSpace: "nowrap" }}
+                              title={`${op} van ${tot} STM-lagen op niveau (${stm.sessies_afgerond} sessies)`}
+                            >
+                              {op}/{tot}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td style={{ padding: "10px 12px" }}>
                         <div className="flex gap-1">

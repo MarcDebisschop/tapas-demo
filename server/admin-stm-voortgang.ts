@@ -122,7 +122,17 @@ export function berekenStmVoortgang(beheerderId: number): StmVoortgang {
   };
 }
 
-// Route-registratie — één read-only admin-endpoint.
+// Compacte batch-samenvatting per practitioner voor de tabelkolom "STM".
+// Bewust een SUBSET van StmVoortgang (enkel wat de tabelcel nodig heeft) zodat
+// de payload klein blijft; hergebruikt exact dezelfde berekenStmVoortgang-helper.
+export interface StmVoortgangCompact {
+  id: number;
+  lagen_op_niveau: number;
+  lagen_totaal: number;
+  sessies_afgerond: number;
+}
+
+// Route-registratie — read-only admin-endpoints (detail + compacte batch).
 export function registerAdminStmVoortgangRoutes(app: Express): void {
   // GET /api/admin/stm-voortgang/:id — STM-voortgang van één practitioner.
   // Gekeyd op beheerder_id (dezelfde identifier als het kwaliteitsdashboard).
@@ -133,6 +143,35 @@ export function registerAdminStmVoortgangRoutes(app: Express): void {
     if (!Number.isFinite(id)) return res.status(400).json({ error: "Ongeldig practitioner-id." });
     try {
       res.json({ voortgang: berekenStmVoortgang(id) });
+    } catch (e) {
+      res.status(500).json({ error: "STM-voortgang kon niet berekend worden." });
+    }
+  });
+
+  // GET /api/admin/stm-voortgang?ids=1,2,1001 — compacte batch voor de tabelkolom.
+  // Eén request voor alle zichtbare practitioners. De client levert de ids die het
+  // al uit /api/kwaliteit/dashboard kent, zodat we de practitioner-enumeratie niet
+  // dupliceren (Regel 2/4). Zelfde admin-guard als de detail-route (Regel 6).
+  app.get("/api/admin/stm-voortgang", (req: Request, res: Response) => {
+    const s = req.session as any;
+    if (!s?.adminId) return res.status(401).json({ error: "Enkel toegankelijk voor admins." });
+    const ruw = String(req.query.ids ?? "");
+    const ids = ruw
+      .split(",")
+      .map((x) => Number(x.trim()))
+      .filter((n) => Number.isFinite(n))
+      .slice(0, 500); // veiligheidsplafond tegen misbruik
+    try {
+      const items: StmVoortgangCompact[] = ids.map((id) => {
+        const v = berekenStmVoortgang(id);
+        return {
+          id,
+          lagen_op_niveau: v.lagen_op_niveau,
+          lagen_totaal: v.lagen_totaal,
+          sessies_afgerond: v.sessies_afgerond,
+        };
+      });
+      res.json({ items });
     } catch (e) {
       res.status(500).json({ error: "STM-voortgang kon niet berekend worden." });
     }
