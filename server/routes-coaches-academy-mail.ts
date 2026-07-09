@@ -182,6 +182,110 @@ export function registerCoachesAcademyMailRoutes(app: Express, db: any, storage:
     `);
     sqlite.exec(`INSERT OR IGNORE INTO mail_huisstijl (id) VALUES (1)`);
 
+    // Seed demo-mailteksten voor de "uitnodiging"-template als die nog niet
+    // bestaat (idempotent). Zo toont Admin Beheer opnieuw ingevulde voorbeeld-
+    // teksten die de admin achteraf via de UI kan aanpassen. De COUNT-check
+    // seedt enkel bij een volledig lege "uitnodiging", en INSERT OR IGNORE
+    // respecteert UNIQUE(templateKey, taal): reeds aangepaste taalrijen blijven
+    // dus altijd behouden. Tokens {{naam}}, {{link}} en {{instrument}} worden
+    // door mailer.ts (haalSjabloon) ingevuld.
+    const uitnodigingCount = (sqlite.prepare(
+      "SELECT COUNT(*) AS n FROM mail_teksten WHERE templateKey = 'uitnodiging'"
+    ).get() as any).n;
+    if (uitnodigingCount === 0) {
+      const insertMailTekst = sqlite.prepare(
+        `INSERT OR IGNORE INTO mail_teksten (templateKey, taal, onderwerp, body) VALUES ('uitnodiging', ?, ?, ?)`
+      );
+      const uitnodigingTeksten: Array<{ taal: string; onderwerp: string; body: string }> = [
+        {
+          taal: "nl",
+          onderwerp: "Uitnodiging: vul je {{instrument}} in",
+          body: [
+            "Beste {{naam}},",
+            "",
+            "Je bent uitgenodigd om {{instrument}} in te vullen via het TaPas-platform.",
+            "",
+            "Start met deze persoonlijke link:",
+            "{{link}}",
+            "",
+            "De vragenlijst neemt slechts enkele minuten in beslag. Je antwoorden worden vertrouwelijk verwerkt. Heb je vragen? Antwoord gerust op deze mail.",
+            "",
+            "Met vriendelijke groet,",
+            "Het TaPasCity-team",
+          ].join("\n"),
+        },
+        {
+          taal: "fr",
+          onderwerp: "Invitation : complétez votre {{instrument}}",
+          body: [
+            "Bonjour {{naam}},",
+            "",
+            "Vous êtes invité(e) à compléter {{instrument}} via la plateforme TaPas.",
+            "",
+            "Commencez avec ce lien personnel :",
+            "{{link}}",
+            "",
+            "Le questionnaire ne prend que quelques minutes. Vos réponses sont traitées de manière confidentielle. Des questions ? Répondez simplement à cet e-mail.",
+            "",
+            "Cordialement,",
+            "L'équipe TaPasCity",
+          ].join("\n"),
+        },
+        {
+          taal: "en",
+          onderwerp: "Invitation: complete your {{instrument}}",
+          body: [
+            "Dear {{naam}},",
+            "",
+            "You have been invited to complete {{instrument}} via the TaPas platform.",
+            "",
+            "Get started with this personal link:",
+            "{{link}}",
+            "",
+            "The questionnaire takes only a few minutes. Your answers are processed confidentially. Any questions? Just reply to this email.",
+            "",
+            "Kind regards,",
+            "The TaPasCity team",
+          ].join("\n"),
+        },
+        {
+          taal: "es",
+          onderwerp: "Invitación: completa tu {{instrument}}",
+          body: [
+            "Estimado/a {{naam}}:",
+            "",
+            "Le invitamos a completar {{instrument}} a través de la plataforma TaPas.",
+            "",
+            "Comience con este enlace personal:",
+            "{{link}}",
+            "",
+            "El cuestionario solo lleva unos minutos. Sus respuestas se tratan de forma confidencial. ¿Tiene alguna pregunta? Responda sin problema a este correo.",
+            "",
+            "Un cordial saludo,",
+            "El equipo de TaPasCity",
+          ].join("\n"),
+        },
+        {
+          taal: "ru",
+          onderwerp: "Приглашение: заполните {{instrument}}",
+          body: [
+            "Здравствуйте, {{naam}}!",
+            "",
+            "Приглашаем вас заполнить {{instrument}} на платформе TaPas.",
+            "",
+            "Начните по этой персональной ссылке:",
+            "{{link}}",
+            "",
+            "Заполнение анкеты займёт всего несколько минут. Ваши ответы обрабатываются конфиденциально. Есть вопросы? Просто ответьте на это письмо.",
+            "",
+            "С уважением,",
+            "команда TaPasCity",
+          ].join("\n"),
+        },
+      ];
+      for (const t of uitnodigingTeksten) insertMailTekst.run(t.taal, t.onderwerp, t.body);
+    }
+
     // Seed demo-coaches als de tabel leeg is
     const coachCount = (sqlite.prepare("SELECT COUNT(*) AS n FROM coach_register").get() as any).n;
     if (coachCount === 0) {
