@@ -262,6 +262,12 @@ export function registerCoachesAcademyMailRoutes(app: Express, db: any, storage:
       console.log("[tapas] Demo-docenten geseed (3 docenten: Marc, Leen, Herman).");
     }
 
+    // Idempotente migratie: werk bestaande (reeds geseede) bio van Marc Debisschop bij.
+    // Draait bij elke start, buiten de seed-guard, zodat ook live-databases worden gecorrigeerd.
+    sqlite.prepare(
+      "UPDATE academy_docenten SET bio = replace(bio, 'organisatiepsycholoog', 'executive senior coach en facilitator'), bijgewerkt_op = CURRENT_TIMESTAMP WHERE naam = 'Marc Debisschop' AND bio LIKE '%organisatiepsycholoog%'"
+    ).run();
+
     // Seed demo-opleidingen als de tabel leeg is
     const opleidingCount = (sqlite.prepare("SELECT COUNT(*) AS n FROM academy_opleidingen").get() as any).n;
     if (opleidingCount === 0) {
