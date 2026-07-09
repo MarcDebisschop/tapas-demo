@@ -154,6 +154,29 @@ function volledigeNaam(waarden: Record<string, string>): string {
 }
 
 // ---------------------------------------------------------------------------
+// Linktype voor de uitnodigingsmail (additief — bestaand gedrag = default).
+//   "vragenlijst" (default) → #/deelnemer/TOKEN   (vragenlijst starten/invullen)
+//   "dashboard"             → /toegang.html?t=TOKEN (cijferslot-permalink,
+//                              rechtstreeks naar het persoonlijke dashboard)
+// De keuze komt uit req.body.linkType; onbekende/lege waarde valt terug op
+// "vragenlijst", zodat bestaande bulk-imports exact hetzelfde blijven werken.
+// ---------------------------------------------------------------------------
+type LinkType = "vragenlijst" | "dashboard";
+
+function leesLinkType(req: Request): LinkType {
+  return req.body?.linkType === "dashboard" ? "dashboard" : "vragenlijst";
+}
+
+function bouwUitnodigingsLink(origin: string, token: string | null, linkType: LinkType): string {
+  const t = token ?? "";
+  if (linkType === "dashboard") {
+    // Statische cijferslot-permalink; origin heeft geen trailing slash meer.
+    return origin ? `${origin}/toegang.html?t=${t}` : `/toegang.html?t=${t}`;
+  }
+  return origin ? `${origin}#/deelnemer/${t}` : `#/deelnemer/${t}`;
+}
+
+// ---------------------------------------------------------------------------
 // Bestandsinhoud uit de request halen (base64 in JSON-body).
 // ---------------------------------------------------------------------------
 function leesBestand(req: Request): Buffer | null {
@@ -416,6 +439,7 @@ export function registerBulkImportRoutes(app: Express): void {
     }> = [];
 
     const origin = typeof req.body?.origin === "string" ? req.body.origin.replace(/\/+$/, "") : "";
+    const linkType = leesLinkType(req);
 
     for (const r of rijen) {
       const email = r.waarden.email ?? "";
@@ -439,7 +463,7 @@ export function registerBulkImportRoutes(app: Express): void {
       // Idempotentie: bestaat er al zo'n uitnodiging → overslaan.
       const bestaand = bestaandeUitnodiging(email, instrumentId, organisatieId);
       if (bestaand) {
-        const link = origin ? `${origin}#/deelnemer/${bestaand.inviteToken}` : `#/deelnemer/${bestaand.inviteToken}`;
+        const link = bouwUitnodigingsLink(origin, bestaand.inviteToken, linkType);
         resultaten.push({
           rij: r.rij,
           email,
@@ -491,7 +515,7 @@ export function registerBulkImportRoutes(app: Express): void {
         }
       }
 
-      const link = origin ? `${origin}#/deelnemer/${inv.inviteToken}` : `#/deelnemer/${inv.inviteToken}`;
+      const link = bouwUitnodigingsLink(origin, inv.inviteToken, linkType);
       const mail = await verstuurUitnodiging({
         naar: email,
         taal,

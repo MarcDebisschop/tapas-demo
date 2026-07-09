@@ -116,6 +116,7 @@ export default function AdminBulkImport() {
   const [instrumentId, setInstrumentId] = useState<string>("");
   const [organisatieId, setOrganisatieId] = useState<string>("geen");
   const [afzenderEmail, setAfzenderEmail] = useState<string>("");
+  const [linkType, setLinkType] = useState<"vragenlijst" | "dashboard">("vragenlijst");
   const [bestand, setBestand] = useState<File | null>(null);
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [verwerkt, setVerwerkt] = useState<VerwerkResponse | null>(null);
@@ -198,6 +199,7 @@ export default function AdminBulkImport() {
         bestandBase64,
         organisatieId: organisatieId !== "geen" ? Number(organisatieId) : null,
         afzenderEmail: afzenderEmail.trim() || null,
+        linkType,
         origin: `${window.location.origin}${window.location.pathname}`,
       });
       const data = (await res.json()) as VerwerkResponse;
@@ -343,6 +345,23 @@ export default function AdminBulkImport() {
                   data-testid="input-afzender"
                 />
               </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Soort uitnodigingslink</Label>
+              <Select value={linkType} onValueChange={(v) => setLinkType(v as "vragenlijst" | "dashboard")}>
+                <SelectTrigger data-testid="select-linktype">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="vragenlijst">Vragenlijst starten (#/deelnemer/TOKEN)</SelectItem>
+                  <SelectItem value="dashboard">Rechtstreeks naar dashboard (cijferslot — /toegang.html?t=TOKEN)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {linkType === "dashboard"
+                  ? "De deelnemer komt via de neutrale pagina op het cijferslot met de juiste achtergrond en daarna rechtstreeks op zijn dashboard."
+                  : "De deelnemer opent de vragenlijst om het instrument in te vullen (standaard)."}
+              </p>
             </div>
             <div className="space-y-1.5">
               <Label>Bestand (.xlsx of .csv)</Label>
