@@ -256,7 +256,7 @@ export function registerCoachesAcademyMailRoutes(app: Express, db: any, storage:
       // Docenten seed — bron: tapas-zip-8/academy/docent-*.jpg (3 docenten)
       // Marc Debisschop (docent-marc.jpg), Prof. Leen Adams (docent-leen.jpg),
       // Herman Van Esbroeck (docent-herman.jpg)
-      insertDocent.run("Marc Debisschop", "Oprichter & Hoofddocent", "Marc Debisschop is organisatiepsycholoog, auteur van het TaPas-model en bedenker van het T4P Business Kompas. Hij begeleidt coaches wereldwijd in de toepassing van talentpsychologie.", "/academy/docent-marc.jpg", 1);
+      insertDocent.run("Marc Debisschop", "Oprichter & Hoofddocent", "Marc Debisschop is executive senior coach en facilitator, auteur van het TaPas-model en bedenker van het T4P Business Kompas. Hij begeleidt coaches wereldwijd in de toepassing van talentpsychologie.", "/academy/docent-marc.jpg", 1);
       insertDocent.run("Prof. Leen Adams", "Academisch Geweten & Begeleider", "Prof. Leen Adams is het academische en deontologische geweten van het TaPas-platform. Ze bewaakt de wetenschappelijke integriteit van de instrumenten en begeleidt coaches in deontologische vraagstukken.", "/academy/docent-leen.jpg", 1);
       insertDocent.run("Herman Van Esbroeck", "Praktijkbegeleider", "Herman Van Esbroeck is bewaker van de menselijke maat binnen het TaPas-traject. Met zachte hand en scherp oog begeleidt hij coaches in de praktijktoepassing van het instrumentarium.", "/academy/docent-herman.jpg", 1);
       console.log("[tapas] Demo-docenten geseed (3 docenten: Marc, Leen, Herman).");
