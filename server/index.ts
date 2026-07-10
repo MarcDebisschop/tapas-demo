@@ -59,6 +59,70 @@ app.use(session({
   },
 }));
 
+// ---------------------------------------------------------------------------
+// Demo-vervaldatum (tijdslot-beveiliging voor derden)
+// ---------------------------------------------------------------------------
+// Zet DEMO_EXPIRES als env var op Render, bv: 2026-08-01T23:59:00+02:00
+// - Niet gezet / leeg  -> demo altijd open (geen slot).
+// - Gezet & verstreken -> bezoekers krijgen een net "demo verlopen"-scherm (410).
+// Verzet de datum later ZONDER redeploy: pas DEMO_EXPIRES aan in Render en
+// klik "Restart service". Geen code-wijziging of rebuild nodig.
+//
+// Uitzonderingen (blijven altijd bereikbaar, ook na verval):
+//   1. Admins met een actieve sessie (req.session.adminId) -> volledige toegang.
+//   2. /api/admin/*  -> zodat een admin ook NA verval nog kan inloggen.
+//   3. /assets/*, favicon e.d. -> zodat de login-UI kan laden.
+const _demoExpiresRaw = (process.env.DEMO_EXPIRES || "").trim();
+const _demoExpiresAt = _demoExpiresRaw ? new Date(_demoExpiresRaw) : null;
+const _demoExpiresValid = _demoExpiresAt && !Number.isNaN(_demoExpiresAt.getTime());
+
+function _demoVervalPagina(vervalIso: string): string {
+  const datum = new Date(vervalIso).toLocaleString("nl-BE", {
+    dateStyle: "long",
+    timeStyle: "short",
+    timeZone: "Europe/Brussels",
+  });
+  return `<!doctype html><html lang="nl"><head><meta charset="UTF-8"/>` +
+    `<meta name="viewport" content="width=device-width, initial-scale=1"/>` +
+    `<title>Demo verlopen — TaPas</title>` +
+    `<style>*{box-sizing:border-box}body{margin:0;min-height:100vh;display:flex;` +
+    `align-items:center;justify-content:center;background:#0b0f17;color:#e6e9ef;` +
+    `font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px}` +
+    `.kaart{max-width:520px;text-align:center;background:#131926;border:1px solid #1f2937;` +
+    `border-radius:16px;padding:40px 32px}h1{font-size:1.5rem;margin:0 0 12px}` +
+    `p{color:#9aa4b2;line-height:1.6;margin:0 0 8px}.klein{font-size:.85rem;color:#6b7280;` +
+    `margin-top:20px}</style></head><body><div class="kaart">` +
+    `<h1>Deze demo is niet langer beschikbaar</h1>` +
+    `<p>De demoperiode is verstreken op <strong>${datum}</strong>.</p>` +
+    `<p>Neem gerust contact op met TaPasCity voor een nieuwe toegang.</p>` +
+    `<p class="klein">TaPas — één platform voor inzicht in mens &amp; team</p>` +
+    `</div></body></html>`;
+}
+
+app.use((req, res, next) => {
+  // Geen geldige vervaldatum ingesteld -> alles open.
+  if (!_demoExpiresValid) return next();
+  // Nog niet verstreken -> alles open.
+  if (Date.now() <= (_demoExpiresAt as Date).getTime()) return next();
+
+  // Vanaf hier: demo is verstreken.
+  // 1. Admin met actieve sessie mag altijd door.
+  if ((req.session as any)?.adminId) return next();
+  // 2. Admin-API blijft open zodat inloggen na verval mogelijk is.
+  if (req.path.startsWith("/api/admin")) return next();
+  // 3. Statische assets blijven open zodat de login-UI kan laden.
+  if (
+    req.path.startsWith("/assets") ||
+    req.path === "/favicon.png" ||
+    req.path === "/favicon.ico"
+  ) {
+    return next();
+  }
+
+  // Alle overige bezoekers: nette vervalpagina.
+  res.status(410).type("html").send(_demoVervalPagina(_demoExpiresRaw));
+});
+
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
     hour: "numeric",
