@@ -336,6 +336,8 @@ export default function Home() {
                 ))}
               </SelectContent>
             </Select>
+            {/* Solo-modus (Regel 2): rondleiding-knop verbergen — leidt af van de T4Teens-flow */}
+            {!verbergBuitenSolo() && (
             <button
               type="button"
               onClick={startRondleiding}
@@ -348,6 +350,7 @@ export default function Home() {
                 {t("hp_nav_flight_kort")}
               </span>
             </button>
+            )}
             {/* Admin-knop: iets prominenter met label zichtbaar op sm+ */}
             <Link href="/admin">
               <button
@@ -383,6 +386,10 @@ export default function Home() {
             <p className="mt-6 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base">
               {t("hp_hero_intro")}
             </p>
+            {/* Solo-modus (Regel 2): hero-knoppen verbergen — 'Kies je wereld' scrollt naar
+                het verborgen kies-blok en 'Ik ben deelnemer' leidt naar /poort; leerlingen
+                komen via een directe token-link binnen, dus deze paden verbergen we. */}
+            {!verbergBuitenSolo() && (
             <div className="mt-8 flex flex-wrap gap-3">
               <Button
                 data-testid="button-kies-ingang"
@@ -400,6 +407,7 @@ export default function Home() {
                 </Button>
               </Link>
             </div>
+            )}
           </div>
           <div className="flex justify-center lg:justify-end">
             <HeroKompas />
@@ -476,8 +484,10 @@ export default function Home() {
         </footer>
       </main>
 
-      {/* Rondleiding — welkom-uitnodiging bij eerste bezoek, vlucht pas na klik — NIET AANRAKEN */}
-      <Rondleiding taal={uiTaal} autoStart={true} />
+      {/* Rondleiding — welkom-uitnodiging bij eerste bezoek, vlucht pas na klik — NIET AANRAKEN.
+          Solo-modus (Regel 2): autoStart uit zodat de popup niet automatisch verschijnt voor
+          leerlingen. Component zelf onaangeroerd; enkel de autoStart-prop is conditioneel. */}
+      <Rondleiding taal={uiTaal} autoStart={!verbergBuitenSolo()} />
     </div>
   );
 }
