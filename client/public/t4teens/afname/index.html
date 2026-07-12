@@ -210,6 +210,16 @@ body{
 .intro ul{margin:14px 0 0;padding-left:0;list-style:none}
 .intro ul li{position:relative;padding:7px 0 7px 30px;color:var(--ink-soft);font-size:15.5px}
 .intro ul li::before{content:"";position:absolute;left:4px;top:14px;width:9px;height:9px;border-radius:50%;background:var(--teal-l)}
+.intro .what{font-size:16px;color:var(--ink);line-height:1.55;margin:2px 0 4px}
+.intro .chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
+.intro .chips .chip{background:var(--teal-soft);color:var(--teal-d);font-size:13.5px;font-weight:700;padding:6px 12px;border-radius:99px}
+.intro .example{background:#fff;border:1px solid var(--teal-soft);border-radius:14px;padding:16px 18px;margin:16px 0 4px;box-shadow:0 4px 18px rgba(13,109,112,.08)}
+.intro .example .ex-label{font-size:12.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--teal-d);margin-bottom:9px}
+.intro .example .ex-q{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:12px;line-height:1.35}
+.intro .example .ex-opts{display:flex;flex-wrap:wrap;gap:8px}
+.intro .example .ex-opt{border:1.5px solid #e2ecec;border-radius:10px;padding:8px 13px;font-size:14px;color:var(--ink-soft)}
+.intro .example .ex-opt.on{border-color:var(--teal);background:var(--teal-softer);color:var(--teal-d);font-weight:700}
+.intro .example .ex-tip{margin-top:12px;font-size:14px;color:var(--ink-soft);line-height:1.45}
 
 /* ---------- Question ---------- */
 .q-top{display:flex;align-items:center;justify-content:flex-end;margin-bottom:8px}
@@ -406,7 +416,7 @@ input[type=range]::-moz-range-thumb{width:34px;height:34px;border-radius:50%;bac
   </div>
 </div>
 <div class="app"><div id="root"></div></div>
-<div class="boost left" id="boost1"><img class="boost-img" src="img/lachende-vrouw.jpg" alt=""><div class="boost-scrim"></div><div class="boost-inner"><div class="b-kicker">Je bent goed bezig</div><div class="b-text">Mooi. Je bent al een flink eind op weg.</div><button class="b-go" data-boost="1">Verder <span class="arrow">&rarr;</span></button></div></div><div class="boost left" id="boost2"><img class="boost-img" src="img/danser-kleurpoeder.jpg" alt=""><div class="boost-scrim"></div><div class="boost-inner"><div class="b-kicker">Bijna klaar</div><div class="b-text">Nog even. Blijf gewoon eerlijk antwoorden.</div><button class="b-go" data-boost="2">Verder <span class="arrow">&rarr;</span></button></div></div>
+<div class="boost left" id="boost1"><img class="boost-img" src="img/wekker-breaktime.jpg" alt=""><div class="boost-scrim"></div><div class="boost-inner"><div class="b-kicker">Je bent goed bezig</div><div class="b-text">Mooi. Je bent al een flink eind op weg.</div><button class="b-go" data-boost="1">Verder <span class="arrow">&rarr;</span></button></div></div><div class="boost left" id="boost2"><img class="boost-img" src="img/dansers-duo.jpg" alt=""><div class="boost-scrim"></div><div class="boost-inner"><div class="b-kicker">Bijna klaar</div><div class="b-text">Nog even. Blijf gewoon eerlijk antwoorden.</div><button class="b-go" data-boost="2">Verder <span class="arrow">&rarr;</span></button></div></div>
 <audio id="player"></audio>
 
 <script>
@@ -1266,7 +1276,7 @@ function render(){
 
 // --- T4Teens lift-off geluid (synthetisch, eenmalig bij Start) ---
 // =============================================================================
-// liftoff — subtiel, aanmoedigend "opstijg"-geluid bij Start (vrouw met vleugels).
+// liftoff — subtiel, aanmoedigend "opstijg"-geluid bij Start (landingspagina).
 //
 // Volledig synthetisch via de Web Audio API: geen audiobestand, geen externe
 // asset, werkt ook na publicatie. Eenmalig (one-shot), niet doorlopend.
@@ -1402,7 +1412,7 @@ function renderLanding(){
   document.body.style.overflow='';
   root.innerHTML =
     '<div class="landing screen">'+
-      '<img class="cover-img" src="img/jetpack-vrouw.jpg" alt="">'+
+      '<img class="cover-img" src="img/graffiti-talent-passie.jpg" alt="">'+
       '<div class="scrim"></div>'+
       '<div class="landing-inner">'+
         '<div class="kicker"><span class="spk">&#10024;</span> T4Teens</div>'+
@@ -1418,7 +1428,7 @@ function renderLanding(){
   goBtn.onclick = ()=>{
     if(liftoffBezig) return;
     liftoffBezig = true;
-    // Start het opstijg-geluid NU, terwijl de landing (vrouw met vleugels) nog in beeld is.
+    // Start het opstijg-geluid NU, terwijl de landing (graffiti Talent & Passie) nog in beeld is.
     try{ if(window.t4teensLiftoff) window.t4teensLiftoff(); }catch(e){}
     // Korte, zichtbare 'opstijg'-feedback op de landingspagina zelf.
     goBtn.classList.add('lifting');
@@ -1558,7 +1568,25 @@ function renderIntro(){
       '<span class="intro-badge">Even rustig beginnen</span>'+
       '<h1>'+(participant.name? ('Klaar, '+escapeHtml(participant.name)+'? ') : 'Klaar? ')+'Dit is hoe het werkt.</h1>'+
       '<div style="margin:-4px 0 10px">'+listenBtn('intro.mp3','Lees voor')+'</div>'+
+      '<p class="what">We ontdekken samen <b>wat jou boeit, wat je energie geeft en waar jij goed in bent</b>. Geen huiswerk, geen cijfers &mdash; gewoon een beeld van jou, vandaag.</p>'+
+      '<div class="chips">'+
+        '<span class="chip">Wat je leuk vindt</span>'+
+        '<span class="chip">Waar je energie van krijgt</span>'+
+        '<span class="chip">Hoe jij in elkaar zit</span>'+
+        '<span class="chip">Wat je boeit</span>'+
+      '</div>'+
       '<div class="moment-box"><span class="lead">Dit is een momentopname.</span>'+DATA.intro+'</div>'+
+      '<div class="example">'+
+        '<div class="ex-label">Zo ziet een vraag eruit</div>'+
+        '<div class="ex-q">Ik kom graag op voor iemand die het moeilijk heeft.</div>'+
+        '<div class="ex-opts">'+
+          '<span class="ex-opt">Niet ik</span>'+
+          '<span class="ex-opt on">Soms ik</span>'+
+          '<span class="ex-opt">Vaak ik</span>'+
+          '<span class="ex-opt">Helemaal ik</span>'+
+        '</div>'+
+        '<div class="ex-tip">Kies wat het best bij jou past. Soms vragen we er ook bij: <b>en doe je dat graag?</b> &mdash; dan tik je de smiley aan die klopt.</div>'+
+      '</div>'+
       '<ul>'+
         '<li>Er zijn geen goede of foute antwoorden.</li>'+
         '<li>Antwoord zoals het vandaag voor jou voelt.</li>'+
@@ -1880,7 +1908,7 @@ function renderVonk(){
   const titleNaam = naam ? ('Wow, <span class="nm">'+escapeHtmlV(naam)+'</span>') : 'Wow';
 
   // sfeerbeeld wisselend
-  const bg = 'img/danser-kleurpoeder.jpg';
+  const bg = 'img/dansers-duo.jpg';
 
   let cards = '';
   sel.forEach((id,i)=>{
