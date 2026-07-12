@@ -60,13 +60,25 @@ volledig ongewijzigd. De override geldt uitsluitend voor de pilot-service.
 
 Staat `VITE_SOLO_INSTRUMENT` leeg, dan is het gedrag identiek aan de live-service.
 
-## Nog te doen bij inplug in de flow (bewust NIET stil "af" verklaard)
+## Status van de twee eerder openstaande punten
 
-- **Navigatie daadwerkelijk verbergen:** `verbergBuitenSolo()` is beschikbaar, maar
-  moet nog in de navigatie/home-component worden aangeroepen om de zijpaden ook
-  visueel te verbergen. (Dit raakt een bestaande UI-component en doen we pas na jouw
-  akkoord, first-time-right + eigen test.)
-- **Handhaving open/dicht:** `tapas-t4teens` staat nu in de beschikbaarheids-registry
-  (admin-knop werkt), maar de T4Teens-afnameroute controleert die vlag nog niet
-  actief (zoals driverscan dat wél doet). Als je een harde open/dicht-poort wilt,
-  moet die check additief in de T4Teens-flow — apart te bespreken.
+- **Navigatie verbergen — AFGEROND & GEVERIFIEERD.** In `home.tsx` worden de
+  zijpaden (werelden-tegels `PlatformOverzicht`, de Lounge-sectie en de
+  T4Sports-demolink) alleen nog getoond wanneer `!verbergBuitenSolo()`. De
+  componenten zelf zijn niet aangeraakt (comment "NIET AANRAKEN" gerespecteerd);
+  enkel de render eromheen is conditioneel. Runtime-getest met Playwright op twee
+  builds:
+  - Solo (`VITE_SOLO_INSTRUMENT=t4teens`): werelden-tegels, Lounge-knop en
+    T4Sports-link **afwezig**, intro overgeslagen, 0 JS-errors.
+  - Baseline (leeg): alle zijpaden **aanwezig**, gedrag identiek aan live.
+  De admin-toegang tot **Vraagbeheer** (`#/admin`) blijft in beide gevallen
+  bereikbaar — vragen blijven dus aanpasbaar tot vlak voor de afname.
+
+- **Harde open/dicht-poort — BEWUST NIET ingebouwd.** `tapas-t4teens` staat in de
+  beschikbaarheids-registry (admin-knop werkt), maar de T4Teens-afnameroute
+  handhaaft die vlag niet actief zoals driverscan dat doet. Keuze voor de pilot:
+  dit raakt de afname-flow zélf en brengt regressierisico in de keten die we
+  ongemoeid willen houden. Voor één school met ~30 leerlingen is een harde poort
+  niet nodig — de links worden gericht uitgedeeld. Minder ingrijpen = veiliger.
+  Wil je later toch een harde poort, dan bouwen we die additief in de T4Teens-flow,
+  na jouw akkoord + eigen test.
