@@ -629,8 +629,10 @@ function beginAfname(){
     return res.json();
   }).then(function(afname){
     if(!afname || !afname.id) throw new Error('Geen geldige afname ontvangen.');
-    // Doorsturen naar de echte platform-vragenlijst (hash-router).
-    window.location.href = '/#/afname/'+afname.id+'/deel1';
+    // Doorsturen naar de echte T4Teens-vragenlijst (zelfstandige afname, 1-op-1 uit
+    // de T4Teens-demo). Regel 2: aparte pagina onder /t4teens/afname/. De afname-id
+    // gaat mee als query zodat het resultaat aan de opgeslagen afname gekoppeld blijft.
+    window.location.href = '/t4teens/afname/?afname='+encodeURIComponent(afname.id);
   }).catch(function(e){
     showErr('Oei, het starten lukte even niet. Probeer het zo nog eens. ('+(e && e.message ? String(e.message).slice(0,120) : 'onbekende fout')+')');
     if(btn){ btn.disabled=false; btn.innerHTML='Ik snap het, start &nbsp;&rarr;'; }
