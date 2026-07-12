@@ -36,6 +36,9 @@ async function requirePrior(req: Request, res: Response, next: Function) {
 // server/driverscan/routes.ts.
 const BESCHIKBAARHEID_INSTRUMENTEN = [
   { id: "tapas-driverscan", label: "Driver-scan" },
+  // Additief (Regel 2): T4Teens toegevoegd t.b.v. de open/dicht-knop voor de
+  // schoolpilot. Default UIT (geen rij = UIT), net als elk ander instrument.
+  { id: "tapas-t4teens", label: "T4Teens" },
 ];
 
 const BEKENDE_IDS = new Set(BESCHIKBAARHEID_INSTRUMENTEN.map((i) => i.id));

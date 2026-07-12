@@ -3,6 +3,9 @@ import { useHashLocation } from "wouter/use-hash-location";
 import { useState, useEffect } from "react";
 import { ShieldCheck } from "lucide-react";
 import { queryClient } from "./lib/queryClient";
+// Solo-modus (T4Teens-only pilot) — additief, Regel 2. Default-uit: geen effect
+// tenzij VITE_SOLO_INSTRUMENT gezet is.
+import { soloSkipIntro } from "@/lib/soloMode";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -205,7 +208,9 @@ function isAdminRoute(): boolean {
 }
 
 function App() {
-  const [introDone, setIntroDone] = useState(() => isAdminRoute());
+  // Additief (Regel 2): in solo-modus de PoortenIntro overslaan. Staat de vlag
+  // uit, dan is soloSkipIntro() === false en blijft dit gedrag identiek aan nu.
+  const [introDone, setIntroDone] = useState(() => isAdminRoute() || soloSkipIntro());
 
   // Als de gebruiker tijdens de poorten-intro naar een admin/coach-route navigeert
   // (bijv. via de Admin-knop op de home-pagina), slaan we de intro direct over.
