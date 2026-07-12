@@ -1,5 +1,10 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
+// Solo-modus (T4Teens-only pilot) — additief, Regel 2. In solo-modus verbergen we
+// de zijpaden (werelden-tegels, Lounge, T4Sports-demolink) zodat een leerling niet
+// afdwaalt. Default-uit: verbergBuitenSolo() === false → home identiek aan nu.
+// De admin-toegang (#/admin → Vraagbeheer) blijft altijd bereikbaar.
+import { verbergBuitenSolo } from "@/lib/soloMode";
 import { AppHeader } from "@/components/Brand";
 import { Button } from "@/components/ui/button";
 import {
@@ -403,21 +408,25 @@ export default function Home() {
 
         {/* ---------------------------------------------------------------- */}
         {/* ZONE C — Platform in één oogopslag (NIEUW R32)                   */}
+        {/* Solo-modus (Regel 2): zijpaden verbergen zodat leerling niet afdwaalt */}
         {/* ---------------------------------------------------------------- */}
-        <PlatformOverzicht />
+        {!verbergBuitenSolo() && <PlatformOverzicht />}
 
         {/* ---------------------------------------------------------------- */}
         {/* KIES JE WERELD — blok "Waar wil je je talent mobiliseren?"        */}
         {/* op verzoek van Marc definitief verwijderd (behoud Lounge/Academy) */}
         {/* ---------------------------------------------------------------- */}
+        {!verbergBuitenSolo() && (
         <section id="kies" data-tour="suite" className="mt-16 scroll-mt-24 sm:mt-24">
           {/* Lounge-uitnodiging — exact Kme() uit ZIP-8 bundle — NIET AANRAKEN */}
           <LoungeWidget />
         </section>
+        )}
 
         {/* ---------------------------------------------------------------- */}
         {/* T4SPORTS DEMO LINK — directe toegang via hash-routing             */}
         {/* ---------------------------------------------------------------- */}
+        {!verbergBuitenSolo() && (
         <section className="mt-10">
           <a
             href="#/t4sports"
@@ -457,6 +466,7 @@ export default function Home() {
             />
           </a>
         </section>
+        )}
 
         {/* FOOTER */}
         <footer className="mt-16 border-t border-border pt-6 sm:mt-24">
