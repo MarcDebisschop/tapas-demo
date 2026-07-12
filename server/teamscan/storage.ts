@@ -14,6 +14,7 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
 import { eq, and } from "drizzle-orm";
 import { randomBytes } from "crypto";
+import { vindDatabasePad } from "../db-pad";
 
 /**
  * TaPas Teamscan-storage.
@@ -23,7 +24,8 @@ import { randomBytes } from "crypto";
  * teamscan_ en botsen niet met de platform- of t4r-tabellen.
  */
 
-const sqlite = new Database("data.db");
+// Gedeeld pad (respecteert TAPAS_DB_PATH) — voorkomt split-brain met de hoofd-DB.
+const sqlite = new Database(vindDatabasePad());
 sqlite.pragma("journal_mode = WAL");
 
 sqlite.exec(`

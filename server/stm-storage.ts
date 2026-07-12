@@ -15,10 +15,11 @@
 // =============================================================================
 
 import Database from "better-sqlite3";
-import { join } from "node:path";
+import { vindDatabasePad } from "./db-pad";
 
 // Gebruik dezelfde data.db als de hoofdapp (WAL laat meerdere handles toe).
-const DB_PAD = join(process.cwd(), "data.db");
+// Gedeeld pad (respecteert TAPAS_DB_PATH) — voorkomt split-brain met de hoofd-DB.
+const DB_PAD = vindDatabasePad();
 const stmDb = new Database(DB_PAD);
 stmDb.pragma("journal_mode = WAL");
 stmDb.pragma("synchronous = NORMAL");
