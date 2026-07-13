@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 // Render de T4Teens-rapport-HTML naar een A4-PDF met Playwright (chromium).
 // Print-CSS wordt gerespecteerd en achtergrondkleuren staan aan (printBackground).
@@ -46,21 +47,23 @@ function mimeFor(ext: string): string {
 }
 
 // Vervang elke relatieve img/... verwijzing (in src="..." of url(...)) door een
-// base64 data-URI. Ontbrekende bestanden laten we ongemoeid.
+// absoluut file://-pad. Zo hoeft chromium de afbeeldingen NIET als megabytes-grote
+// base64-string in het geheugen te houden (dat liet de render op kleine hosts zoals
+// Render free/512MB tegen het RAM-plafond lopen). Chromium leest de bestanden nu
+// rechtstreeks en efficient van schijf. Ontbrekende bestanden laten we ongemoeid.
 function inlineAfbeeldingen(html: string): string {
   const dir = afnameDir();
   const cache = new Map<string, string | null>();
 
-  function dataUriVoor(relPad: string): string | null {
+  function fileUrlVoor(relPad: string): string | null {
     if (cache.has(relPad)) return cache.get(relPad)!;
     let out: string | null = null;
     try {
       const clean = relPad.split(/[?#]/)[0];
       const abs = path.resolve(dir, clean);
       if (fs.existsSync(abs)) {
-        const buf = fs.readFileSync(abs);
-        const mime = mimeFor(path.extname(abs));
-        out = `data:${mime};base64,${buf.toString("base64")}`;
+        // pathToFileURL codeert spaties/speciale tekens correct
+        out = pathToFileURL(abs).href;
       }
     } catch {
       out = null;
@@ -73,7 +76,7 @@ function inlineAfbeeldingen(html: string): string {
   html = html.replace(
     /(src\s*=\s*)(["'])(img\/[^"']+)\2/gi,
     (m, pre, q, ref) => {
-      const uri = dataUriVoor(ref);
+      const uri = fileUrlVoor(ref);
       return uri ? `${pre}${q}${uri}${q}` : m;
     }
   );
@@ -82,7 +85,7 @@ function inlineAfbeeldingen(html: string): string {
   html = html.replace(
     /url\(\s*(["']?)(img\/[^"')]+)\1\s*\)/gi,
     (m, q, ref) => {
-      const uri = dataUriVoor(ref);
+      const uri = fileUrlVoor(ref);
       return uri ? `url(${q}${uri}${q})` : m;
     }
   );
@@ -135,12 +138,37 @@ export async function bouwT4TeensPdf(html: string): Promise<Buffer> {
   // Lazy import zodat de server ook draait als playwright niet beschikbaar is.
   const { chromium } = await import("playwright");
   const browser = await launchChromium(chromium);
+  let tmpBestand: string | null = null;
   try {
     const page = await browser.newPage();
     const gereed = inlineAfbeeldingen(html);
-    await page.setContent(gereed, { waitUntil: "networkidle" });
-    // Zorg dat webfonts geladen zijn voordat we printen.
-    await page.evaluate(() => (document as any).fonts?.ready).catch(() => {});
+
+    // Schrijf de HTML naar een tijdelijk bestand IN de afname-map en navigeer er
+    // via file:// naartoe. Zo laadt chromium de (file://) afbeeldingen betrouwbaar
+    // en geheugenzuinig van schijf i.p.v. als grote base64-string in de heap.
+    const dir = afnameDir();
+    tmpBestand = path.join(dir, `.rapport-render-${Date.now()}-${Math.random().toString(36).slice(2)}.html`);
+    fs.writeFileSync(tmpBestand, gereed, "utf-8");
+    await page.goto(pathToFileURL(tmpBestand).href, { waitUntil: "networkidle" });
+
+    // Wacht expliciet tot alle <img> geladen zijn voor we printen.
+    await page
+      .evaluate(async () => {
+        const imgs = Array.from(document.images);
+        await Promise.all(
+          imgs.map((img) =>
+            img.complete
+              ? Promise.resolve()
+              : new Promise((res) => {
+                  img.addEventListener("load", () => res(null));
+                  img.addEventListener("error", () => res(null));
+                })
+          )
+        );
+        await (document as any).fonts?.ready;
+      })
+      .catch(() => {});
+
     const pdf = await page.pdf({
       format: "A4",
       printBackground: true,
@@ -150,6 +178,13 @@ export async function bouwT4TeensPdf(html: string): Promise<Buffer> {
     return Buffer.from(pdf);
   } finally {
     await browser.close();
+    if (tmpBestand) {
+      try {
+        fs.unlinkSync(tmpBestand);
+      } catch {
+        /* ignore */
+      }
+    }
   }
 }
 
