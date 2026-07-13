@@ -43,6 +43,22 @@ const allowlist = [
 ];
 
 async function buildAll() {
+  // 0. PLAYWRIGHT CHROMIUM — additief (Werkprotocol Regel 2), raakt geen bestaand
+  //    gedrag. Nodig zodat de T4Teens-per-leerling-PDF ook op Render kan renderen
+  //    (de PDF-generatie gebruikt playwright chromium). Fout-tolerant: als de
+  //    download faalt of de browser al aanwezig is, blijft de build gewoon doorgaan.
+  console.log("playwright chromium installeren (voor PDF-generatie)...");
+  try {
+    execSync("npx --yes playwright install chromium", {
+      cwd: root,
+      stdio: "inherit",
+      env: { ...process.env },
+    });
+    console.log("playwright chromium OK.");
+  } catch (e) {
+    console.warn("waarschuwing: playwright chromium-install niet voltooid (build gaat door):", e?.message || e);
+  }
+
   // 1. Wis dist/ volledig
   await rm(path.join(root, "dist"), { recursive: true, force: true });
   await mkdir(path.join(root, "dist", "public"), { recursive: true });
