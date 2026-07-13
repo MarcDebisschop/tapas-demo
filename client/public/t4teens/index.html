@@ -65,14 +65,18 @@ body{
 /* ---------- LANDING (full-bleed cover) ---------- */
 .landing{
   min-height:100vh;min-height:100dvh;
-  margin:0 -18px;padding:0;
+  /* Volle schermbreedte: breek uit de 680px-container tot rand-tot-rand. */
+  width:100vw;max-width:100vw;
+  margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);
+  padding:0;
   display:flex;flex-direction:column;justify-content:flex-start;
   position:relative;overflow:hidden;
   color:#fff;
   background:#1a1410;
 }
 .landing .cover-wrap{position:relative;z-index:0;width:100%}
-.landing .cover-img{position:relative;display:block;width:100%;height:auto;animation:coverIn 1.5s cubic-bezier(.2,.7,.2,1) both}
+/* Landscape cover over de volle breedte van het scherm. */
+.landing .cover-img{position:relative;display:block;width:100%;height:auto;object-fit:cover;animation:coverIn 1.5s cubic-bezier(.2,.7,.2,1) both}
 @keyframes coverIn{from{opacity:0;transform:scale(1.04)}to{opacity:1;transform:scale(1)}}
 .landing .scrim{position:absolute;left:0;right:0;bottom:-1px;height:140px;z-index:1;pointer-events:none;background:linear-gradient(to bottom, rgba(26,20,16,0) 0%, rgba(26,20,16,.55) 55%, rgba(26,20,16,1) 100%)}
 .landing-inner{position:relative;z-index:2;width:100%;max-width:560px;margin:0 auto;padding:30px 28px 54px;text-align:center;animation:landIn .85s cubic-bezier(.2,.7,.2,1) .3s both}
@@ -354,7 +358,7 @@ function renderLanding(){
       '<div class="landing-inner">'+
         '<div class="kicker"><span class="spk">&#10024;</span> T4Teens</div>'+
         '<h1>Ontdek <span class="hl">jouw vonk</span></h1>'+
-        '<p class="sub">Een paar leuke vragen over wat jou blij maakt, wat je boeit en hoe jij in elkaar zit.</p>'+
+        '<p class="sub">Een paar leuke vragen over wat je graag doet \u00e9n waar je goed in bent \u2014 en hoe jij in elkaar zit.</p>'+
         '<p class="micro">Geen toets. Geen punten. Gewoon jij.</p>'+
         '<div class="go-line"><span>Let\u2019s</span><button class="cta" id="goBtn">DO</button><span>it</span></div>'+
         '<p class="time-note">Klaar in ongeveer 8 minuten &middot; je kan alles beluisteren</p>'+
@@ -492,7 +496,7 @@ var DEMO = [
       {value:0,label:'Niet ik'},{value:1,label:'Soms wel'},
       {value:2,label:'Vaak ik'},{value:3,label:'Helemaal ik'} ] },
   { id:'V1', type:'recognition+energy',
-    tag:'Past het bij jou + word je er blij van?',
+    tag:'Past het bij jou + doe je dat graag?',
     text:'Ik wil eerst snappen hoe iets in elkaar zit voor ik begin \u2014 en daar krijg ik energie van.',
     options:[
       {value:0,label:'Niet ik'},{value:1,label:'Soms wel'},
@@ -506,7 +510,7 @@ var DEMO = [
       {value:2,label:'Best wel'},{value:3,label:'Helemaal mijn ding'} ] }
 ];
 
-function energyLabel(v){ return {'-2':'Word ik niet blij van','-1':'Niet zo blij','0':'Maakt niet uit','1':'Word ik blij van','2':'Word ik super blij van'}[String(v)]; }
+function energyLabel(v){ return {'-2':'Doe ik echt niet graag','-1':'Doe ik niet graag','0':'Maakt niet uit','1':'Doe ik graag','2':'Doe ik heel graag'}[String(v)]; }
 function batteryDemo(){
   var v=5;
   return '<div class="battery-wrap">'+
@@ -522,8 +526,8 @@ function optsDemo(it){
   }).join('')+'</div>';
 }
 function energyDemo(it){
-  return '<div class="energy-block"><div class="energy-q"><span class="spark">&#9889;</span> En word je daar blij van?</div>'+
-    '<p class="energy-help">Niet of je het kan, maar of je er blij van wordt. Kies de smiley die het best past.</p>'+
+  return '<div class="energy-block"><div class="energy-q"><span class="spark">&#9889;</span> En doe je dat graag?</div>'+
+    '<p class="energy-help">Niet of je het kan, maar of je het graag doet. Kies de smiley die het best past.</p>'+
     '<div class="energy-scale" data-q="'+it.id+'-e">'+ it.energyOptions.map(function(o){
       return '<button class="energy-opt" data-val="'+o.value+'"><span class="emoji">'+energyEmoji(o.value)+'</span><span class="lab">'+energyLabel(o.value)+'</span></button>';
     }).join('')+'</div></div>';
