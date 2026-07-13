@@ -90,12 +90,42 @@ function inlineAfbeeldingen(html: string): string {
   return html;
 }
 
+// Onthoud of we al eens een runtime-install probeerden (max. 1 keer per proces).
+let runtimeInstallGeprobeerd = false;
+
+async function launchChromium(chromium: any) {
+  try {
+    return await chromium.launch({
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
+  } catch (err: any) {
+    const msg = String(err?.message || err);
+    // Als de browser-executable ontbreekt (bv. build-install niet gepersisteerd
+    // op Render), installeer chromium dan lazy IN DEZELFDE runtime-omgeving en
+    // probeer opnieuw. Zelfde home/user als het draaiende proces → het pad klopt.
+    const ontbreekt = /Executable doesn't exist|Please run the following command|install/i.test(msg);
+    if (ontbreekt && !runtimeInstallGeprobeerd) {
+      runtimeInstallGeprobeerd = true;
+      const { execSync } = await import("node:child_process");
+      try {
+        console.warn("[T4Teens PDF] chromium ontbreekt — lazy runtime-install gestart...");
+        execSync("npx --yes playwright install chromium", { stdio: "inherit" });
+        console.warn("[T4Teens PDF] runtime-install klaar, nieuwe launch-poging.");
+      } catch (installErr) {
+        console.error("[T4Teens PDF] runtime-install mislukt:", installErr);
+      }
+      return await chromium.launch({
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      });
+    }
+    throw err;
+  }
+}
+
 export async function bouwT4TeensPdf(html: string): Promise<Buffer> {
   // Lazy import zodat de server ook draait als playwright niet beschikbaar is.
   const { chromium } = await import("playwright");
-  const browser = await chromium.launch({
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
-  });
+  const browser = await launchChromium(chromium);
   try {
     const page = await browser.newPage();
     const gereed = inlineAfbeeldingen(html);
