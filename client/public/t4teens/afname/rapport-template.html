@@ -120,6 +120,19 @@ a{color:var(--ocean-deep)}
 .batt-num{font-family:'Fraunces';font-weight:600;font-size:3.4rem;line-height:1;color:var(--coral-deep)}
 .batt-num small{font-size:1.1rem;color:var(--ink-soft);font-family:'Inter';font-weight:500}
 
+/* schoolmotivatie-hefboom */
+.hefboom-card{margin-top:22px;padding:24px 26px;border-radius:20px;border:1px solid var(--line);border-left:6px solid var(--sun-deep);background:linear-gradient(180deg,#FCF4E0 0%,#FBEFD6 100%);box-shadow:0 6px 22px var(--shadow)}
+.hefboom-card.hoog{border-left-color:var(--sage-deep);background:linear-gradient(180deg,#F0F4EA 0%,#E8F0DE 100%)}
+.hefboom-card.midden{border-left-color:var(--sun-deep)}
+.hefboom-card.laag{border-left-color:var(--coral-deep);background:linear-gradient(180deg,#FCEFE9 0%,#FBE6DC 100%)}
+.hefboom-kicker{display:inline-flex;align-items:center;gap:6px;font-family:'Inter';font-weight:600;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--sun-deep)}
+.hefboom-card.hoog .hefboom-kicker{color:var(--sage-deep)}
+.hefboom-card.laag .hefboom-kicker{color:var(--coral-deep)}
+.hefboom-card h3{font-family:'Fraunces';font-weight:600;font-size:1.42rem;line-height:1.2;color:var(--ink);margin:10px 0 12px}
+.hefboom-card p{font-size:1.02rem;line-height:1.6;color:var(--ink-soft);margin:0}
+.hefboom-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.hefboom-chip{display:inline-block;padding:6px 14px;border-radius:99px;background:#fff;border:1px solid var(--line);font-family:'Inter';font-weight:500;font-size:.86rem;color:var(--ink)}
+
 /* energie geeft / kost — staafjes (geen radar) */
 .energy-grid{display:grid;grid-template-columns:1fr;gap:14px;margin-top:8px}
 .energy-item{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:14px}
@@ -469,9 +482,9 @@ details.why .body{padding:0 18px 16px;font-size:.88rem;color:var(--ink-soft)}
 <!-- ============ TOPIC 1: ENERGIE ============ -->
 <section class="section">
   <div class="wrap">
-    <span class="kicker"><span class="num">1</span>Jouw energie</span>
-    <h2>Waar laad je van op, waar loop je van leeg?</h2>
-    <p class="lede">Dit is de rode draad door alles wat hierna komt. Niet wat je <em>kan</em>, maar wat je <em>energie geeft</em>.</p>
+    <span class="kicker"><span class="num">1</span>Jouw schoolmotivatie &amp; energie</span>
+    <h2>Hoe graag ga je naar school &mdash; en wat geeft jou energie?</h2>
+    <p class="lede">We starten met hoe graag je de laatste weken naar school gaat. Daarna kijken we naar wat jou <em>energie geeft</em> &mdash; niet wat je <em>kan</em>, maar wat je gr&aacute;&aacute;g doet. Dat is de rode draad, &eacute;n de hefboom om je goesting voor school te voeden.</p>
     <div class="listen" data-audio="audio-rapport/s1-energie.mp3" role="button" tabindex="0" aria-label="Luister naar deze uitleg">
       <span class="l-btn">&#9658;</span>
       <span><span class="l-txt">Liever luisteren?</span><br><span class="l-sub">ong. 40 sec</span></span>
@@ -484,18 +497,20 @@ details.why .body{padding:0 18px 16px;font-size:.88rem;color:var(--ink-soft)}
           <div class="battery-row">
             <div>
               <div class="batt-num">{{BATTERIJ}}<small>/10</small></div>
-              <div style="font-size:.9rem;color:var(--ink-soft);font-weight:500">jouw batterij vandaag</div>
+              <div style="font-size:.9rem;color:var(--ink-soft);font-weight:500">hoe graag je de laatste weken naar school gaat</div>
             </div>
             <div class="battery">
               <div class="batt-track"><div class="batt-fill" style="width:{{BATTERIJ_PCT}}%"></div></div>
-              <div class="batt-scale"><span>leeg</span><span>vol</span></div>
+              <div class="batt-scale"><span>niet graag</span><span>heel graag</span></div>
             </div>
           </div>
-          <p style="margin-top:18px;font-size:.96rem;color:var(--ink-soft)">Dit is je persoonlijke ijkpunt. Alles hieronder lees je <strong>ten opzichte van deze {{BATTERIJ}}</strong> &mdash; niet ten opzichte van iemand anders.</p>
+          <p style="margin-top:18px;font-size:.96rem;color:var(--ink-soft)">Dit is je vertrekpunt. Het zegt niets over wat je kan &mdash; het zegt hoe graag je op dit moment naar school gaat. Hieronder lees je wat jou energie geeft, want d&aacute;t is de hefboom om die goesting te voeden.</p>
         </div>
       </div>
       <div class="spot"><img src="img/abstract-energie.png" alt="Warme abstracte vormen die energie verbeelden"></div>
     </div>
+
+{{MOTIVATIE_HEFBOOM}}
 
     <div class="cols" style="margin-top:24px">
       <div class="card card-tinted">
@@ -516,7 +531,7 @@ details.why .body{padding:0 18px 16px;font-size:.88rem;color:var(--ink-soft)}
     <div class="saidblock">
       <div class="said-head"><span>&#128172;</span>Dit gaf jij aan</div>
 {{SAID_ENERGIE}}
-      <div class="said-foot">Dit zijn jouw eigen antwoorden &mdash; ze verklaren waarom je batterij vooral oplaadt bij wat je energie geeft, en leegloopt bij wat je vandaag eerder leegtrekt.</div>
+      <div class="said-foot">Dit zijn jouw eigen antwoorden &mdash; ze laten zien waar je energie van krijgt, en wat je vandaag eerder leegtrekt. Precies daar zit de hefboom om liever naar school te gaan.</div>
     </div>
   </div>
 </section>

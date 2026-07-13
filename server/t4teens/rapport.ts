@@ -39,7 +39,7 @@ interface OptionRec { value?: number; key?: string; label: string; }
 interface ItemRec { id: string; text: string; options?: OptionRec[]; energy?: boolean; }
 
 const ITEMS: Record<string, ItemRec> = {
-  I1: { id: "I1", text: "Hoe vol zit je batterij vandaag?" },
+  I1: { id: "I1", text: "Hoe graag ga je de laatste weken naar school?" },
   D1: { id: "D1", text: "Ik wil dat iets echt klopt voordat ik het loslaat — ook al kost dat meer tijd.", options: recog() },
   D2: { id: "D2", text: "Ik vind het fijn als iedereen om me heen het naar zijn zin heeft, soms zet ik mezelf daarvoor opzij.", options: recog() },
   D3: { id: "D3", text: "Er is iemand naar wie ik opkijk — als die in mij gelooft, doe ik alles om te tonen wat ik kan.", options: recog() },
@@ -517,12 +517,20 @@ export function bouwT4TeensRapport(scores: VonkScore, deelnemer: Deelnemer): T4T
   const SAID_STRATEGIE = ["V2", "V6", "V3"].filter((id) => id in answers).map((id) => saidItem(id, answers, energy)).join("\n");
 
   // ---- in jouw eigen woorden ----
-  const OW_ENERGIE = `        <div class="ow-row"><div class="ow-q">&ldquo;Hoe vol zit je batterij vandaag?&rdquo;</div><div class="ow-a batt">${battery} / 10</div></div>`;
+  const OW_ENERGIE = `        <div class="ow-row"><div class="ow-q">&ldquo;Hoe graag ga je de laatste weken naar school?&rdquo;</div><div class="ow-a batt">${battery} / 10</div></div>`;
   const OW_FOCI = ["F1", "F4", "F2", "F3", "F5"].filter((id) => id in answers).map((id) => owRow(id, answers, energy)).join("\n");
   const OW_MOTOR = ["D1", "D2", "D3", "D4", "D5", "D6"].filter((id) => id in answers).map((id) => owRow(id, answers, energy)).join("\n");
   const OW_STRATEGIE = ["V2", "V6", "V3", "V1", "V4", "V5"].filter((id) => id in answers).map((id) => owRow(id, answers, energy)).join("\n");
   const OW_INTERESSE = ["R3", "R4", "R1", "R2", "R5", "R6"].filter((id) => id in answers).map((id) => owRow(id, answers, energy)).join("\n");
   const OW_BETEKENIS = ["B1"].filter((id) => id in answers).map((id) => owRow(id, answers, energy)).join("\n");
+
+  // ---- schoolmotivatie-hefboom ----------------------------------------
+  // De startvraag peilt hoe graag de leerling de laatste weken naar school
+  // gaat (0-10). De energiegevers (wat doe je gráág) zijn de hefbomen: bij
+  // een lage schoolmotivatie tonen we ze als concrete aanknopingspunten om
+  // meer goesting te vinden; bij een hoge motivatie als wat die goesting
+  // voedt en dus vast te houden is.
+  const MOTIVATIE_HEFBOOM = bouwHefboom(battery, give);
 
   // ---- motor-duiding per ranking (rem/gaspedaal + keuzestress/ouders) ----
   const motor = bouwMotorDuiding(scores, deelnemer.naam);
@@ -543,7 +551,50 @@ export function bouwT4TeensRapport(scores: VonkScore, deelnemer: Deelnemer): T4T
     CK_CASE: motor.CK_CASE,
     SAID_ENERGIE, SAID_FOCI, SAID_MOTOR, SAID_INTERESSE, SAID_STRATEGIE,
     OW_ENERGIE, OW_FOCI, OW_MOTOR, OW_STRATEGIE, OW_INTERESSE, OW_BETEKENIS,
+    MOTIVATIE_HEFBOOM,
   };
+}
+
+// ----------------------------------------------------------------------------
+// Schoolmotivatie-hefboom: koppelt de startscore (0-10, hoe graag naar school)
+// aan de energiegevers (wat de leerling gráág doet). Laag => hefboom om meer
+// goesting te vinden; hoog => bevestiging van wat die goesting voedt.
+// ----------------------------------------------------------------------------
+function bouwHefboom(battery: number, give: { id: string; e: number }[]): string {
+  const labels = give.slice(0, 3).map((x) => ENERGY_LABEL[x.id]?.label).filter(Boolean) as string[];
+  const chips = labels.length
+    ? labels.map((l) => `<span class="hefboom-chip">${l}</span>`).join("")
+    : `<span class="hefboom-chip">wat jij gr&aacute;&aacute;g doet</span>`;
+  const opsom = labels.length
+    ? (labels.length === 1 ? labels[0] : labels.slice(0, -1).join(", ") + " en " + labels[labels.length - 1])
+    : "de dingen die jij graag doet";
+
+  let toon: "laag" | "midden" | "hoog";
+  if (battery <= 4) toon = "laag";
+  else if (battery <= 6) toon = "midden";
+  else toon = "hoog";
+
+  let kicker: string, kop: string, tekst: string;
+  if (toon === "laag") {
+    kicker = "jouw hefboom";
+    kop = "School voelt nu even zwaar &mdash; maar h&eacute;r, d&iacute;t doe je wel graag";
+    tekst = `Je gaf aan dat je de laatste weken niet zo graag naar school gaat. Dat mag er zijn. En toch valt er iets moois op: <strong>${opsom}</strong> doe jij wel gr&aacute;&aacute;g. Precies daar zit je hefboom. De vraag is niet &ldquo;hoe hou ik vol&rdquo;, maar &ldquo;hoe krijg ik <em>meer</em> van wat ik graag doe in mijn schooldag?&rdquo; Bekijk samen met je begeleider hoe je hier vaker op kan inzetten &mdash; dat is vaak net wat je liever naar school doet gaan.`;
+  } else if (toon === "midden") {
+    kicker = "jouw hefboom";
+    kop = "Je goesting voor school wisselt &mdash; dit kan ze omhoog trekken";
+    tekst = `Je gaat de laatste weken soms wel, soms minder graag naar school. Goed nieuws: je hebt een duidelijke hefboom. <strong>${opsom}</strong> geeft jou energie. Hoe meer daarvan in je schooldag zit, hoe groter de kans dat je goesting stijgt. Zoek samen met je begeleider waar je hier meer op kan inzetten.`;
+  } else {
+    kicker = "hou dit vast";
+    kop = "Je gaat graag naar school &mdash; d&iacute;t voedt die goesting";
+    tekst = `Mooi: de laatste weken ga je graag naar school. Dat komt niet vanzelf. Wat die goesting voedt, zijn de dingen die jou energie geven: <strong>${opsom}</strong>. Blijf daarop inzetten &mdash; het is precies wat je liever naar school laat gaan. Zo hou je die motor draaiende.`;
+  }
+
+  return `      <div class="hefboom-card ${toon}">
+        <span class="hefboom-kicker">&#9889; ${kicker}</span>
+        <h3>${kop}</h3>
+        <p>${tekst}</p>
+        <div class="hefboom-chips">${chips}</div>
+      </div>`;
 }
 
 function riaKeyOf(id: string): string {
