@@ -36,6 +36,7 @@ import { registerT4RInlineRoutes } from "./routes/t4r";
 import { registerWebinarRoutes } from "./routes/webinars";
 import { registerInstrumentenCatalogusRoutes } from "./routes/instrumenten-catalogus";
 import { registerVragenlijstT4TeensRoutes } from "./routes/vragenlijst-t4teens";
+import { registerT4TeensRapportRoutes } from "./routes/t4teens-rapport";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -71,6 +72,9 @@ export async function registerRoutes(
 
   // --- T4Teens vragenlijst (override-aware endpoint voor afname) ---
   registerVragenlijstT4TeensRoutes(app);
+
+  // --- T4Teens per-leerling rapport + PDF (additief, eigen namespace) ---
+  registerT4TeensRapportRoutes(app);
 
   // -------------------------------------------------------------------------
   // T4Recruitment — ingeplugde routes (eigen module-namespace).

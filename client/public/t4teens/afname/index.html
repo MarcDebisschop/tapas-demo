@@ -281,6 +281,10 @@ input[type=range]::-moz-range-thumb{width:34px;height:34px;border-radius:50%;bac
 .energy-opt .lab{font-size:11px;color:var(--ink-soft);font-weight:600;line-height:1.2}
 .energy-opt.sel{border-color:var(--teal);background:var(--teal-soft)}
 .energy-opt.sel .lab{color:var(--teal-d)}
+.moeite-block{margin-top:22px;padding:18px 16px 16px;border:1px dashed var(--teal-soft);background:var(--teal-softer);border-radius:14px}
+.moeite-q{font-size:16px;font-weight:700;color:var(--teal-d);margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.moeite-q .spark{color:var(--amber)}
+.moeite-help{font-size:14px;color:var(--ink-soft);margin:0 0 13px;line-height:1.4}
 
 /* Nav */
 .nav{display:flex;gap:12px;margin-top:26px}
@@ -1246,6 +1250,14 @@ function listenBtn(file, label){
   return '<button class="listen" data-audio="'+file+'"><span class="ic">'+ICON_PLAY+'</span><span class="txt">'+(label||'Beluister')+'</span></button>';
 }
 function energyEmoji(v){ return {'-2':'😣','-1':'😕','0':'😐','1':'🙂','2':'😄'}[String(v)]; }
+// --- MOEITE-schaal (enkel voor de driver-vragen D1-D4). Additief; raakt de vraagtekst niet.
+//     Meet hoeveel moeite het de leerling kost om zo te zijn. Weinig moeite = gaspedaal (+),
+//     veel moeite = rem (-). De waarde wordt in het bestaande energy-object gezet als energy.D1..D4,
+//     zodat scoreVonk (drvEnergy) er ongewijzigd mee rekent.
+function isDriverMoeiteItem(it){ return it && it.family==='Drivers' && it.type==='recognition'; }
+function moeiteEmoji(v){ return {'-2':'😓','-1':'😕','1':'🙂','2':'😌'}[String(v)]; }
+function moeiteLabel(v){ return {'-2':'Kost me heel veel moeite','-1':'Kost me moeite','1':'Kost me weinig moeite','2':'Kost me helemaal geen moeite'}[String(v)]; }
+const MOEITE_OPTS = [{value:-2},{value:-1},{value:1},{value:2}];
 
 function showBoost(id){
   const el = document.getElementById(id);
@@ -1602,6 +1614,7 @@ function renderIntro(){
 function renderQuestion(it){
   let body = '';
   if(it.type==='battery') body = batteryHtml(it);
+  else if(isDriverMoeiteItem(it)) body = recognitionHtml(it) + moeiteHtml(it);
   else if(it.type==='recognition') body = recognitionHtml(it);
   else if(it.type==='recognition+energy') body = recognitionHtml(it) + energyHtml(it);
   else if(it.type==='interest') body = optsHtml(it, it.options.map(o=>({val:o.value,label:o.label})));
@@ -1647,6 +1660,13 @@ function energyHtml(it){
     ).join('')+'</div></div>';
 }
 function energyLabel(v){ return {'-2':'Doe ik echt niet graag','-1':'Doe ik niet graag','0':'Maakt niet uit','1':'Doe ik graag','2':'Doe ik heel graag'}[String(v)]; }
+function moeiteHtml(it){
+  return '<div class="moeite-block"><div class="moeite-q"><span class="spark">&#9889;</span> En hoeveel moeite kost het je om zo te zijn?</div>'+
+    '<p class="moeite-help">Niet of je zo b&eacute;nt, maar of het je moeite kost of net vanzelf gaat. Kies de smiley die het best past.</p>'+
+    '<div class="energy-scale" data-role="moeite">'+ MOEITE_OPTS.map(o=>
+      '<button class="energy-opt'+(energy[it.id]===o.value?' sel':'')+'" data-val="'+o.value+'"><span class="emoji">'+moeiteEmoji(o.value)+'</span><span class="lab">'+moeiteLabel(o.value)+'</span></button>'
+    ).join('')+'</div></div>';
+}
 function batteryHtml(it){
   const v = (it.id in answers)?answers[it.id]:5;
   return '<div class="battery-wrap">'+
@@ -1687,6 +1707,13 @@ function bindQuestion(it){
       energy[it.id]=parseInt(btn.dataset.val,10); updateNext(it);
     };
   });
+  root.querySelectorAll('[data-role=moeite] .energy-opt').forEach(btn=>{
+    btn.onclick = ()=>{
+      root.querySelectorAll('[data-role=moeite] .energy-opt').forEach(x=>x.classList.remove('sel'));
+      btn.classList.add('sel');
+      energy[it.id]=parseInt(btn.dataset.val,10); updateNext(it);
+    };
+  });
 }
 function goNext(){
   const finishing = idx === items.length-1;
@@ -1694,8 +1721,8 @@ function goNext(){
   const it = items[idx];
   if(it && !isAnswered(it)){
     // nog niet (helemaal) ingevuld: vriendelijk benoemen i.p.v. doorgaan
-    const needEnergy = (it.type==='recognition+energy') && (it.id in answers) && !(it.id in energy);
-    showHint(needEnergy ? 'energy' : 'main');
+    const needEnergy = ((it.type==='recognition+energy') || isDriverMoeiteItem(it)) && (it.id in answers) && !(it.id in energy);
+    showHint(needEnergy ? (isDriverMoeiteItem(it) ? 'moeite' : 'energy') : 'main');
     return;
   }
   hideHint();
@@ -1712,6 +1739,7 @@ function isAnswered(it){
   if(it.type==='battery') return true;
   if(!(it.id in answers)) return false;
   if(it.type==='recognition+energy') return (it.id in energy);
+  if(isDriverMoeiteItem(it)) return (it.id in energy);
   return true;
 }
 function updateNext(it){
@@ -1722,10 +1750,12 @@ function showHint(kind){
   const h=document.getElementById('qHint'); if(!h) return;
   const txt = kind==='energy'
     ? 'Je bent er bijna! Vertel ook nog even of je dat graag doet, dan gaan we verder.'
+    : kind==='moeite'
+    ? 'Je bent er bijna! Vertel ook nog even hoeveel moeite het je kost om zo te zijn, dan gaan we verder.'
     : 'Oei, deze vraag is nog niet ingevuld. Kies even het antwoord dat vandaag het best bij jou past. Er is geen fout antwoord, hoor.';
   document.getElementById('qHintTxt').textContent = txt;
   h.classList.add('show');
-  playVoice(kind==='energy' ? 'hint-energy.mp3' : 'hint-main.mp3');
+  playVoice((kind==='energy'||kind==='moeite') ? 'hint-energy.mp3' : 'hint-main.mp3');
 }
 function hideHint(){ const h=document.getElementById('qHint'); if(h) h.classList.remove('show'); }
 
@@ -1999,20 +2029,52 @@ function toggleVonkSeq(){
 
 function renderDone(){
   document.body.style.overflow='';
-  root.innerHTML =
-    '<div class="screen"><div class="card done">'+
-      '<div class="check">'+ICON_CHECK+'</div>'+
-      '<h1>Top. Je bent klaar.</h1>'+
-      '<img class="done-photo" src="img/thank-you.jpg" alt="Bedankt">'+
-      '<p>Je hebt zonet jouw momentopname ingevuld. Dit is een beeld van hoe jij het vandaag ziet, en dat mag groeien en veranderen.</p>'+
-      '<p>We kunnen je echt nog veel meer over jezelf vertellen. Dat doet jouw begeleider straks samen met jou.</p>'+
-      '<div class="next-actions">'+
-        '<a class="na-card primary" href="mijn.html"><span class="na-ic">\u{1F396}\u{FE0F}</span><span class="na-tx"><b>Mijn TA-PAS bekijken</b><span>Jouw oorkondes en wat vandaag bij jou uitspringt.</span></span><span class="na-arrow">&rarr;</span></a>'+
-        '<a class="na-card read" href="rapport.html"><span class="na-ic">\u{1F4D6}</span><span class="na-tx"><b>Lees of beluister je verkenning</b><span>Het volledige Studiekompas, met een stem die voorleest.</span></span><span class="na-arrow">&rarr;</span></a>'+
-        '<a class="na-card pdf" href="T4Teens-Studiekompas-Lana.pdf" download><span class="na-ic">\u{2B07}\u{FE0F}</span><span class="na-tx"><b>Bewaren als PDF</b><span>Download om te bewaren of te delen met iemand die je vertrouwt.</span></span><span class="na-arrow">&rarr;</span></a>'+
-      '</div>'+
-      '<p class="na-hint">Dit is een momentopname &mdash; geen eindpunt. Neem het gerust mee naar je begeleider.</p>'+
-    '</div></div>';
+  // Per-leerling rapport + PDF worden server-side gegenereerd op basis van
+  // de verzamelde answers/energy. De links hieronder worden ingevuld zodra
+  // het POST-antwoord binnen is.
+  var rapportHref = '';
+  var pdfHref = '';
+  function actionsHtml(status){
+    var read;
+    if(status==='loading'){
+      read = '<div class="na-card read" style="opacity:.7;cursor:default"><span class="na-ic">\u{1F4D6}</span><span class="na-tx"><b>Je verkenning wordt klaargemaakt&hellip;</b><span>Een ogenblik &mdash; we stellen jouw persoonlijke Studiekompas samen.</span></span></div>';
+    } else if(status==='ready'){
+      read = '<a class="na-card read" href="'+rapportHref+'"><span class="na-ic">\u{1F4D6}</span><span class="na-tx"><b>Lees of beluister je verkenning</b><span>Het volledige Studiekompas, met een stem die voorleest.</span></span><span class="na-arrow">&rarr;</span></a>'+
+        (pdfHref ? '<a class="na-card pdf" href="'+pdfHref+'" download><span class="na-ic">\u{2B07}\u{FE0F}</span><span class="na-tx"><b>Bewaren als PDF</b><span>Download om te bewaren of te delen met iemand die je vertrouwt.</span></span><span class="na-arrow">&rarr;</span></a>' : '');
+    } else {
+      read = '<div class="na-card read" style="opacity:.85"><span class="na-ic">\u{1F4D6}</span><span class="na-tx"><b>Je verkenning is nog niet beschikbaar</b><span>Probeer het straks opnieuw of vraag je begeleider.</span></span></div>';
+    }
+    return '<a class="na-card primary" href="mijn.html"><span class="na-ic">\u{1F396}\u{FE0F}</span><span class="na-tx"><b>Mijn TA-PAS bekijken</b><span>Jouw oorkondes en wat vandaag bij jou uitspringt.</span></span><span class="na-arrow">&rarr;</span></a>'+ read;
+  }
+  function paint(status){
+    root.innerHTML =
+      '<div class="screen"><div class="card done">'+
+        '<div class="check">'+ICON_CHECK+'</div>'+
+        '<h1>Top. Je bent klaar.</h1>'+
+        '<img class="done-photo" src="img/thank-you.jpg" alt="Bedankt">'+
+        '<p>Je hebt zonet jouw momentopname ingevuld. Dit is een beeld van hoe jij het vandaag ziet, en dat mag groeien en veranderen.</p>'+
+        '<p>We kunnen je echt nog veel meer over jezelf vertellen. Dat doet jouw begeleider straks samen met jou.</p>'+
+        '<div class="next-actions">'+ actionsHtml(status) +'</div>'+
+        '<p class="na-hint">Dit is een momentopname &mdash; geen eindpunt. Neem het gerust mee naar je begeleider.</p>'+
+      '</div></div>';
+  }
+  paint('loading');
+  var deelnemer = {
+    naam: (participant.name||'').trim() || 'jij',
+    leeftijd: participant.ageValue || participant.ageBand || '',
+    klas: ''
+  };
+  fetch('/api/t4teens/rapport', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ deelnemer: deelnemer, answers: answers, energy: energy })
+  }).then(function(r){ return r.ok ? r.json() : Promise.reject(r); })
+    .then(function(data){
+      rapportHref = data.rapportUrl || '';
+      pdfHref = data.pdfUrl || '';
+      paint(rapportHref ? 'ready' : 'error');
+    })
+    .catch(function(err){ console.error('[T4Teens] rapport genereren mislukt', err); paint('error'); });
 }
 
 render();
