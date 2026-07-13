@@ -93,11 +93,22 @@ function inlineAfbeeldingen(html: string): string {
 // Onthoud of we al eens een runtime-install probeerden (max. 1 keer per proces).
 let runtimeInstallGeprobeerd = false;
 
+// Geheugenzuinige launch-args — nodig op kleine hosts (bv. Render free, 512MB):
+// zonder deze vlaggen loopt chromium bij een zwaar rapport (grote ingebedde
+// afbeeldingen) tegen het RAM-plafond en crasht de request (502).
+const LAUNCH_ARGS = [
+  "--no-sandbox",
+  "--disable-setuid-sandbox",
+  "--disable-dev-shm-usage",
+  "--disable-gpu",
+  "--single-process",
+  "--no-zygote",
+  "--disable-extensions",
+];
+
 async function launchChromium(chromium: any) {
   try {
-    return await chromium.launch({
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
-    });
+    return await chromium.launch({ args: LAUNCH_ARGS });
   } catch (err: any) {
     const msg = String(err?.message || err);
     // Als de browser-executable ontbreekt (bv. build-install niet gepersisteerd
@@ -114,9 +125,7 @@ async function launchChromium(chromium: any) {
       } catch (installErr) {
         console.error("[T4Teens PDF] runtime-install mislukt:", installErr);
       }
-      return await chromium.launch({
-        args: ["--no-sandbox", "--disable-setuid-sandbox"],
-      });
+      return await chromium.launch({ args: LAUNCH_ARGS });
     }
     throw err;
   }
