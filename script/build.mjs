@@ -49,11 +49,23 @@ async function buildAll() {
   //    download faalt of de browser al aanwezig is, blijft de build gewoon doorgaan.
   console.log("playwright chromium installeren (voor PDF-generatie)...");
   try {
-    execSync("npx --yes playwright install chromium", {
-      cwd: root,
-      stdio: "inherit",
-      env: { ...process.env },
-    });
+    // Eerst met systeem-libs (--with-deps): Render's Node-image mist standaard de
+    // shared libraries die chromium nodig heeft om te starten. Lukt dat niet
+    // (geen apt/sudo), val dan terug op een kale browser-install.
+    try {
+      execSync("npx --yes playwright install --with-deps chromium", {
+        cwd: root,
+        stdio: "inherit",
+        env: { ...process.env },
+      });
+    } catch (depErr) {
+      console.warn("--with-deps niet gelukt, val terug op kale install:", depErr?.message || depErr);
+      execSync("npx --yes playwright install chromium", {
+        cwd: root,
+        stdio: "inherit",
+        env: { ...process.env },
+      });
+    }
     console.log("playwright chromium OK.");
   } catch (e) {
     console.warn("waarschuwing: playwright chromium-install niet voltooid (build gaat door):", e?.message || e);

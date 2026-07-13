@@ -115,4 +115,16 @@ export function registerT4TeensRapportRoutes(app: Express): void {
     res.setHeader("Content-Disposition", `inline; filename="${bestand}"`);
     res.send(r.pdf);
   });
+
+  // Tijdelijke diagnose-endpoint (additief): probeert een mini-PDF te renderen en
+  // rapporteert de exacte chromium-fout. Enkel voor de pilot-verificatie; raakt
+  // geen bestaand pad. Kan later verwijderd worden.
+  app.get("/api/t4teens/rapport-pdf-diagnose", async (_req: Request, res: Response) => {
+    try {
+      const buf = await bouwT4TeensPdf("<html><body><h1>diagnose ok</h1></body></html>");
+      res.json({ ok: true, bytes: buf.length });
+    } catch (e: any) {
+      res.json({ ok: false, error: String(e?.message || e), stack: String(e?.stack || "").split("\n").slice(0, 6) });
+    }
+  });
 }
