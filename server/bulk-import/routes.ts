@@ -41,6 +41,24 @@ function requireAdmin(req: Request, res: Response): boolean {
 }
 
 // ---------------------------------------------------------------------------
+// Prior-beheerdercheck (Werkprotocol Regel 2 — additief).
+// Gratis bulk-verzending ZONDER organisatie (geen credits) is voorbehouden aan
+// de hoofdbeheerder (isPrior). Gewone admins moeten een organisatie kiezen
+// zodat het bestaande credit-model geldt. Deze helper wijzigt niets aan de
+// bestaande flow; ze levert enkel de isPrior-status van de ingelogde admin.
+// ---------------------------------------------------------------------------
+async function isPriorAdmin(req: Request): Promise<boolean> {
+  const adminId = (req.session as any)?.adminId;
+  if (!adminId) return false;
+  try {
+    const beheerder = await storage.getBeheerder(Number(adminId));
+    return !!beheerder && beheerder.actief === true && beheerder.isPrior === true;
+  } catch {
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Org-eigen afzender-tabel (idempotent aangemaakt in de nieuwe module).
 // ---------------------------------------------------------------------------
 function zorgAfzenderTabel(): void {
@@ -380,6 +398,22 @@ export function registerBulkImportRoutes(app: Express): void {
       req.body?.organisatieId != null && Number.isFinite(Number(req.body.organisatieId))
         ? Number(req.body.organisatieId)
         : null;
+
+    // -----------------------------------------------------------------------
+    // BEVEILIGING (additief): gratis verzending ZONDER organisatie (geen
+    // credits) is voorbehouden aan de hoofdbeheerder (isPrior). Een gewone
+    // admin die geen organisatie kiest, krijgt 403 en moet een organisatie
+    // selecteren zodat het bestaande credit-model geldt. Verandert niets aan
+    // de flow met een gekozen organisatie of voor prior-beheerders.
+    // -----------------------------------------------------------------------
+    if (organisatieId == null && !(await isPriorAdmin(req))) {
+      return res.status(403).json({
+        error:
+          "Gratis verzending zonder organisatie is voorbehouden aan de hoofdbeheerder. " +
+          "Kies een organisatie (credits worden verrekend) of vraag de hoofdbeheerder.",
+        code: "ENKEL_PRIOR_GRATIS",
+      });
+    }
 
     // Optionele org-eigen afzender (override). Wordt bewaard voor hergebruik.
     const afzenderOverride: string | null =
