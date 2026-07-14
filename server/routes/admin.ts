@@ -16,15 +16,40 @@
 
 import type { Express } from "express";
 import { storage, db } from "../storage";
+import { verifieerWachtwoord } from "../auth/wachtwoord";
+
+// Demo-modus: identiek criterium als elders in de server (TAPAS_DEMO="1").
+// In demo blijft de login e-mail-only (wachtwoord wordt genegeerd), zodat de
+// publieke demo alles automatisch invult. In de definitieve modus (geen
+// demo-vlag) is een correct wachtwoord verplicht.
+const DEMO_MODE = process.env.TAPAS_DEMO === "1";
 
 export function registerAdminRoutes(app: Express): void {
   // --- Admin: login ---
   app.post("/api/admin/login", async (req, res) => {
-    const { email } = req.body || {};
+    const { email, wachtwoord } = req.body || {};
     if (!email) return res.status(400).json({ message: "E-mailadres ontbreekt." });
     const beheerder = await storage.getBeheerderByEmail(email.trim().toLowerCase());
     if (!beheerder || !beheerder.actief) {
       return res.status(401).json({ message: "E-mailadres of wachtwoord onjuist." });
+    }
+    // ADDITIEF: in de definitieve modus is een geldig wachtwoord verplicht.
+    // In demo-modus wordt deze controle overgeslagen (bestaand gedrag).
+    if (!DEMO_MODE) {
+      if (!wachtwoord) {
+        return res.status(401).json({ message: "E-mailadres of wachtwoord onjuist." });
+      }
+      if (!beheerder.wachtwoordHash) {
+        // Geen wachtwoord ingesteld voor dit account in de definitieve modus.
+        return res.status(403).json({
+          message:
+            "Voor dit account is nog geen wachtwoord ingesteld. Neem contact op met de hoofdbeheerder.",
+        });
+      }
+      const geldig = await verifieerWachtwoord(String(wachtwoord), beheerder.wachtwoordHash);
+      if (!geldig) {
+        return res.status(401).json({ message: "E-mailadres of wachtwoord onjuist." });
+      }
     }
     (req.session as any).adminId = beheerder.id;
     req.session.save((err) => {

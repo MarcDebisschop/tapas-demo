@@ -763,6 +763,10 @@ export const beheerders = sqliteTable("beheerders", {
   // Gedisabled i.p.v. verwijderd. actief=false => geen toegang, maar blijft in
   // de lijst staan zodat heractivatie eenvoudig is.
   actief: integer("actief", { mode: "boolean" }).notNull().default(true),
+  // ADDITIEF: veilige wachtwoord-hash (scrypt). Nullable zodat bestaande rijen
+  // en de demo-modus ongemoeid blijven. Wordt ENKEL gebruikt door de
+  // definitieve (niet-demo) admin-login; in demo blijft login e-mail-only.
+  wachtwoordHash: text("wachtwoord_hash"),
   createdAt: text("created_at").notNull(),
 });
 export type Beheerder = typeof beheerders.$inferSelect;
