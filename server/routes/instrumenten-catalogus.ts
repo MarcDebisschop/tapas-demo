@@ -103,6 +103,19 @@ const VERRIJKING: Record<string, {
     rapport: "T4Teens talentkaart + studiegids",
     emoji: "🎒",
   },
+  "t4kids": {
+    doelgroep: "Kinderen 10-13 jaar, ouders, CLB & lagere-schoolteams",
+    useCases: [
+      "Talentontdekking einde lagere school",
+      "Voorbereiding studiekeuze secundair",
+      "Ouder-kind gesprek over interesses",
+      "Zelfvertrouwen & zelfkennis",
+    ],
+    outcome:
+      "Kindvriendelijk, procesgericht talentbeeld in 'nu'-taal, met apart ouder-/coachdeel. Geen etiket, wel richting.",
+    rapport: "T4Kids Ontdekkingsreis-rapport (kinddeel + ouderdeel)",
+    emoji: "🧭",
+  },
   "t4students": {
     doelgroep: "Studenten hoger onderwijs, studentenbegeleiders",
     useCases: [

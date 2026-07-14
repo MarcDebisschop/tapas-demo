@@ -381,6 +381,27 @@ function bouwRegistry(): Map<string, InstrumentDescriptor> {
     creditCost: 1,
   });
 
+  // -------------------------------------------------------------------------
+  // T4Kids — individueel instrument voor kinderen (10-13 jaar).
+  //
+  // T4Kids is een kindvriendelijke, speelse talent-ontdekkingsreis, ontwikkeld
+  // als voorbereiding op de studiekeuze naar het secundair onderwijs. De
+  // descriptor is metadata-only (géén instrument.json); de rapport-branch
+  // gebruikt instrumentId "t4kids" als routing-sleutel.
+  // -------------------------------------------------------------------------
+  map.set("t4kids", {
+    instrumentId: "t4kids",
+    flowType: "individual",
+    name: "T4Kids",
+    version: "1.0.0",
+    description:
+      "Speelse talent-ontdekkingsreis voor kinderen (10-13 jaar): ontdek je " +
+      "interesses, sterktes en drijfveren in drie korte modules — als " +
+      "voorbereiding op de studiekeuze naar het secundair onderwijs.",
+    isDefault: false,
+    creditCost: 1,
+  });
+
   return map;
 }
 

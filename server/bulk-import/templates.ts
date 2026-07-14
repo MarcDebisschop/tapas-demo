@@ -79,6 +79,14 @@ export const TEMPLATES: Record<string, InstrumentTemplate> = {
       "de ouder/voogd VERPLICHT (ouderlijke toestemming).",
     velden: [...BASIS_VELDEN, ...OUDER_VELDEN_VERPLICHT],
   },
+  t4kids: {
+    instrumentId: "t4kids",
+    titel: "T4Kids (10-13 jaar)",
+    instructie:
+      "Talent-ontdekkingsreis voor kinderen. Naam én e-mail van de ouder/voogd " +
+      "zijn VERPLICHT (ouderlijke toestemming).",
+    velden: [...BASIS_VELDEN, ...OUDER_VELDEN_VERPLICHT],
+  },
   t4students: {
     instrumentId: "t4students",
     titel: "T4Students (hoger onderwijs)",
