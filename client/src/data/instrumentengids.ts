@@ -211,6 +211,24 @@ export const INSTRUMENTENGIDS: GidsInstrument[] = [
     icoon: "Trophy",
   },
   {
+    id: "t4kids",
+    naam: "T4Kids",
+    orientatie: "education",
+    eyebrow: "Kinderen · talentontdekking",
+    omschrijving:
+      "Een speelse talent-ontdekkingsreis voor kinderen (10–13 jaar): in drie korte modules ontdekken ze hun interesses, sterktes en drijfveren — als voorbereiding op de studiekeuze naar het secundair onderwijs.",
+    beantwoordt:
+      "Waar krijg ik nu energie van? Welke dingen doe ik graag en gaan me vlot af? Wat vertelt dat over de richting die bij mij past?",
+    gebruik:
+      "Voor talentontdekking op het einde van de lagere school, voorbereiding van de studiekeuze naar het secundair, en het ouder-kindgesprek over interesses en zelfvertrouwen.",
+    doelgroep: "Kinderen 10–13 jaar, ouders, CLB & lagere-schoolteams.",
+    start: { label: "Ontdek T4Kids", route: "/reis/t4kids", direct: false },
+    rapportTeaser:
+      "Een kindvriendelijk, procesgericht talentbeeld in ‘nu’-taal, met een apart ouder-/coachdeel. Geen etiket, wel richting.",
+    leeftijdsfocus: "10–13 jaar · einde lager onderwijs",
+    icoon: "Compass",
+  },
+  {
     id: "t4teens",
     naam: "T4Teens",
     orientatie: "education",
