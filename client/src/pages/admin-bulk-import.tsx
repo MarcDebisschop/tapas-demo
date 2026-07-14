@@ -11,7 +11,7 @@
 // blijft onveranderd bestaan; dit is een aanvulling.
 // =============================================================================
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
@@ -129,6 +129,12 @@ export default function AdminBulkImport() {
   const { data: organisaties } = useQuery<Organisatie[]>({
     queryKey: ["/api/organisaties"],
   });
+  // Prior-beheerder? Enkel de hoofdbeheerder mag gratis (zonder organisatie)
+  // versturen. Gewone admins moeten een organisatie kiezen (credits).
+  const { data: mijnProfiel } = useQuery<{ isPrior: boolean }>({
+    queryKey: ["/api/admin/me"],
+  });
+  const isPrior = mijnProfiel?.isPrior === true;
 
   const instrumenten = instrumentenData?.instrumenten ?? [];
   const simulatiemodus = instrumentenData?.simulatiemodus ?? false;
@@ -136,6 +142,16 @@ export default function AdminBulkImport() {
     () => instrumenten.find((i) => i.instrumentId === instrumentId),
     [instrumenten, instrumentId],
   );
+
+  // Niet-prior admins mogen niet 'Geen organisatie' (gratis) kiezen. Zodra de
+  // organisatie-lijst geladen is, selecteren we voor hen automatisch de eerste
+  // organisatie. Prior-beheerders houden de vrije keuze (incl. 'geen').
+  useEffect(() => {
+    if (isPrior) return;
+    if (organisatieId === "geen" && (organisaties?.length ?? 0) > 0) {
+      setOrganisatieId(String(organisaties![0].id));
+    }
+  }, [isPrior, organisaties, organisatieId]);
 
   function reset() {
     setPreview(null);
@@ -313,8 +329,10 @@ export default function AdminBulkImport() {
           <CardHeader>
             <CardTitle>2. Organisatie &amp; bestand</CardTitle>
             <CardDescription>
-              De organisatie draagt de credits (1 credit per uitnodiging). Zonder organisatie worden
-              er geen credits verrekend.
+              De organisatie draagt de credits (1 credit per uitnodiging).{" "}
+              {isPrior
+                ? "Als hoofdbeheerder kun je 'Geen organisatie' kiezen om gratis (zonder credits) te versturen, bv. voor een promo."
+                : "Kies een organisatie; de credits worden op die organisatie verrekend."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -326,7 +344,9 @@ export default function AdminBulkImport() {
                     <SelectValue placeholder="Geen organisatie" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="geen">Geen organisatie</SelectItem>
+                    {isPrior && (
+                      <SelectItem value="geen">Geen organisatie (gratis — hoofdbeheerder)</SelectItem>
+                    )}
                     {(organisaties ?? []).map((o) => (
                       <SelectItem key={o.id} value={String(o.id)}>
                         {o.naam}
