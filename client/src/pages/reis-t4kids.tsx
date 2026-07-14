@@ -314,7 +314,7 @@ export default function ReisT4Kids() {
                             className={`rounded-xl border-2 p-4 text-left text-base transition ${
                               gekozenKant
                                 ? "border-teal-500 bg-teal-100 font-semibold text-teal-900"
-                                : "border-slate-200 bg-white hover:border-teal-300"
+                                : "border-slate-200 bg-white text-slate-800 hover:border-teal-300"
                             }`}
                             data-testid={`keuze-${paar.id}-${kant}`}
                           >
@@ -349,7 +349,7 @@ export default function ReisT4Kids() {
                     className={`rounded-xl border-2 p-3 text-center text-sm capitalize transition ${
                       isGekozen
                         ? "border-purple-500 bg-purple-100 font-semibold text-purple-900"
-                        : "border-slate-200 bg-white hover:border-purple-300"
+                        : "border-slate-200 bg-white text-slate-800 hover:border-purple-300"
                     }`}
                     data-testid={`archetype-${a.id}`}
                   >
@@ -373,7 +373,7 @@ export default function ReisT4Kids() {
                           placeholder="Waarom vind je dit leuk?"
                           value={waarom[aid] ?? ""}
                           onChange={(e) => setWaarom((p) => ({ ...p, [aid]: e.target.value }))}
-                          className="mt-2"
+                          className="mt-2 border-slate-300 bg-white text-slate-800 placeholder:text-slate-400"
                           data-testid={`waarom-${aid}`}
                         />
                       </div>
@@ -396,7 +396,7 @@ export default function ReisT4Kids() {
                         className={`rounded-full border-2 px-4 py-2 text-sm capitalize transition ${
                           rang >= 0
                             ? "border-amber-500 bg-amber-100 font-semibold text-amber-900"
-                            : "border-slate-200 bg-white hover:border-amber-300"
+                            : "border-slate-200 bg-white text-slate-700 hover:border-amber-300"
                         }`}
                         data-testid={`top3-${aid}`}
                       >
@@ -433,7 +433,7 @@ export default function ReisT4Kids() {
                             className={`rounded-lg border-2 px-2 py-2 text-sm transition ${
                               gekozenOpt
                                 ? "border-teal-500 bg-teal-100 font-semibold text-teal-900"
-                                : "border-slate-200 bg-white hover:border-teal-300"
+                                : "border-slate-200 bg-white text-slate-800 hover:border-teal-300"
                             }`}
                             data-testid={`schaal-${st.id}-${opt.waarde}`}
                           >
