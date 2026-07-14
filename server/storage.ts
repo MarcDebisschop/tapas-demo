@@ -362,6 +362,7 @@ sqlite.exec(`
     is_prior INTEGER NOT NULL DEFAULT 0,
     toegevoegd_door TEXT,
     actief INTEGER NOT NULL DEFAULT 1,
+    wachtwoord_hash TEXT,
     created_at TEXT NOT NULL
   );
 
@@ -430,6 +431,18 @@ try {
   if (!heeft("deelnemer_email")) add(`ALTER TABLE afnames ADD COLUMN deelnemer_email TEXT;`);
   // Instrument-ID: welk instrument werd afgenomen (bijv. 't4p', 't4teens', 't4sports').
   if (!heeft("instrument_id")) add(`ALTER TABLE afnames ADD COLUMN instrument_id TEXT;`);
+} catch {
+  // negeerbaar in nieuwe databases
+}
+
+// Migratie voor bestaande databases: wachtwoord-hash op beheerders (ADDITIEF).
+// Enkel gebruikt door de definitieve (niet-demo) admin-login. Nullable, dus
+// bestaande rijen en de demo-modus blijven ongewijzigd.
+try {
+  const cols = sqlite.prepare(`PRAGMA table_info(beheerders)`).all() as Array<{ name: string }>;
+  const heeft = (n: string) => cols.some((c) => c.name === n);
+  const add = (sql: string) => { try { sqlite.exec(sql); } catch { /* bestaat al */ } };
+  if (!heeft("wachtwoord_hash")) add(`ALTER TABLE beheerders ADD COLUMN wachtwoord_hash TEXT;`);
 } catch {
   // negeerbaar in nieuwe databases
 }
@@ -3333,6 +3346,11 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(beheerders).where(eq(beheerders.email, email.toLowerCase())).get();
   }
 
+  // ADDITIEF: wachtwoord-hash beheer voor de definitieve admin-login.
+  async zetBeheerderWachtwoordHash(id: number, hash: string): Promise<void> {
+    db.update(beheerders).set({ wachtwoordHash: hash }).where(eq(beheerders.id, id)).run();
+  }
+
   async maakBeheerder(data: InsertBeheerder & { toegevoegdDoor?: string }): Promise<Beheerder> {
     const now = new Date().toISOString();
     return db
@@ -3508,3 +3526,31 @@ export const storage = new DatabaseStorage();
     console.warn("[tapas] Seed prior beheerders overgeslagen:", (e as Error)?.message);
   }
 })();
+
+// ---------------------------------------------------------------------------
+// ADDITIEF — Seed starthash voor prior beheerders (enkel definitieve modus).
+// In de demo (TAPAS_DEMO="1") gebeurt niets: login blijft daar e-mail-only.
+// In de definitieve modus krijgt elke prior beheerder ZONDER wachtwoord-hash
+// het startwachtwoord "Tintinenco01", zodat de bestaande gewoonte blijft
+// werken. Idempotent: accounts die al een hash hebben worden niet aangeraakt.
+// De hash-berekening is async (scrypt); we voeren ze na de start uit.
+// ---------------------------------------------------------------------------
+if (process.env.TAPAS_DEMO !== "1") {
+  (async function seedPriorWachtwoorden() {
+    try {
+      const { hashWachtwoord } = await import("./auth/wachtwoord");
+      const rijen = sqlite
+        .prepare(
+          `SELECT id FROM beheerders WHERE is_prior = 1 AND (wachtwoord_hash IS NULL OR wachtwoord_hash = '')`,
+        )
+        .all() as Array<{ id: number }>;
+      if (rijen.length === 0) return;
+      const hash = await hashWachtwoord("Tintinenco01");
+      const upd = sqlite.prepare(`UPDATE beheerders SET wachtwoord_hash = ? WHERE id = ?`);
+      for (const r of rijen) upd.run(hash, r.id);
+      console.log(`[tapas] Starthash gezet voor ${rijen.length} prior beheerder(s).`);
+    } catch (e) {
+      console.warn("[tapas] Seed prior wachtwoorden overgeslagen:", (e as Error)?.message);
+    }
+  })();
+}
