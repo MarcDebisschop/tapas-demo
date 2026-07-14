@@ -91,9 +91,9 @@ h1,h2,h3,.display{font-family:'Fraunces',serif}
   <div class="wrap">
     <div class="logo"><span class="dot"></span>T4Teens</div>
     <div class="seal">&#127894;</div>
-    <h1>Welkom, Lana &mdash;<br>dit is <em>jouw</em> TA-PAS</h1>
+    <h1 id="heroTitel">Welkom, <span class="nm-slot">Lana</span> &mdash;<br>dit is <em>jouw</em> TA-PAS</h1>
     <p class="sub">Je vulde alles in. Hieronder vind je de dingen die vandaag bij jou uitspringen, als kleine oorkondes. En je kan je volledige verkenning lezen, beluisteren of bewaren.</p>
-    <div class="meta">15 jaar &middot; 3de middelbaar &middot; code T4T-2026-0148</div>
+    <div class="meta" id="heroMeta">15 jaar &middot; 3de middelbaar &middot; code T4T-2026-0148</div>
   </div>
 </header>
 
@@ -106,28 +106,28 @@ h1,h2,h3,.display{font-family:'Fraunces',serif}
 
     <div class="oorkondes">
       <div class="oork c1">
-        <span class="ribbon">&#10024; toegekend aan Lana</span>
+        <span class="ribbon">&#10024; toegekend aan <span class="nm-slot">Lana</span></span>
         <div class="badge-ic">&#128161;</div>
         <h3>De Bedenker</h3>
         <p>Jij krijgt energie van nieuwe dingen verzinnen die er nog niet zijn &mdash; en je kan erin opgaan. Dat is een echte kracht.</p>
         <div class="award">Voor wie graag iets eigens maakt</div>
       </div>
       <div class="oork c2">
-        <span class="ribbon">&#10024; toegekend aan Lana</span>
+        <span class="ribbon">&#10024; toegekend aan <span class="nm-slot">Lana</span></span>
         <div class="badge-ic">&#128218;</div>
         <h3>De Doorgever</h3>
         <p>Je legt graag iets uit en geeft door wat je weet. Iemand iets aanleren geeft jou energie &mdash; daar word je blij van.</p>
         <div class="award">Voor wie anderen verder helpt</div>
       </div>
       <div class="oork c3">
-        <span class="ribbon">&#10024; toegekend aan Lana</span>
+        <span class="ribbon">&#10024; toegekend aan <span class="nm-slot">Lana</span></span>
         <div class="badge-ic">&#129309;</div>
         <h3>De Meedenker</h3>
         <p>Je voelt mensen goed aan en denkt graag &eacute;&eacute;n-op-&eacute;&eacute;n met iemand mee om samen een oplossing te vinden.</p>
         <div class="award">Voor wie er is voor een ander</div>
       </div>
       <div class="oork c4">
-        <span class="ribbon">&#10024; toegekend aan Lana</span>
+        <span class="ribbon">&#10024; toegekend aan <span class="nm-slot">Lana</span></span>
         <div class="badge-ic">&#10024;</div>
         <h3>De Maker met Lat</h3>
         <p>Je wil dingen graag echt goed doen en hebt oog voor kwaliteit. Als je daar tijd en ruimte voor krijgt, blink je uit.</p>
@@ -147,19 +147,19 @@ h1,h2,h3,.display{font-family:'Fraunces',serif}
     <p class="lede">Je volledige verkenning staat klaar. Kies zelf hoe je het bekijkt &mdash; lezen mag, maar luisteren mag net zo goed.</p>
 
     <div class="actions">
-      <a class="act read" href="rapport.html">
+      <a class="act read" id="linkLezen" href="rapport.html">
         <div class="a-ic">&#128214;</div>
         <h3>Lezen</h3>
         <p>Bekijk je volledige Studiekompas, rustig op je eigen tempo.</p>
         <span class="go">Open je rapport &rarr;</span>
       </a>
-      <a class="act listen-a" href="rapport.html">
+      <a class="act listen-a" id="linkLuisteren" href="rapport.html">
         <div class="a-ic">&#128266;</div>
         <h3>Luisteren</h3>
         <p>Bij elke pagina kan je op &lsquo;Liever luisteren?&rsquo; klikken. Een rustige stem leest het voor.</p>
         <span class="go">Beluister je rapport &rarr;</span>
       </a>
-      <a class="act pdf" href="T4Teens-Studiekompas-Lana.pdf" download>
+      <a class="act pdf" id="linkPdf" href="T4Teens-Studiekompas-Lana.pdf" download>
         <div class="a-ic">&#11015;</div>
         <h3>Bewaren als PDF</h3>
         <p>Download je Studiekompas om te bewaren of te delen met iemand die je vertrouwt.</p>
@@ -180,6 +180,48 @@ h1,h2,h3,.display{font-family:'Fraunces',serif}
     <a href="index.html" style="display:inline-block;margin-top:12px;color:var(--coral-deep);text-decoration:none;font-weight:600;font-size:.85rem">&#8635; Demo opnieuw starten</a>
   </div>
 </footer>
+
+<script>
+/* Additief (Werkprotocol Regel 2): personaliseer deze pagina met de echte
+   deelnemer uit sessionStorage (gezet door de afname in index.html). Zonder
+   sessie-gegevens blijft de bestaande voorbeeldweergave ongewijzigd staan. */
+(function(){
+  var data = null;
+  try { data = JSON.parse(sessionStorage.getItem('t4teens_mijn') || 'null'); } catch(e){ data = null; }
+  if(!data) return;
+
+  function esc(s){ return String(s||'').replace(/[&<>"]/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
+
+  // 1. Naam op alle plaatsen (hero-titel + 4 oorkonde-labels)
+  if(data.naam){
+    var slots = document.querySelectorAll('.nm-slot');
+    for(var i=0;i<slots.length;i++){ slots[i].textContent = data.naam; }
+    document.title = 'Mijn TA-PAS \u2014 ' + data.naam;
+  }
+
+  // 2. Meta-regel: toon enkel de leeftijd als die bekend is (geen verzonnen klas/code)
+  var meta = document.getElementById('heroMeta');
+  if(meta){
+    if(data.leeftijd){
+      var lft = String(data.leeftijd);
+      meta.textContent = /^\d+$/.test(lft) ? (lft + ' jaar') : lft;
+    } else {
+      meta.style.display = 'none';
+    }
+  }
+
+  // 3. Echte rapport- en PDF-links van deze deelnemer
+  if(data.rapportUrl){
+    var lz = document.getElementById('linkLezen'); if(lz) lz.setAttribute('href', data.rapportUrl);
+    var ls = document.getElementById('linkLuisteren'); if(ls) ls.setAttribute('href', data.rapportUrl);
+  }
+  var pdf = document.getElementById('linkPdf');
+  if(pdf){
+    if(data.pdfUrl){ pdf.setAttribute('href', data.pdfUrl); }
+    else { pdf.style.display = 'none'; } /* geen PDF beschikbaar: verberg de tegel */
+  }
+})();
+</script>
 
 </body>
 </html>

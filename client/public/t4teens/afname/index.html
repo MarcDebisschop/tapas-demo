@@ -2072,6 +2072,17 @@ function renderDone(){
     .then(function(data){
       rapportHref = data.rapportUrl || '';
       pdfHref = data.pdfUrl || '';
+      // Additief (Werkprotocol Regel 2): bewaar de echte deelnemer-gegevens en
+      // rapportlinks in sessionStorage, zodat 'mijn.html' de juiste invuller toont
+      // in plaats van de statische voorbeeldnaam. Raakt geen bestaand pad aan.
+      try {
+        sessionStorage.setItem('t4teens_mijn', JSON.stringify({
+          naam: deelnemer.naam && deelnemer.naam !== 'jij' ? deelnemer.naam : '',
+          leeftijd: deelnemer.leeftijd || '',
+          rapportUrl: rapportHref,
+          pdfUrl: pdfHref
+        }));
+      } catch(e){ /* sessionStorage niet beschikbaar: mijn.html valt terug op standaard */ }
       paint(rapportHref ? 'ready' : 'error');
     })
     .catch(function(err){ console.error('[T4Teens] rapport genereren mislukt', err); paint('error'); });
