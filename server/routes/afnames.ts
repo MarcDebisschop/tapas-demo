@@ -187,6 +187,10 @@ export function registerAfnameRoutes(app: Express): void {
       taal: normaliseerTaal(a.taal),
       reedsGestart: a.status !== "uitgenodigd",
       voltooid: a.status === "voltooid",
+      // Additief (Regel 2): het instrument meegeven zodat het landingsscherm
+      // instrument-passende koppen/labels kan tonen. Bestaande clients die dit
+      // veld negeren, gedragen zich exact zoals voorheen.
+      instrumentId: a.instrumentId ?? null,
     });
   });
 

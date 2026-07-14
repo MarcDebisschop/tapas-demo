@@ -89,6 +89,53 @@ export const STRINGS = {
     es: "0 = agotado · 10 = lleno de energía. Sirve como punto de referencia para el cuestionario.",
     ru: "0 = истощён · 10 = полон энергии. Это служит точкой отсчёта для опросника.",
   },
+
+  // --- T4Teens-varianten (additief, Regel 2) ---------------------------------
+  // Deze sleutels worden UITSLUITEND getoond wanneer het landingsscherm weet dat
+  // het instrument "t4teens" is. Alle bestaande T4P-sleutels blijven onaangeroerd
+  // en blijven de standaard/fallback voor elk ander instrument.
+  deel_welkom_titel_t4teens: {
+    nl: "Welkom bij je T4Teens Studiekompas",
+    fr: "Bienvenue dans ton T4Teens Studiekompas",
+    en: "Welcome to your T4Teens Study Compass",
+    es: "Bienvenido a tu Brújula de Estudio T4Teens",
+    ru: "Добро пожаловать в твой учебный компас T4Teens",
+  },
+  deel_welkom_intro_t4teens: {
+    nl: "Je bent uitgenodigd om deze vragenlijst in te vullen. Vul je gegevens in, schat je energie van vandaag in en geef toestemming. Daarna start de vragenlijst (ongeveer 15–20 minuten in twee delen).",
+    fr: "Tu es invité·e à remplir ce questionnaire. Renseigne tes informations, évalue ton énergie du jour et donne ton consentement. Le questionnaire démarre ensuite (environ 15 à 20 minutes en deux parties).",
+    en: "You have been invited to complete this questionnaire. Enter your details, rate your energy for today, and give your consent. The questionnaire then begins (about 15–20 minutes in two parts).",
+    es: "Has sido invitado a completar este cuestionario. Introduce tus datos, evalúa tu energía de hoy y da tu consentimiento. A continuación comienza el cuestionario (unos 15–20 minutos en dos partes).",
+    ru: "Тебя пригласили заполнить этот опросник. Укажи свои данные, оцени свою энергию на сегодня и дай согласие. После этого начнётся опросник (примерно 15–20 минут в двух частях).",
+  },
+  veld_bedrijf_t4teens: {
+    nl: "School (vermelding)",
+    fr: "École (mention)",
+    en: "School (label)",
+    es: "Escuela (mención)",
+    ru: "Школа (указание)",
+  },
+  veld_functie_t4teens: {
+    nl: "Studierichting",
+    fr: "Orientation d'études",
+    en: "Study track",
+    es: "Itinerario de estudios",
+    ru: "Направление обучения",
+  },
+  veld_baseline_t4teens: {
+    nl: "Je energie vandaag",
+    fr: "Ton énergie aujourd'hui",
+    en: "Your energy today",
+    es: "Tu energía hoy",
+    ru: "Твоя энергия сегодня",
+  },
+  veld_baseline_hint_t4teens: {
+    nl: "0 = uitgeput · 10 = vol energie. Dit dient als referentiepunt voor de vragenlijst.",
+    fr: "0 = épuisé · 10 = plein d'énergie. Cela sert de point de référence pour le questionnaire.",
+    en: "0 = exhausted · 10 = full of energy. This serves as a reference point for the questionnaire.",
+    es: "0 = agotado · 10 = lleno de energía. Sirve como punto de referencia para el cuestionario.",
+    ru: "0 = истощён · 10 = полон энергии. Это служит точкой отсчёта для опросника.",
+  },
   consent_titel: { nl: "Toestemming (GDPR)", fr: "Consentement (RGPD)", en: "Consent (GDPR)", es: "Consentimiento (RGPD)", ru: "Согласие (GDPR)" },
   consent_uitleg: {
     nl: "Je antwoorden worden centraal en beveiligd opgeslagen en uitsluitend gebruikt om jouw professioneel profiel en rapport te genereren. Je gegevens worden niet voor andere doeleinden verwerkt.",

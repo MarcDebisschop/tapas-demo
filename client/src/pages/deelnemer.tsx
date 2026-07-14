@@ -38,6 +38,10 @@ interface UitnodigingView {
   taal: Taal;
   reedsGestart: boolean;
   voltooid: boolean;
+  // Additief (Regel 2): optioneel instrument, gebruikt om het landingsscherm
+  // instrument-passend te labelen. Ontbreekt het veld (oudere server), dan
+  // valt alles terug op de bestaande T4P-teksten.
+  instrumentId?: string | null;
 }
 
 export default function Deelnemer() {
@@ -73,6 +77,15 @@ export default function Deelnemer() {
 
   // Vertaal alle UI in de (eventueel gewisselde) taal van de deelnemer.
   const t = maakVertaler(taal);
+
+  // Additief (Regel 2): instrument-bewuste labelkeuze voor het landingsscherm.
+  // Voor het T4Teens-instrument tonen we tiener-passende koppen/labels; voor elk
+  // ander instrument (incl. het standaard T4P Business) blijven de bestaande
+  // teksten exact behouden. `tt(basis)` kiest de "<basis>_t4teens"-sleutel enkel
+  // wanneer het instrument t4teens is, anders de originele sleutel.
+  const isT4Teens = data?.instrumentId === "t4teens";
+  const tt = (basisSleutel: string) =>
+    isT4Teens ? t(`${basisSleutel}_t4teens` as any) : t(basisSleutel as any);
 
   async function start() {
     if (!data) return;
@@ -185,8 +198,8 @@ export default function Deelnemer() {
     <div className="min-h-[100dvh] bg-background">
       <AppHeader />
       <main className="mx-auto max-w-2xl px-4 py-10 sm:px-6">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">{t("deel_welkom_titel")}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{t("deel_welkom_intro")}</p>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">{tt("deel_welkom_titel")}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{tt("deel_welkom_intro")}</p>
 
         <Card className="mt-6">
           <CardContent className="space-y-5 p-6">
@@ -222,18 +235,18 @@ export default function Deelnemer() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="company">{t("veld_bedrijf")}</Label>
+                <Label htmlFor="company">{tt("veld_bedrijf")}</Label>
                 <Input id="company" value={company} onChange={(e) => setCompany(e.target.value)} placeholder={t("optioneel")} data-testid="input-company" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="role">{t("veld_functie")}</Label>
+                <Label htmlFor="role">{tt("veld_functie")}</Label>
                 <Input id="role" value={role} onChange={(e) => setRole(e.target.value)} placeholder={t("optioneel")} data-testid="input-role" />
               </div>
             </div>
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label>{t("veld_baseline")}</Label>
+                <Label>{tt("veld_baseline")}</Label>
                 <span className="text-sm font-semibold text-primary" data-testid="text-baseline-value">{baseline} / 10</span>
               </div>
               <Slider
@@ -244,7 +257,7 @@ export default function Deelnemer() {
                 step={1}
                 data-testid="slider-baseline"
               />
-              <p className="text-xs text-muted-foreground">{t("veld_baseline_hint")}</p>
+              <p className="text-xs text-muted-foreground">{tt("veld_baseline_hint")}</p>
             </div>
 
             <div className="rounded-md border border-border bg-muted/40 p-4">
