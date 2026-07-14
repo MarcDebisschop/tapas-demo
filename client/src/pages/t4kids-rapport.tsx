@@ -32,6 +32,15 @@ import {
   YAxis,
 } from "recharts";
 import { apiRequest } from "@/lib/queryClient";
+import {
+  FOCUS_KLEUR,
+  DEEP_TEAL,
+  ORANGE,
+  VIOLET,
+  TAPPIE_SRC,
+  COVER_GRADIENT,
+  AFSLUITER_GRADIENT,
+} from "@/pages/t4kids/palette";
 
 // ── Contract-vorm (enkel wat dit rapport nodig heeft) ─────────────────────────
 interface ReiskaartItem { focus: string; activiteit: string; keuzes: number }
@@ -109,17 +118,9 @@ interface T4KidsContract {
 interface ManifestEntry { naam: string; focus: string; bestand: string; emoji: string }
 interface Manifest { archetypen: Record<string, ManifestEntry> }
 
-// ── Kleuren per focus (sluit aan bij de archetype-illustraties) ───────────────
-const FOCUS_KLEUR: Record<string, string> = {
-  "Abstraherend": "#6366f1",
-  "Doelgericht-Creatief": "#f97316",
-  "Sociaal-gericht": "#f43f5e",
-  "Uitvoerend": "#10b981",
-  "Overdracht-gericht": "#0ea5e9",
-  "Artistiek-Creatief": "#a855f7",
-};
-const TEAL = "#0f766e";
-const AMBER = "#f59e0b";
+// ── Kleuren per focus komen uit het gedeelde tiener-palet ─────────────────────
+const TEAL = DEEP_TEAL; // hoofd-accent voor sterktes/tegels
+const AMBER = ORANGE; // energie-accent voor drijfveren
 
 const voornaam = (n: string) => (n || "").trim().split(/\s+/)[0] || "ontdekker";
 
@@ -134,17 +135,32 @@ function formatteerDatum(iso: string): string {
 // ── Pagina-wrapper: elke sectie print op een eigen A4-pagina ─────────────────
 function Pagina({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <section className={`t4k-pagina mx-auto mb-8 w-full max-w-[820px] rounded-3xl bg-white/90 p-8 shadow-lg ring-1 ring-teal-100 sm:p-10 ${className}`}>
+    <section className={`t4k-pagina mx-auto mb-8 w-full max-w-[820px] rounded-3xl bg-white p-8 shadow-xl ring-1 ring-slate-200 sm:p-10 ${className}`}>
       {children}
     </section>
   );
 }
 
+// Tappie-mascotte in het rapport (print-veilig, geen animatie).
+function Tappie({ size = 96, className = "" }: { size?: number; className?: string }) {
+  return (
+    <img
+      src={TAPPIE_SRC}
+      alt="Tappie"
+      style={{ width: size, height: size }}
+      className={`select-none object-contain ${className}`}
+    />
+  );
+}
+
 function SectieTitel({ nr, children }: { nr?: string; children: React.ReactNode }) {
   return (
-    <h2 className="flex items-center gap-3 text-2xl font-extrabold text-teal-800 sm:text-3xl">
+    <h2 className="flex items-center gap-3 text-2xl font-extrabold sm:text-3xl" style={{ color: DEEP_TEAL }}>
       {nr && (
-        <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-400 text-lg font-black text-white shadow">
+        <span
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg font-black text-white shadow"
+          style={{ backgroundColor: ORANGE }}
+        >
           {nr}
         </span>
       )}
@@ -256,19 +272,114 @@ export default function T4KidsRapport() {
     [exact],
   );
 
+  // ── Deel 5 — cross-eiland-analyse (client-side afgeleid uit contractdata) ────
+  // Versterkingen (signalen die samenvallen) + "verwonderlijke dingen om samen
+  // te bespreken" (zachte spanning). Nooit "tegenstrijdig"; robuust bij lege data.
+  const analyse = useMemo(() => {
+    const res = {
+      versterkingen: [] as string[],
+      verwonderlijk: [] as string[],
+      ouder: "",
+    };
+    if (!exact) return res;
+
+    const tally = [...(exact.focusTally ?? [])]
+      .filter((f) => f.keuzes > 0)
+      .sort((a, b) => b.keuzes - a.keuzes);
+    const archs = exact.archetypen ?? [];
+    const top3 = exact.top3 ?? [];
+    const stellingen = exact.stellingen ?? [];
+    const archFocus = new Set(archs.map((a) => a.focus));
+    const dom = tally[0];
+    const kleineAct = (s: string) => (s ? s.charAt(0).toLowerCase() + s.slice(1) : s);
+
+    // A. Versterkingen / bevestigingen
+    if (dom && archs.length > 0) {
+      const passend = archs.filter((a) => a.focus === dom.focus);
+      if (passend.length > 0) {
+        const namen = passend.slice(0, 2).map((a) => a.naam).join(" en ");
+        res.versterkingen.push(
+          `Op Eiland 1 koos je vaak voor ${kleineAct(dom.activiteit)}, en op Eiland 2 koos je figuren als ${namen} die daar prachtig bij passen. Dat versterkt elkaar — een duidelijk signaal van waar jouw energie zit. 💪`,
+        );
+      }
+    }
+    const sterkeSterktes = stellingen.filter((s) => s.soort === "Sterkte" && s.gekozenWaarde >= 2);
+    if (sterkeSterktes.length > 0 && dom) {
+      const woorden = sterkeSterktes.slice(0, 2).map((s) => `“${s.gekozenWoord}”`).join(" en ");
+      res.versterkingen.push(
+        `Je liet op Eiland 3 ook zien dat ${woorden} vaak bij jou past. Zulke krachten helpen je om met ${kleineAct(dom.activiteit)} nog verder te groeien.`,
+      );
+    }
+
+    // B. Verwonderlijke dingen die fijn zijn om samen te bespreken
+    if (dom && archs.length > 0 && !archFocus.has(dom.focus)) {
+      const yArch = archs[0]!;
+      res.verwonderlijk.push(
+        `Je koos op Eiland 1 vaak voor ${kleineAct(dom.activiteit)}, maar bij de figuren viel je meer op ${yArch.naam}. Dat is niet gek — misschien speelt het ene vooral thuis, en het andere vooral op school? Fijn om er samen eens over te praten: wanneer voelt ${naam} zich het meest zichzelf?`,
+      );
+    } else if (dom && archs.length > 0 && top3.length > 0) {
+      const topArch =
+        archs.find((a) => a.topRang === 1) ??
+        archs.find((a) => top3.some((t) => t.id === a.id));
+      if (topArch && topArch.focus !== dom.focus) {
+        res.verwonderlijk.push(
+          `Je reisde op Eiland 1 het vaakst naar ${kleineAct(dom.activiteit)}, maar bij je top koos je voor ${topArch.naam}. Twee mooie kanten van jou! Wanneer komt elk van beide het sterkst naar boven — thuis, op school of bij vrienden?`,
+        );
+      }
+    }
+    const sterkeDrijf = stellingen.filter((s) => s.soort === "Drijfveer" && s.gekozenWaarde >= 2);
+    if (sterkeDrijf.length > 0) {
+      res.verwonderlijk.push(
+        `Je liet zien dat je dingen graag héél goed wil doen. Dat is een mooie kracht — én soms best spannend. Wat helpt jou als iets even niet lukt?`,
+      );
+    }
+
+    // Warme fallbacks als er geen duidelijke divergentie/versterking is.
+    if (res.versterkingen.length === 0) {
+      res.versterkingen.push(
+        `Over de eilanden heen zie je telkens stukjes van dezelfde ${naam} terugkomen. Zoek samen naar wat op elk eiland het meest opviel.`,
+      );
+    }
+    if (res.verwonderlijk.length === 0) {
+      res.verwonderlijk.push(
+        `De eilanden vertellen een verrassend consistent verhaal — mooi! Bespreek samen wat ${naam} het meest verraste.`,
+      );
+    }
+
+    // Ouder-verdieping — context-druk iets explicieter, als uitnodiging.
+    const ouderStukken: string[] = [];
+    if (dom && archs.length > 0 && !archFocus.has(dom.focus)) {
+      ouderStukken.push(
+        `Er is een lichte spanning tussen de sterke interesse in “${dom.activiteit}” (Eiland 1) en de gekozen figuren (Eiland 2). Dat kan wijzen op een verschil in context — thuis versus school — of tussen wat ${naam} leuk vindt en waar hij/zij zich (nog) toe durft rekenen.`,
+      );
+    }
+    if (sterkeDrijf.length > 0) {
+      ouderStukken.push(
+        `De antwoorden op Eiland 3 tonen een merkbare drijfveer (bijvoorbeeld iets heel goed willen doen of anderen willen plezieren). Zulke drijfveren zijn krachtig én kunnen extrinsieke druk meebrengen — de moeite waard om er zonder oordeel over door te vragen.`,
+      );
+    }
+    if (ouderStukken.length === 0) {
+      ouderStukken.push(
+        `De signalen over de drie eilanden liggen mooi in lijn met elkaar. Dat maakt het gesprek met ${naam} eenvoudiger: bevestig wat je ziet en vraag door op wat hem/haar zelf het meest verraste.`,
+      );
+    }
+    res.ouder = ouderStukken.join(" ");
+    return res;
+  }, [exact, naam]);
+
   if (isLoading) {
     return (
-      <div className="grid min-h-[100dvh] place-items-center bg-gradient-to-b from-sky-50 to-amber-50">
-        <p className="animate-pulse text-lg text-teal-700">Je talenten-boekje wordt gemaakt…</p>
+      <div className="grid min-h-[100dvh] place-items-center bg-gradient-to-b from-cyan-600 via-violet-700 to-slate-900">
+        <p className="animate-pulse text-lg font-semibold text-cyan-200">Je talenten-boekje wordt gemaakt…</p>
       </div>
     );
   }
   if (isError || !data || !kind || !ouder || !exact || !meta) {
     return (
-      <div className="grid min-h-[100dvh] place-items-center bg-gradient-to-b from-sky-50 to-amber-50 px-6 text-center">
-        <div>
-          <div className="text-5xl">🧭</div>
-          <p className="mt-3 text-lg text-slate-700">
+      <div className="grid min-h-[100dvh] place-items-center bg-gradient-to-b from-cyan-600 via-violet-700 to-slate-900 px-6 text-center">
+        <div className="flex flex-col items-center">
+          <Tappie size={110} />
+          <p className="mt-3 text-lg text-slate-100">
             We konden dit talenten-boekje nog niet ophalen. Rond eerst de reis helemaal af.
           </p>
         </div>
@@ -279,18 +390,18 @@ export default function T4KidsRapport() {
   const datum = formatteerDatum(data.generatedAt);
 
   return (
-    <div className="t4k-root min-h-[100dvh] bg-gradient-to-b from-sky-100 via-teal-50 to-amber-50 pb-16">
+    <div className="t4k-root min-h-[100dvh] bg-gradient-to-b from-cyan-700 via-violet-800 to-slate-900 pb-16">
       <PrintStyles />
 
       {/* Zwevende actiebalk (niet mee-geprint) */}
-      <div className="t4k-noprint sticky top-0 z-20 flex items-center justify-between gap-3 bg-teal-700/95 px-4 py-3 text-white shadow-md backdrop-blur">
+      <div className="t4k-noprint sticky top-0 z-20 flex items-center justify-between gap-3 bg-slate-900/95 px-4 py-3 text-white shadow-md ring-1 ring-cyan-400/30 backdrop-blur">
         <span className="font-semibold" style={{ fontFamily: "'Baloo 2', system-ui, sans-serif" }}>
           🧭 Talenten-boekje van {naam}
         </span>
         <button
           type="button"
           onClick={() => window.print()}
-          className="rounded-full bg-amber-400 px-5 py-2 text-sm font-bold text-teal-900 shadow transition hover:bg-amber-300"
+          className="rounded-full bg-orange-500 px-5 py-2 text-sm font-bold text-white shadow transition hover:bg-orange-400"
           data-testid="button-download-pdf"
         >
           ⬇︎ Download als PDF
@@ -299,8 +410,8 @@ export default function T4KidsRapport() {
 
       <main className="px-3 pt-8 sm:px-6">
         {/* ── COVER ─────────────────────────────────────────────────────── */}
-        <section className="t4k-cover t4k-pagina mx-auto mb-8 flex w-full max-w-[820px] flex-col items-center justify-center overflow-hidden rounded-3xl bg-gradient-to-br from-teal-500 via-teal-400 to-amber-300 p-10 text-center text-white shadow-xl sm:p-16">
-          <div className="text-6xl sm:text-7xl">🌟</div>
+        <section className={`t4k-cover t4k-pagina mx-auto mb-8 flex w-full max-w-[820px] flex-col items-center justify-center overflow-hidden rounded-3xl bg-gradient-to-br ${COVER_GRADIENT} p-10 text-center text-white shadow-2xl sm:p-16`}>
+          <Tappie size={130} className="drop-shadow-[0_8px_14px_rgba(0,0,0,0.4)]" />
           <p className="mt-4 text-sm font-semibold uppercase tracking-widest text-white/90">
             TaPasCity · Tapas for Kids
           </p>
@@ -310,7 +421,7 @@ export default function T4KidsRapport() {
           >
             Een vergrootglas voor<br />mijn talenten & passies
           </h1>
-          <div className="mt-8 inline-flex flex-col items-center rounded-3xl bg-white/25 px-8 py-5 ring-2 ring-white/50">
+          <div className="mt-8 inline-flex flex-col items-center rounded-3xl bg-white/15 px-8 py-5 ring-2 ring-white/40">
             <span className="text-sm text-white/90">Dit boekje is van</span>
             <span
               className="mt-1 text-5xl font-black sm:text-6xl"
@@ -319,13 +430,22 @@ export default function T4KidsRapport() {
               {naam}
             </span>
           </div>
-          <div className="mt-8 text-7xl sm:text-8xl">🥔</div>
           <p className="mt-6 text-white/90">{datum && `Mijn ontdekkingsreis · ${datum}`}</p>
         </section>
 
         {/* ── WELKOM ────────────────────────────────────────────────────── */}
         <Pagina>
           <SectieTitel>Hoi {naam}, welkom in jouw boekje!</SectieTitel>
+
+          <div className="mt-4 flex items-center gap-4 rounded-2xl bg-slate-900 p-4 text-slate-100 ring-1 ring-cyan-400/40">
+            <Tappie size={72} className="shrink-0" />
+            <p className="text-[15px] leading-relaxed">
+              De vrolijke figuur in dit boekje is <strong className="text-cyan-300">Tappie</strong>. Tappie
+              kan elke gedaante aannemen — detective, uitvinder, kunstenaar en nog veel meer. Net zoals jij:
+              jij draagt heel veel talenten en passies in je. In dit boekje ontdek je welke.
+            </p>
+          </div>
+
           <div className="mt-4 space-y-3 text-[17px] leading-relaxed text-slate-700">
             <p>
               Jij bent op <strong>ontdekkingsreis</strong> geweest langs drie eilanden. Onderweg maakte je
@@ -361,7 +481,7 @@ export default function T4KidsRapport() {
           {kind.energieVan.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-2">
               {kind.energieVan.map((z, i) => (
-                <span key={i} className="rounded-full bg-amber-100 px-4 py-2 text-sm font-medium text-amber-900 ring-1 ring-amber-200">
+                <span key={i} className="rounded-full bg-orange-100 px-4 py-2 text-sm font-semibold text-orange-900 ring-1 ring-orange-300">
                   ⭐ {z}
                 </span>
               ))}
@@ -424,10 +544,12 @@ export default function T4KidsRapport() {
                         {src ? (
                           <img src={src} alt={a.naam} className="aspect-square w-full object-cover" loading="lazy" />
                         ) : (
-                          <div className="grid aspect-square w-full place-items-center bg-teal-50 text-4xl">🥔</div>
+                          <div className="grid aspect-square w-full place-items-center bg-cyan-50 p-4">
+                            <img src={TAPPIE_SRC} alt="" className="h-full w-full object-contain" />
+                          </div>
                         )}
                         {a.topRang && (
-                          <span className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-amber-400 text-sm font-black text-white shadow">
+                          <span className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-black text-white shadow" style={{ backgroundColor: ORANGE }}>
                             #{a.topRang}
                           </span>
                         )}
@@ -449,7 +571,7 @@ export default function T4KidsRapport() {
 
           {/* Top-3 */}
           {exact.top3.length > 0 && (
-            <div className="mt-8 rounded-2xl bg-gradient-to-r from-amber-50 to-teal-50 p-5 ring-1 ring-amber-100">
+            <div className="mt-8 rounded-2xl bg-gradient-to-r from-orange-50 to-cyan-50 p-5 ring-1 ring-orange-200">
               <h3 className="text-lg font-bold text-slate-800">🏆 Jouw top {exact.top3.length}</h3>
               <ol className="mt-2 flex flex-wrap gap-2">
                 {exact.top3.map((t) => (
@@ -490,8 +612,8 @@ export default function T4KidsRapport() {
           )}
 
           {kind.vanzelfGing.length > 0 && (
-            <div className="mt-6 rounded-2xl bg-amber-50 p-5 ring-1 ring-amber-100">
-              <h3 className="text-lg font-bold text-amber-900">Wat bijna vanzelf ging ✨</h3>
+            <div className="mt-6 rounded-2xl bg-orange-50 p-5 ring-1 ring-orange-200">
+              <h3 className="text-lg font-bold text-orange-900">Wat bijna vanzelf ging ✨</h3>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-[15px] text-slate-700">
                 {kind.vanzelfGing.map((z, i) => <li key={i}>{z}</li>)}
               </ul>
@@ -534,7 +656,7 @@ export default function T4KidsRapport() {
                     <span className="text-[15px] text-slate-700">{s.tekst}</span>
                     <span
                       className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${
-                        s.soort === "Sterkte" ? "bg-teal-100 text-teal-800" : "bg-amber-100 text-amber-800"
+                        s.soort === "Sterkte" ? "bg-cyan-100 text-cyan-800" : "bg-orange-100 text-orange-800"
                       }`}
                     >
                       {s.gekozenWoord}
@@ -544,6 +666,53 @@ export default function T4KidsRapport() {
               </ul>
             </div>
           )}
+        </Pagina>
+
+        {/* ── WAT WE TERUGZIEN OVER DE EILANDEN HEEN (cross-eiland) ─────── */}
+        <Pagina>
+          <SectieTitel>Wat we terugzien over de eilanden heen</SectieTitel>
+          <p className="mt-4 text-[17px] leading-relaxed text-slate-700">
+            Elk eiland vertelde een stukje van jouw verhaal. Als we ze <strong>samen</strong> bekijken, zien
+            we waar de eilanden elkaar <strong>versterken</strong> — en waar er iets <strong>verwonderlijks</strong>{" "}
+            zit dat fijn is om samen te bespreken.
+          </p>
+
+          {/* A. Versterkingen / bevestigingen */}
+          <div className="mt-6 rounded-2xl bg-cyan-50 p-5 ring-1 ring-cyan-200">
+            <h3 className="flex items-center gap-2 text-lg font-bold" style={{ color: DEEP_TEAL }}>
+              <span className="text-xl">💪</span> Wat elkaar versterkt
+            </h3>
+            <ul className="mt-3 space-y-3">
+              {analyse.versterkingen.map((z, i) => (
+                <li key={i} className="rounded-xl bg-white p-3 text-[15px] leading-relaxed text-slate-700 shadow-sm ring-1 ring-cyan-100">
+                  {z}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* B. Verwonderlijke dingen om samen te bespreken */}
+          <div className="mt-4 rounded-2xl bg-violet-50 p-5 ring-1 ring-violet-200">
+            <h3 className="flex items-center gap-2 text-lg font-bold" style={{ color: VIOLET }}>
+              <span className="text-xl">✨</span> Verwonderlijke dingen om samen te bespreken
+            </h3>
+            <ul className="mt-3 space-y-3">
+              {analyse.verwonderlijk.map((z, i) => (
+                <li key={i} className="rounded-xl bg-white p-3 text-[15px] leading-relaxed text-slate-700 shadow-sm ring-1 ring-violet-100">
+                  {z}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3 text-sm italic text-slate-500">
+              Dit zijn geen tekortkomingen — het zijn nieuwsgierige vragen. Er is geen goed of fout.
+            </p>
+          </div>
+
+          {/* Ouder-verdieping */}
+          <div className="mt-4 rounded-2xl bg-slate-900 p-5 text-slate-100 ring-1 ring-cyan-400/40">
+            <h3 className="text-base font-bold text-cyan-300">Voor de ouder — iets dieper</h3>
+            <p className="mt-2 text-[15px] leading-relaxed">{analyse.ouder}</p>
+          </div>
         </Pagina>
 
         {/* ── DEEL 4 — PADEN OM TE VERKENNEN ────────────────────────────── */}
@@ -564,7 +733,7 @@ export default function T4KidsRapport() {
         </Pagina>
 
         {/* ── VOOR DE OUDER ─────────────────────────────────────────────── */}
-        <Pagina className="bg-teal-50/80">
+        <Pagina className="bg-slate-50">
           <SectieTitel>Voor de ouder — een uitnodiging</SectieTitel>
           <p className="mt-4 text-[16px] leading-relaxed text-slate-700">{ouder.methodiek}</p>
 
@@ -585,12 +754,49 @@ export default function T4KidsRapport() {
             </ul>
           </div>
 
-          <div className="mt-4 rounded-2xl bg-amber-50 p-5 ring-1 ring-amber-100">
-            <h3 className="text-lg font-bold text-amber-900">Belangrijke nuance</h3>
+          <div className="mt-4 rounded-2xl bg-orange-50 p-5 ring-1 ring-orange-200">
+            <h3 className="text-lg font-bold text-orange-900">Belangrijke nuance</h3>
             <p className="mt-2 text-[15px] text-slate-700">{ouder.nuance}</p>
           </div>
 
-          <p className="mt-5 text-center text-[16px] font-medium text-teal-800">
+          {/* Concreet aan de slag */}
+          <div className="mt-4 rounded-2xl bg-white p-5 ring-1 ring-slate-200">
+            <h3 className="text-lg font-bold" style={{ color: DEEP_TEAL }}>Zo ga je samen aan de slag</h3>
+            <ol className="mt-3 space-y-2 text-[15px] text-slate-700">
+              <li className="flex gap-3">
+                <span className="font-black" style={{ color: ORANGE }}>1.</span>
+                <span>Lees het boekje <strong>samen</strong> door en laat {naam} zelf vertellen bij de figuren die hij/zij koos — luister meer dan je stuurt.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="font-black" style={{ color: ORANGE }}>2.</span>
+                <span>Vraag door op de <strong>“verwonderlijke dingen”</strong>: “Wanneer voel jij je zo? Op school, thuis, bij vrienden?” Zonder oordeel.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="font-black" style={{ color: ORANGE }}>3.</span>
+                <span>Benoem talenten <strong>procesgericht</strong>: prijs de inzet en de aanpak (“je bleef doorzoeken”), niet enkel het resultaat.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="font-black" style={{ color: ORANGE }}>4.</span>
+                <span>Geef ruimte om te <strong>oefenen en te falen</strong> — talent groeit door proberen. Vier kleine stappen.</span>
+              </li>
+              <li className="flex gap-3">
+                <span className="font-black" style={{ color: ORANGE }}>5.</span>
+                <span>Kom er <strong>later nog eens op terug</strong>. Kinderen veranderen; dit is een momentopname, geen etiket.</span>
+              </li>
+            </ol>
+          </div>
+
+          {/* Uitnodiging TaPas-coach */}
+          <div className="mt-4 rounded-2xl bg-slate-900 p-5 text-slate-100 ring-1 ring-cyan-400/40">
+            <h3 className="text-lg font-bold text-cyan-300">Samen verder met een TaPas-coach</h3>
+            <p className="mt-2 text-[15px] leading-relaxed">
+              Wil je dieper ingaan op wat je hier ontdekte? Een gesprek met een TaPas-coach kan verdiepend en
+              ondersteunend werken — voor {naam} én voor jou als ouder. De coach helpt de signalen uit dit
+              boekje vertalen naar concrete, warme stappen. Neem gerust contact op via je TaPas-begeleider.
+            </p>
+          </div>
+
+          <p className="mt-5 text-center text-[16px] font-medium" style={{ color: DEEP_TEAL }}>
             Neem {naam} ernstig, wees nieuwsgierig, en ontdek samen. Dat is het mooiste cadeau. 💛
           </p>
         </Pagina>
@@ -665,8 +871,8 @@ export default function T4KidsRapport() {
         </Pagina>
 
         {/* ── AFSLUITER ─────────────────────────────────────────────────── */}
-        <section className="t4k-pagina mx-auto mb-8 flex w-full max-w-[820px] flex-col items-center justify-center rounded-3xl bg-gradient-to-br from-amber-300 via-teal-400 to-teal-600 p-12 text-center text-white shadow-xl sm:p-16">
-          <div className="text-6xl">🎈</div>
+        <section className={`t4k-pagina mx-auto mb-8 flex w-full max-w-[820px] flex-col items-center justify-center rounded-3xl bg-gradient-to-br ${AFSLUITER_GRADIENT} p-12 text-center text-white shadow-2xl sm:p-16`}>
+          <Tappie size={140} className="drop-shadow-[0_8px_14px_rgba(0,0,0,0.4)]" />
           <h2
             className="mt-4 text-3xl font-black sm:text-4xl"
             style={{ fontFamily: "'Baloo 2', system-ui, sans-serif" }}
@@ -677,8 +883,7 @@ export default function T4KidsRapport() {
             Je hebt jouw talenten onder een vergrootglas gelegd. Blijf nieuwsgierig, blijf proberen — er is nog
             zóveel moois in jou te ontdekken.
           </p>
-          <p className="mt-6 font-semibold">Het TaPas-team wenst je een talent-rijke reis. 🌟</p>
-          <div className="mt-6 text-5xl">🥔🌟🚀</div>
+          <p className="mt-6 font-semibold">Tappie en het TaPas-team wensen je een talent-rijke reis. 🌟</p>
         </section>
       </main>
     </div>
