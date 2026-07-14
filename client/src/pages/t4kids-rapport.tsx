@@ -41,6 +41,7 @@ import {
   COVER_GRADIENT,
   AFSLUITER_GRADIENT,
 } from "@/pages/t4kids/palette";
+import { analyseerWoorden } from "@/pages/t4kids/woordanalyse";
 
 // ── Contract-vorm (enkel wat dit rapport nodig heeft) ─────────────────────────
 interface ReiskaartItem { focus: string; activiteit: string; keuzes: number }
@@ -367,6 +368,27 @@ export default function T4KidsRapport() {
     return res;
   }, [exact, naam]);
 
+  // ── "De onzichtbare laag" — de eigen woorden van het kind serieus nemen ──────
+  // Puur afgeleid uit de reeds aanwezige `waarom`-teksten. Robuust bij lege data.
+  const woordAnalyse = useMemo(
+    () =>
+      analyseerWoorden(
+        (exact?.archetypen ?? []).map((a) => ({
+          naam: a.naam,
+          focus: a.focus,
+          waarom: a.waarom,
+        })),
+      ),
+    [exact],
+  );
+
+  // Verwonderlijke punten uit de woorden (divergentie woord ↔ figuur) — ADDITIEF
+  // bovenop de bestaande cross-eiland verwonderpunten.
+  const verwonderlijkAlles = useMemo(
+    () => [...analyse.verwonderlijk, ...woordAnalyse.divergenties.map((d) => d.zin)],
+    [analyse, woordAnalyse],
+  );
+
   if (isLoading) {
     return (
       <div className="grid min-h-[100dvh] place-items-center bg-gradient-to-b from-cyan-600 via-violet-700 to-slate-900">
@@ -668,6 +690,69 @@ export default function T4KidsRapport() {
           )}
         </Pagina>
 
+        {/* ── WAT JOUW EIGEN WOORDEN ONS VERTELDEN (de onzichtbare laag) ── */}
+        <Pagina>
+          <SectieTitel>Wat jouw eigen woorden ons vertelden</SectieTitel>
+
+          <div className="mt-4 flex items-start gap-4 rounded-2xl bg-slate-900 p-4 text-slate-100 ring-1 ring-cyan-400/40">
+            <Tappie size={64} className="shrink-0" />
+            <p className="text-[15px] leading-relaxed">
+              Bij de figuren schreef je in je eigen woorden waarom ze bij je passen. Dank je wel — zo
+              mochten we even in <strong className="text-cyan-300">jóuw wereld</strong> meekijken. Dit is
+              wat we daarin terugzagen.
+            </p>
+          </div>
+
+          {woordAnalyse.heeftWoorden ? (
+            <>
+              {/* De voorzichtige rode draad uit de woorden */}
+              <div className="mt-4 rounded-2xl bg-cyan-50 p-5 ring-1 ring-cyan-200">
+                <h3 className="flex items-center gap-2 text-lg font-bold" style={{ color: DEEP_TEAL }}>
+                  <span className="text-xl">🧵</span> Een zachte rode draad
+                </h3>
+                <p className="mt-2 text-[15px] leading-relaxed text-slate-700">
+                  In jouw woorden kwam vooral dit naar boven:{" "}
+                  <strong>{woordAnalyse.rodeDraad[0]?.motief.label}</strong>
+                  {woordAnalyse.rodeDraad[1] && (
+                    <>
+                      , en ook <strong>{woordAnalyse.rodeDraad[1].motief.label}</strong>
+                    </>
+                  )}
+                  . Misschien is dat iets waar jij blij van wordt — het lijkt een beetje op wie jij bent.
+                </p>
+                {woordAnalyse.citaat && (
+                  <p className="mt-3 rounded-xl bg-white p-3 text-[15px] italic text-slate-600 shadow-sm ring-1 ring-cyan-100">
+                    Je schreef bijvoorbeeld: “{woordAnalyse.citaat}”
+                  </p>
+                )}
+              </div>
+
+              {/* Het verbindende: eenzelfde motief bij meerdere figuren */}
+              {woordAnalyse.verbindend && (
+                <div className="mt-4 rounded-2xl bg-violet-50 p-5 ring-1 ring-violet-200">
+                  <h3 className="flex items-center gap-2 text-lg font-bold" style={{ color: VIOLET }}>
+                    <span className="text-xl">🔗</span> Wat alles verbindt
+                  </h3>
+                  <p className="mt-2 text-[15px] leading-relaxed text-slate-700">
+                    Bij verschillende figuren ({woordAnalyse.verbindend.figuren.join(", ")}) kwam telkens
+                    ditzelfde terug: <strong>{woordAnalyse.verbindend.motief.label}</strong>. Dat lijkt
+                    echt iets te zijn wat jou drijft. Mooi om te zien!
+                  </p>
+                </div>
+              )}
+
+              <p className="mt-4 text-center text-[16px] font-medium" style={{ color: DEEP_TEAL }}>
+                Jouw woorden laten zien wie je bent — dank je dat je ze met ons deelde. 💛
+              </p>
+            </>
+          ) : (
+            <div className="mt-4 rounded-2xl bg-cyan-50 p-5 text-[15px] leading-relaxed text-slate-700 ring-1 ring-cyan-200">
+              Deze keer koos je vooral met je gevoel — ook dat vertelt iets moois. Soms weet je gewoon dat
+              iets bij je past, zonder er woorden voor te hebben. Ook dat mag. 💛
+            </div>
+          )}
+        </Pagina>
+
         {/* ── WAT WE TERUGZIEN OVER DE EILANDEN HEEN (cross-eiland) ─────── */}
         <Pagina>
           <SectieTitel>Wat we terugzien over de eilanden heen</SectieTitel>
@@ -697,7 +782,7 @@ export default function T4KidsRapport() {
               <span className="text-xl">✨</span> Verwonderlijke dingen om samen te bespreken
             </h3>
             <ul className="mt-3 space-y-3">
-              {analyse.verwonderlijk.map((z, i) => (
+              {verwonderlijkAlles.map((z, i) => (
                 <li key={i} className="rounded-xl bg-white p-3 text-[15px] leading-relaxed text-slate-700 shadow-sm ring-1 ring-violet-100">
                   {z}
                 </li>
@@ -757,6 +842,27 @@ export default function T4KidsRapport() {
           <div className="mt-4 rounded-2xl bg-orange-50 p-5 ring-1 ring-orange-200">
             <h3 className="text-lg font-bold text-orange-900">Belangrijke nuance</h3>
             <p className="mt-2 text-[15px] text-slate-700">{ouder.nuance}</p>
+          </div>
+
+          {/* De onzichtbare laag — de eigen woorden van het kind */}
+          <div className="mt-4 rounded-2xl bg-white p-5 ring-1 ring-violet-200">
+            <h3 className="text-lg font-bold" style={{ color: VIOLET }}>De onzichtbare laag: de eigen woorden</h3>
+            <p className="mt-2 text-[15px] leading-relaxed text-slate-700">
+              We mochten even te gast zijn in de wereld van {naam}. Bij de figuren schreef {naam} in eigen
+              woorden waaróm ze passen. Die woorden tonen soms een motief dat ónder het gekozen figuur ligt —
+              bijvoorbeeld een helpend of sociaal motief onder een creatief figuur.
+              {woordAnalyse.divergenties.length > 0 && (
+                <>
+                  {" "}Zo koos {naam} bijvoorbeeld <strong>{woordAnalyse.divergenties[0]!.figuurNaam}</strong>,
+                  maar de woorden erbij wezen eerder richting “{woordAnalyse.divergenties[0]!.woordMotief.label}”.
+                </>
+              )}{" "}
+              Vaak zit dát dichter bij de echte belevingswereld dan onze archetype-labels.
+            </p>
+            <p className="mt-2 text-[15px] leading-relaxed text-slate-700">
+              Een fijne uitnodiging: vraag net op die eigen woorden door — “Je zei bij die figuur ‘…’,
+              vertel daar eens over?” — zonder te sturen. Het kind is de expert over zichzelf; wij zijn te gast.
+            </p>
           </div>
 
           {/* Concreet aan de slag */}
