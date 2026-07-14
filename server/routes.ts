@@ -37,6 +37,7 @@ import { registerWebinarRoutes } from "./routes/webinars";
 import { registerInstrumentenCatalogusRoutes } from "./routes/instrumenten-catalogus";
 import { registerVragenlijstT4TeensRoutes } from "./routes/vragenlijst-t4teens";
 import { registerVragenlijstT4KidsRoutes } from "./routes/vragenlijst-t4kids";
+import { registerT4KidsRapportRoutes } from "./routes/t4kids-rapport";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -75,6 +76,9 @@ export async function registerRoutes(
 
   // --- T4Kids vragenlijst (override-aware endpoint voor afname) ---
   registerVragenlijstT4KidsRoutes(app);
+
+  // --- T4Kids rapport (additieve, T4Kids-eigen leesroute voor het kindrapport) ---
+  registerT4KidsRapportRoutes(app);
 
   // -------------------------------------------------------------------------
   // T4Recruitment — ingeplugde routes (eigen module-namespace).

@@ -30,6 +30,8 @@ import {
   ARCHETYPE_BY_ID,
   STELLING_BY_ID,
   T4KIDS_STELLINGEN,
+  T4KIDS_INTERESSE_PAREN,
+  T4KIDS_WOORDSCHAAL,
   type Focus,
 } from "./itembank";
 
@@ -62,6 +64,47 @@ export interface T4KidsRapportOuder {
   talentVolgensBloom: string;
   nuance: string;
 }
+
+// ── Exacte antwoorden (additief) — de letterlijke keuzes van het kind ────────
+// Dit veld is puur additief: het bevat GEEN nieuwe interpretatie, enkel de
+// letterlijke input van het kind (keuze-teksten, waarom-woorden, gekozen woord
+// uit de woordschaal). Het rapport gebruikt dit voor de "exacte antwoorden"-
+// sectie én als databron voor de staafgrafieken.
+export interface T4KidsExacteInteresse {
+  id: string; // T4K-I-NN
+  gekozenKant: "links" | "rechts";
+  gekozenTekst: string; // letterlijke tekst van de gekozen kant
+  andereTekst: string; // de niet-gekozen kant (context)
+  focus: string; // interne focus achter de gekozen kant
+}
+export interface T4KidsExacteArchetype {
+  id: string; // T4K-A-NN
+  naam: string;
+  focus: string;
+  waarom: string; // letterlijke woorden van het kind
+  topRang: number | null; // 1..3 als het in de top-3 zit, anders null
+}
+export interface T4KidsExacteStelling {
+  id: string; // T4K-Z-NN
+  tekst: string; // letterlijke stelling
+  soort: StellingSoort;
+  gekozenWaarde: number; // 0..3
+  gekozenWoord: string; // "bijna nooit" | "soms" | "vaak" | "bijna altijd"
+}
+export interface T4KidsFocusTally {
+  focus: string;
+  activiteit: string;
+  keuzes: number; // aantal interessekeuzes voor deze focus (alleen Eiland 1)
+}
+export interface T4KidsExacteAntwoorden {
+  interesses: T4KidsExacteInteresse[];
+  focusTally: T4KidsFocusTally[]; // interesse-only, gesorteerd hoog→laag
+  archetypen: T4KidsExacteArchetype[];
+  top3: { rang: number; id: string; naam: string }[];
+  stellingen: T4KidsExacteStelling[];
+}
+
+type StellingSoort = (typeof T4KIDS_STELLINGEN)[number]["soort"];
 
 export interface T4KidsMainMeta {
   completedInteresse: number;
@@ -97,6 +140,7 @@ export interface T4KidsContract {
     rapport: {
       kind: T4KidsRapportKind;
       ouder: T4KidsRapportOuder;
+      exacteAntwoorden: T4KidsExacteAntwoorden;
     };
   };
 }
@@ -361,6 +405,70 @@ export function buildT4KidsContract(opts: BuildT4KidsOpts): T4KidsContract {
       "Interesses en talenten zijn op deze leeftijd nog volop in ontwikkeling (Marcia/Columbus). Wat vandaag boeit, kan volgend jaar verschuiven — en dat hoort er helemaal bij.",
   };
 
+  // ── Exacte antwoorden (additief) ─────────────────────────────────────────
+  // Interessekeuzes in de gedefinieerde volgorde, met de letterlijke teksten.
+  const woordVan = (w: number) =>
+    T4KIDS_WOORDSCHAAL.find((x) => x.waarde === w)?.label ?? String(w);
+
+  const interesseFocusPicks: Record<Focus, number> = {
+    "Abstraherend": 0,
+    "Doelgericht-Creatief": 0,
+    "Sociaal-gericht": 0,
+    "Uitvoerend": 0,
+    "Overdracht-gericht": 0,
+    "Artistiek-Creatief": 0,
+  };
+  const exacteInteresses: T4KidsExacteInteresse[] = [];
+  for (const paar of T4KIDS_INTERESSE_PAREN) {
+    const kant = interesseKant(responses[paar.id]);
+    if (!kant) continue;
+    const gekozen = kant === "links" ? paar.links : paar.rechts;
+    const ander = kant === "links" ? paar.rechts : paar.links;
+    interesseFocusPicks[gekozen.focus] += 1;
+    exacteInteresses.push({
+      id: paar.id,
+      gekozenKant: kant,
+      gekozenTekst: gekozen.tekst,
+      andereTekst: ander.tekst,
+      focus: gekozen.focus,
+    });
+  }
+  const focusTally: T4KidsFocusTally[] = T4KIDS_FOCI
+    .map((f) => ({ focus: f, activiteit: FOCUS_ACTIVITEIT[f], keuzes: interesseFocusPicks[f] }))
+    .sort((a, b) => b.keuzes - a.keuzes);
+
+  const topRangById = new Map<string, number>();
+  top3Ids.forEach((id, i) => topRangById.set(id, i + 1));
+  const exacteArchetypen: T4KidsExacteArchetype[] = gekozenArchetypen.map((a) => ({
+    id: a.id,
+    naam: a.naam,
+    focus: a.focus,
+    waarom: a.waarom,
+    topRang: topRangById.get(a.id) ?? null,
+  }));
+  const exacteTop3 = topArchetypen.map((a, i) => ({ rang: i + 1, id: a.id, naam: a.naam }));
+
+  const exacteStellingen: T4KidsExacteStelling[] = [];
+  for (const s of T4KIDS_STELLINGEN) {
+    const score = schaalScore(responses[s.id]);
+    if (score === null) continue;
+    exacteStellingen.push({
+      id: s.id,
+      tekst: s.tekst,
+      soort: s.soort,
+      gekozenWaarde: score,
+      gekozenWoord: woordVan(score),
+    });
+  }
+
+  const exacteAntwoorden: T4KidsExacteAntwoorden = {
+    interesses: exacteInteresses,
+    focusTally,
+    archetypen: exacteArchetypen,
+    top3: exacteTop3,
+    stellingen: exacteStellingen,
+  };
+
   return {
     contractVersion: "1.0.0",
     instrumentId: "t4kids",
@@ -390,7 +498,7 @@ export function buildT4KidsContract(opts: BuildT4KidsOpts): T4KidsContract {
         constructRows,
         familyRows,
       },
-      rapport: { kind, ouder },
+      rapport: { kind, ouder, exacteAntwoorden },
     },
   };
 }
