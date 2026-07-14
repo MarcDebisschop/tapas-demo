@@ -1002,23 +1002,53 @@ function PrintStyles() {
     <style>{`
       @media print {
         @page { size: A4; margin: 12mm; }
-        html, body { background: #ffffff !important; }
+        html, body {
+          background: #ffffff !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
         .t4k-noprint { display: none !important; }
         .t4k-root { background: #ffffff !important; padding: 0 !important; }
         .t4k-root main { padding: 0 !important; }
+        /* Elke logische pagina begint op een verse A4-pagina en mag intern
+           netjes over twee A4's lopen (GEEN break-inside: avoid → geen bleed). */
         .t4k-pagina {
           box-shadow: none !important;
           ring: 0 !important;
-          break-inside: avoid;
-          page-break-inside: avoid;
-          page-break-after: always;
+          break-before: page;
+          page-break-before: always;
+          break-after: auto;
+          page-break-after: auto;
+          break-inside: auto;
+          page-break-inside: auto;
+          overflow: visible !important;
+          height: auto !important;
           margin: 0 auto 0 auto !important;
           max-width: 100% !important;
           width: 100% !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
         }
-        .t4k-pagina:last-child { page-break-after: auto; }
-        .t4k-chart { break-inside: avoid; page-break-inside: avoid; }
-        figure { break-inside: avoid; page-break-inside: avoid; }
+        /* De cover mag geen lege pagina ervoor forceren. */
+        .t4k-pagina:first-child {
+          break-before: auto;
+          page-break-before: avoid;
+        }
+        /* Atomische blokken nooit middenin splitsen. */
+        .t4k-chart, figure {
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }
+        .t4k-pagina .rounded-2xl, .t4k-pagina .rounded-xl {
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }
+        /* Koppen bij hun tekst houden. */
+        h1, h2, h3 {
+          break-after: avoid;
+          page-break-after: avoid;
+          break-inside: avoid;
+        }
         a { color: #0f766e !important; text-decoration: underline; }
       }
     `}</style>
