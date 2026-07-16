@@ -8,12 +8,30 @@ export interface ClientItem {
   pos: string;
   text: string;
 }
+// ADDITIEF (T4Teens): vonk-antwoordmodel per item. Enkel gevuld voor de
+// T4Teens-vragenlijst; deel1-t4teens.tsx rendert de juiste widget op basis
+// van `type`. Andere instrumenten laten dit veld weg (null/undefined).
+export type T4TeensVonkOption =
+  | { value: number; label: string }
+  | { key: string; label: string };
+export interface T4TeensMeta {
+  vonkId: string;
+  type: "battery" | "recognition" | "recognition+energy" | "sjt" | "interest" | "meaning";
+  min?: number;
+  max?: number;
+  options?: T4TeensVonkOption[];
+  energyOptions?: { value: number; label: string }[];
+  // ADDITIEF: enkel gevuld voor driver-items D1..D4 — de "moeite"-schaal die naast
+  // de 0..3 herkenning wordt bevraagd en in energy[vonkId] belandt.
+  moeiteOptions?: { value: number; label: string }[];
+}
 export interface ClientBlock {
   blockIndex: number;
   stateKey: string;
   family: string;
   energyMode: "item" | "block";
   items: ClientItem[];
+  t4teens?: T4TeensMeta | null;
 }
 export interface ConnectionQuestion {
   id: string;

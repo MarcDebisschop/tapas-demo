@@ -19,9 +19,41 @@ import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import JSZip from "jszip";
-import type { Answers, Energy } from "../t4teens/scoring";
+import type { Answers, Energy, VonkMsg } from "../t4teens/scoring";
+import { scoreVonk, selectVonk, VONK_MSG } from "../t4teens/scoring";
 import { renderT4TeensHtml } from "../t4teens/rapport";
 import { bouwT4TeensPdf } from "../t4teens/rapport-pdf";
+import { storage } from "../storage";
+
+// ADDITIEF (Regel 2): bouw de "uitlezing"-kaarten (titel + korte tekst) uit de
+// opgeslagen vonk-antwoorden — exact dezelfde selectie (scoreVonk + selectVonk)
+// die de losse vonk-client en de Studiekompas gebruiken. VonkMeta-items (opening/
+// closing zonder title) worden overgeslagen; enkel echte headline-kaarten blijven.
+function bouwUitlezingKaarten(answers: Answers, energy: Energy): { icon: string; title: string; body: string }[] {
+  const scores = scoreVonk(answers, energy);
+  const ids = selectVonk(scores);
+  const kaarten: { icon: string; title: string; body: string }[] = [];
+  for (const id of ids) {
+    const msg = VONK_MSG[id] as VonkMsg | undefined;
+    if (msg && "title" in msg && msg.title) {
+      kaarten.push({ icon: msg.icon, title: msg.title, body: msg.body });
+    }
+  }
+  return kaarten;
+}
+
+function parseVonkAntwoorden(raw: string | null | undefined): { answers: Answers; energy: Energy } {
+  if (!raw) return { answers: {}, energy: {} };
+  try {
+    const o = typeof raw === "string" ? JSON.parse(raw) : raw;
+    return {
+      answers: o && typeof o.answers === "object" && o.answers ? o.answers : {},
+      energy: o && typeof o.energy === "object" && o.energy ? o.energy : {},
+    };
+  } catch {
+    return { answers: {}, energy: {} };
+  }
+}
 
 interface Deelnemer {
   naam: string;
@@ -36,6 +68,10 @@ interface OpgeslagenRapport {
   pdf: Buffer | null;
   naam: string;
   aangemaakt: number;
+  // ADDITIEF (Regel 2): koppeling naar de platform-afname die dit Studiekompas
+  // opleverde. Enkel gevuld bij een platform-afname; de losse vonk-flow laat dit
+  // leeg. Laat de uitlezing-endpoint het juiste rapport per afname terugvinden.
+  afnameId?: number | null;
 }
 
 // In-memory opslag (desnoods per BUILD-BRIEF). Simpele LRU-cap tegen groei.
@@ -67,6 +103,7 @@ function schrijfNaarSchijf(r: OpgeslagenRapport): void {
       naam: r.naam,
       aangemaakt: r.aangemaakt,
       heeftPdf: !!r.pdf,
+      afnameId: r.afnameId ?? null,
     };
     fs.writeFileSync(path.join(dir, `${r.id}.json`), JSON.stringify(meta), "utf-8");
     fs.writeFileSync(path.join(dir, `${r.id}.html`), r.html, "utf-8");
@@ -96,6 +133,7 @@ function laadVanSchijf(): void {
           pdf,
           naam: meta.naam || "deelnemer",
           aangemaakt: meta.aangemaakt || Date.now(),
+          afnameId: typeof meta.afnameId === "number" ? meta.afnameId : null,
         });
       } catch {
         /* sla individueel corrupt bestand over */
@@ -132,6 +170,40 @@ function bewaar(r: OpgeslagenRapport): void {
     RAPPORTEN.delete(oudste);
     verwijderVanSchijf(oudste);
   }
+}
+
+// ── ADDITIEF (Regel 2): herbruikbare opslag-helper ──────────────────────────
+// Slaat een reeds gegenereerd Studiekompas (HTML + optionele PDF) op via exact
+// dezelfde weg als de POST /api/t4teens/rapport-route: in-memory Map + schijf-
+// persistentie + LRU-cap (zie `bewaar`). Zo verschijnt een rapport dat elders in
+// de codebase wordt aangemaakt (bv. bij het voltooien van een platform-afname in
+// server/routes/afnames.ts) automatisch in de centrale lijst en de ZIP-download,
+// ZONDER de opslaglogica te dupliceren.
+// Retourneert dezelfde vorm als de POST-route: { id, rapportUrl, pdfUrl }.
+export function slaT4TeensRapportOp(
+  html: string,
+  pdf: Buffer | null,
+  naam: string,
+  afnameId?: number | null,
+): { id: string; rapportUrl: string; pdfUrl: string | null } {
+  const id = randomUUID();
+  bewaar({ id, html, pdf, naam: naam || "deelnemer", aangemaakt: Date.now(), afnameId: afnameId ?? null });
+  return {
+    id,
+    rapportUrl: `/api/t4teens/rapport/${id}`,
+    pdfUrl: pdf ? `/api/t4teens/rapport/${id}/pdf` : null,
+  };
+}
+
+// Zoek het meest recente bewaarde rapport voor een gegeven platform-afname.
+function vindRapportVoorAfname(afnameId: number): OpgeslagenRapport | undefined {
+  let gevonden: OpgeslagenRapport | undefined;
+  for (const r of RAPPORTEN.values()) {
+    if (r.afnameId === afnameId && (!gevonden || r.aangemaakt >= gevonden.aangemaakt)) {
+      gevonden = r;
+    }
+  }
+  return gevonden;
 }
 
 export function registerT4TeensRapportRoutes(app: Express): void {
@@ -220,6 +292,31 @@ export function registerT4TeensRapportRoutes(app: Express): void {
         pdfUrl: r.pdf ? `/api/t4teens/rapport/${r.id}/pdf` : null,
       }));
     res.json({ aantal: lijst.length, metPdf: lijst.filter((r) => r.heeftPdf).length, rapporten: lijst });
+  });
+
+  // ── ADDITIEF (Regel 2): uitlezing + PDF-koppeling per platform-afname ──────
+  // Geeft de leerling op het einde van de platform/mail-flow dezelfde "uitlezing"
+  // (opvallende headline-kaarten) als de losse vonk-client, plus de download-URL
+  // van het al gegenereerde Studiekompas. Guarded op instrumentId "t4teens";
+  // elk ander instrument krijgt 404 zodat de klassieke flow onaangeroerd blijft.
+  app.get("/api/t4teens/afname/:afnameId/uitlezing", async (req: Request, res: Response) => {
+    const afnameId = Number(req.params.afnameId);
+    if (!Number.isFinite(afnameId)) return res.status(400).json({ error: "Ongeldig afname-id." });
+    const afname = await storage.getAfname(afnameId);
+    if (!afname || afname.instrumentId !== "t4teens") {
+      return res.status(404).json({ error: "Geen T4Teens-uitlezing voor deze afname." });
+    }
+    const { answers, energy } = parseVonkAntwoorden((afname as any).mainResponses);
+    const kaarten = bouwUitlezingKaarten(answers, energy);
+    const rapport = vindRapportVoorAfname(afnameId);
+    res.json({
+      naam: afname.name ?? "",
+      voltooid: afname.status === "voltooid",
+      kaarten,
+      rapportId: rapport?.id ?? null,
+      rapportUrl: rapport ? `/api/t4teens/rapport/${rapport.id}` : null,
+      pdfUrl: rapport && rapport.pdf ? `/api/t4teens/rapport/${rapport.id}/pdf` : null,
+    });
   });
 
   // ── ADDITIEF (Regel 2): één knop → alle PDF's centraal als ZIP ─────────────

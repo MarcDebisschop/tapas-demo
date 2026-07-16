@@ -151,8 +151,21 @@ export const blockResponseSchema = z.object({
   blockEnergy: z.number().nullable(),
 });
 
+// ADDITIEF (T4Teens — Werkprotocol Regel 2): vonk-Likert antwoorden per item.
+// Enkel de T4Teens-afname stuurt dit optionele veld mee; alle andere instrumenten
+// laten het weg en blijven ONVERANDERD de most/least-engine (`responses`) gebruiken.
+// `answers` is gekeyd op korte vonk-id's (I1, D1..D6, V1..V6, F1..F5, R1..R6, B1),
+// waarden zijn getal (recognition/interest/battery) of string (sjt/meaning).
+// `energy` (−2..+2) enkel voor de recognition+energy-items.
+export const t4teensVonkSchema = z.object({
+  answers: z.record(z.string(), z.union([z.number(), z.string()])),
+  energy: z.record(z.string(), z.number()),
+});
+export type T4TeensVonk = z.infer<typeof t4teensVonkSchema>;
+
 export const submitMainSchema = z.object({
   responses: z.record(z.string(), blockResponseSchema),
+  t4teens: t4teensVonkSchema.optional(),
 });
 export type SubmitMain = z.infer<typeof submitMainSchema>;
 

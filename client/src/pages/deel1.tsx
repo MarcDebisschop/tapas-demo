@@ -12,6 +12,7 @@ import { apiRequest } from "@/lib/queryClient";
 import type { ClientInstrument, ClientBlock, AnswerState, BlockAnswer, EnergyOption, Afname } from "@/lib/types";
 import { ChevronLeft, ChevronRight, ThumbsUp, ThumbsDown, Check, CheckCircle2 } from "lucide-react";
 import { maakVertaler, normaliseerTaal, STANDAARD_TAAL, publiekeFamilie } from "@shared/i18n";
+import Deel1T4Teens from "./deel1-t4teens";
 
 function emptyAnswer(): BlockAnswer {
   return { most: null, least: null, itemEnergy: { most: null, least: null }, blockEnergy: null };
@@ -100,6 +101,7 @@ export default function Deel1() {
   // het instrument geladen zijn. We doen dit eenmalig (geladenRef) zodat lokale
   // wijzigingen daarna niet overschreven worden.
   useEffect(() => {
+    if (isT4Teens) return; // T4Teens heeft een eigen component/herstelpad.
     if (geladenRef.current) return;
     if (!afname || !inst) return;
     geladenRef.current = true;
@@ -134,6 +136,7 @@ export default function Deel1() {
   // Debounced tussentijds bewaren. Pas actief nadat herstel-poging klaar is en
   // er minstens iets is ingevuld. Slaat stil over bij een voltooide afname.
   useEffect(() => {
+    if (isT4Teens) return; // T4Teens bewaart via zijn eigen component.
     if (!geladenRef.current) return;
     if (!afname || afname.status === "voltooid") return;
     if (Object.keys(answers).length === 0) return;
@@ -213,6 +216,14 @@ export default function Deel1() {
     if (!blockComplete) return;
     if (idx < blocks.length - 1) setIdx((i) => i + 1);
     else finishDeel1();
+  }
+
+  // ADDITIEF (Regel 2): T4Teens gebruikt een eigen deel-1-component die de
+  // vonk-Likert per item vastlegt. Alle hooks hierboven zijn al aangeroepen
+  // (rules-of-hooks), dus deze delegatie is veilig. De klassieke render hieronder
+  // blijft ONGEWIJZIGD voor alle andere instrumenten.
+  if (afname && isT4Teens) {
+    return <Deel1T4Teens id={id} afname={afname} />;
   }
 
   // Vergrendeling: een voltooide afname mag niet opnieuw worden ingevuld.

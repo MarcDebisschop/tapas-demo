@@ -4,18 +4,33 @@ import { AppHeader } from "@/components/Brand";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { AdminAfnameDetail } from "@/lib/types";
+import type { AdminAfnameDetail, Afname } from "@/lib/types";
 import { CheckCircle2 } from "lucide-react";
 import { maakVertaler, normaliseerTaal, STANDAARD_TAAL, DATE_LOCALE } from "@shared/i18n";
+import KlaarT4Teens from "./klaar-t4teens";
 
 export default function Klaar() {
   const params = useParams();
   const id = Number(params.id);
+
+  // ADDITIEF (Regel 2): T4Teens krijgt een eigen einde met uitlezing + PDF-download.
+  // We halen het instrument publiek op (zelfde endpoint als deel2.tsx) en delegeren
+  // enkel voor "t4teens"; de klassieke klaar-render hieronder blijft ONGEWIJZIGD.
+  const { data: afname } = useQuery<Afname>({
+    queryKey: ["/api/afnames", id],
+    enabled: !!id,
+  });
+
   const { data, isLoading } = useQuery<AdminAfnameDetail>({
     queryKey: ["/api/admin/afnames", id],
+    enabled: !!id && afname?.instrumentId !== "t4teens",
   });
   const taal = normaliseerTaal((data as any)?.taal ?? STANDAARD_TAAL);
   const t = maakVertaler(taal);
+
+  if (afname?.instrumentId === "t4teens") {
+    return <KlaarT4Teens id={id} />;
+  }
 
   return (
     <div className="min-h-[100dvh] bg-background">

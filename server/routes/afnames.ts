@@ -35,6 +35,11 @@ import {
 import { buildGeneratorContract } from "../scoring";
 import { buildT4StudentsContract } from "../t4students/scoring";
 import { z } from "zod";
+// ADDITIEF (T4Teens — Regel 2): Studiekompas-generatie bij platform-voltooiing.
+import { renderT4TeensHtml } from "../t4teens/rapport";
+import { bouwT4TeensPdf } from "../t4teens/rapport-pdf";
+import { slaT4TeensRapportOp } from "./t4teens-rapport";
+import type { Answers, Energy } from "../t4teens/scoring";
 
 // Genereert een leesbare respondentCode op basis van naam + jaar + volgnummer.
 function makeRespondentCode(name: string, id: number): string {
@@ -52,6 +57,22 @@ function makeRespondentCode(name: string, id: number): string {
 // In de demo is er geen live LLM. We laten de assistent toch 'leven' met een
 // reflectief, niet-diagnostisch antwoord dat ECHT uit het profiel put.
 const DEMO_MODE = process.env.TAPAS_DEMO === "1";
+
+// ADDITIEF (T4Teens): lees het bewaarde vonk-antwoordobject { answers, energy } uit
+// mainResponses. Best-effort: bij een lege/ongeldige waarde geven we lege objecten
+// terug zodat de Studiekompas-generatie nooit crasht op onverwachte invoer.
+function parseT4TeensVonk(raw: string | null | undefined): { answers: Answers; energy: Energy } {
+  if (!raw) return { answers: {}, energy: {} };
+  try {
+    const o = typeof raw === "string" ? JSON.parse(raw) : raw;
+    return {
+      answers: o && typeof o.answers === "object" && o.answers ? o.answers : {},
+      energy: o && typeof o.energy === "object" && o.energy ? o.energy : {},
+    };
+  } catch {
+    return { answers: {}, energy: {} };
+  }
+}
 
 export function registerAfnameRoutes(app: Express): void {
   const startAfnameSchema = insertAfnameSchema.extend({
@@ -254,7 +275,11 @@ export function registerAfnameRoutes(app: Express): void {
       return res.status(400).json({ error: "Ongeldige antwoorden voor deel 1" });
     }
     const updated = await storage.updateAfname(id, {
-      mainResponses: JSON.stringify(parsed.data.responses),
+      // ADDITIEF (T4Teens): bij een vonk-payload bewaren we het T4Teens-specifieke
+      // antwoordobject { answers, energy }; anders het klassieke block-record (ONGEWIJZIGD).
+      mainResponses: parsed.data.t4teens
+        ? JSON.stringify(parsed.data.t4teens)
+        : JSON.stringify(parsed.data.responses),
     });
     res.json({ ok: true, status: updated?.status ?? a.status });
   });
@@ -272,7 +297,11 @@ export function registerAfnameRoutes(app: Express): void {
       return res.status(400).json({ error: "Ongeldige antwoorden voor deel 1" });
     }
     const updated = await storage.updateAfname(id, {
-      mainResponses: JSON.stringify(parsed.data.responses),
+      // ADDITIEF (T4Teens): zie /concept — vonk-payload wordt als { answers, energy }
+      // bewaard; klassiek pad blijft byte-identiek het block-record opslaan.
+      mainResponses: parsed.data.t4teens
+        ? JSON.stringify(parsed.data.t4teens)
+        : JSON.stringify(parsed.data.responses),
       status: "deel2",
     });
     res.json(updated);
@@ -291,14 +320,22 @@ export function registerAfnameRoutes(app: Express): void {
       return res.status(400).json({ error: "Ongeldige antwoorden voor deel 2" });
     }
     const connection = parsed.data.answers;
-    const responses = JSON.parse(a.mainResponses);
 
     // Server-side scoring + generatie van het bevroren A3-contract.
     // Additief (T4Students): een T4Students-afname krijgt een eigen contract met
     // instrumentId "t4students". Het T4P-pad (en elk ander instrument) blijft
     // volledig ongewijzigd via buildGeneratorContract.
+    //
+    // ADDITIEF (T4Teens): voor t4teens is mainResponses de vonk-vorm { answers, energy }
+    // — GEEN block-records. De klassieke scorer (buildGeneratorContract) verwacht
+    // `r.most` per blok en zou daarop crashen (500). Daarom krijgt t4teens hier een
+    // minimaal, geldig contract; de échte inhoud zit in het Studiekompas-HTML/PDF dat
+    // verderop wordt gegenereerd. Zo blijft `JSON.parse(a.mainResponses)` (met block-
+    // records) EXCLUSIEF in de klassieke else-tak, byte-identiek voor alle andere
+    // instrumenten.
     let contract: any;
     if (a.instrumentId === "t4students") {
+      const responses = JSON.parse(a.mainResponses);
       // Open reflectie-antwoorden reizen optioneel additief mee in de request.
       const reflectie =
         req.body && typeof req.body.reflectie === "object" && req.body.reflectie
@@ -315,7 +352,10 @@ export function registerAfnameRoutes(app: Express): void {
         reflectie,
         taal: a.taal,
       });
+    } else if (a.instrumentId === "t4teens") {
+      contract = { instrumentId: "t4teens", respondentCode: a.respondentCode };
     } else {
+      const responses = JSON.parse(a.mainResponses);
       contract = buildGeneratorContract({
         respondentCode: a.respondentCode,
         name: a.name,
@@ -358,6 +398,34 @@ export function registerAfnameRoutes(app: Express): void {
         await storage.verbruik(a.organisatieId, a.id);
       } catch {
         // Verbruik mag de profielgeneratie nooit blokkeren; loggen volstaat.
+      }
+    }
+
+    // ── ADDITIEF (Werkprotocol Regel 2): T4Teens → altijd een 26-pagina Studiekompas ──
+    // Bij een T4Teens-platformafname genereren we NA de voltooiing altijd het volledige
+    // Studiekompas (dezelfde renderT4TeensHtml + bouwT4TeensPdf als de vonk-flow) en
+    // bewaren we het via de bestaande centrale opslag (in-memory + schijf + ZIP-download),
+    // ZONDER opslaglogica te dupliceren. De vonk-antwoorden staan al in vonk-vorm
+    // (gekeyd op korte id's I1, D1..R6, B1) in mainResponses — de platform→vonk mapping
+    // gebeurde in deel1-t4teens.tsx via het per-item `vonkId`-veld uit de vragenlijst.
+    // Alles is best-effort: een generatiefout mag de afname-voltooiing NOOIT blokkeren
+    // (net als de bestaande dashboard-koppeling en creditverbruik hierboven).
+    if (a.instrumentId === "t4teens") {
+      try {
+        const vonk = parseT4TeensVonk(a.mainResponses);
+        const html = renderT4TeensHtml(vonk.answers, vonk.energy, {
+          naam: a.name,
+          code: a.respondentCode,
+        });
+        let pdf: Buffer | null = null;
+        try {
+          pdf = await bouwT4TeensPdf(html);
+        } catch (pdfErr) {
+          console.error("[T4Teens afname] PDF-generatie mislukt (best-effort):", pdfErr);
+        }
+        slaT4TeensRapportOp(html, pdf, a.name, a.id);
+      } catch (e) {
+        console.error("[T4Teens afname] Studiekompas-generatie mislukt (best-effort):", e);
       }
     }
 

@@ -53,6 +53,137 @@ const T4TEENS_ITEMS: {
   { id: "T4T-B1-1", domein: "Betekenis", cluster: "Betekenis", tekst: "Waar zou jij iets willen betekenen voor anderen of voor de wereld?" },
 ];
 
+// ─── Vonk-antwoordmodel per item (ADDITIEF — Werkprotocol Regel 2) ───────────
+// Exacte 1-op-1 kopie van de itemtypes/opties uit de standalone vonk-client
+// (client/public/t4teens/afname/index.html → DATA.items). Dit legt vast HOE elk
+// item bevraagd wordt, zodat de platform-vragenlijst dezelfde vonk-Likert vastlegt
+// die de Studiekompas nodig heeft — i.p.v. de generieke most/least-engine.
+//
+// De platform-item-id → vonk-key mapping (T4T-I1-1 → I1, … T4T-B1-1 → B1) gebeurt
+// via het veld `vonkId`; dit komt exact overeen met ACC_MAP/FOC_MAP/RIA_MAP in
+// server/t4teens/scoring.ts. Types worden LETTERLIJK overgenomen uit de vonk-client:
+//   I1        → battery (0..10)
+//   D1..D4    → recognition (0..3, geen energie)
+//   D5,D6     → sjt (keuze a/b)
+//   V1..V6    → recognition+energy (0..3 + energie −2..+2)
+//   F1,F2,F4  → recognition+energy
+//   F3,F5     → sjt
+//   R1..R6    → interest (0..2)
+//   B1        → meaning (keuze)
+type VonkOption = { value: number; label: string } | { key: string; label: string };
+interface VonkMeta {
+  vonkId: string;
+  type: "battery" | "recognition" | "recognition+energy" | "sjt" | "interest" | "meaning";
+  min?: number;
+  max?: number;
+  options?: VonkOption[];
+  energyOptions?: { value: number; label: string }[];
+  // ADDITIEF (fideliteit vonk-client): driver-items D1..D4 verzamelen NAAST de
+  // 0..3 herkenning ook een "moeite"-schaal. De gekozen waarde wordt in energy[vonkId]
+  // geschreven; scoreVonk gebruikt energy.D1..D4 voor drvEnergy (gaspedaal/rem) en
+  // contextBrake. Waarden {-2,-1,1,2} (bewust GEEN 0) — 1-op-1 uit index.html (MOEITE_OPTS).
+  moeiteOptions?: { value: number; label: string }[];
+}
+
+const RECOGNITION_OPTS = [
+  { value: 0, label: "Niet ik" },
+  { value: 1, label: "Soms ik" },
+  { value: 2, label: "Vaak ik" },
+  { value: 3, label: "Helemaal ik" },
+];
+const ENERGY_OPTS = [
+  { value: -2, label: "Kost me veel energie" },
+  { value: -1, label: "Kost me energie" },
+  { value: 0, label: "Maakt niet veel uit" },
+  { value: 1, label: "Geeft me energie" },
+  { value: 2, label: "Geeft me veel energie" },
+];
+const INTEREST_OPTS = [
+  { value: 0, label: "Nee, niets voor mij" },
+  { value: 1, label: "Een beetje" },
+  { value: 2, label: "Ja, trekt me aan" },
+];
+// Moeite-schaal voor de driver-items D1..D4 (exacte labels + waarden uit de vonk-client
+// index.html → MOEITE_OPTS/moeiteLabel). Let op: bewust GEEN neutrale 0.
+const MOEITE_OPTS = [
+  { value: -2, label: "Kost me heel veel moeite" },
+  { value: -1, label: "Kost me moeite" },
+  { value: 1, label: "Kost me weinig moeite" },
+  { value: 2, label: "Kost me helemaal geen moeite" },
+];
+
+// vonkId → antwoordmodel. SJT/meaning-opties zijn de exacte labels uit de vonk-client.
+const VONK_META: Record<string, VonkMeta> = {
+  I1: { vonkId: "I1", type: "battery", min: 0, max: 10 },
+  D1: { vonkId: "D1", type: "recognition", options: RECOGNITION_OPTS, moeiteOptions: MOEITE_OPTS },
+  D2: { vonkId: "D2", type: "recognition", options: RECOGNITION_OPTS, moeiteOptions: MOEITE_OPTS },
+  D3: { vonkId: "D3", type: "recognition", options: RECOGNITION_OPTS, moeiteOptions: MOEITE_OPTS },
+  D4: { vonkId: "D4", type: "recognition", options: RECOGNITION_OPTS, moeiteOptions: MOEITE_OPTS },
+  D5: {
+    vonkId: "D5",
+    type: "sjt",
+    options: [
+      { key: "a", label: "Ik pak het zelf vast en regel het." },
+      { key: "b", label: "Ik vraag of we het samen kunnen aanpakken." },
+    ],
+  },
+  D6: {
+    vonkId: "D6",
+    type: "sjt",
+    options: [
+      { key: "a", label: "Ik doe wat ik beloofd had, een belofte is een belofte." },
+      { key: "b", label: "Ik schat in wat op dat moment het belangrijkst is." },
+    ],
+  },
+  V1: { vonkId: "V1", type: "recognition+energy", options: RECOGNITION_OPTS, energyOptions: ENERGY_OPTS },
+  V2: { vonkId: "V2", type: "recognition+energy", options: RECOGNITION_OPTS, energyOptions: ENERGY_OPTS },
+  V3: { vonkId: "V3", type: "recognition+energy", options: RECOGNITION_OPTS, energyOptions: ENERGY_OPTS },
+  V4: { vonkId: "V4", type: "recognition+energy", options: RECOGNITION_OPTS, energyOptions: ENERGY_OPTS },
+  V5: { vonkId: "V5", type: "recognition+energy", options: RECOGNITION_OPTS, energyOptions: ENERGY_OPTS },
+  V6: { vonkId: "V6", type: "recognition+energy", options: RECOGNITION_OPTS, energyOptions: ENERGY_OPTS },
+  F1: { vonkId: "F1", type: "recognition+energy", options: RECOGNITION_OPTS, energyOptions: ENERGY_OPTS },
+  F2: { vonkId: "F2", type: "recognition+energy", options: RECOGNITION_OPTS, energyOptions: ENERGY_OPTS },
+  F3: {
+    vonkId: "F3",
+    type: "sjt",
+    options: [
+      { key: "a", label: "Ja, zeker met een duidelijk plan." },
+      { key: "b", label: "Liever niet, dat is me te veel herhaling." },
+    ],
+  },
+  F4: { vonkId: "F4", type: "recognition+energy", options: RECOGNITION_OPTS, energyOptions: ENERGY_OPTS },
+  F5: {
+    vonkId: "F5",
+    type: "sjt",
+    options: [
+      { key: "a", label: "Samen met anderen." },
+      { key: "b", label: "Liever alleen." },
+    ],
+  },
+  R1: { vonkId: "R1", type: "interest", options: INTEREST_OPTS },
+  R2: { vonkId: "R2", type: "interest", options: INTEREST_OPTS },
+  R3: { vonkId: "R3", type: "interest", options: INTEREST_OPTS },
+  R4: { vonkId: "R4", type: "interest", options: INTEREST_OPTS },
+  R5: { vonkId: "R5", type: "interest", options: INTEREST_OPTS },
+  R6: { vonkId: "R6", type: "interest", options: INTEREST_OPTS },
+  B1: {
+    vonkId: "B1",
+    type: "meaning",
+    options: [
+      { key: "mensen", label: "Voor mensen dichtbij me" },
+      { key: "samenleving", label: "Voor de samenleving" },
+      { key: "natuur", label: "Voor de natuur en de planeet" },
+      { key: "maken", label: "Door iets moois of nuttigs te maken" },
+      { key: "kennis", label: "Door kennis en ontdekking" },
+    ],
+  },
+};
+
+// Platform-item-id (T4T-I1-1) → korte vonk-key (I1): strip prefix + volgnummer-suffix.
+function vonkKeyVoor(itemId: string): string {
+  return itemId.replace(/^T4T-/, "").replace(/-\d+$/, "");
+}
+
 /**
  * Bouw een ClientInstrument-compatibel object voor T4Teens.
  * Elk item wordt een eigen blok (blockIndex = itemIndex).
@@ -66,6 +197,10 @@ function buildT4TeensClientInstrument(taal: string) {
     const ovMap = overrides.get(item.id);
     const text = (ovMap && ovMap[taal]) ? ovMap[taal] : item.tekst;
 
+    // Vonk-antwoordmodel voor dit item (ADDITIEF veld `t4teens`).
+    const vonkId = vonkKeyVoor(item.id);
+    const t4teens = VONK_META[vonkId] ?? null;
+
     return {
       blockIndex: idx,
       stateKey: `B${idx}`,
@@ -77,6 +212,8 @@ function buildT4TeensClientInstrument(taal: string) {
           text,
         },
       ],
+      // ADDITIEF: enkel gevuld voor T4Teens; deel1-t4teens.tsx rendert hierop.
+      t4teens,
     };
   });
 

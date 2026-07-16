@@ -1926,6 +1926,10 @@ function selectVonk(s){
 
 let vonkSeq = [];      // [audiobestand...] in afspeelvolgorde
 let vonkSeqIdx = 0;
+// HARDE stop-guard: zodra de sequentie de laatste clip heeft afgespeeld, staat
+// vonkFinished op true en mag de reeks NOOIT vanzelf herbeginnen. Enkel een
+// expliciete klik op "Lees voor" (toggleVonkSeq) zet dit terug op false + idx 0.
+let vonkFinished = false;
 let vonkPlaying = false;
 
 function escapeHtmlV(s){ return String(s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -1978,13 +1982,15 @@ function renderVonk(){
 
   // bouw audiosequentie: opening -> geselecteerde -> closing
   vonkSeq = ['vonk-opening.mp3'].concat(sel.map(id=>VONK_MSG[id] && VONK_MSG[id].audio).filter(Boolean)).concat(['vonk-closing.mp3']);
-  vonkSeqIdx = 0; vonkPlaying = false;
+  vonkSeqIdx = 0; vonkPlaying = false; vonkFinished = false;
 
   document.getElementById('vonkNext').onclick = ()=>{ stopVonkSeq(); idx = items.length + 1; render(); window.scrollTo({top:0}); };
   document.getElementById('vonkListen').onclick = toggleVonkSeq;
 
-  // start de beleving automatisch (mag door browser geblokkeerd worden -> dan via knop)
-  setTimeout(()=>{ startVonkSeq(); }, 650);
+  // start de beleving eenmalig automatisch (mag door browser geblokkeerd worden -> dan via knop).
+  // Guard: alleen starten als de reeks nog niet gestart/afgerond is, zodat een her-render
+  // nooit een tweede automatische afspeelbeurt uitlokt.
+  setTimeout(()=>{ if(!vonkPlaying && !vonkFinished && vonkSeqIdx === 0){ startVonkSeq(); } }, 650);
 }
 
 function setVonkListenUI(playing){
@@ -2003,14 +2009,23 @@ function highlightVonkCard(){
 }
 function startVonkSeq(){
   if(vonkPlaying) return;
+  // Klaar-guard: als de reeks al helemaal afgespeeld is, niet vanzelf herbeginnen.
+  if(vonkFinished || vonkSeqIdx>=vonkSeq.length) return;
   vonkPlaying = true; setVonkListenUI(true);
   playVonkAt(vonkSeqIdx);
 }
 function playVonkAt(i){
-  if(i>=vonkSeq.length){ stopVonkSeq(); return; }
+  // HARDE guard: voorbij de laatste clip → definitief stoppen en markeren als klaar.
+  // Nooit terugvallen op index 0 (dat gebeurt enkel via toggleVonkSeq bij een klik).
+  if(i>=vonkSeq.length){ vonkFinished = true; stopVonkSeq(); return; }
   vonkSeqIdx = i;
   highlightVonkCard();
-  player.onended = ()=>{ if(vonkPlaying){ playVonkAt(vonkSeqIdx+1); } };
+  player.onended = ()=>{
+    // Alleen doorspoelen zolang we effectief spelen én er nog een volgende clip is.
+    // Op de laatste clip (of na een stop) stoppen we hard i.p.v. door te lussen.
+    if(vonkPlaying && vonkSeqIdx+1 < vonkSeq.length){ playVonkAt(vonkSeqIdx+1); }
+    else { vonkFinished = true; stopVonkSeq(); }
+  };
   player.src = 'audio/'+vonkSeq[i];
   player.currentTime = 0;
   player.play().catch(()=>{ /* autoplay geblokkeerd: wacht op knop */ vonkPlaying=false; setVonkListenUI(false); });
@@ -2024,7 +2039,11 @@ function stopVonkSeq(){
 }
 function toggleVonkSeq(){
   if(vonkPlaying){ stopVonkSeq(); }
-  else { if(vonkSeqIdx>=vonkSeq.length) vonkSeqIdx=0; startVonkSeq(); }
+  else {
+    // Expliciete gebruikersklik = de ENIGE manier om vanaf het begin te herbeluisteren.
+    if(vonkFinished || vonkSeqIdx>=vonkSeq.length){ vonkSeqIdx=0; vonkFinished=false; }
+    startVonkSeq();
+  }
 }
 
 function renderDone(){
