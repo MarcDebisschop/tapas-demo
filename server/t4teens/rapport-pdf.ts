@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { installEmojiFontEenmalig } from "./emoji-font";
 
 // Render de T4Teens-rapport-HTML naar een A4-PDF met Playwright (chromium).
 // Print-CSS wordt gerespecteerd en achtergrondkleuren staan aan (printBackground).
@@ -135,6 +136,15 @@ async function launchChromium(chromium: any) {
 }
 
 export async function bouwT4TeensPdf(html: string): Promise<Buffer> {
+  // Additief (Werkprotocol Regel 2): zorg éénmalig per proces dat het gebundelde
+  // Noto Color Emoji-lettertype in fontconfig staat, zodat Chromium de emoji-iconen
+  // in KLEUR inbedt i.p.v. tofu. Best-effort/non-blocking — mag de render nooit breken.
+  try {
+    installEmojiFontEenmalig();
+  } catch {
+    /* ignore */
+  }
+
   // Lazy import zodat de server ook draait als playwright niet beschikbaar is.
   const { chromium } = await import("playwright");
   const browser = await launchChromium(chromium);

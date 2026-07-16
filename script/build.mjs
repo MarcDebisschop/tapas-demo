@@ -135,6 +135,18 @@ async function buildAll() {
   await cp(path.join(root, "server", "tts.py"), path.join(root, "dist", "tts.py"), { force: true });
   console.log("tts.py gekopieerd naar dist/.");
 
+  // 5b. Kopieer het gebundelde Noto Color Emoji-lettertype naar dist/assets/fonts/
+  //     (zelfde patroon als tts.py hierboven). De runtime-installer (emoji-font.ts)
+  //     vindt het daar en zet het in ~/.fonts + fc-cache, zodat Chromium de
+  //     emoji-iconen in het T4Teens-rapport in KLEUR inbedt op Render.
+  await mkdir(path.join(root, "dist", "assets", "fonts"), { recursive: true });
+  await cp(
+    path.join(root, "server", "assets", "fonts", "NotoColorEmoji.ttf"),
+    path.join(root, "dist", "assets", "fonts", "NotoColorEmoji.ttf"),
+    { force: true },
+  );
+  console.log("NotoColorEmoji.ttf gekopieerd naar dist/assets/fonts/.");
+
   // 6. BEWAKING VLAAMSE STEM — blokkeert de build als de stem-architectuur kapot is.
   //    Draait de statische controles (geen speechSynthesis, Sulafat, VLAAMSE_STEM_PROMPT,
   //    spawn-import, /api/tts-route, prompt-prepend, spawn-error-handler).
