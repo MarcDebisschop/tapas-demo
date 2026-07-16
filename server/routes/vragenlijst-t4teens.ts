@@ -221,7 +221,7 @@ function buildT4TeensClientInstrument(taal: string) {
     instrumentId: "tapas-t4teens",
     name: "T4Teens — Vonk-instrument",
     language: taal,
-    description: "Ontdek je talent, energie en gedragspatroon. Voor jongeren van 16 tot 21 jaar.",
+    description: "Ontdek je talent, energie en gedragspatroon. Voor jongeren van 13 tot 17 jaar.",
     responseScales: {
       energy: {
         type: "ordinal",

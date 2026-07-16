@@ -342,7 +342,7 @@ function bouwRegistry(): Map<string, InstrumentDescriptor> {
     creditCost: 1,
   });
 
-  // T4Teens — individueel instrument voor jongeren (16-21 jaar).
+  // T4Teens — individueel instrument voor jongeren (13-17 jaar).
   //
   // T4Teens is een op maat gemaakte variant van het T4P-profiel, ontwikkeld
   // voor jongeren in het voortgezet onderwijs. De inhoud (vragenlijst, blokken,
@@ -356,7 +356,7 @@ function bouwRegistry(): Map<string, InstrumentDescriptor> {
     name: "T4Teens",
     version: "1.0.0",
     description:
-      "Individueel TaPas-profiel voor jongeren (16-21 jaar): ontdek je talent, " +
+      "Individueel TaPas-profiel voor jongeren (13-17 jaar): ontdek je talent, " +
       "energie en gedragspatroon in een doelgroepspecifieke vragenlijst en rapport.",
     isDefault: false,
     creditCost: 1,

@@ -91,7 +91,7 @@ const VERRIJKING: Record<string, {
     emoji: "🌹",
   },
   "t4teens": {
-    doelgroep: "Jongeren 14-18 jaar, CLB-begeleiders, schoolcoaches",
+    doelgroep: "Jongeren 13-17 jaar, CLB-begeleiders, schoolcoaches",
     useCases: [
       "Studiekeuze-begeleiding",
       "Talentherkenning in het secundair onderwijs",

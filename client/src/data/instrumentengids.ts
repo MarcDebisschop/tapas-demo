@@ -211,6 +211,24 @@ export const INSTRUMENTENGIDS: GidsInstrument[] = [
     icoon: "Trophy",
   },
   {
+    id: "t4kids",
+    naam: "T4Kids",
+    orientatie: "education",
+    eyebrow: "Kinderen · talentontdekking",
+    omschrijving:
+      "Een leeftijdsspecifiek talentprofiel voor kinderen, in speelse en toegankelijke taal, dat helpt bij vroege talentherkenning in de overgang naar het secundair onderwijs.",
+    beantwoordt:
+      "Waar ben ik als kind goed in? Wat vind ik leuk om te doen? Welke talenten mag ik verder ontdekken?",
+    gebruik:
+      "Voor vroege talentherkenning, oudergesprekken en een zachte voorbereiding op studiekeuze in het secundair.",
+    doelgroep: "Kinderen 11–13 jaar, ouders, leerkrachten en CLB-begeleiders.",
+    start: { label: "Ontdek T4Kids", route: "/studie/leerlingen", direct: false },
+    rapportTeaser:
+      "Een T4Kids talentkaart in kindertaal, met een eerste blik op interesses en talenten.",
+    leeftijdsfocus: "11–13 jaar · overgang naar secundair",
+    icoon: "Backpack",
+  },
+  {
     id: "t4teens",
     naam: "T4Teens",
     orientatie: "education",
@@ -221,11 +239,11 @@ export const INSTRUMENTENGIDS: GidsInstrument[] = [
       "Waar liggen mijn talenten als jongere? Welke studierichting past bij wie ik ben? Wat geeft mij energie op school en daarbuiten?",
     gebruik:
       "Voor studiekeuzebegeleiding, talentherkenning in het secundair, preventie van studiedropout en ouder-kindgesprekken over richting.",
-    doelgroep: "Jongeren 14–18 jaar, CLB-begeleiders, schoolcoaches.",
+    doelgroep: "Jongeren 13–17 jaar, CLB-begeleiders, schoolcoaches.",
     start: { label: "Ontdek T4Teens", route: "/studie/leerlingen", direct: false },
     rapportTeaser:
       "Een T4Teens talentkaart in jongerentaal, met studierichtingssuggesties op basis van de talent-foci.",
-    leeftijdsfocus: "14–18 jaar · secundair onderwijs",
+    leeftijdsfocus: "13–17 jaar · secundair onderwijs",
     icoon: "Backpack",
   },
   {
