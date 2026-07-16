@@ -15,3 +15,6 @@ data.db-journal
 
 *.log
 .DS_Store
+
+# Runtime: op schijf bewaarde T4Teens-rapporten (niet committen)
+t4teens-rapporten/

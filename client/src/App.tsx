@@ -51,6 +51,7 @@ import { AdminLoginGate } from "@/components/AdminLoginGate";
 import Koop from "@/pages/koop";
 import AdminPrijzen from "@/pages/admin-prijzen";
 import AdminBulkImport from "@/pages/admin-bulk-import";
+import AdminT4TeensRapporten from "@/pages/admin-t4teens-rapporten";
 import AdminFactuurhuisstijl from "@/pages/admin-factuurhuisstijl";
 import { Redirect } from "wouter";
 import Studie, { StudieScholenPagina, StudieLeerlingenPagina, StudieInstrumentenPagina } from "@/pages/studie";
@@ -105,6 +106,7 @@ function AppRouter() {
       <Route path="/afname/:id/klaar" component={Klaar} />
       <Route path="/admin">{() => <AdminLoginGate><Admin /></AdminLoginGate>}</Route>
       <Route path="/admin/credits">{() => <AdminLoginGate><AdminCredits /></AdminLoginGate>}</Route>
+      <Route path="/admin/t4teens-rapporten">{() => <AdminLoginGate><AdminT4TeensRapporten /></AdminLoginGate>}</Route>
       <Route path="/admin/toegang">{() => <AdminLoginGate><AdminToegang /></AdminLoginGate>}</Route>
       <Route path="/admin/vraagbeheer">{() => <AdminLoginGate><AdminVraagbeheer /></AdminLoginGate>}</Route>
       <Route path="/admin/duidingbeheer">{() => <AdminLoginGate><AdminDuidingbeheer /></AdminLoginGate>}</Route>

@@ -34,7 +34,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Afname, OrganisatieMetSaldo } from "@/lib/types";
-import { Copy, Check, Send, UserPlus, Bell, Languages, Settings2, ChartColumn, GraduationCap, Mail, KeyRound, Users, CreditCard, BarChart2, Building2, ArrowRight, Layers, Euro, FileSpreadsheet, Sparkles, Power, MonitorPlay, Palette } from "lucide-react";
+import { Copy, Check, Send, UserPlus, Bell, Languages, Settings2, ChartColumn, GraduationCap, Mail, KeyRound, Users, CreditCard, BarChart2, Building2, ArrowRight, Layers, Euro, FileSpreadsheet, Sparkles, Power, MonitorPlay, Palette, FileText } from "lucide-react";
 import { LegeStaat } from "@/components/LegeStaat";
 import {
   TALEN,
@@ -334,6 +334,11 @@ export default function Admin() {
               <Link href="/admin/bulk-import">
                 <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-bulk-import">
                   <FileSpreadsheet className="h-3.5 w-3.5 shrink-0" /> Bulk-import (Excel)
+                </a>
+              </Link>
+              <Link href="/admin/t4teens-rapporten">
+                <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-t4teens-rapporten">
+                  <FileText className="h-3.5 w-3.5 shrink-0" /> T4Teens-rapporten (PDF's)
                 </a>
               </Link>
             </div>
