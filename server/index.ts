@@ -2,13 +2,29 @@ import "dotenv/config";
 import express, { Response, NextFunction } from 'express';
 import type { Request } from 'express';
 import session from "express-session";
-import MemoryStore from "memorystore";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import betterSqlite3SessionStore from "better-sqlite3-session-store";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
+import { sqlite } from "./storage";
 import { createServer } from "node:http";
 
 const app = express();
 const httpServer = createServer(app);
+
+// A3 — SESSION_SECRET fail-fast in productie. In productie mag de app NOOIT met
+// een hardgecodeerde fallback-secret draaien; dat zou sessies vervalsbaar maken.
+if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET) {
+  throw new Error(
+    "SESSION_SECRET ontbreekt in productie. Zet de omgevingsvariabele SESSION_SECRET voordat je de app start.",
+  );
+}
+if (!process.env.SESSION_SECRET) {
+  console.warn(
+    "[tapas] WAARSCHUWING: SESSION_SECRET niet gezet — hardgecodeerde fallback wordt gebruikt (enkel voor niet-productie).",
+  );
+}
 
 declare module "http" {
   interface IncomingMessage {
@@ -26,8 +42,49 @@ app.use(
 
 app.use(express.urlencoded({ extended: false }));
 
+// A4 — Security-hardening via helmet. CSP is BEWUST uitgeschakeld: de bestaande
+// Vite/React-frontend en assets (incl. inline styles/scripts en cross-origin
+// laden via de pplx.app-proxy) draaien zonder CSP. Een te strikte CSP zou de
+// frontend breken; liever geen CSP dan een brekende CSP. Cross-origin
+// resource/embedder policies staan ruim zodat de cross-origin cookie-/asset-
+// flow via de proxy blijft werken.
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginEmbedderPolicy: false,
+    crossOriginOpenerPolicy: false,
+  }),
+);
+
+// A4 — Ruime rate-limiting op auth-/token-endpoints (login, wachtwoord-,
+// token- en magic-link-endpoints). Limieten zijn zo gekozen dat normaal gebruik
+// niet gehinderd wordt; enkel brute-force valt op. `trust proxy` staat al op 1
+// (hieronder), zodat het echte client-IP achter de pplx.app-proxy telt.
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 50,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { message: "Te veel pogingen. Probeer het over enkele minuten opnieuw." },
+});
+app.use(
+  [
+    "/api/admin/login",
+    "/api/admin/wachtwoord",
+    "/api/coach/login",
+    "/api/deelnemers/login",
+    "/api/deelnemers/token-login",
+    "/api/deelnemers/magic",
+  ],
+  authLimiter,
+);
+
 // Sessie-middleware (voor admin login)
-const MStore = MemoryStore(session);
+// A2 — SQLite-backed session store i.p.v. MemoryStore, op dezelfde better-sqlite3
+// DB als de app (via de gedeelde `sqlite`-instantie uit storage.ts). Zo blijven
+// sessies bewaard over herstarts heen. De cookie-config blijft ONGEWIJZIGD.
+const SqliteStore = betterSqlite3SessionStore(session);
 // Op pplx.app loopt het verkeer via een HTTPS-proxy (X-Forwarded-Proto: https).
 // trust proxy = 1 zodat req.secure correct werkt achter de proxy.
 // KRITIEK: pplx.app proxy strip cookies zonder __Host- prefix.
@@ -45,7 +102,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   name: "__Host-tapas-sid",
-  store: new MStore({ checkPeriod: 86400000 }),
+  store: new SqliteStore({ client: sqlite, expired: { clear: true, intervalMs: 24 * 60 * 60 * 1000 } }),
   cookie: {
     maxAge: 24 * 60 * 60 * 1000,
     httpOnly: true,

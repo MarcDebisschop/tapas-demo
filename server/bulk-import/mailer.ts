@@ -50,6 +50,10 @@ export function isSimulatiemodus(): boolean {
 function afzenderVoor(from?: string | null): string {
   if (from && from.trim()) return from.trim();
   if (process.env.SMTP_FROM && process.env.SMTP_FROM.trim()) return process.env.SMTP_FROM.trim();
+  // C1 — extra configureerbare fallback-afzender vóór de hardgecodeerde default,
+  // zodat productie een eigen afzender kan zetten zonder SMTP_FROM te overschrijven.
+  if (process.env.MAIL_FALLBACK_FROM && process.env.MAIL_FALLBACK_FROM.trim())
+    return process.env.MAIL_FALLBACK_FROM.trim();
   return STANDAARD_AFZENDER;
 }
 
