@@ -92,6 +92,23 @@ const STATUS_LABEL: Record<Taal, Record<string, string>> = {
   },
 };
 
+// Leesbare labels per instrument-id; onbekende id → ruwe id, leeg/null → "—".
+const INSTRUMENT_LABEL: Record<string, string> = {
+  t4teens: "T4Teens",
+  t4students: "T4Students",
+  "2minscan": "2MinScan",
+  "t4p-business-kompas": "T4P Business Kompas",
+  "impact-roos": "Impact-roos",
+  hdd: "HDD",
+  t4o: "T4 Organizations",
+  t4recruitment: "T4Recruitment",
+};
+
+function instrumentLabel(id?: string | null): string {
+  if (!id) return "—";
+  return INSTRUMENT_LABEL[id] ?? id;
+}
+
 // Bovenregel voor de lege-staat-illustratie (vlucht-signatuur).
 const EMPTY_OOG: Record<Taal, string> = {
   nl: "NOG NIETS OP DE RADAR",
@@ -490,6 +507,7 @@ export default function Admin() {
                     <TableHead>{t("admin_col_code")}</TableHead>
                     <TableHead>{t("admin_col_naam")}</TableHead>
                     <TableHead className="hidden sm:table-cell">{t("admin_col_org")}</TableHead>
+                    <TableHead className="hidden md:table-cell">{t("admin_col_instrument")}</TableHead>
                     <TableHead>{t("admin_col_status")}</TableHead>
                     <TableHead className="hidden sm:table-cell">{t("admin_col_taal")}</TableHead>
                     <TableHead className="hidden md:table-cell">{t("admin_col_aangemaakt")}</TableHead>
@@ -506,6 +524,9 @@ export default function Admin() {
                         <TableCell className="font-medium text-foreground">{a.respondentCode}</TableCell>
                         <TableCell>{a.name}</TableCell>
                         <TableCell className="hidden sm:table-cell text-muted-foreground">{a.company || "—"}</TableCell>
+                        <TableCell className="hidden md:table-cell text-muted-foreground" data-testid={`text-instrument-${a.id}`}>
+                          {instrumentLabel(a.instrumentId)}
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline" className={statusBadge(a.status)} data-testid={`status-${a.id}`}>
                             {STATUS_LABEL[uiTaal][a.status] ?? a.status}

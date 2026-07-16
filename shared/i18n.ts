@@ -391,6 +391,7 @@ export const STRINGS = {
   admin_col_code: { nl: "Code", fr: "Code", en: "Code", es: "Código", ru: "Код" },
   admin_col_naam: { nl: "Naam", fr: "Nom", en: "Name", es: "Nombre", ru: "Имя" },
   admin_col_org: { nl: "Organisatie", fr: "Organisation", en: "Organization", es: "Organización", ru: "Организация" },
+  admin_col_instrument: { nl: "Instrument", fr: "Instrument", en: "Instrument", es: "Instrumento", ru: "Инструмент" },
   admin_col_status: { nl: "Status", fr: "Statut", en: "Status", es: "Estado", ru: "Статус" },
   admin_col_taal: { nl: "Taal", fr: "Langue", en: "Language", es: "Idioma", ru: "Язык" },
   admin_col_aangemaakt: { nl: "Aangemaakt", fr: "Créé", en: "Created", es: "Creado", ru: "Создано" },

@@ -98,6 +98,7 @@ export function registerAdminRoutes(app: Express): void {
         role: a.role,
         status: a.status,
         taal: a.taal,
+        instrumentId: a.instrumentId ?? null,
         createdAt: a.createdAt,
         completedAt: a.completedAt,
         inviteToken: a.inviteToken,
