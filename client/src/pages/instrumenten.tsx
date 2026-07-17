@@ -31,6 +31,7 @@ import {
   Trophy,
   Backpack,
   GraduationCap,
+  Sparkles,
   Download,
   BookOpen,
   ArrowRight,
@@ -71,6 +72,7 @@ const ICONEN: Record<string, React.ComponentType<{ className?: string; style?: R
   Trophy,
   Backpack,
   GraduationCap,
+  Sparkles,
   SlidersHorizontal,
 };
 

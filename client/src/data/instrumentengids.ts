@@ -211,6 +211,24 @@ export const INSTRUMENTENGIDS: GidsInstrument[] = [
     icoon: "Trophy",
   },
   {
+    id: "t4kids",
+    naam: "T4Kids",
+    orientatie: "education",
+    eyebrow: "Kinderen · talentontdekking",
+    omschrijving:
+      "Een speels, leeftijdsspecifiek talentprofiel voor kinderen, in eenvoudige en beeldende taal, dat helpt om talenten en interesses vroeg zichtbaar te maken.",
+    beantwoordt:
+      "Waar word ik blij van? Waar ben ik goed in? Wat geeft mij energie op school en in mijn vrije tijd?",
+    gebruik:
+      "Voor vroege talentherkenning, ouder-kindgesprekken over interesses en een positieve start van studiekeuzeoriëntatie.",
+    doelgroep: "Kinderen 11–13 jaar, ouders, leerkrachten en zorgcoördinatoren.",
+    start: { label: "Ontdek T4Kids", route: "/studie/leerlingen", direct: false },
+    rapportTeaser:
+      "Een kindvriendelijke T4Kids talentkaart met herkenbare beelden, die talenten en interesses in eenvoudige taal weergeeft.",
+    leeftijdsfocus: "11–13 jaar",
+    icoon: "Sparkles",
+  },
+  {
     id: "t4teens",
     naam: "T4Teens",
     orientatie: "education",
@@ -221,11 +239,11 @@ export const INSTRUMENTENGIDS: GidsInstrument[] = [
       "Waar liggen mijn talenten als jongere? Welke studierichting past bij wie ik ben? Wat geeft mij energie op school en daarbuiten?",
     gebruik:
       "Voor studiekeuzebegeleiding, talentherkenning in het secundair, preventie van studiedropout en ouder-kindgesprekken over richting.",
-    doelgroep: "Jongeren 14–18 jaar, CLB-begeleiders, schoolcoaches.",
+    doelgroep: "Jongeren 13–17 jaar, CLB-begeleiders, schoolcoaches.",
     start: { label: "Ontdek T4Teens", route: "/studie/leerlingen", direct: false },
     rapportTeaser:
       "Een T4Teens talentkaart in jongerentaal, met studierichtingssuggesties op basis van de talent-foci.",
-    leeftijdsfocus: "14–18 jaar · secundair onderwijs",
+    leeftijdsfocus: "13–17 jaar",
     icoon: "Backpack",
   },
   {
@@ -239,11 +257,11 @@ export const INSTRUMENTENGIDS: GidsInstrument[] = [
       "Bevestigt mijn studiekeuze wie ik ben? Welke jobdomeinen sluiten aan bij mijn talent? Hoe formuleer ik mijn sterktes richting stage en eerste job?",
     gebruik:
       "Voor studierichtingsbevestiging of -bijsturing, voorbereiding op het stagezoekproces, eerste loopbaanoriëntatie en persoonlijke ontwikkeling.",
-    doelgroep: "Studenten hoger onderwijs, studentenbegeleiders.",
+    doelgroep: "Studenten 17–23 jaar, studentenbegeleiders.",
     start: { label: "Ontdek T4Students", route: "/studie/leerlingen", direct: false },
     rapportTeaser:
       "Een T4Students talentpaspoort met jobdomein-mapping en een eerste LinkedIn-formulering voor de start op de arbeidsmarkt.",
-    leeftijdsfocus: "18+ · hoger onderwijs",
+    leeftijdsfocus: "17–23 jaar",
     icoon: "GraduationCap",
   },
 ];
