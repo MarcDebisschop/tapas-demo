@@ -12,5 +12,9 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      # SESSION_SECRET is VERPLICHT in productie (server/index.ts fail-fast, A3).
+      # Render genereert eenmalig een veilige willekeurige waarde en bewaart die.
+      - key: SESSION_SECRET
+        generateValue: true
       # VITE_DEMO_MODE is ingebakken via .env.production tijdens de build (DEMO_MODE=true)
       # PORT wordt automatisch door Render geïnjecteerd op 10000 — niet overschrijven
