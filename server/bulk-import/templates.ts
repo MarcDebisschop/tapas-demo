@@ -53,7 +53,7 @@ const OUDER_VELDEN_OPTIONEEL: VeldDef[] = [
   { kolom: "E-mail ouder/voogd", sleutel: "ouderEmail", verplicht: false, hint: "Geldig e-mailadres ouder/voogd (optioneel)" },
 ];
 
-// De 6 instrumenten binnen scope voor bulk-import.
+// De 8 instrumenten binnen scope voor bulk-import.
 export const TEMPLATES: Record<string, InstrumentTemplate> = {
   "2minscan": {
     instrumentId: "2minscan",
@@ -71,9 +71,17 @@ export const TEMPLATES: Record<string, InstrumentTemplate> = {
       "in. E-mail is verplicht.",
     velden: [...BASIS_VELDEN],
   },
+  t4kids: {
+    instrumentId: "t4kids",
+    titel: "T4Kids (11-13 jaar)",
+    instructie:
+      "Talentprofiel voor kinderen. Naam én e-mail van de ouder/voogd zijn " +
+      "VERPLICHT (ouderlijke toestemming voor minderjarige).",
+    velden: [...BASIS_VELDEN, ...OUDER_VELDEN_VERPLICHT],
+  },
   t4teens: {
     instrumentId: "t4teens",
-    titel: "T4Teens (16-21 jaar)",
+    titel: "T4Teens (13-17 jaar)",
     instructie:
       "Talentprofiel voor jongeren. Voor minderjarigen zijn naam én e-mail van " +
       "de ouder/voogd VERPLICHT (ouderlijke toestemming).",
@@ -81,7 +89,7 @@ export const TEMPLATES: Record<string, InstrumentTemplate> = {
   },
   t4students: {
     instrumentId: "t4students",
-    titel: "T4Students (hoger onderwijs)",
+    titel: "T4Students (17-23 jaar)",
     instructie:
       "Talentprofiel voor studenten. Naam/e-mail ouder/voogd is optioneel " +
       "(enkel invullen bij minderjarige studenten).",
