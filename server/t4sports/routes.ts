@@ -10,6 +10,7 @@ import { getDescriptor } from "../registry";
 import { buildT4SportsContract } from "./scoring";
 import type { BlockResponse } from "./scoring";
 import { genereerT4SportsRapport } from "./rapport";
+import { renderRapportPdf } from "../rapport-pdf";
 import { verrijkT4SportsRapport } from "../duiding-manager";
 import { bouwT4SportsUitlegScript } from "./uitleg";
 import { bouwT4SportsChatProfiel } from "./chat";
@@ -329,6 +330,43 @@ export function registerT4SportsRoutes(app: Express): void {
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.setHeader("Content-Disposition", `attachment; filename="t4sports-profiel-${veiligNaam}.html"`);
     res.send(html);
+  });
+
+  // =========================================================================
+  // GET /api/t4sports/afnames/:id/rapport/pdf — rapport als PDF downloaden
+  // Zelfde vaste HTML-layout, omgezet via de gedeelde HTML->PDF-laag. Bij een
+  // render-fout terugval op de HTML zodat de flow nooit breekt.
+  // =========================================================================
+  app.get("/api/t4sports/afnames/:id/rapport/pdf", async (req, res) => {
+    const id = Number(req.params.id);
+    const a = await storage.getAfname(id);
+    if (!a) return res.status(404).send("Afname niet gevonden");
+    if (!a.generatorContract) return res.status(400).send("Profiel nog niet voltooid");
+
+    let contract: any;
+    try { contract = JSON.parse(a.generatorContract); } catch {
+      return res.status(400).send("Ongeldig contract");
+    }
+
+    let html = genereerT4SportsRapport(contract, a.taal);
+    try { html = await verrijkT4SportsRapport(html, contract); } catch { /* fallback op statische html */ }
+    const veiligNaam = (a.name || "atleet")
+      .normalize("NFKD")
+      .replace(/[^\w\s-]/g, "")
+      .trim()
+      .replace(/\s+/g, "-")
+      .slice(0, 60) || "atleet";
+    try {
+      const buffer = await renderRapportPdf(html, { titel: `T4Sports-profiel — ${a.name ?? ""}` });
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="t4sports-profiel-${veiligNaam}.pdf"`);
+      return res.send(buffer);
+    } catch (e) {
+      console.error("[t4sports] PDF-render mislukt, terugval op HTML:", e);
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.setHeader("Content-Disposition", `attachment; filename="t4sports-profiel-${veiligNaam}.html"`);
+      return res.send(html);
+    }
   });
 
   // =========================================================================

@@ -16,6 +16,8 @@
 import { bouwRapportInhoud, renderRapportHtml } from "./rapportgenerator";
 import { bouwT4StudentsRapport, renderT4StudentsHtml } from "./t4students/rapport";
 import { bouwT4pBusinessProfiel, renderT4pBusinessProfielHtml } from "./t4p/rapport";
+import { bouwT4TeensRapport, renderT4TeensHtml } from "./t4teens/rapport";
+import { renderRapportPdf } from "./rapport-pdf";
 
 export interface GeneratorEntry {
   // bouw krijgt (contract, variant); niet elke generator gebruikt variant.
@@ -33,6 +35,10 @@ export const RAPPORT_GENERATORS: Record<string, GeneratorEntry> = {
   "t4p-business-kompas": {
     bouw: (contract) => bouwT4pBusinessProfiel(contract),
     render: (inhoud) => renderT4pBusinessProfielHtml(inhoud),
+  },
+  t4teens: {
+    bouw: (contract) => bouwT4TeensRapport(contract),
+    render: (inhoud) => renderT4TeensHtml(inhoud),
   },
 };
 
@@ -55,4 +61,21 @@ export function kiesGenerator(instrumentId: unknown): GeneratorEntry {
     return RAPPORT_GENERATORS[instrumentId];
   }
   return FALLBACK;
+}
+
+// Bouwt uit een (bevroren) contract de instrument-eigen HTML en zet die om naar
+// een PDF-buffer via de gedeelde HTML->PDF-laag (server/rapport-pdf.ts). Werkt
+// voor elk HTML-instrument in de registry én — via de FALLBACK — voor elk
+// onbekend instrument, zodat er ALTIJD een PDF is. De pdfkit-instrumenten HDD en
+// Driver-scan lopen NIET via deze helper; die behouden hun eigen PDF-functie.
+// Gooit bij een render-fout; de aanroeper valt dan terug op de HTML-download.
+export async function genereerRapportPdf(
+  instrumentId: unknown,
+  contract: any,
+  variant: "kompas" | "coachatlas" = "kompas",
+): Promise<Buffer> {
+  const gen = kiesGenerator(instrumentId);
+  const inhoud = gen.bouw(contract, variant);
+  const html = gen.render(inhoud);
+  return renderRapportPdf(html, { titel: inhoud?.titel });
 }

@@ -4,6 +4,7 @@ import { insertT4OSessieSchema, GROEP_NAAR_RING, T4O_GROEPEN, type T4OGroep } fr
 import { t4oInstrument, itemsVoorRing, verplichteItemIdsVoorRing } from "./instrument";
 import { scoorOrganisatie } from "./scoring";
 import { renderT4ORapport } from "./rapport";
+import { renderRapportPdf } from "../rapport-pdf";
 import { seedBishop } from "./seed";
 
 /**
@@ -119,7 +120,7 @@ export function registerT4OrganizationsRoutes(app: Express): void {
   });
 
   // ---- Organisatierapport --------------------------------------------------
-  app.get("/api/t4o/sessies/:id/rapport", (req, res) => {
+  app.get("/api/t4o/sessies/:id/rapport", async (req, res) => {
     const sessieId = Number(req.params.id);
     const sessie = storage.getSessie(sessieId);
     if (!sessie) return res.status(404).json({ error: "Sessie niet gevonden" });
@@ -133,6 +134,20 @@ export function registerT4OrganizationsRoutes(app: Express): void {
     }
     const scores = scoorOrganisatie(antwoorden);
     const formaat = (req.query.formaat as string) ?? "html";
+    if (formaat === "pdf") {
+      // Zelfde vaste HTML-layout, omgezet naar PDF via de gedeelde laag. Faalt de
+      // render, dan terugval op HTML zodat de flow nooit breekt.
+      const html = renderT4ORapport(scores, sessie);
+      try {
+        const buffer = await renderRapportPdf(html, { titel: "T4O Organisatierapport" });
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", 'attachment; filename="t4o-organisatierapport.pdf"');
+        return res.send(buffer);
+      } catch (e) {
+        console.error("[t4o] PDF-render mislukt, terugval op HTML:", e);
+        return res.type("html").send(html);
+      }
+    }
     if (formaat === "html") {
       res.type("html").send(renderT4ORapport(scores, sessie));
     } else {

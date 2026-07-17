@@ -4,6 +4,7 @@ import { teamscanAntwoordenInhoudSchema, insertTeamscanSessieSchema } from "./sc
 import { scoorIndividueel, aggregeerTeam, itembank, interpretatie } from "./scoring";
 import { vertaalItembank } from "./itembank-i18n";
 import { renderIndividueelRapport, renderTeamRapport } from "./rapport";
+import { renderRapportPdf } from "../rapport-pdf";
 import { z } from "zod";
 
 /**
@@ -126,13 +127,25 @@ export function registerTeamscanRoutes(app: Express): void {
   });
 
   // ---- Individueel rapport (per deelnemer) ----
-  app.get("/api/teamscan/deelnemer/:token/rapport", (req, res) => {
+  app.get("/api/teamscan/deelnemer/:token/rapport", async (req, res) => {
     const deelnemer = storage.getDeelnemerViaToken(req.params.token);
     if (!deelnemer) return res.status(404).json({ error: "Ongeldige link" });
     const antwoorden = storage.getAntwoorden(deelnemer.id);
     if (!antwoorden) return res.status(404).json({ error: "Nog geen antwoorden ingediend" });
     const resultaat = scoorIndividueel(antwoorden);
     const formaat = (req.query.formaat as string) ?? "json";
+    if (formaat === "pdf") {
+      const html = renderIndividueelRapport(resultaat, deelnemer.label);
+      try {
+        const buffer = await renderRapportPdf(html, { titel: `Teamscan — ${deelnemer.label}` });
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", 'attachment; filename="teamscan-individueel.pdf"');
+        return res.send(buffer);
+      } catch (e) {
+        console.error("[teamscan] PDF-render mislukt, terugval op HTML:", e);
+        return res.type("html").send(html);
+      }
+    }
     if (formaat === "html") {
       res.type("html").send(renderIndividueelRapport(resultaat, deelnemer.label));
     } else {
@@ -141,7 +154,7 @@ export function registerTeamscanRoutes(app: Express): void {
   });
 
   // ---- Teamrapport (aggregatie) ----
-  app.get("/api/teamscan/sessies/:id/teamrapport", (req, res) => {
+  app.get("/api/teamscan/sessies/:id/teamrapport", async (req, res) => {
     const sessieId = Number(req.params.id);
     const sessie = storage.getSessie(sessieId);
     if (!sessie) return res.status(404).json({ error: "Sessie niet gevonden" });
@@ -156,6 +169,18 @@ export function registerTeamscanRoutes(app: Express): void {
     const individuen = ruweAntwoorden.map((a) => scoorIndividueel(a));
     const team = aggregeerTeam(individuen);
     const formaat = (req.query.formaat as string) ?? "json";
+    if (formaat === "pdf") {
+      const html = renderTeamRapport(team, sessie.teamNaam);
+      try {
+        const buffer = await renderRapportPdf(html, { titel: `Teamscan — ${sessie.teamNaam}` });
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", 'attachment; filename="teamscan-teamrapport.pdf"');
+        return res.send(buffer);
+      } catch (e) {
+        console.error("[teamscan] PDF-render mislukt, terugval op HTML:", e);
+        return res.type("html").send(html);
+      }
+    }
     if (formaat === "html") {
       res.type("html").send(renderTeamRapport(team, sessie.teamNaam));
     } else {

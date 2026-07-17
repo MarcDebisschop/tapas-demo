@@ -15,6 +15,7 @@
 import type { Express } from "express";
 import { storage, CreditError } from "../storage";
 import { genereerRapportSchema } from "@shared/schema";
+import { renderRapportPdf } from "../rapport-pdf";
 
 export function registerRapportenRoutes(app: Express): void {
   // =========================================================================
@@ -112,5 +113,46 @@ export function registerRapportenRoutes(app: Express): void {
       `attachment; filename="${veiligeNaam}.html"`,
     );
     res.send(r.html);
+  });
+
+  // Download het rapport als een ECHTE, code-gegenereerde PDF via de gedeelde
+  // HTML->PDF-laag (server/rapport-pdf.ts). De vaste, instrument-eigen
+  // HTML-layout blijft de bindende structuur; deze route zet enkel diezelfde
+  // HTML om naar PDF. Zo krijgt elk gedeeld-pad-instrument (t4p, t4students,
+  // t4teens, ...) altijd een downloadbare PDF op maat.
+  //
+  // ROBUUST: faalt de render (geen Chromium, crash), dan valt de route netjes
+  // terug op de HTML-download i.p.v. de afname/rapport-flow te breken.
+  app.get("/api/rapporten/:id/pdf", async (req, res) => {
+    const r = await storage.getRapport(Number(req.params.id));
+    if (!r) return res.status(404).send("Rapport niet gevonden");
+    const veiligeNaam =
+      (r.titel || "profiel")
+        .normalize("NFKD")
+        .replace(/[^\w\s-]/g, "")
+        .trim()
+        .replace(/\s+/g, "-")
+        .slice(0, 80) || "profiel";
+
+    // Hangt er al een echt PDF-document aan (pdfkit-instrument/seed)? Serveer dat.
+    const bestaandePdf = (r as any).pdfBase64 as string | null | undefined;
+    if (bestaandePdf) {
+      const buf = Buffer.from(bestaandePdf, "base64");
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${veiligeNaam}.pdf"`);
+      return res.send(buf);
+    }
+
+    try {
+      const buffer = await renderRapportPdf(r.html, { titel: r.titel });
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${veiligeNaam}.pdf"`);
+      return res.send(buffer);
+    } catch (e) {
+      console.error("[rapporten] PDF-render mislukt, terugval op HTML:", e);
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.setHeader("Content-Disposition", `attachment; filename="${veiligeNaam}.html"`);
+      return res.send(r.html);
+    }
   });
 }

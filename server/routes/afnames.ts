@@ -34,6 +34,7 @@ import {
 } from "@shared/schema";
 import { buildGeneratorContract } from "../scoring";
 import { buildT4StudentsContract } from "../t4students/scoring";
+import { buildT4TeensContract } from "../t4teens/scoring";
 import { z } from "zod";
 
 // Genereert een leesbare respondentCode op basis van naam + jaar + volgnummer.
@@ -313,6 +314,19 @@ export function registerAfnameRoutes(app: Express): void {
         consentTimestamp: a.consentTimestamp,
         responses,
         reflectie,
+        taal: a.taal,
+      });
+    } else if (a.instrumentId === "t4teens") {
+      // T4Teens: eigen itembank + eigen scoringscontract (instrumentId "t4teens"),
+      // zodat de registry de T4Teens-generator kiest i.p.v. de generieke fallback.
+      contract = buildT4TeensContract({
+        respondentCode: a.respondentCode,
+        name: a.name,
+        company: a.company,
+        role: a.role,
+        consentScope: a.consentScope,
+        consentTimestamp: a.consentTimestamp,
+        responses,
         taal: a.taal,
       });
     } else {
