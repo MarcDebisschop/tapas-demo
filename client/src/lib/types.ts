@@ -41,6 +41,7 @@ export interface BlockAnswer {
   least: string | null;
   itemEnergy: { most: number | null; least: number | null };
   blockEnergy: number | null;
+  toelichting?: string | null;
 }
 export type AnswerState = Record<string, BlockAnswer>;
 

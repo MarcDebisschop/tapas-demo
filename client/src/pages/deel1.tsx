@@ -14,8 +14,19 @@ import { ChevronLeft, ChevronRight, ThumbsUp, ThumbsDown, Check, CheckCircle2 } 
 import { maakVertaler, normaliseerTaal, STANDAARD_TAAL, publiekeFamilie } from "@shared/i18n";
 
 function emptyAnswer(): BlockAnswer {
-  return { most: null, least: null, itemEnergy: { most: null, least: null }, blockEnergy: null };
+  return { most: null, least: null, itemEnergy: { most: null, least: null }, blockEnergy: null, toelichting: null };
 }
+
+// Label voor de optionele driver-toelichting bij een energiekostende keuze.
+// Klein inline-woordenboek zodat de feature in alle afname-talen leesbaar is;
+// valt terug op NL wanneer de taal ontbreekt.
+const TOELICHTING_LABELS: Record<string, string> = {
+  nl: "Wat maakt dit energiekostend? (optioneel)",
+  en: "What makes this energy-draining? (optional)",
+  fr: "Qu'est-ce qui rend cela épuisant ? (facultatif)",
+  de: "Was macht dies energieraubend? (optional)",
+  es: "¿Qué hace que esto reste energía? (opcional)",
+};
 
 // Energieknoppen-rij.
 function EnergyRow({
@@ -95,6 +106,18 @@ export default function Deel1() {
   const stateKey = block ? `B${block.blockIndex}` : "";
   const cur = answers[stateKey] ?? emptyAnswer();
   const energyOptions = inst?.responseScales.energy.options ?? [];
+  // "Energiekostend" = de laagste/negatieve energie-optie. Zodra die gekozen is,
+  // tonen we een optioneel toelichting-veld (blokkeert de afname nooit).
+  const minEnergie = energyOptions.length ? Math.min(...energyOptions.map((o) => o.value)) : 0;
+  const isEnergieKostend = (v: number | null | undefined) =>
+    v !== null && v !== undefined && (v < 0 || v === minEnergie);
+  const isDriverBlok = block?.family === "Drivers";
+  const toonToelichting =
+    isDriverBlok &&
+    (block?.energyMode === "block"
+      ? isEnergieKostend(cur.blockEnergy)
+      : isEnergieKostend(cur.itemEnergy.most) || isEnergieKostend(cur.itemEnergy.least));
+  const toelichtingLabel = TOELICHTING_LABELS[taal] ?? TOELICHTING_LABELS.nl;
 
   // Herstel eerder (tussentijds) bewaarde antwoorden zodra zowel de afname als
   // het instrument geladen zijn. We doen dit eenmalig (geladenRef) zodat lokale
@@ -368,6 +391,26 @@ export default function Deel1() {
                       testidPrefix="energy-item-least"
                     />
                   </div>
+                </div>
+              )}
+
+              {/* Optionele driver-toelichting: alleen bij een energiekostende keuze. */}
+              {toonToelichting && (
+                <div className="space-y-2 border-t border-border pt-4">
+                  <label
+                    htmlFor="toelichting"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    {toelichtingLabel}
+                  </label>
+                  <textarea
+                    id="toelichting"
+                    value={cur.toelichting ?? ""}
+                    onChange={(e) => update({ toelichting: e.target.value || null })}
+                    rows={2}
+                    data-testid="input-toelichting"
+                    className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                  />
                 </div>
               )}
             </div>

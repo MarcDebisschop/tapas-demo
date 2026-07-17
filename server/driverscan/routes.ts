@@ -98,6 +98,7 @@ function saneerResponses(raw: any): Responses {
           least: numOrNull(ie.least),
         },
         blockEnergy: numOrNull(r.blockEnergy),
+        toelichting: typeof r.toelichting === "string" ? r.toelichting : null,
       };
     }
   }
@@ -114,7 +115,12 @@ function scoorDrivers(raw: any): DriverScanRow[] {
   const scores = buildMainScores(responses, 0);
   return scores.constructRows
     .filter((r) => r.family === "Drivers" && DRIVERKEY_SET.has(r.construct))
-    .map((r) => ({ key: r.construct as DriverKey, net: r.net, avgEnergy: r.avgEnergy }))
+    .map((r) => ({
+      key: r.construct as DriverKey,
+      net: r.net,
+      avgEnergy: r.avgEnergy,
+      toelichting: r.toelichtingen && r.toelichtingen.length ? r.toelichtingen.join(" · ") : null,
+    }))
     .sort((a, b) => {
       if (b.net !== a.net) return b.net - a.net;
       return DRIVER_KEYS.indexOf(a.key) - DRIVER_KEYS.indexOf(b.key);

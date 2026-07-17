@@ -45,6 +45,7 @@ export interface UiTekst {
   kolomSignaal: string;
   gaspedaalLabel: string;
   remLabel: string;
+  toelichtingLabel: string;
   neutraalLabel: string;
   aandriverLabel: string;   // "sterkst aan het stuur"
   netUitleg: string;
@@ -89,6 +90,7 @@ export const UI: Record<Taal, UiTekst> = {
     kolomSignaal: "Signaal",
     gaspedaalLabel: "gaspedaal",
     remLabel: "rem",
+    toelichtingLabel: "toelichting",
     neutraalLabel: "neutraal",
     aandriverLabel: "sterkst aan het stuur",
     netUitleg: "Netto = hoe vaak méést gekozen − hoe vaak mínst gekozen.",
@@ -131,6 +133,7 @@ export const UI: Record<Taal, UiTekst> = {
     kolomSignaal: "Signal",
     gaspedaalLabel: "accélérateur",
     remLabel: "frein",
+    toelichtingLabel: "précision",
     neutraalLabel: "neutre",
     aandriverLabel: "le plus fort au volant",
     netUitleg: "Net = nombre de fois choisi le plus − nombre de fois choisi le moins.",
@@ -173,6 +176,7 @@ export const UI: Record<Taal, UiTekst> = {
     kolomSignaal: "Signal",
     gaspedaalLabel: "accelerator",
     remLabel: "brake",
+    toelichtingLabel: "note",
     neutraalLabel: "neutral",
     aandriverLabel: "most firmly at the wheel",
     netUitleg: "Net = how often chosen most − how often chosen least.",
@@ -215,6 +219,7 @@ export const UI: Record<Taal, UiTekst> = {
     kolomSignaal: "Señal",
     gaspedaalLabel: "acelerador",
     remLabel: "freno",
+    toelichtingLabel: "nota",
     neutraalLabel: "neutro",
     aandriverLabel: "más firmemente al volante",
     netUitleg: "Neto = cuántas veces elegido más − cuántas veces elegido menos.",
@@ -257,6 +262,7 @@ export const UI: Record<Taal, UiTekst> = {
     kolomSignaal: "Сигнал",
     gaspedaalLabel: "газ",
     remLabel: "тормоз",
+    toelichtingLabel: "пояснение",
     neutraalLabel: "нейтрально",
     aandriverLabel: "крепче всего за рулём",
     netUitleg: "Нетто = сколько раз выбран как наиболее близкий − сколько раз как наименее.",

@@ -68,16 +68,33 @@ check(
   !!dm && /uitsluitend de meegegeven/i.test(dm),
 );
 
-// -- Garantie 3: het AI-duidingpad valt terug op bouwRapportInhoud -------------
-// Bewijs dat de statische weg de fallback is: de repository bouwt eerst de
-// statische inhoud (bouwRapportInhoud) en verrijkt daarna enkel bij succes.
+// -- Garantie 3: het AI-duidingpad valt terug op de statische generieke inhoud --
+// De rapportkeuze loopt sinds de registry via server/rapport-registry.ts. De
+// generieke fallback dáár gebruikt bouwRapportInhoud; de live paden (storage.ts
+// en repositories/rapporten.ts) bouwen eerst de statische inhoud via de registry
+// en verrijken pas daarna, met behoud van de statische inhoud als fallback.
+const registry = lees("server/rapport-registry.ts");
+check("rapport-registry.ts bestaat", registry !== null);
+check(
+  "rapport-registry.ts: generieke fallback gebruikt bouwRapportInhoud",
+  !!registry && /bouwRapportInhoud/.test(registry),
+);
 const repo = lees("server/repositories/rapporten.ts");
-check("rapporten.ts bouwt nog steeds de statische bouwRapportInhoud", !!repo && /bouwRapportInhoud/.test(repo));
+check("rapporten.ts kiest de generator via de gedeelde registry", !!repo && /kiesGenerator/.test(repo));
 check("rapporten.ts roept genereerAiDuiding aan (additief AI-pad)", !!repo && /genereerAiDuiding/.test(repo));
 check(
   "rapporten.ts: AI-pad heeft een fallback naar de statische inhoud",
-  !!repo && /fallback naar bouwRapportInhoud/.test(repo),
+  !!repo && /fallback naar de generieke generator/.test(repo),
   "de statische inhoud/html moet behouden blijven als de AI faalt",
+);
+const stor = lees("server/storage.ts");
+check(
+  "storage.ts kiest de generator via de gedeelde registry (één bron van waarheid)",
+  !!stor && /kiesGenerator/.test(stor),
+);
+check(
+  "storage.ts: AI-duiding draait nooit op een instrument met eigen generator",
+  !!stor && /heeftDedicatedGenerator/.test(stor),
 );
 check(
   "duiding-manager.ts: genereerAiDuiding retourneert null bij falen (fallback-signaal)",

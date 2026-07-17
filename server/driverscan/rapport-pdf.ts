@@ -32,6 +32,7 @@ export interface DriverScanRow {
   key: DriverKey;
   net: number;
   avgEnergy: number;
+  toelichting?: string | null;
 }
 
 export interface DriverScanPdfInput {
@@ -277,6 +278,11 @@ export function renderDriverScanPdf(input: DriverScanPdfInput): Promise<Buffer> 
         labelBlok(ui.remLabel.toUpperCase(), REM, d.rem);
         // kantelpunt
         labelBlok("↔", ACCENT, d.kantel);
+        // optionele deelnemer-toelichting (alleen indien ingevuld bij een
+        // energiekostende keuze); weggelaten bij oudere afnames zonder tekst.
+        if (typeof r.toelichting === "string" && r.toelichting.trim()) {
+          labelBlok(ui.toelichtingLabel.toUpperCase(), MUTE, r.toelichting.trim());
+        }
         y += 10;
       });
 

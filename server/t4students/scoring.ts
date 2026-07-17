@@ -180,6 +180,7 @@ export function buildT4StudentsContract(opts: BuildT4StudentsOpts): T4StudentsCo
     avgEnergy: v.scores.length ? round2(v.scores.reduce((a, b) => a + b, 0) / v.scores.length) : 0,
     energySource: v.scores.length ? "item" : "geen",
     mostItems: v.mostItems,
+    toelichtingen: [],
   }));
 
   const familyRows: FamilyRow[] = Object.entries(familyScores).map(([family, scores]) => ({

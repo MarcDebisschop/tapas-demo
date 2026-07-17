@@ -149,6 +149,7 @@ export const blockResponseSchema = z.object({
     least: z.number().nullable(),
   }),
   blockEnergy: z.number().nullable(),
+  toelichting: z.string().nullable().optional(),
 });
 
 export const submitMainSchema = z.object({

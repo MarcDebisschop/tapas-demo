@@ -12,7 +12,8 @@ import { rapporten, afnames } from "@shared/schema";
 import type { Rapport, Afname } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 import { db } from "../storage";
-import { bouwRapportInhoud, renderRapportHtml } from "../rapportgenerator";
+import { renderRapportHtml } from "../rapportgenerator";
+import { kiesGenerator, heeftDedicatedGenerator } from "../rapport-registry";
 import { genereerAiDuiding, isLiveDuidingAan, DUIDING_INSTRUMENT } from "../duiding-manager";
 
 export class RapportError extends Error {
@@ -38,17 +39,24 @@ export async function genereerRapport(
     );
   }
   const contract = JSON.parse(afname.generatorContract);
-  let inhoud = bouwRapportInhoud(contract, variant);
-  let html = renderRapportHtml(inhoud);
+  // Instrument -> generator via de gedeelde registry (server/rapport-registry.ts),
+  // exact dezelfde keuze als server/storage.ts en script/regen_reports.ts. De
+  // generieke fallback in de registry gebruikt bouwRapportInhoud.
+  const generator = kiesGenerator(contract?.instrumentId);
+  let inhoud = generator.bouw(contract, variant);
+  let html = generator.render(inhoud);
 
   // --- Additief (T4P-pilot): LIVE AI-duiding. De statische inhoud/html hierboven
-  //     blijft de default én meteen de fallback. Enkel wanneer live-duiding AAN
-  //     staat en het instrument T4P is, proberen we de prozateksten te verrijken.
-  //     Faalt de AI (traag/geen key/fout/guardrail), dan behouden we de statische
-  //     bouwRapportInhoud-tekst — een afname blokkeert nooit. De cijfers/tabellen
-  //     (uit scoring.ts) blijven in alle gevallen ongemoeid. ---
+  //     blijft de default én meteen de fallback. Ze draait enkel op de generieke
+  //     structuur (nooit op een instrument met een eigen generator) en enkel
+  //     wanneer live-duiding AAN staat. Faalt de AI, dan behouden we de statische
+  //     inhoud — een afname blokkeert nooit. De cijfers/tabellen blijven ongemoeid. ---
   try {
-    if (contract?.instrumentId === DUIDING_INSTRUMENT && isLiveDuidingAan()) {
+    if (
+      !heeftDedicatedGenerator(contract?.instrumentId) &&
+      contract?.instrumentId === DUIDING_INSTRUMENT &&
+      isLiveDuidingAan()
+    ) {
       const verrijkt = await genereerAiDuiding(inhoud, contract);
       if (verrijkt) {
         inhoud = verrijkt;
@@ -56,7 +64,7 @@ export async function genereerRapport(
       }
     }
   } catch {
-    // stil terugvallen op de statische inhoud/html (fallback naar bouwRapportInhoud)
+    // stil terugvallen op de statische inhoud/html (fallback naar de generieke generator)
   }
 
   const now = new Date().toISOString();

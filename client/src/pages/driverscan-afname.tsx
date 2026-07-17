@@ -35,6 +35,7 @@ interface Answer {
   least: string | null;
   itemEnergy: { most: number | null; least: number | null };
   blockEnergy: number | null;
+  toelichting?: string | null;
 }
 type AnswerState = Record<string, Answer>;
 
@@ -48,15 +49,15 @@ const TALEN = [
 
 // Minimale UI-microcopy per taal (afname-scherm; rapportteksten zitten server-side).
 const T: Record<string, Record<string, string>> = {
-  nl: { titel: "Driver-scan", intro: "Kies per blok wat het MÉÉST en het MÍNST bij je past, en geef de energie aan.", meest: "Past het meest", minst: "Past het minst", energieMeest: "Energie bij 'meest'", energieMinst: "Energie bij 'minst'", blok: "Blok", van: "van", vorige: "Vorige", volgende: "Volgende", afronden: "Rapport genereren", naam: "Naam (optioneel)", genereren: "Rapport wordt gegenereerd…", klaar: "Rapport gedownload", fout: "Er ging iets mis. Probeer opnieuw.", onvolledig: "Vul eerst 'meest', 'minst' en beide energiewaarden in." },
-  fr: { titel: "Driver-scan", intro: "Par bloc, choisissez ce qui vous correspond LE PLUS et LE MOINS, puis indiquez l'énergie.", meest: "Correspond le plus", minst: "Correspond le moins", energieMeest: "Énergie pour « le plus »", energieMinst: "Énergie pour « le moins »", blok: "Bloc", van: "sur", vorige: "Précédent", volgende: "Suivant", afronden: "Générer le rapport", naam: "Nom (facultatif)", genereren: "Génération du rapport…", klaar: "Rapport téléchargé", fout: "Une erreur s'est produite. Réessayez.", onvolledig: "Complétez d'abord « le plus », « le moins » et les deux valeurs d'énergie." },
-  en: { titel: "Driver-scan", intro: "For each block, pick what fits you MOST and LEAST, then set the energy.", meest: "Fits most", minst: "Fits least", energieMeest: "Energy for 'most'", energieMinst: "Energy for 'least'", blok: "Block", van: "of", vorige: "Previous", volgende: "Next", afronden: "Generate report", naam: "Name (optional)", genereren: "Generating report…", klaar: "Report downloaded", fout: "Something went wrong. Please try again.", onvolledig: "First fill in 'most', 'least' and both energy values." },
-  es: { titel: "Driver-scan", intro: "En cada bloque, elige lo que MÁS y MENOS encaja contigo, y luego indica la energía.", meest: "Encaja más", minst: "Encaja menos", energieMeest: "Energía para «más»", energieMinst: "Energía para «menos»", blok: "Bloque", van: "de", vorige: "Anterior", volgende: "Siguiente", afronden: "Generar informe", naam: "Nombre (opcional)", genereren: "Generando informe…", klaar: "Informe descargado", fout: "Algo salió mal. Inténtalo de nuevo.", onvolledig: "Primero completa «más», «menos» y ambos valores de energía." },
-  ru: { titel: "Driver-scan", intro: "В каждом блоке выберите, что подходит вам БОЛЬШЕ и МЕНЬШЕ всего, и укажите энергию.", meest: "Подходит больше всего", minst: "Подходит меньше всего", energieMeest: "Энергия для «больше»", energieMinst: "Энергия для «меньше»", blok: "Блок", van: "из", vorige: "Назад", volgende: "Далее", afronden: "Сформировать отчёт", naam: "Имя (необязательно)", genereren: "Формирование отчёта…", klaar: "Отчёт загружен", fout: "Что-то пошло не так. Попробуйте ещё раз.", onvolledig: "Сначала укажите «больше», «меньше» и оба значения энергии." },
+  nl: { titel: "Driver-scan", intro: "Kies per blok wat het MÉÉST en het MÍNST bij je past, en geef de energie aan.", meest: "Past het meest", minst: "Past het minst", energieMeest: "Energie bij 'meest'", energieMinst: "Energie bij 'minst'", blok: "Blok", van: "van", vorige: "Vorige", volgende: "Volgende", afronden: "Rapport genereren", naam: "Naam (optioneel)", genereren: "Rapport wordt gegenereerd…", klaar: "Rapport gedownload", fout: "Er ging iets mis. Probeer opnieuw.", onvolledig: "Vul eerst 'meest', 'minst' en beide energiewaarden in.", toelichting: "Wat maakt dit energiekostend? (optioneel)" },
+  fr: { titel: "Driver-scan", intro: "Par bloc, choisissez ce qui vous correspond LE PLUS et LE MOINS, puis indiquez l'énergie.", meest: "Correspond le plus", minst: "Correspond le moins", energieMeest: "Énergie pour « le plus »", energieMinst: "Énergie pour « le moins »", blok: "Bloc", van: "sur", vorige: "Précédent", volgende: "Suivant", afronden: "Générer le rapport", naam: "Nom (facultatif)", genereren: "Génération du rapport…", klaar: "Rapport téléchargé", fout: "Une erreur s'est produite. Réessayez.", onvolledig: "Complétez d'abord « le plus », « le moins » et les deux valeurs d'énergie.", toelichting: "Qu'est-ce qui rend cela épuisant ? (facultatif)" },
+  en: { titel: "Driver-scan", intro: "For each block, pick what fits you MOST and LEAST, then set the energy.", meest: "Fits most", minst: "Fits least", energieMeest: "Energy for 'most'", energieMinst: "Energy for 'least'", blok: "Block", van: "of", vorige: "Previous", volgende: "Next", afronden: "Generate report", naam: "Name (optional)", genereren: "Generating report…", klaar: "Report downloaded", fout: "Something went wrong. Please try again.", onvolledig: "First fill in 'most', 'least' and both energy values.", toelichting: "What makes this energy-draining? (optional)" },
+  es: { titel: "Driver-scan", intro: "En cada bloque, elige lo que MÁS y MENOS encaja contigo, y luego indica la energía.", meest: "Encaja más", minst: "Encaja menos", energieMeest: "Energía para «más»", energieMinst: "Energía para «menos»", blok: "Bloque", van: "de", vorige: "Anterior", volgende: "Siguiente", afronden: "Generar informe", naam: "Nombre (opcional)", genereren: "Generando informe…", klaar: "Informe descargado", fout: "Algo salió mal. Inténtalo de nuevo.", onvolledig: "Primero completa «más», «menos» y ambos valores de energía.", toelichting: "¿Qué hace que esto reste energía? (opcional)" },
+  ru: { titel: "Driver-scan", intro: "В каждом блоке выберите, что подходит вам БОЛЬШЕ и МЕНЬШЕ всего, и укажите энергию.", meest: "Подходит больше всего", minst: "Подходит меньше всего", energieMeest: "Энергия для «больше»", energieMinst: "Энергия для «меньше»", blok: "Блок", van: "из", vorige: "Назад", volgende: "Далее", afronden: "Сформировать отчёт", naam: "Имя (необязательно)", genereren: "Формирование отчёта…", klaar: "Отчёт загружен", fout: "Что-то пошло не так. Попробуйте ещё раз.", onvolledig: "Сначала укажите «больше», «меньше» и оба значения энергии.", toelichting: "Что делает это энергозатратным? (необязательно)" },
 };
 
 function leegAntwoord(): Answer {
-  return { most: null, least: null, itemEnergy: { most: null, least: null }, blockEnergy: null };
+  return { most: null, least: null, itemEnergy: { most: null, least: null }, blockEnergy: null, toelichting: null };
 }
 
 function EnergiePicker({
@@ -113,6 +114,12 @@ export default function DriverScanAfname() {
   const energyOptions = data?.responseScales.energy.options ?? [];
   const block = blocks[idx];
   const cur = block ? answers[block.stateKey] ?? leegAntwoord() : leegAntwoord();
+  // "Energiekostend" = de laagste/negatieve energie-optie. Bij die keuze tonen
+  // we een optioneel toelichting-veld; het blokkeert de afronding nooit.
+  const minEnergie = energyOptions.length ? Math.min(...energyOptions.map((o) => o.value)) : 0;
+  const isEnergieKostend = (v: number | null | undefined) =>
+    v !== null && v !== undefined && (v < 0 || v === minEnergie);
+  const toonToelichting = isEnergieKostend(cur.itemEnergy.most) || isEnergieKostend(cur.itemEnergy.least);
 
   const update = (patch: Partial<Answer>) => {
     if (!block) return;
@@ -258,6 +265,18 @@ export default function DriverScanAfname() {
                 <p className="text-xs font-medium text-muted-foreground mb-1.5">{tt("energieMinst")}</p>
                 <EnergiePicker options={energyOptions} value={cur.itemEnergy.least} disabled={!cur.least} onChange={(v) => update({ itemEnergy: { ...cur.itemEnergy, least: v } })} />
               </div>
+              {toonToelichting && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1.5">{tt("toelichting")}</p>
+                  <textarea
+                    value={cur.toelichting ?? ""}
+                    onChange={(e) => update({ toelichting: e.target.value || null })}
+                    rows={2}
+                    data-testid="input-toelichting"
+                    className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground"
+                  />
+                </div>
+              )}
             </div>
           </div>
         )}

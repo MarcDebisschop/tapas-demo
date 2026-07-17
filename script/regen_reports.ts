@@ -1,7 +1,7 @@
 // Herbouwt alle bestaande rapporten op basis van de nieuwe rijke contracten,
 // en zorgt dat de Marc-showcase een kompas + coachatlas heeft.
 import Database from "better-sqlite3";
-import { bouwRapportInhoud, renderRapportHtml } from "../server/rapportgenerator";
+import { kiesGenerator } from "../server/rapport-registry";
 
 const db = new Database("data.db");
 
@@ -15,8 +15,9 @@ for (const r of reps) {
   const row = getContract.get(r.afname_id) as any;
   if (!row?.generator_contract) continue;
   const contract = JSON.parse(row.generator_contract);
-  const inhoud = bouwRapportInhoud(contract, r.variant);
-  const html = renderRapportHtml(inhoud);
+  const generator = kiesGenerator(contract?.instrumentId);
+  const inhoud = generator.bouw(contract, r.variant);
+  const html = generator.render(inhoud);
   updRep.run(
     `${inhoud.titel} — ${inhoud.respondent.naam}`,
     JSON.stringify(inhoud),
@@ -41,8 +42,9 @@ if (marc?.generator_contract) {
       .prepare("select id from rapporten where afname_id=? and variant=?")
       .get(marc.id, variant);
     if (exists) continue;
-    const inhoud = bouwRapportInhoud(contract, variant);
-    const html = renderRapportHtml(inhoud);
+    const generator = kiesGenerator(contract?.instrumentId);
+    const inhoud = generator.bouw(contract, variant);
+    const html = generator.render(inhoud);
     insRep.run(
       marc.id, variant, `${inhoud.titel} — ${inhoud.respondent.naam}`,
       JSON.stringify(inhoud), html, contract?.contractVersion ?? "1.0.0", now

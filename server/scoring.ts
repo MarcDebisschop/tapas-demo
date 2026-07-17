@@ -22,6 +22,7 @@ export interface BlockResponse {
   least: string | null;
   itemEnergy: { most: number | null; least: number | null };
   blockEnergy: number | null;
+  toelichting?: string | null;
 }
 export type Responses = Record<string, BlockResponse>;
 
@@ -35,6 +36,7 @@ export interface ConstructRow {
   avgEnergy: number;
   energySource: string;
   mostItems: string[];
+  toelichtingen: string[];
 }
 export interface FamilyRow {
   family: string;
@@ -49,6 +51,7 @@ interface ConstructAcc {
   energyVals: number[];
   energySource: Set<string>;
   mostItems: string[];
+  toelichtingen: string[];
 }
 interface FamilyAcc {
   energyVals: number[];
@@ -75,6 +78,7 @@ function aggregate(responses: Responses): { rows: ConstructRow[]; famRows: Famil
           energyVals: [],
           energySource: new Set<string>(),
           mostItems: [],
+          toelichtingen: [],
         };
       }
       const c = constructs[it.construct];
@@ -82,6 +86,9 @@ function aggregate(responses: Responses): { rows: ConstructRow[]; famRows: Famil
       if (r.most === it.pos) {
         c.most += 1;
         c.mostItems.push(it.text);
+        if (typeof r.toelichting === "string" && r.toelichting.trim()) {
+          c.toelichtingen.push(r.toelichting.trim());
+        }
         if (b.energyMode === "item" && r.itemEnergy.most !== null && r.itemEnergy.most !== undefined) {
           c.energyVals.push(r.itemEnergy.most);
           c.energySource.add("item");
@@ -115,6 +122,7 @@ function aggregate(responses: Responses): { rows: ConstructRow[]; famRows: Famil
       : 0,
     energySource: [...v.energySource].join("+") || "geen",
     mostItems: v.mostItems,
+    toelichtingen: v.toelichtingen,
   }));
 
   const famRows: FamilyRow[] = Object.entries(families).map(([family, v]) => ({

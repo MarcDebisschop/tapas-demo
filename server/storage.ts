@@ -53,8 +53,8 @@ import { randomBytes } from "crypto";
 import { eq, desc, and } from "drizzle-orm";
 import { existsSync, readFileSync } from "fs";
 import { resolve } from "path";
-import { bouwRapportInhoud, renderRapportHtml } from "./rapportgenerator";
-import { bouwT4StudentsRapport, renderT4StudentsHtml } from "./t4students/rapport";
+import { renderRapportHtml } from "./rapportgenerator";
+import { kiesGenerator, heeftDedicatedGenerator } from "./rapport-registry";
 import { genereerAiDuiding, isLiveDuidingAan, DUIDING_INSTRUMENT } from "./duiding-manager";
 
 // -----------------------------------------------------------------------------
@@ -2440,17 +2440,14 @@ export class DatabaseStorage implements IStorage {
     let inhoud: any;
     let html: string;
 
-    // --- Additief (T4Students): eigen inhoud/HTML-tak op basis van instrumentId.
-    //     Het bestaande T4P/kompas-pad blijft de default; enkel wanneer het
-    //     contract instrumentId "t4students" draagt, gebruiken we de eigen
-    //     T4Students-rapportbouwer. Geen wijziging aan het T4P-gedrag. ---
-    if (contract?.instrumentId === "t4students") {
-      inhoud = bouwT4StudentsRapport(contract);
-      html = renderT4StudentsHtml(inhoud);
-    } else {
-      inhoud = bouwRapportInhoud(contract, variant);
-      html = renderRapportHtml(inhoud);
-    }
+    // --- Instrument -> generator via de gedeelde registry (server/rapport-registry.ts).
+    //     Elk instrument met een eigen generator (t4students, t4p-business-kompas, ...)
+    //     krijgt zijn volledige rapport; al de rest valt terug op de generieke
+    //     bouwRapportInhoud. Eén bron van waarheid, gedeeld met
+    //     repositories/rapporten.ts en script/regen_reports.ts. ---
+    const generator = kiesGenerator(contract?.instrumentId);
+    inhoud = generator.bouw(contract, variant);
+    html = generator.render(inhoud);
 
     // --- Additief (T4P-pilot): LIVE AI-duiding op het ECHTE afname-pad. De
     //     statische inhoud/html hierboven blijft de default én meteen de fallback.
@@ -2460,7 +2457,14 @@ export class DatabaseStorage implements IStorage {
     //     nooit. De cijfers/tabellen (uit scoring.ts) blijven altijd ongemoeid.
     //     Spiegelt server/repositories/rapporten.ts:44-60. ---
     try {
-      if (contract?.instrumentId === DUIDING_INSTRUMENT && isLiveDuidingAan()) {
+      // AI-duiding verrijkt enkel de generieke RapportInhoud-structuur; ze mag
+      // NIET draaien op een instrument met een eigen generator (bv. T4P), omdat
+      // renderRapportHtml de rijkere structuur niet kent.
+      if (
+        !heeftDedicatedGenerator(contract?.instrumentId) &&
+        contract?.instrumentId === DUIDING_INSTRUMENT &&
+        isLiveDuidingAan()
+      ) {
         const verrijkt = await genereerAiDuiding(inhoud, contract);
         if (verrijkt) {
           inhoud = verrijkt;
