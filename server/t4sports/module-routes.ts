@@ -79,7 +79,7 @@ function haalAangemaakt(afnameId: number): string | null {
 
 const moduleAntwoordSchema = z.object({
   moduleId: z.enum(["M1", "M2", "M3"]),
-  antwoorden: z.record(z.string(), z.number().int().min(0).max(10)),
+  antwoorden: z.record(z.string(), z.number().int().min(0).max(7)),
 });
 
 const moduleAntwoordenBatchSchema = z.object({
