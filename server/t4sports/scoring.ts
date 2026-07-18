@@ -201,6 +201,11 @@ export function buildT4SportsContract(opts: {
   sporttak?: string | null;
   ploeg?: string | null;
   rol?: string | null;
+  niveau?: string | null;
+  niveauLabel?: string | null;
+  sportType?: string | null;
+  ambitie?: string | null;
+  ambitieLabel?: string | null;
   baselineEnergy: number;
   responses: Responses;
   connection: ConnectionAnswers;
@@ -240,6 +245,11 @@ export function buildT4SportsContract(opts: {
     sporttak: opts.sporttak ?? null,
     ploeg: opts.ploeg ?? null,
     rol: opts.rol ?? null,
+    niveau: opts.niveau ?? null,
+    niveauLabel: opts.niveauLabel ?? null,
+    sportType: opts.sportType ?? null,
+    ambitie: opts.ambitie ?? null,
+    ambitieLabel: opts.ambitieLabel ?? null,
     taal: opts.taal ?? "nl",
     generatedAt: new Date().toISOString(),
     sections: {
