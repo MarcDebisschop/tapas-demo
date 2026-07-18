@@ -180,7 +180,10 @@ export interface PdfDiagResult {
   stack?: string;
 }
 
-export async function diagServerlessPdf(): Promise<PdfDiagResult> {
+export async function diagServerlessPdf(
+  html: string = "<h1>test</h1>",
+  waitUntil: "load" | "domcontentloaded" | "networkidle" = "load",
+): Promise<PdfDiagResult> {
   let stap = "start";
   let executablePath = "(nog niet bepaald)";
   let chromiumArgsCount: number | undefined;
@@ -203,9 +206,9 @@ export async function diagServerlessPdf(): Promise<PdfDiagResult> {
       args: sparticuz.args,
     });
     try {
-      stap = "newPage + setContent";
+      stap = `newPage + setContent (waitUntil=${waitUntil})`;
       const page = await browser.newPage();
-      await page.setContent("<h1>test</h1>", { waitUntil: "load" });
+      await page.setContent(html, { waitUntil });
       stap = "page.pdf";
       const pdf = await page.pdf({ format: "A4", printBackground: true });
       await page.close().catch(() => {});

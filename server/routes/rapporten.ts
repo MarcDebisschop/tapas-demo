@@ -25,10 +25,20 @@ export function registerRapportenRoutes(app: Express): void {
   // TIJDELIJK (Fase 5) — diagnose van de serverless PDF-launch op Render.
   // Geeft ALTIJD HTTP 200 + JSON zodat curl de echte fout leest. Wordt na de
   // fix weer verwijderd (geen debug-endpoint in productie laten).
-  app.get("/api/_pdfdiag", async (_req, res) => {
-    const result = await diagServerlessPdf();
+  app.get("/api/_pdfdiag", async (req, res) => {
+    // ?real=<id> rendert de ECHTE rapport-HTML met de productie-wachtconditie
+    // (networkidle) zodat we de fout van het echte rapport reproduceren.
+    const realId = req.query.real ? Number(req.query.real) : undefined;
+    let html: string | undefined;
+    let waitUntil: "load" | "networkidle" = "load";
+    if (realId) {
+      const r = await storage.getRapport(realId);
+      html = r?.html;
+      waitUntil = "networkidle";
+    }
+    const result = await diagServerlessPdf(html ?? undefined, waitUntil);
     console.log("[_pdfdiag]", JSON.stringify(result));
-    res.status(200).json(result);
+    res.status(200).json({ ...result, realId: realId ?? null, htmlLen: html?.length ?? null });
   });
 
   app.post("/api/rapporten", async (req, res) => {
