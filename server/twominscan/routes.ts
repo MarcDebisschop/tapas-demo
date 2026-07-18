@@ -19,13 +19,25 @@
 // =============================================================================
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
-import { genereer2msRapportPdf, TALEN } from "./rapport-selectie";
+import {
+  genereer2msRapportPdf,
+  genereer2msRapportOpVolgorde,
+  TALEN,
+} from "./rapport-selectie";
 
+const KLEUR = z.enum(["rood", "geel", "groen", "blauw"]);
+
+// AANBEVOLEN pad: kleurvolgorde + gemeten X-stand -> altijd één van de 24.
+// TERUGVAL: egCode (oud pad). Minstens één van beide moet aanwezig zijn.
 const rapportSchema = z.object({
-  egCode: z.string().min(2, "egCode is verplicht"),
+  egCode: z.string().min(2).optional(),
+  volgorde: z.array(KLEUR).min(2).max(4).optional(),
+  xStand: z.enum(["II", "EE", "IE", "X"]).optional(),
   naam: z.string().optional(),
   taal: z.enum(["nl", "fr", "en", "es", "ru"]).optional(),
   datum: z.string().optional(),
+}).refine((d) => (d.volgorde && d.volgorde.length >= 2) || (d.egCode && d.egCode.length >= 2), {
+  message: "Geef een kleurvolgorde (aanbevolen) of een egCode op.",
 });
 
 function veiligeBestandsnaam(naam: string | undefined, egCode: string): string {
@@ -44,14 +56,22 @@ export function registerTwominscanRoutes(app: Express): void {
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige aanvraag" });
     }
-    const { egCode, naam, taal, datum } = parsed.data;
+    const { egCode, volgorde, xStand, naam, taal, datum } = parsed.data;
     const afnamedatum = datum && datum.trim() ? datum : new Date().toLocaleDateString("nl-BE");
 
     try {
-      const { buffer, selectie } = await genereer2msRapportPdf(egCode, taal ?? "nl", {
-        naam: naam ?? null,
-        datum: afnamedatum,
-      });
+      // AANBEVOLEN: match op kleurvolgorde + X-stand (levert altijd één van de 24).
+      // TERUGVAL: egCode-pad voor bestaande integraties.
+      const { buffer, selectie } =
+        volgorde && volgorde.length >= 2
+          ? await genereer2msRapportOpVolgorde(volgorde, xStand ?? null, taal ?? "nl", {
+              naam: naam ?? null,
+              datum: afnamedatum,
+            })
+          : await genereer2msRapportPdf(egCode as string, taal ?? "nl", {
+              naam: naam ?? null,
+              datum: afnamedatum,
+            });
       const bestandsnaam = veiligeBestandsnaam(naam, selectie.profiel.egCodeRaw);
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="${bestandsnaam}.pdf"`);

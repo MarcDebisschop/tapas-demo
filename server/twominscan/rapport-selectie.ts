@@ -26,37 +26,53 @@ export const TALEN: Taal[] = ["nl", "fr", "en", "es", "ru"];
 // De 24 geijkte profielen: rauwe EG-code (met X) -> {kleur, ieStand}.
 // ieStand is de CONCRETE stand die in de bestandsnaam staat (bewezen in de
 // mapping-verificatie: per profiel geeft precies één van EE/II/IE een bestand).
+// KLEURVOLGORDE-SLEUTEL (bewezen bron van waarheid)
+// -------------------------------------------------
+// Elk van de 24 profielen heeft een UNIEKE volledige kleurvolgorde én een
+// VASTE X-stand (EE/II/IE) die al in de bestandsnaam vervat zit. De 2MINSCAN
+// meet twee dingen APART: (1) de kleurvolgorde, (2) de energetische stand
+// (introvert II / extravert EE / ambivert IE). Samen wijzen die naar precies
+// één van de 24 profielen. De kleurvolgorde identificeert het profiel volledig;
+// de X-stand bevestigt de energetische band en dient als tie-breaker.
+//
+// BELANGRIJK: de X is GEEN vrije variabele die je zomaar in een kleur-gekozen
+// code duwt. Er bestaan exact 24 profielen (niet 24×3). Daarom matchen we op de
+// gemeten kleurvolgorde tegen de 24 echte profielen, zodat er ALTIJD een geldig
+// bestaand rapport uitkomt — nooit een onbestaande combinatie zoals "RgEEN-a".
+type KleurId = "rood" | "geel" | "groen" | "blauw";
+
 interface ProfielMap {
-  egCodeRaw: string; // met X, zoals in client/src/twominscan/profielen.ts
-  kleur: string;     // rood/geel/groen/blauw
-  ieStand: "EE" | "II" | "IE";
+  egCodeRaw: string;          // met X, zoals in client/src/twominscan/profielen.ts
+  kleur: string;              // band-kleur = hoogste kleur (rood/geel/groen/blauw)
+  ieStand: "EE" | "II" | "IE"; // VASTE stand uit de bestandsnaam
+  volgorde: KleurId[];        // volledige 4-kleurenvolgorde (uniek per profiel)
 }
 
 export const PROFIEL_BESTAND_MAP: ProfielMap[] = [
-  { egCodeRaw: "TbXO-g",   kleur: "rood",  ieStand: "EE" },
-  { egCodeRaw: "T/RbXO-g", kleur: "rood",  ieStand: "II" },
-  { egCodeRaw: "TbXO-z",   kleur: "rood",  ieStand: "IE" },
-  { egCodeRaw: "TbXN-z",   kleur: "rood",  ieStand: "EE" },
-  { egCodeRaw: "T/RbXN-a", kleur: "rood",  ieStand: "II" },
-  { egCodeRaw: "TbXN-a",   kleur: "rood",  ieStand: "IE" },
-  { egCodeRaw: "RgXN-z",   kleur: "geel",  ieStand: "EE" },
-  { egCodeRaw: "R/TgXN-z", kleur: "geel",  ieStand: "II" },
-  { egCodeRaw: "RgXN-a",   kleur: "geel",  ieStand: "IE" },
-  { egCodeRaw: "RgXO-a",   kleur: "geel",  ieStand: "EE" },
-  { egCodeRaw: "T/RbXN-g", kleur: "geel",  ieStand: "II" },
-  { egCodeRaw: "RgXO-b",   kleur: "geel",  ieStand: "IE" },
-  { egCodeRaw: "RzXN-a",   kleur: "groen", ieStand: "EE" },
-  { egCodeRaw: "R/TzXN-a", kleur: "groen", ieStand: "II" },
-  { egCodeRaw: "RzXN-b",   kleur: "groen", ieStand: "IE" },
-  { egCodeRaw: "RzXO-b",   kleur: "groen", ieStand: "EE" },
-  { egCodeRaw: "R/TzXO-g", kleur: "groen", ieStand: "II" },
-  { egCodeRaw: "RzXO-g",   kleur: "groen", ieStand: "IE" },
-  { egCodeRaw: "TaXO-b",   kleur: "blauw", ieStand: "EE" },
-  { egCodeRaw: "T/RaXO-b", kleur: "blauw", ieStand: "II" },
-  { egCodeRaw: "TaXO-g",   kleur: "blauw", ieStand: "IE" },
-  { egCodeRaw: "TaXN-b",   kleur: "blauw", ieStand: "EE" },
-  { egCodeRaw: "T/RaXN-z", kleur: "blauw", ieStand: "II" },
-  { egCodeRaw: "TaXN-z",   kleur: "blauw", ieStand: "IE" },
+  { egCodeRaw: "TbXO-g",   kleur: "rood",  ieStand: "EE", volgorde: ["rood","blauw","groen","geel"] },
+  { egCodeRaw: "T/RbXO-g", kleur: "rood",  ieStand: "II", volgorde: ["rood","groen","blauw","geel"] },
+  { egCodeRaw: "TbXO-z",   kleur: "rood",  ieStand: "IE", volgorde: ["rood","blauw","geel","groen"] },
+  { egCodeRaw: "TbXN-z",   kleur: "rood",  ieStand: "EE", volgorde: ["rood","geel","blauw","groen"] },
+  { egCodeRaw: "T/RbXN-a", kleur: "rood",  ieStand: "II", volgorde: ["rood","groen","geel","blauw"] },
+  { egCodeRaw: "TbXN-a",   kleur: "rood",  ieStand: "IE", volgorde: ["rood","geel","groen","blauw"] },
+  { egCodeRaw: "RgXN-z",   kleur: "geel",  ieStand: "EE", volgorde: ["geel","rood","blauw","groen"] },
+  { egCodeRaw: "R/TgXN-z", kleur: "geel",  ieStand: "II", volgorde: ["geel","blauw","rood","groen"] },
+  { egCodeRaw: "RgXN-a",   kleur: "geel",  ieStand: "IE", volgorde: ["geel","rood","groen","blauw"] },
+  { egCodeRaw: "RgXO-a",   kleur: "geel",  ieStand: "EE", volgorde: ["geel","groen","rood","blauw"] },
+  { egCodeRaw: "T/RbXN-g", kleur: "geel",  ieStand: "II", volgorde: ["geel","blauw","groen","rood"] },
+  { egCodeRaw: "RgXO-b",   kleur: "geel",  ieStand: "IE", volgorde: ["geel","groen","blauw","rood"] },
+  { egCodeRaw: "RzXN-a",   kleur: "groen", ieStand: "EE", volgorde: ["groen","geel","rood","blauw"] },
+  { egCodeRaw: "R/TzXN-a", kleur: "groen", ieStand: "II", volgorde: ["groen","rood","geel","blauw"] },
+  { egCodeRaw: "RzXN-b",   kleur: "groen", ieStand: "IE", volgorde: ["groen","geel","blauw","rood"] },
+  { egCodeRaw: "RzXO-b",   kleur: "groen", ieStand: "EE", volgorde: ["groen","blauw","geel","rood"] },
+  { egCodeRaw: "R/TzXO-g", kleur: "groen", ieStand: "II", volgorde: ["groen","rood","blauw","geel"] },
+  { egCodeRaw: "RzXO-g",   kleur: "groen", ieStand: "IE", volgorde: ["groen","blauw","rood","geel"] },
+  { egCodeRaw: "TaXO-b",   kleur: "blauw", ieStand: "EE", volgorde: ["blauw","groen","geel","rood"] },
+  { egCodeRaw: "T/RaXO-b", kleur: "blauw", ieStand: "II", volgorde: ["blauw","geel","groen","rood"] },
+  { egCodeRaw: "TaXO-g",   kleur: "blauw", ieStand: "IE", volgorde: ["blauw","groen","rood","geel"] },
+  { egCodeRaw: "TaXN-b",   kleur: "blauw", ieStand: "EE", volgorde: ["blauw","rood","groen","geel"] },
+  { egCodeRaw: "T/RaXN-z", kleur: "blauw", ieStand: "II", volgorde: ["blauw","geel","rood","groen"] },
+  { egCodeRaw: "TaXN-z",   kleur: "blauw", ieStand: "IE", volgorde: ["blauw","rood","geel","groen"] },
 ];
 
 // Normaliseer een taalcode naar een ondersteunde 2MINSCAN-taal (fallback nl).
@@ -96,6 +112,42 @@ export function vindProfiel(egCode: string): ProfielMap | null {
   return null;
 }
 
+// ---------------------------------------------------------------------------
+// ROBUUSTE SELECTIE op (kleurvolgorde + gemeten X-stand).
+//
+// Dit is de correcte weg volgens de 2MINSCAN-methode: de vragenlijst meet de
+// kleurvolgorde EN, apart, de energetische stand (II/EE/IE). Samen wijzen die
+// naar precies één van de 24 profielen. De kleurvolgorde is uniek per profiel en
+// dus de sterkste identifier; de X-stand bevestigt de energetische band en
+// breekt de knoop bij een onvolledige kleurmatch. Er komt ALTIJD een geldig
+// bestaand profiel uit — nooit een onbestaande code zoals "RgEEN-a".
+// ---------------------------------------------------------------------------
+export function kiesOpKleurvolgorde(
+  volgorde: KleurId[],
+  xStand?: "II" | "EE" | "IE" | "X" | null,
+): ProfielMap {
+  if (!Array.isArray(volgorde) || volgorde.length < 2) {
+    throw new Error("2MINSCAN: onvolledige kleurvolgorde — kan geen profiel bepalen.");
+  }
+  // Normaliseer X (ambivert) naar IE; de bestanden gebruiken IE voor ambivert.
+  const gewensteStand = xStand === "EE" || xStand === "II" ? xStand : xStand === "IE" ? "IE" : null;
+
+  const beoordeeld = PROFIEL_BESTAND_MAP.map((p) => {
+    let punten = 0;
+    // Volledige kleurvolgorde, hoogste posities zwaarst gewogen.
+    if (p.volgorde[0] === volgorde[0]) punten += 100;
+    if (p.volgorde[1] === volgorde[1]) punten += 40;
+    if (p.volgorde[2] === volgorde[2]) punten += 10;
+    if (p.volgorde[3] === volgorde[3]) punten += 4;
+    // X-stand als bevestiging/tie-breaker (lager gewicht dan de kleurvolgorde,
+    // zodat de kleurvolgorde altijd leidend blijft).
+    if (gewensteStand && p.ieStand === gewensteStand) punten += 3;
+    return { p, punten };
+  }).sort((a, b) => b.punten - a.punten);
+
+  return beoordeeld[0].p;
+}
+
 // Bouw de kandidaat-bestandspaden (met fallbacks, spiegelt server/gids/pdf-engine.ts).
 export function bestandsKandidaten(bestandsnaam: string, taal: Taal): string[] {
   const rel = path.join("twominscan-rapporten", taal, bestandsnaam);
@@ -113,13 +165,8 @@ export interface SelectieResultaat {
   pad: string;
 }
 
-// Hoofdfunctie: kies het juiste PDF-bestand voor een EG-code + taal.
-// Gooit een sprekende fout als code onbekend is of het bestand ontbreekt.
-export function kiesRapportBestand(egCode: string, taalIn: unknown): SelectieResultaat {
-  const profiel = vindProfiel(egCode);
-  if (!profiel) {
-    throw new Error(`2MINSCAN: onbekende EG-code "${egCode}" — geen geijkt profiel gevonden.`);
-  }
+// Kies het PDF-bestand voor een reeds bepaald profiel + taal (met taal-fallback).
+export function bestandVoorProfiel(profiel: ProfielMap, taalIn: unknown): SelectieResultaat {
   const taal = normaliseer2msTaal(taalIn);
   const fragment = codeNaarFragment(profiel.egCodeRaw, profiel.ieStand);
   const bestandsnaam = `${profiel.kleur}_${fragment}_${taal}.pdf`;
@@ -141,7 +188,17 @@ export function kiesRapportBestand(egCode: string, taalIn: unknown): SelectieRes
   throw new Error(`2MINSCAN: rapport-PDF niet gevonden voor "${bestandsnaam}".`);
 }
 
-// Lees de gekozen PDF als buffer.
+// Hoofdfunctie (EG-code-pad): kies het juiste PDF-bestand voor een EG-code + taal.
+// Gooit een sprekende fout als code onbekend is of het bestand ontbreekt.
+export function kiesRapportBestand(egCode: string, taalIn: unknown): SelectieResultaat {
+  const profiel = vindProfiel(egCode);
+  if (!profiel) {
+    throw new Error(`2MINSCAN: onbekende EG-code "${egCode}" — geen geijkt profiel gevonden.`);
+  }
+  return bestandVoorProfiel(profiel, taalIn);
+}
+
+// Lees de gekozen PDF als buffer (EG-code-pad).
 export function leesRapportBuffer(egCode: string, taal: unknown): { buffer: Buffer; selectie: SelectieResultaat } {
   const selectie = kiesRapportBestand(egCode, taal);
   return { buffer: readFileSync(selectie.pad), selectie };
@@ -226,13 +283,29 @@ export async function injecteerNaamDatum(
   return Buffer.from(uit);
 }
 
-// Volledige helper: kies + lees + injecteer in één stap.
+// Volledige helper (EG-code-pad): kies + lees + injecteer in één stap.
 export async function genereer2msRapportPdf(
   egCode: string,
   taal: unknown,
   opts: InjectieOpties = {},
 ): Promise<{ buffer: Buffer; selectie: SelectieResultaat }> {
   const { buffer, selectie } = leesRapportBuffer(egCode, taal);
+  const uit = await injecteerNaamDatum(buffer, opts);
+  return { buffer: uit, selectie };
+}
+
+// ROBUUSTE helper: kies op (kleurvolgorde + X-stand) -> lees -> injecteer.
+// Dit is het aanbevolen pad: het levert ALTIJD één van de 24 bestaande profielen
+// en kan dus nooit een 404 op een onbestaande code veroorzaken.
+export async function genereer2msRapportOpVolgorde(
+  volgorde: KleurId[],
+  xStand: "II" | "EE" | "IE" | "X" | null | undefined,
+  taal: unknown,
+  opts: InjectieOpties = {},
+): Promise<{ buffer: Buffer; selectie: SelectieResultaat }> {
+  const profiel = kiesOpKleurvolgorde(volgorde, xStand ?? null);
+  const selectie = bestandVoorProfiel(profiel, taal);
+  const buffer = readFileSync(selectie.pad);
   const uit = await injecteerNaamDatum(buffer, opts);
   return { buffer: uit, selectie };
 }

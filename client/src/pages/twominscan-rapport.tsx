@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { PROFIELEN } from "@/twominscan/profielen";
+import { kleurVolgorde } from "@/twominscan/data";
 import { bouwRapportData } from "@/twominscan/content";
 import { ontleedEGCode } from "@/twominscan/egcode";
 import { KLEUR, KLEUR_HEX } from "@/twominscan/theme";
@@ -50,9 +51,15 @@ export default function TwominscanRapport() {
   const ontleed = ontleedEGCode(data.egCode, taal);
   const ieLabel = payload?.ie?.label ?? "";
 
+  // AANBEVOLEN selectie-sleutel voor de officiële PDF: de volledige gemeten
+  // kleurvolgorde + de apart gemeten X-stand. Samen wijzen die naar precies
+  // één van de 24 bestaande profielen (nooit een onbestaande combinatie).
+  const volgorde: string[] | undefined = payload?.score ? kleurVolgorde(payload.score) : undefined;
+  const xStand: string | undefined = payload?.ie?.xStand ?? undefined;
+
   return (
     <div style={{ background: "#e8e6df", minHeight: "100vh", paddingBottom: 60 }}>
-      <PrintBalk tr={tr} egCode={data.egCode} naam={data.naam} datum={data.datum} taal={taal} />
+      <PrintBalk tr={tr} egCode={data.egCode} volgorde={volgorde} xStand={xStand} naam={data.naam} datum={data.datum} taal={taal} />
       <div className="rapport-doc" style={docStyle}>
         <Cover data={data} ieLabel={ieLabel} tr={tr} />
         <Inhoud tr={tr} />
@@ -84,7 +91,7 @@ const docStyle: React.CSSProperties = {
   fontFamily: "Georgia, 'Times New Roman', serif",
 };
 
-function PrintBalk({ tr, egCode, naam, datum, taal }: { tr: Vertaler; egCode: string; naam?: string; datum?: string; taal: Taal }) {
+function PrintBalk({ tr, egCode, volgorde, xStand, naam, datum, taal }: { tr: Vertaler; egCode: string; volgorde?: string[]; xStand?: string; naam?: string; datum?: string; taal: Taal }) {
   const [bezig, setBezig] = useState(false);
 
   // Download het OFFICIËLE, vooraf ontwikkelde energetische rapport-PDF
@@ -97,7 +104,16 @@ function PrintBalk({ tr, egCode, naam, datum, taal }: { tr: Vertaler; egCode: st
       const resp = await fetch("/api/twominscan/rapport.pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ egCode, naam: naam || undefined, taal, datum: datum || undefined }),
+        // Stuur bij voorkeur de kleurvolgorde + X-stand (robuust: altijd één van
+        // de 24). egCode blijft meegaan als terugval voor de server.
+        body: JSON.stringify({
+          egCode,
+          volgorde: volgorde && volgorde.length >= 2 ? volgorde : undefined,
+          xStand: xStand || undefined,
+          naam: naam || undefined,
+          taal,
+          datum: datum || undefined,
+        }),
       });
       if (!resp.ok) throw new Error(`status ${resp.status}`);
       const blob = await resp.blob();
