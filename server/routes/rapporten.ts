@@ -26,9 +26,35 @@ export function registerRapportenRoutes(app: Express): void {
   // Geeft ALTIJD HTTP 200 + JSON zodat curl de echte fout leest. Wordt na de
   // fix weer verwijderd (geen debug-endpoint in productie laten).
   app.get("/api/_pdfdiag", async (req, res) => {
-    // ?real=<id> rendert de ECHTE rapport-HTML met de productie-wachtconditie
-    // (networkidle) zodat we de fout van het echte rapport reproduceren.
+    // ?real=<id> rendert de ECHTE rapport-HTML met de productie-wachtconditie.
+    // &via=render roept de ECHTE renderRapportPdf aan (exact het productie-pad)
+    // en legt de opgevangen fout bloot i.p.v. stil op HTML terug te vallen.
     const realId = req.query.real ? Number(req.query.real) : undefined;
+    const viaRender = req.query.via === "render";
+
+    if (realId && viaRender) {
+      const r = await storage.getRapport(realId);
+      if (!r) return res.status(200).json({ ok: false, stap: "getRapport", error: "rapport niet gevonden" });
+      const t0 = Date.now();
+      try {
+        const buf = await renderRapportPdf(r.html, { titel: r.titel });
+        const head = buf.subarray(0, 5).toString("latin1");
+        return res.status(200).json({
+          ok: head === "%PDF-", stap: "renderRapportPdf", via: "render",
+          pdfBytes: buf.length, header: head, ms: Date.now() - t0, htmlLen: r.html.length,
+        });
+      } catch (e) {
+        const result = {
+          ok: false, stap: "renderRapportPdf", via: "render", ms: Date.now() - t0,
+          error: e instanceof Error ? e.message : String(e),
+          stack: e instanceof Error && e.stack ? e.stack.slice(0, 1500) : undefined,
+          htmlLen: r.html.length,
+        };
+        console.log("[_pdfdiag via=render]", JSON.stringify(result));
+        return res.status(200).json(result);
+      }
+    }
+
     let html: string | undefined;
     let waitUntil: "load" | "networkidle" = "load";
     if (realId) {
