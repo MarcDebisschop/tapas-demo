@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Gedeelde HTML -> PDF-laag (Fase 3).
+// Gedeelde HTML -> PDF-laag (Fase 3, serverless-launch in Fase 4).
 //
 // WAAROM
 // Elk HTML-instrument (t4p, t4students, t4o, t4sports(+modules), teamscan,
@@ -11,15 +11,24 @@
 // De pdfkit-instrumenten HDD en Driver-scan hebben al hun eigen echte PDF en
 // lopen NIET via deze laag.
 //
+// DUAL-MODE LAUNCH (Fase 4)
+// Render-free heeft GEEN systeem-Chromium. Daarom twee paden:
+//  (a) Productie/serverless (Render): playwright-core + @sparticuz/chromium —
+//      Chromium komt als npm-dependency mee, geen systeeminstallatie nodig.
+//      Launch-per-render met directe close (512MB-veilig, geen gedeelde
+//      instance die kan lekken).
+//  (b) Lokaal/dev: de gewone Playwright-launch met een gedeelde, hergebruikte
+//      browser-instance (snel voor herhaalde renders/tests).
+//
 // ROBUUSTHEID (bindende eis): een render-fout mag de afname/rapport-flow nooit
-// breken. Playwright wordt dynamisch geïmporteerd en één browser-instance wordt
-// hergebruikt. Faalt de render (geen Chromium, crash, ...), dan gooit deze
-// functie een fout die de aanroeper opvangt en terugvalt op de HTML-download.
+// breken. Alles wordt dynamisch geïmporteerd; faalt de render (geen Chromium,
+// crash, ...), dan logt deze module de echte oorzaak (incl. executablePath) en
+// gooit een fout die de aanroeper opvangt en terugvalt op de HTML-download.
 // ---------------------------------------------------------------------------
 
-// Type-only import: brengt geen runtime-afhankelijkheid mee (playwright wordt
-// pas via dynamic import geladen wanneer er echt een PDF gemaakt wordt).
-import type { Browser } from "playwright";
+// Type-only import: brengt geen runtime-afhankelijkheid mee. playwright-core en
+// playwright delen dezelfde Browser-types.
+import type { Browser } from "playwright-core";
 
 export interface RenderPdfOpts {
   titel?: string;
@@ -27,15 +36,19 @@ export interface RenderPdfOpts {
   marge?: { top?: string; right?: string; bottom?: string; left?: string };
 }
 
-// Eén gedeelde browser-instance (lazy). We bewaren de launch-promise zodat
-// gelijktijdige aanvragen niet elk een eigen browser starten.
-let browserPromise: Promise<Browser> | null = null;
+// Render zet standaard RENDER=true; NODE_ENV=production dekt andere productie-
+// omgevingen af. In beide gevallen gebruiken we de serverless @sparticuz-launch.
+function isServerless(): boolean {
+  return !!process.env.RENDER || process.env.NODE_ENV === "production";
+}
 
-async function getBrowser(): Promise<Browser> {
-  if (!browserPromise) {
-    browserPromise = (async () => {
-      // Dynamische import: als playwright/Chromium ontbreekt, faalt dit hier en
-      // valt de aanroeper netjes terug op HTML.
+// --- Dev: gedeelde browser-instance (lazy, hergebruikt) --------------------
+let devBrowserPromise: Promise<Browser> | null = null;
+
+async function getDevBrowser(): Promise<Browser> {
+  if (!devBrowserPromise) {
+    devBrowserPromise = (async () => {
+      // Volledige Playwright met zijn eigen gebundelde Chromium (lokale dev).
       const { chromium } = await import("playwright");
       return chromium.launch({
         headless: true,
@@ -44,11 +57,31 @@ async function getBrowser(): Promise<Browser> {
     })();
     // Reset de cache bij een mislukte launch, zodat een volgende poging opnieuw
     // probeert i.p.v. een kapotte promise te blijven hergebruiken.
-    browserPromise.catch(() => {
-      browserPromise = null;
+    devBrowserPromise.catch(() => {
+      devBrowserPromise = null;
     });
   }
-  return browserPromise;
+  return devBrowserPromise;
+}
+
+// --- Productie/serverless: @sparticuz/chromium + playwright-core -----------
+// Launch-per-render (geen gedeelde instance) zodat op Render-free (512MB) elk
+// verzoek een schone, direct-gesloten browser krijgt en geheugen niet lekt.
+async function launchServerlessBrowser(): Promise<{ browser: Browser; executablePath: string }> {
+  const [{ chromium }, sparticuzMod] = await Promise.all([
+    import("playwright-core"),
+    import("@sparticuz/chromium"),
+  ]);
+  // ESM/CJS-interop: @sparticuz/chromium exporteert het object als default.
+  const sparticuz: any = (sparticuzMod as any).default ?? sparticuzMod;
+  // executablePath() geeft een Promise<string> (pakt de gebundelde binary uit).
+  const executablePath: string = await sparticuz.executablePath();
+  const browser = await chromium.launch({
+    headless: true,
+    executablePath,
+    args: sparticuz.args,
+  });
+  return { browser, executablePath };
 }
 
 // Wikkelt een fragment in een volledig HTML-document. De bestaande generators
@@ -61,19 +94,19 @@ function alsVolledigDocument(html: string): string {
 </head><body>${html}</body></html>`;
 }
 
-/**
- * Zet een (volledige) HTML-string om naar een PDF-buffer via Playwright headless
- * Chromium. A4, printBackground aan. Gooit bij een render-fout — de aanroeper
- * moet dat opvangen en terugvallen op de HTML-download.
- */
-export async function renderRapportPdf(html: string, opts: RenderPdfOpts = {}): Promise<Buffer> {
-  const document = alsVolledigDocument(html);
-  const browser = await getBrowser();
+// Rendert één document op een gegeven browser naar een PDF-buffer. Sluit altijd
+// de pagina (finally); de browser-levensduur wordt door de aanroeper beheerd.
+async function rendermetBrowser(
+  browser: Browser,
+  document: string,
+  opts: RenderPdfOpts,
+): Promise<Buffer> {
   const page = await browser.newPage();
   try {
     await page.setContent(document, { waitUntil: "networkidle" });
     if (opts.titel) {
       await page.evaluate((t) => {
+        // In evaluate verwijst `document` naar de browser-DOM (niet de string).
         document.title = t;
       }, opts.titel);
     }
@@ -93,16 +126,57 @@ export async function renderRapportPdf(html: string, opts: RenderPdfOpts = {}): 
   }
 }
 
-// Best-effort opruimen bij server-shutdown (niet verplicht; Chromium sluit mee
-// af met het proces). Aangeroepen vanuit index.ts is optioneel.
-export async function sluitPdfBrowser(): Promise<void> {
-  if (!browserPromise) return;
+/**
+ * Zet een (volledige) HTML-string om naar een PDF-buffer via headless Chromium.
+ * A4, printBackground aan. Kiest automatisch de serverless- (@sparticuz) of
+ * dev-launch. Gooit bij een render-fout — de aanroeper moet dat opvangen en
+ * terugvallen op de HTML-download.
+ */
+export async function renderRapportPdf(html: string, opts: RenderPdfOpts = {}): Promise<Buffer> {
+  const documentHtml = alsVolledigDocument(html);
+
+  if (isServerless()) {
+    // Launch-per-render + directe close (512MB-veilig).
+    let browser: Browser | null = null;
+    let executablePath = "(nog niet bepaald)";
+    try {
+      const launched = await launchServerlessBrowser();
+      browser = launched.browser;
+      executablePath = launched.executablePath;
+      return await rendermetBrowser(browser, documentHtml, opts);
+    } catch (e) {
+      console.error(
+        `[rapport-pdf] Serverless PDF-render mislukt (executablePath=${executablePath}): ` +
+          `${e instanceof Error ? e.message : String(e)}`,
+      );
+      throw e;
+    } finally {
+      if (browser) await browser.close().catch(() => {});
+    }
+  }
+
+  // Lokaal/dev: gedeelde instance hergebruiken.
   try {
-    const b = await browserPromise;
+    const browser = await getDevBrowser();
+    return await rendermetBrowser(browser, documentHtml, opts);
+  } catch (e) {
+    console.error(
+      `[rapport-pdf] Dev PDF-render mislukt: ${e instanceof Error ? e.message : String(e)}`,
+    );
+    throw e;
+  }
+}
+
+// Best-effort opruimen bij server-shutdown. Sluit enkel de gedeelde dev-instance;
+// serverless-browsers worden al per render gesloten. Aanroep is optioneel.
+export async function sluitPdfBrowser(): Promise<void> {
+  if (!devBrowserPromise) return;
+  try {
+    const b = await devBrowserPromise;
     await b.close();
   } catch {
     // stil
   } finally {
-    browserPromise = null;
+    devBrowserPromise = null;
   }
 }

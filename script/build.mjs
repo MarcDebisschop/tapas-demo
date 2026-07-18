@@ -107,25 +107,9 @@ async function buildAll() {
   await cp(path.join(root, "server", "tts.py"), path.join(root, "dist", "tts.py"), { force: true });
   console.log("tts.py gekopieerd naar dist/.");
 
-  // 5b. Best-effort Chromium-installatie voor de gedeelde HTML->PDF-laag
-  //     (server/rapport-pdf.ts gebruikt Playwright headless Chromium). BEWUST
-  //     niet-fataal: als de download op de buildomgeving (bv. Render-free) niet
-  //     lukt, moet de build tóch slagen. De PDF-render vangt een ontbrekende
-  //     browser op en valt terug op de HTML-download.
-  console.log("Chromium voor PDF-render installeren (best-effort)...");
-  try {
-    execSync("node_modules/.bin/playwright install chromium", {
-      cwd: root,
-      stdio: "inherit",
-      env: { ...process.env },
-    });
-    console.log("Chromium geïnstalleerd.");
-  } catch (e) {
-    console.warn(
-      "[WAARSCHUWING] Chromium-installatie mislukt — PDF-download valt terug op HTML tot " +
-        "Chromium beschikbaar is. Draai op de server eenmalig 'npx playwright install --with-deps chromium'.",
-    );
-  }
+  // NB (Fase 4): geen 'playwright install chromium' meer nodig. De PDF-render
+  // gebruikt in productie @sparticuz/chromium (Chromium als npm-dependency),
+  // dus de build hangt niet meer af van een systeem-Chromium-download.
 
   // 6. BEWAKING VLAAMSE STEM — blokkeert de build als de stem-architectuur kapot is.
   //    Draait de statische controles (geen speechSynthesis, Sulafat, VLAAMSE_STEM_PROMPT,
