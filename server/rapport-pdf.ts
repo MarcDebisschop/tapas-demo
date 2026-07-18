@@ -94,6 +94,26 @@ function alsVolledigDocument(html: string): string {
 </head><body>${html}</body></html>`;
 }
 
+// Zet de documenttitel via de HTML-string i.p.v. page.evaluate. Reden: de
+// server wordt met esbuild geminified; een aan page.evaluate meegegeven functie
+// wordt dan zo herschreven dat de geserialiseerde body een niet-bestaande
+// variabele aanspreekt ("ReferenceError: e is not defined"). Titel in de HTML
+// injecteren omzeilt page.evaluate volledig en is minify-veilig.
+function metTitel(html: string, titel?: string): string {
+  if (!titel) return html;
+  const esc = titel
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  if (/<title[\s>]/i.test(html)) {
+    return html.replace(/<title[^>]*>[\s\S]*?<\/title>/i, `<title>${esc}</title>`);
+  }
+  if (/<head[\s>]/i.test(html)) {
+    return html.replace(/<head([^>]*)>/i, `<head$1><title>${esc}</title>`);
+  }
+  return html;
+}
+
 // Rendert één document op een gegeven browser naar een PDF-buffer. Sluit altijd
 // de pagina (finally); de browser-levensduur wordt door de aanroeper beheerd.
 async function rendermetBrowser(
@@ -104,12 +124,6 @@ async function rendermetBrowser(
   const page = await browser.newPage();
   try {
     await page.setContent(document, { waitUntil: "networkidle" });
-    if (opts.titel) {
-      await page.evaluate((t) => {
-        // In evaluate verwijst `document` naar de browser-DOM (niet de string).
-        document.title = t;
-      }, opts.titel);
-    }
     const pdf = await page.pdf({
       format: "A4",
       printBackground: true,
@@ -133,7 +147,7 @@ async function rendermetBrowser(
  * terugvallen op de HTML-download.
  */
 export async function renderRapportPdf(html: string, opts: RenderPdfOpts = {}): Promise<Buffer> {
-  const documentHtml = alsVolledigDocument(html);
+  const documentHtml = metTitel(alsVolledigDocument(html), opts.titel);
 
   if (isServerless()) {
     // Launch-per-render + directe close (512MB-veilig).
