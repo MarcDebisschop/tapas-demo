@@ -56,7 +56,7 @@ function slaModuleResultaatOp(afnameId: number, moduleId: string, resultaat: Mod
   `).run(afnameId, moduleId, JSON.stringify(resultaat), now);
 }
 
-function haalModuleResultatenOp(afnameId: number): ModuleResultaat[] {
+export function haalModuleResultatenOp(afnameId: number): ModuleResultaat[] {
   const rijen = moduleDb.prepare(`
     SELECT module_id, resultaat_json, aangemaakt_at
     FROM t4sports_module_resultaten

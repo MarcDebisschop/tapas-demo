@@ -7,6 +7,19 @@
 import { sportNaam } from "./scoring";
 import type { ConstructRow } from "./scoring";
 import type { ModuleResultaat, SchaalResultaat } from "./module-scoring";
+import {
+  hoofdstukDatakwaliteit,
+  hoofdstukEnergiestaat,
+  hoofdstukBronstellingen,
+  hoofdstukTalentdynamiek,
+  hoofdstukSportcontext,
+  hoofdstukRisicos,
+  hoofdstukToekomst,
+  hoofdstukIntegratieAnalyse,
+  hoofdstukCoachingsplan,
+  hoofdstukWetenschap,
+  type ChapterData,
+} from "./rapport-hoofdstukken";
 
 // ────────────────────────────────────────────────────────────────────────────
 // Hulpfuncties
@@ -40,7 +53,9 @@ function topRows(rows: ConstructRow[], family: string, n: number): ConstructRow[
 }
 
 function energiePct(energie: number): number {
-  return Math.round(((energie + 2) / 4) * 100);
+  // Clamp naar 0–100 zodat balken nooit overflowen (bug-fix: negatieve/>100 breedtes).
+  const pct = Math.round(((energie + 2) / 4) * 100);
+  return Math.min(100, Math.max(0, pct));
 }
 
 function energieKleur(energie: number): string {
@@ -405,6 +420,29 @@ export function genereerT4SportsRapportCompleet(
     </div>`;
   }
 
+  // Data-object voor de diepgang-hoofdstukken (data-gedreven, geen hardcoded atleetdata).
+  const chapterData: ChapterData = {
+    naam,
+    sporttak,
+    niveauLabel,
+    sportTypeLabel,
+    ambitieLabel,
+    rows,
+    sportprofiel,
+    consistency,
+    normEnergy,
+    baselineEnergy,
+    energieProfiel,
+    drukProfiel,
+    dominanteDriver,
+    driverInfo,
+    sportpassie,
+    billijkheid,
+    mentaleZelfinv,
+    clubInv,
+    hasModules,
+  };
+
   return `<!DOCTYPE html>
 <html lang="nl">
 <head>
@@ -526,17 +564,28 @@ export function genereerT4SportsRapportCompleet(
 <div class="toc">
   <div class="toc-title">Inhoudsopgave</div>
   <div class="toc-item"><span class="toc-item-name">Sportprofiel in één oogopslag</span><span class="toc-item-nr">★</span></div>
+  <div class="toc-item"><span class="toc-item-name">Leeswijzer &amp; datakwaliteit</span><span class="toc-item-nr">i</span></div>
+  <div class="toc-item"><span class="toc-item-name">Mentale energiestaat</span><span class="toc-item-nr">E</span></div>
   <div class="toc-item"><span class="toc-item-name">1 · Talentprofiel — De Motor</span><span class="toc-item-nr">1</span></div>
   <div class="toc-item"><span class="toc-item-name">2 · Versnellersprofiel — De Versnellingsbak</span><span class="toc-item-nr">2</span></div>
   <div class="toc-item"><span class="toc-item-name">3 · Driverprofiel — De Stuurkracht</span><span class="toc-item-nr">3</span></div>
   <div class="toc-item"><span class="toc-item-name">4 · Drukprofiel &amp; Sportverbondenheid</span><span class="toc-item-nr">4</span></div>
   <div class="toc-item"><span class="toc-item-name">5 · Coaching-aanwijzingen (basis)</span><span class="toc-item-nr">5</span></div>
+  <div class="toc-item"><span class="toc-item-name">Bronstellingen — Toegang, Route &amp; Drivers</span><span class="toc-item-nr">✎</span></div>
+  <div class="toc-item"><span class="toc-item-name">Drieledige talentdynamiek</span><span class="toc-item-nr">∆</span></div>
+  <div class="toc-item"><span class="toc-item-name">Sportcontext &amp; prestatiefit</span><span class="toc-item-nr">◎</span></div>
+  <div class="toc-item"><span class="toc-item-name">Risico's &amp; waakpunten</span><span class="toc-item-nr">!</span></div>
+  <div class="toc-item"><span class="toc-item-name">Toekomstgerichte synthese</span><span class="toc-item-nr">→</span></div>
   ${hasModules ? `<div style="margin-top:16px;color:#C9A84C;font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;font-weight:700;padding-bottom:8px;border-bottom:1px solid #1a2a4a;">Extra Modules — Wetenschappelijk Onderbouwd</div>` : ""}
   ${moduleResultaten.map((mr, i) => `
     <div class="toc-module-item">
       <span class="toc-module-badge">${esc(mr.moduleId)}</span>
       <span class="toc-module-name">${i + 6} · ${esc(mr.moduleNaam)}</span>
     </div>`).join("")}
+  <div style="margin-top:16px;color:#C9A84C;font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;font-weight:700;padding-bottom:8px;border-bottom:1px solid #1a2a4a;">Integratie &amp; Coaching</div>
+  <div class="toc-item"><span class="toc-item-name">16 · Geïntegreerde profielanalyse</span><span class="toc-item-nr">16</span></div>
+  <div class="toc-item"><span class="toc-item-name">17 · Integraal coachingsplan</span><span class="toc-item-nr">17</span></div>
+  <div class="toc-item"><span class="toc-item-name">Wetenschappelijke grondslagen</span><span class="toc-item-nr">§</span></div>
 </div>
 
 <!-- ══════════════════════════ RAPPORT INHOUD ══════════════════════════ -->
@@ -580,6 +629,12 @@ export function genereerT4SportsRapportCompleet(
       </div>
     </div>
   </div>
+
+  <!-- LEESWIJZER & DATAKWALITEIT -->
+  ${hoofdstukDatakwaliteit(chapterData)}
+
+  <!-- MENTALE ENERGIESTAAT -->
+  ${hoofdstukEnergiestaat(chapterData)}
 
   <!-- BLOK 1: TALENTPROFIEL -->
   <div class="section">
@@ -668,7 +723,7 @@ export function genereerT4SportsRapportCompleet(
         <div class="section-subtitle">Wat er gebeurt in het kritische moment + connectie met de sport</div>
       </div>
     </div>
-    <div class="druk-badge ${drukProfiel}">${drukProfiel === "gaspedaal" ? "⚡ Gaspedaal" : drukProfiel === "rem" ? "⛔ Rem" : "⚖ Wisselvallig"}</div>
+    <div class="druk-badge ${drukProfiel}">${drukProfiel === "gaspedaal" ? "Gaspedaal" : drukProfiel === "rem" ? "Rem" : "Wisselvallig"}</div>
     <div class="highlight-box"><p>${drukUitleg}</p></div>
     <div style="margin-top:16px;">
       <h4 style="color:#0D1B3E;font-size:0.88rem;font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px;">Sportverbondenheid</h4>
@@ -704,8 +759,32 @@ export function genereerT4SportsRapportCompleet(
     </div>
   </div>
 
+  <!-- BRONSTELLINGEN (Talent-Toegang / Route / Drivers) -->
+  ${hoofdstukBronstellingen(chapterData)}
+
+  <!-- DRIELEDIGE TALENTDYNAMIEK -->
+  ${hoofdstukTalentdynamiek(chapterData)}
+
+  <!-- SPORTCONTEXT & PRESTATIEFIT -->
+  ${hoofdstukSportcontext(chapterData)}
+
+  <!-- RISICO'S & WAAKPUNTEN -->
+  ${hoofdstukRisicos(chapterData)}
+
+  <!-- TOEKOMSTGERICHTE SYNTHESE -->
+  ${hoofdstukToekomst(chapterData)}
+
   <!-- ══════ MODULE-SECTIES ══════ -->
   ${moduleSectiesHtml.join("\n")}
+
+  <!-- H16 GEÏNTEGREERDE PROFIELANALYSE -->
+  ${hoofdstukIntegratieAnalyse(chapterData)}
+
+  <!-- H17 INTEGRAAL COACHINGSPLAN -->
+  ${hoofdstukCoachingsplan(chapterData)}
+
+  <!-- WETENSCHAPPELIJKE GRONDSLAGEN -->
+  ${hoofdstukWetenschap(chapterData)}
 
   <!-- DISCLAIMER -->
   <div class="disclaimer">
