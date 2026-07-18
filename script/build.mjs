@@ -34,6 +34,7 @@ const allowlist = [
   "openai",
   "passport",
   "passport-local",
+  "pdf-lib",
   "stripe",
   "uuid",
   "ws",

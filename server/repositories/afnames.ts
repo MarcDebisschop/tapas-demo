@@ -51,7 +51,7 @@ export async function createAfname(data: NewAfname): Promise<Afname> {
       consentTimestamp: data.consentTimestamp,
       verwerkingsdoel:
         data.verwerkingsdoel ??
-        "Genereren van een professioneel energetisch gedragsprofiel (T4P Business Kompas)",
+        "Genereren van een professioneel TaPas talent- en driverprofiel (T4P Business Kompas)",
       rechtsgrond: data.rechtsgrond ?? "toestemming",
       privacyverklaringVersie: data.privacyverklaringVersie ?? PRIVACY_VERKLARING_VERSIE,
       consentIp: data.consentIp ?? null,

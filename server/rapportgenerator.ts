@@ -98,18 +98,18 @@ function publiekeFamilie(intern: unknown, taal: Taal): string {
 
 const T = {
   ondertitel_kompas: m(
-    "Energetisch gedragsprofiel in professionele context",
-    "Profil comportemental énergétique en contexte professionnel",
-    "Energetic behavioral profile in a professional context",
-    "Perfil conductual energético en contexto profesional",
-    "Энергетический поведенческий профиль в профессиональном контексте"
+    "TaPas talent- en driverprofiel in professionele context",
+    "Profil de talents et de drivers TaPas en contexte professionnel",
+    "TaPas talent and driver profile in a professional context",
+    "Perfil de talento y drivers TaPas en contexto profesional",
+    "Профиль талантов и drivers TaPas в профессиональном контексте"
   ),
   ondertitel_atlas: m(
-    "Energetisch gedragsprofiel met coachingsfocus",
-    "Profil comportemental énergétique avec focus coaching",
-    "Energetic behavioral profile with a coaching focus",
-    "Perfil conductual energético con enfoque de coaching",
-    "Энергетический поведенческий профиль с фокусом на коучинг"
+    "TaPas talent- en driverprofiel met coachingsfocus",
+    "Profil de talents et de drivers TaPas avec focus coaching",
+    "TaPas talent and driver profile with a coaching focus",
+    "Perfil de talento y drivers TaPas con enfoque de coaching",
+    "Профиль талантов и drivers TaPas с фокусом на коучинг"
   ),
   // Sectie 1 — energiebeeld
   kop_energie: m(

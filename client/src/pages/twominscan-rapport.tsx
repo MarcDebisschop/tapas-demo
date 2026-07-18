@@ -52,7 +52,7 @@ export default function TwominscanRapport() {
 
   return (
     <div style={{ background: "#e8e6df", minHeight: "100vh", paddingBottom: 60 }}>
-      <PrintBalk tr={tr} />
+      <PrintBalk tr={tr} egCode={data.egCode} naam={data.naam} datum={data.datum} taal={taal} />
       <div className="rapport-doc" style={docStyle}>
         <Cover data={data} ieLabel={ieLabel} tr={tr} />
         <Inhoud tr={tr} />
@@ -84,16 +84,51 @@ const docStyle: React.CSSProperties = {
   fontFamily: "Georgia, 'Times New Roman', serif",
 };
 
-function PrintBalk({ tr }: { tr: Vertaler }) {
+function PrintBalk({ tr, egCode, naam, datum, taal }: { tr: Vertaler; egCode: string; naam?: string; datum?: string; taal: Taal }) {
+  const [bezig, setBezig] = useState(false);
+
+  // Download het OFFICIËLE, vooraf ontwikkelde energetische rapport-PDF
+  // (24 profielen × 5 talen, eigen layout) met naam + datum geïnjecteerd op
+  // pagina 1. Dit is het bindende document — niet de web-print van deze pagina.
+  async function downloadOfficielePdf() {
+    if (bezig) return;
+    setBezig(true);
+    try {
+      const resp = await fetch("/api/twominscan/rapport.pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ egCode, naam: naam || undefined, taal, datum: datum || undefined }),
+      });
+      if (!resp.ok) throw new Error(`status ${resp.status}`);
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const veilig = (naam || `2MINSCAN-${egCode}`).replace(/[^\w\s-]/g, "").trim().replace(/\s+/g, "-") || "2MINSCAN";
+      a.download = `${veilig}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      // Terugval: browser-print van de web-weergave als het endpoint faalt.
+      console.error("[2MINSCAN] officiële PDF mislukt, terugval op print:", e);
+      window.print();
+    } finally {
+      setBezig(false);
+    }
+  }
+
   return (
     <div className="no-print" style={{ position: "sticky", top: 0, zIndex: 10, background: KLEUR.petrol, color: "#fff", padding: "10px 18px", display: "flex", alignItems: "center", gap: 14 }}>
       <span style={{ fontWeight: 800, letterSpacing: 1 }}>2MINSCAN</span>
       <span style={{ fontSize: 12, opacity: 0.85 }}>{tr("ui.subtitel", "Energetisch Gedragsprofiel")}</span>
       <button
-        onClick={() => window.print()}
-        style={{ marginLeft: "auto", background: KLEUR.goud, color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontWeight: 700, cursor: "pointer" }}
+        onClick={downloadOfficielePdf}
+        disabled={bezig}
+        style={{ marginLeft: "auto", background: KLEUR.goud, color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontWeight: 700, cursor: bezig ? "wait" : "pointer", opacity: bezig ? 0.7 : 1 }}
       >
-        {tr("ui.rapport.download_pdf", "⬇ Download als PDF")}
+        {bezig ? tr("ui.rapport.download_bezig", "⏳ Rapport wordt opgehaald…") : tr("ui.rapport.download_pdf", "⬇ Download als PDF")}
       </button>
     </div>
   );

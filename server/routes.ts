@@ -22,6 +22,7 @@ import { registerPriveAankoopRoutes } from "./prive-aankoop/routes";
 import { registerBulkImportRoutes } from "./bulk-import/routes";
 import { registerT4OrganizationsRoutes } from "./t4organizations/routes";
 import { registerDriverScanRoutes } from "./driverscan/routes";
+import { registerTwominscanRoutes } from "./twominscan/routes";
 import { buildInstrumentBeschikbaarheidRoutes } from "./instrument-beschikbaarheid";
 
 // Domeinrouters (item 1.1, Fase 5)
@@ -94,6 +95,7 @@ export async function registerRoutes(
   // ONGEWIJZIGD; raakt geen bestaand afname- of rapportpad aan.
   // -------------------------------------------------------------------------
   registerDriverScanRoutes(app);
+  registerTwominscanRoutes(app);
 
   // -------------------------------------------------------------------------
   // Human Due Diligence — vlaggenschip-traject (journey).

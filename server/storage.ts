@@ -1798,7 +1798,7 @@ export class DatabaseStorage implements IStorage {
         consentGiven: true,
         consentScope: data.consentScope,
         consentTimestamp: data.consentTimestamp,
-        verwerkingsdoel: data.verwerkingsdoel ?? "Genereren van een professioneel energetisch gedragsprofiel (T4P Business Kompas)",
+        verwerkingsdoel: data.verwerkingsdoel ?? "Genereren van een professioneel TaPas talent- en driverprofiel (T4P Business Kompas)",
         rechtsgrond: data.rechtsgrond ?? "toestemming",
         privacyverklaringVersie: data.privacyverklaringVersie ?? PRIVACY_VERKLARING_VERSIE,
         consentIp: data.consentIp ?? null,
