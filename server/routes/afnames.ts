@@ -32,6 +32,7 @@ import {
   startViaLinkSchema,
   bewaartermijnSchema,
 } from "@shared/schema";
+import { dashboardCodeVanToken, voornaamVanNaam } from "../dashboard-code";
 import { buildGeneratorContract } from "../scoring";
 import { buildT4StudentsContract } from "../t4students/scoring";
 import { buildT4TeensContract } from "../t4teens/scoring";
@@ -376,6 +377,35 @@ export function registerAfnameRoutes(app: Express): void {
     }
 
     res.json({ afname: updated, contract, dashboardToken });
+  });
+
+  // --- Optie A: eindscherm koppelt e-mail aan een persoonlijk dashboard ------
+  // Apart en idempotent van de connection-flow: het eindscherm (klaar.tsx)
+  // verzamelt HIER het e-mailadres (zodat de afrondingsknop in deel2 ongewijzigd
+  // blijft). Bestaande deelnemer -> zelfde dashboardToken; nieuwe deelnemer ->
+  // aangemaakt. De afname wordt gekoppeld en we geven token + afgeleide
+  // 4-cijfercode + voornaam terug voor de rechtstreekse dashboardlink.
+  app.post("/api/afnames/:id/koppel-dashboard", async (req, res) => {
+    const id = Number(req.params.id);
+    const a = await storage.getAfname(id);
+    if (!a) return res.status(404).json({ error: "Afname niet gevonden" });
+
+    const emailRaw = (req.body && typeof req.body.email === "string") ? req.body.email.trim() : "";
+    if (!emailRaw || !/.+@.+\..+/.test(emailRaw)) {
+      return res.status(400).json({ error: "Geef een geldig e-mailadres op." });
+    }
+
+    try {
+      await storage.koppelAfnameAanDeelnemer(id, emailRaw);
+      const deelnemer = await storage.vindOfMaakDeelnemer(emailRaw, a.taal);
+      return res.json({
+        dashboardToken: deelnemer.dashboardToken,
+        dashboardCode: dashboardCodeVanToken(deelnemer.dashboardToken),
+        voornaam: voornaamVanNaam(deelnemer.naam),
+      });
+    } catch {
+      return res.status(500).json({ error: "Koppelen aan dashboard mislukt." });
+    }
   });
 
   // =========================================================================

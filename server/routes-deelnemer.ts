@@ -21,6 +21,7 @@ import {
   type Doelgroep,
 } from "./bibliotheek-deelnemer";
 import { normaliseerTaal } from "@shared/i18n";
+import { dashboardCodeVanToken, voornaamVanNaam } from "./dashboard-code";
 import {
   deelnemerLoginSchema,
   magicLinkAanvraagSchema,
@@ -126,9 +127,9 @@ export function registerDeelnemerRoutes(app: Express): void {
     return res.json({
       ok: true,
       dashboardToken: deelnemer.dashboardToken,
-      voornaam: deelnemer.voornaam ?? "",
+      voornaam: voornaamVanNaam(deelnemer.naam) ?? "",
       skin,
-      dashboardCode: deelnemer.dashboardCode ?? "",
+      dashboardCode: dashboardCodeVanToken(deelnemer.dashboardToken),
     });
   });
 
@@ -148,20 +149,12 @@ export function registerDeelnemerRoutes(app: Express): void {
       recentsteInstrument === "t4p-students" ? "students" :
       "business";
 
-    // dashboardCode: deterministisch 4-cijferig slot afgeleid van het dashboard-token.
-    // Elke deelnemer heeft zo een unieke combinatie. Formaat: 4 cijfers 0-9.
-    const tokenHash = deelnemer.dashboardToken;
-    const dashboardCode = [
-      parseInt(tokenHash.replace(/[^0-9]/g, "").charAt(0) || "2"),
-      parseInt(tokenHash.replace(/[^0-9]/g, "").charAt(1) || "0"),
-      parseInt(tokenHash.replace(/[^0-9]/g, "").charAt(2) || "2"),
-      parseInt(tokenHash.replace(/[^0-9]/g, "").charAt(3) || "6"),
-    ].join("");
+    // dashboardCode: deterministisch 4-cijferig slot afgeleid van het dashboard-token
+    // (gedeelde helper, zodat het eindscherm exact dezelfde code toont).
+    const dashboardCode = dashboardCodeVanToken(deelnemer.dashboardToken);
 
     // Voornaam: eerste woord van de naam ("Marc Debisschop" → "Marc").
-    const voornaam = deelnemer.naam
-      ? deelnemer.naam.trim().split(/\s+/)[0]
-      : null;
+    const voornaam = voornaamVanNaam(deelnemer.naam);
 
     // Fase 3 stuurt hier een echte e-mail; nu geven we het token direct terug.
     res.json({

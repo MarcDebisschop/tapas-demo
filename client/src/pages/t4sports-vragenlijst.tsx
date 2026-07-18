@@ -689,18 +689,156 @@ function VerbindingScherm({
 }
 
 // ============================================================
-// Scherm 5: Voltooiing
+// Scherm 5: Voltooiing — bevestiging + e-mailbrug + dashboardlink (Optie A)
 // ============================================================
-function VoltooiingScherm({ naam }: { naam: string }) {
+// De exclusieve dashboardlink voor T4Sports is de absolute URL naar de eigen
+// atletenpagina /#/t4sports/dashboard/{respondentCode}. Voor T4Sports is de
+// dashboardtoken bewust de respondentCode zelf (niet deelnemer.dashboardToken),
+// dus we bouwen de link daaruit i.p.v. het generieke koppel-dashboard-token.
+function t4sportsDashboardUrl(respondentCode: string): string {
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  return `${origin}/#/t4sports/dashboard/${respondentCode}`;
+}
+
+function VoltooiingScherm({
+  naam,
+  respondentCode,
+  completedAt,
+  onNaarDashboard,
+}: {
+  naam: string;
+  respondentCode: string;
+  completedAt: string | null;
+  onNaarDashboard: () => void;
+}) {
+  const { toast } = useToast();
+  const [email, setEmail] = useState("");
+  const [verzonden, setVerzonden] = useState(false);
+
+  const voornaam = naam.split(" ")[0] || "atleet";
+  const link = t4sportsDashboardUrl(respondentCode);
+  const emailGeldig = /.+@.+\..+/.test(email.trim());
+  const datumTekst = completedAt
+    ? new Date(completedAt).toLocaleString("nl-BE", { dateStyle: "long", timeStyle: "short" })
+    : null;
+
+  function verstuur(e: React.FormEvent) {
+    e.preventDefault();
+    if (!emailGeldig) return;
+    // T4Sports registreert geen aparte deelnemer-koppeling: de persoonlijke
+    // toegang IS de respondentCode-link. Deze stap bevestigt en onthult de link.
+    setVerzonden(true);
+  }
+
+  async function kopieer() {
+    try {
+      await navigator.clipboard.writeText(link);
+      toast({ title: "Gekopieerd", description: "Je persoonlijke link staat op het klembord." });
+    } catch {
+      toast({ title: "Kopiëren mislukt", description: "Selecteer en kopieer de link handmatig.", variant: "destructive" });
+    }
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: NAVY }}>
-      <div className="text-center px-6">
-        <div style={{ color: GOUD }} className="text-5xl font-extrabold mb-4">🏆</div>
-        <h2 className="text-2xl font-bold text-white mb-3">Profiel gereed, {naam.split(" ")[0] || "atleet"}.</h2>
-        <p className="text-blue-200 text-sm">
-          Je T4Sports Mental Talent Profiel is aangemaakt.<br />
-          Bekijk je resultaten via het dashboard.
-        </p>
+    <div className="relative min-h-screen overflow-y-auto" style={{ background: NAVY }}>
+      <SportBg opacity={0.05} />
+      <div className="relative z-10 max-w-lg mx-auto px-6 py-12">
+        <div className="text-center">
+          <div style={{ color: GOUD }} className="text-5xl font-extrabold mb-3">🏆</div>
+          <h2 className="text-2xl font-extrabold text-white mb-2">
+            Je antwoorden zijn goed geregistreerd, {voornaam}.
+          </h2>
+          <p className="text-blue-200 text-sm leading-relaxed">
+            Je T4Sports Mental Talent Profiel is aangemaakt en veilig opgeslagen.
+          </p>
+        </div>
+
+        {/* Respondentcode + tijdstip */}
+        <div className="mt-8 rounded-2xl border px-5 py-4" style={{ borderColor: "rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.05)" }}>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <div className="text-white/40 text-xs uppercase tracking-wide">Respondentcode</div>
+              <div className="text-white font-semibold" data-testid="text-respondentcode">{respondentCode}</div>
+            </div>
+            <div>
+              <div className="text-white/40 text-xs uppercase tracking-wide">Voltooid op</div>
+              <div className="text-white font-semibold">{datumTekst ?? "—"}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Optie A — e-mailbrug */}
+        {!verzonden ? (
+          <form onSubmit={verstuur} className="mt-6 rounded-2xl border px-5 py-5" style={{ borderColor: `${GOUD}40`, background: `${GOUD}0D` }}>
+            <Label htmlFor="t4s-email" className="text-blue-200 text-sm">
+              Waar mogen we je persoonlijke toegang naartoe sturen?
+            </Label>
+            <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+              <Input
+                id="t4s-email"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                placeholder="jij@voorbeeld.be"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                aria-label="E-mailadres"
+                data-testid="input-email"
+                className="sm:flex-1 bg-white/10 border-white/20 text-white placeholder:text-white/40"
+              />
+              <Button
+                type="submit"
+                disabled={!emailGeldig}
+                className="font-bold"
+                style={emailGeldig ? { background: GOUD, color: NAVY } : { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.3)" }}
+                data-testid="button-stuur-toegang"
+              >
+                Stuur mij mijn persoonlijke toegang
+              </Button>
+            </div>
+          </form>
+        ) : (
+          <div className="mt-6 rounded-2xl border px-5 py-5" style={{ borderColor: `${GOUD}55`, background: `${GOUD}12` }}>
+            <h3 style={{ color: GOUD }} className="text-base font-extrabold">Je persoonlijke toegang staat klaar</h3>
+            <p className="text-blue-200 text-sm mt-1 leading-relaxed">
+              Op je persoonlijk dashboard begrijp je je profiel, beluister je de uitleg, ga je de
+              verdieping in via de bibliotheek, stel je vragen aan je AI-coach en download je je PDF.
+            </p>
+
+            <div className="mt-4">
+              <div className="text-white/40 text-xs uppercase tracking-wide mb-1">Jouw rechtstreekse dashboardlink</div>
+              <div className="flex items-start gap-2">
+                <a
+                  href={link}
+                  className="break-all text-sm font-medium underline underline-offset-2"
+                  style={{ color: GOUD }}
+                  data-testid="link-dashboard-url"
+                >
+                  {link}
+                </a>
+              </div>
+              <button
+                type="button"
+                onClick={kopieer}
+                className="mt-2 rounded-md border px-3 py-1.5 text-xs font-semibold"
+                style={{ borderColor: "rgba(255,255,255,0.25)", color: "rgba(255,255,255,0.8)" }}
+                data-testid="button-kopieer-link"
+              >
+                Kopieer link
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Primaire knop — profiel is server-side al gegenereerd in de voltooid-staat */}
+        <Button
+          onClick={onNaarDashboard}
+          className="mt-6 w-full font-bold"
+          style={{ background: GOUD, color: NAVY }}
+          data-testid="button-naar-dashboard"
+        >
+          Naar mijn dashboard →
+        </Button>
       </div>
     </div>
   );
@@ -735,6 +873,7 @@ export default function T4SportsVragenlijst() {
   const [stap, setStap] = useState<Stap>("welkom");
   const [afnameId, setAfnameId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [voltooidInfo, setVoltooidInfo] = useState<{ respondentCode: string; completedAt: string | null } | null>(null);
 
   // Instrument ophalen — retry: 2 voor cold-start sandbox; staleTime laag voor verse data
   const { data: inst, isLoading: instLoading, isError: instError } = useQuery<T4SportsInstrument>({
@@ -793,14 +932,14 @@ export default function T4SportsVragenlijst() {
       });
       const data: any = await res.json();
       if (data.ok) {
+        // Profiel is nu server-side gegenereerd. We tonen het bevestigings-/
+        // eindscherm (met dashboardlink) en laten de atleet zelf doorklikken —
+        // geen geforceerde auto-redirect meer.
+        setVoltooidInfo({
+          respondentCode: data.afname?.respondentCode ?? "",
+          completedAt: data.afname?.completedAt ?? new Date().toISOString(),
+        });
         setStap("voltooid");
-        // Navigeer naar dashboard na 2 sec
-        setTimeout(() => {
-          const respondentCode = data.afname?.respondentCode;
-          if (respondentCode) {
-            navigate(`/t4sports/dashboard/${respondentCode}`);
-          }
-        }, 2000);
       }
     } catch {
       toast({ title: "Fout", description: "Kon profiel niet genereren. Probeer opnieuw.", variant: "destructive" });
@@ -897,5 +1036,15 @@ export default function T4SportsVragenlijst() {
     );
   }
 
-  return <VoltooiingScherm naam={naam} />;
+  return (
+    <VoltooiingScherm
+      naam={naam}
+      respondentCode={voltooidInfo?.respondentCode ?? ""}
+      completedAt={voltooidInfo?.completedAt ?? null}
+      onNaarDashboard={() => {
+        const code = voltooidInfo?.respondentCode;
+        if (code) navigate(`/t4sports/dashboard/${code}`);
+      }}
+    />
+  );
 }
