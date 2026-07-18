@@ -15,12 +15,21 @@
 import type { Express } from "express";
 import { storage, CreditError } from "../storage";
 import { genereerRapportSchema } from "@shared/schema";
-import { renderRapportPdf } from "../rapport-pdf";
+import { renderRapportPdf, diagServerlessPdf } from "../rapport-pdf";
 
 export function registerRapportenRoutes(app: Express): void {
   // =========================================================================
   // Fase C3 — Rapportgeneratie
   // =========================================================================
+
+  // TIJDELIJK (Fase 5) — diagnose van de serverless PDF-launch op Render.
+  // Geeft ALTIJD HTTP 200 + JSON zodat curl de echte fout leest. Wordt na de
+  // fix weer verwijderd (geen debug-endpoint in productie laten).
+  app.get("/api/_pdfdiag", async (_req, res) => {
+    const result = await diagServerlessPdf();
+    console.log("[_pdfdiag]", JSON.stringify(result));
+    res.status(200).json(result);
+  });
 
   app.post("/api/rapporten", async (req, res) => {
     const parsed = genereerRapportSchema.safeParse(req.body);
