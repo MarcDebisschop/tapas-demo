@@ -257,7 +257,7 @@ function GidsKaart({
                 data-testid={`button-koop-${instr.id}`}
               >
                 <ShoppingCart className="h-3.5 w-3.5" />
-                Koop &amp; start
+                Koop &amp; start {instr.naam}
               </Button>
             );
           }
