@@ -22,6 +22,7 @@ export interface PriveePrijs {
 const SEED: Array<{ id: string; naam: string; cent: number }> = [
   { id: "twominscan", naam: "2MinScan", cent: 4500 },
   { id: "t4p-business", naam: "T4P Business", cent: 18500 },
+  { id: "t4kids", naam: "T4Kids", cent: 8000 },
   { id: "t4teens", naam: "T4Teens", cent: 6500 },
   { id: "t4students", naam: "T4Students", cent: 9500 },
 ];

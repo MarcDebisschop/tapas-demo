@@ -22,6 +22,7 @@ export const PRIVE_AANKOOP: Record<string, PriveAankoopConfig> = {
   // Privé koopbaar (particulier, zonder organisatie).
   twominscan: { koopbaar: true, prijsId: "twominscan" },
   "t4p-business": { koopbaar: true, prijsId: "t4p-business" },
+  t4kids: { koopbaar: true, prijsId: "t4kids" },
   t4teens: { koopbaar: true, prijsId: "t4teens" },
   t4students: { koopbaar: true, prijsId: "t4students" },
   // Enkel via organisatie / op aanvraag (geen start-knop, wel fiche-PDF).

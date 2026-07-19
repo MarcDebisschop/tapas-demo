@@ -51,7 +51,10 @@ export default function Koop() {
     [prijzen, instrumentId],
   );
 
-  const isKind = instrumentId === "t4teens" || instrumentId === "t4students";
+  const isKind =
+    instrumentId === "t4kids" ||
+    instrumentId === "t4teens" ||
+    instrumentId === "t4students";
   const instr = vindInstrument(instrumentId);
   const startRoute = instr?.start.route ?? "/";
 
