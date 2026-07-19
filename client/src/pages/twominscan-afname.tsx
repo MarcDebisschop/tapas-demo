@@ -95,7 +95,7 @@ export default function TwominscanAfname() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: KLEUR.zacht, color: KLEUR.inkt }}>
+    <div className="twominscan-pagina" style={{ minHeight: "100vh", background: KLEUR.zacht, color: KLEUR.inkt }}>
       <TopBalk taal={taal} setTaal={setTaal} tr={tr} />
       <div style={{ maxWidth: 980, margin: "0 auto", padding: "28px 20px 64px" }}>
         {stap === "intro" && (

@@ -58,7 +58,7 @@ export default function TwominscanRapport() {
   const xStand: string | undefined = payload?.ie?.xStand ?? undefined;
 
   return (
-    <div style={{ background: "#e8e6df", minHeight: "100vh", paddingBottom: 60 }}>
+    <div className="twominscan-pagina rapport-achtergrond" style={{ background: "#e8e6df", minHeight: "100vh", paddingBottom: 60 }}>
       <PrintBalk tr={tr} egCode={data.egCode} volgorde={volgorde} xStand={xStand} naam={data.naam} datum={data.datum} taal={taal} />
       <div className="rapport-doc" style={docStyle}>
         <Cover data={data} ieLabel={ieLabel} tr={tr} />

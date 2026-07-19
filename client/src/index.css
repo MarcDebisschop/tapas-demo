@@ -292,6 +292,29 @@ body::after {
 }
 
 /**
+ * 2MINSCAN-pagina's (afname + rapport) zijn bewust LICHT ontworpen:
+ * warme crème-achtergrond met donkere tekst, in zowel light- als dark-mode.
+ * De globale `#root > div { background: transparent !important }`-regel (voor
+ * het Earhart-watermerk) maakte deze pagina's transparant, waardoor in dark-mode
+ * de zwarte body doorscheen en de donkergroene tekst onleesbaar werd.
+ * Hier forceren we de bedoelde lichte achtergrond terug, ongeacht het thema. */
+.twominscan-pagina,
+#root > div.twominscan-pagina {
+  background-color: #f6f4ef !important;
+  color: #1f2a28 !important;
+}
+/* Het rapport gebruikt een iets koeler grijs als paginakader. */
+#root > div.twominscan-pagina[data-rapport],
+.twominscan-pagina.rapport-achtergrond {
+  background-color: #e8e6df !important;
+}
+/* Verberg het donkere vliegtuig-watermerk op deze lichte pagina's, zodat het
+ * niet als donkere vlek door de crème-achtergrond schemert. */
+.dark:has(.twominscan-pagina) body::after {
+  display: none;
+}
+
+/**
  * Using the elevate system.
  * Automatic contrast adjustment.
  *
