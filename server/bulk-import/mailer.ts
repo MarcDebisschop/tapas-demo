@@ -43,8 +43,17 @@ function smtpGeconfigureerd(): boolean {
   return !!(process.env.SMTP_HOST && process.env.SMTP_HOST.trim());
 }
 
+// C3 — Brevo HTTP-API (additief). Render's gratis plan blokkeert uitgaande
+// SMTP-poorten (25/465/587) sinds 26 sept 2025, waardoor nodemailer een
+// 'Connection timeout' geeft. De Brevo transactionele API werkt over HTTPS
+// (poort 443) en wordt NIET geblokkeerd. Staat BREVO_API_KEY ingevuld, dan
+// versturen we via die API i.p.v. SMTP. Verandert niets aan de SMTP-weg.
+function brevoApiGeconfigureerd(): boolean {
+  return !!(process.env.BREVO_API_KEY && process.env.BREVO_API_KEY.trim());
+}
+
 export function isSimulatiemodus(): boolean {
-  return !smtpGeconfigureerd();
+  return !smtpGeconfigureerd() && !brevoApiGeconfigureerd();
 }
 
 function afzenderVoor(from?: string | null): string {
@@ -130,12 +139,76 @@ export async function verstuurUitnodiging(input: MailInput): Promise<MailResulta
     return { status: "gesimuleerd", gesimuleerd: true };
   }
 
+  // C3 — Voorkeur: Brevo HTTP-API (werkt op Render free; SMTP is daar geblokkeerd).
+  if (brevoApiGeconfigureerd()) {
+    return verstuurViaBrevoApi({ from, naar: input.naar, naam: input.naam, subject, text });
+  }
+
   try {
     await getTransporter().sendMail({ from, to: input.naar, subject, text });
     return { status: "verstuurd", gesimuleerd: false };
   } catch (e) {
     const melding = e instanceof Error ? e.message : "Onbekende SMTP-fout";
     console.error(`[bulk-import/mailer] Verzending mislukt naar ${input.naar}: ${melding}`);
+    return { status: "fout", gesimuleerd: false, melding };
+  }
+}
+
+// C3 — Verstuur via de Brevo transactionele HTTP-API (POST https://api.brevo.com/v3/smtp/email).
+// Gebruikt de ingebouwde fetch (Node 18+). Splitst de afzender in naam+e-mail.
+async function verstuurViaBrevoApi(args: {
+  from: string;
+  naar: string;
+  naam: string;
+  subject: string;
+  text: string;
+}): Promise<MailResultaat> {
+  const apiKey = process.env.BREVO_API_KEY!.trim();
+  // Splits "Naam <email@x>" of val terug op puur e-mailadres.
+  const m = args.from.match(/^\s*(.*?)\s*<\s*([^>]+)\s*>\s*$/);
+  const senderEmail = (m ? m[2] : args.from).trim();
+  const senderNaam = (m && m[1] ? m[1] : "TaPasCity").trim();
+  const body = {
+    sender: { email: senderEmail, name: senderNaam },
+    to: [{ email: args.naar, name: args.naam || undefined }],
+    subject: args.subject,
+    textContent: args.text,
+  };
+  try {
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), 20000);
+    const resp = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "api-key": apiKey,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    clearTimeout(t);
+    if (resp.ok) {
+      let messageId = "";
+      try {
+        const j = (await resp.json()) as { messageId?: string };
+        messageId = j.messageId ?? "";
+      } catch {
+        /* body kan leeg zijn */
+      }
+      return {
+        status: "verstuurd",
+        gesimuleerd: false,
+        melding: messageId ? `Brevo-API messageId=${messageId}` : "Verstuurd via Brevo-API.",
+      };
+    }
+    const foutTekst = await resp.text().catch(() => "");
+    const melding = `Brevo-API HTTP ${resp.status}: ${foutTekst.slice(0, 300)}`;
+    console.error(`[bulk-import/mailer] Brevo-API verzending mislukt naar ${args.naar}: ${melding}`);
+    return { status: "fout", gesimuleerd: false, melding };
+  } catch (e) {
+    const melding = e instanceof Error ? e.message : "Onbekende Brevo-API-fout";
+    console.error(`[bulk-import/mailer] Brevo-API-fout naar ${args.naar}: ${melding}`);
     return { status: "fout", gesimuleerd: false, melding };
   }
 }
