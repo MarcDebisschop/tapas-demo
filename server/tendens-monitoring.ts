@@ -243,6 +243,281 @@ export function schrijfUaIjkpunt(sqlite: any): number {
   return geschreven;
 }
 
+// ===========================================================================
+// FASE 2 — Detectiemotor.
+//
+// Leest UITSLUITEND geaggregeerde snapshots + baseline en detecteert tendensen
+// via drie wetenschappelijk onderbouwde families:
+//   Familie A/B (volume, base-rate) : Shewhart 3-sigma control chart + CUSUM
+//                                      (changepoint) + p-chart (proporties).
+//   Familie C   (structuurdrift)     : vergelijking van een live structuur-
+//                                      metriek tegen het UA-ijkpunt.
+//
+// STRIKT PRINCIPE: geen verzonnen signalen. Elke methode heeft een minimum-
+// datavereiste (min-n / min-aantal-perioden). Onder die grens rapporteert de
+// motor eerlijk "onvoldoende data" en schrijft GEEN signaal weg.
+// ===========================================================================
+
+// Minimum aantal historische perioden voor een betrouwbare control chart.
+const MIN_PERIODEN_CONTROLCHART = 8;
+// Minimum aantal afnames voor een betrouwbare voltooiingsgraad-p-kaart.
+const MIN_N_PCHART = 30;
+// CUSUM-parameters (in eenheden van sigma): k = toegestane drift (0,5 sigma),
+// h = beslissingsgrens (5 sigma) — standaard, robuuste keuze uit de literatuur.
+const CUSUM_K_SIGMA = 0.5;
+const CUSUM_H_SIGMA = 5.0;
+// Structuurdrift-drempels t.o.v. het UA-ijkpunt.
+const DRIFT_PHI_MIN = 0.85;        // Tucker phi < 0,85 = onvoldoende reproductie.
+const DRIFT_OMEGA_REL_DALING = 0.10; // omega-daling van >10% t.o.v. ijkpunt = signaal.
+
+export interface ControlChartResultaat {
+  gemiddelde: number;
+  sd: number;
+  ondergrens: number;   // gemiddelde - 3 sigma
+  bovengrens: number;   // gemiddelde + 3 sigma
+  uitschieters: { index: number; waarde: number; richting: "boven" | "onder" }[];
+  voldoendeData: boolean;
+}
+
+// Shewhart 3-sigma control chart op een reeks tellingen.
+// De laatste waarde geldt als "actueel"; historie = alle waarden ervoor.
+export function berekenControlChart(reeks: number[]): ControlChartResultaat {
+  const leeg: ControlChartResultaat = {
+    gemiddelde: 0, sd: 0, ondergrens: 0, bovengrens: 0, uitschieters: [], voldoendeData: false,
+  };
+  if (!Array.isArray(reeks) || reeks.length < MIN_PERIODEN_CONTROLCHART) return leeg;
+
+  const n = reeks.length;
+  const gemiddelde = reeks.reduce((a, b) => a + b, 0) / n;
+  // Steekproef-SD (n-1). Bij SD=0 is er geen variatie en dus geen uitschieter.
+  const variance = reeks.reduce((a, b) => a + (b - gemiddelde) ** 2, 0) / (n - 1);
+  const sd = Math.sqrt(variance);
+  const ondergrens = gemiddelde - 3 * sd;
+  const bovengrens = gemiddelde + 3 * sd;
+
+  const uitschieters: ControlChartResultaat["uitschieters"] = [];
+  if (sd > 0) {
+    reeks.forEach((waarde, index) => {
+      if (waarde > bovengrens) uitschieters.push({ index, waarde, richting: "boven" });
+      else if (waarde < ondergrens) uitschieters.push({ index, waarde, richting: "onder" });
+    });
+  }
+  return { gemiddelde, sd, ondergrens, bovengrens, uitschieters, voldoendeData: true };
+}
+
+export interface CusumResultaat {
+  changepointIndex: number | null; // eerste index waar de grens wordt overschreden
+  richting: "stijging" | "daling" | null;
+  maxCusumPositief: number;
+  maxCusumNegatief: number;
+  voldoendeData: boolean;
+}
+
+// Tabellaire CUSUM voor changepoint-detectie op een reeks.
+// Detecteert een geleidelijke niveauverschuiving (niet enkel losse uitschieters).
+export function berekenCusum(reeks: number[]): CusumResultaat {
+  const leeg: CusumResultaat = {
+    changepointIndex: null, richting: null, maxCusumPositief: 0, maxCusumNegatief: 0, voldoendeData: false,
+  };
+  if (!Array.isArray(reeks) || reeks.length < MIN_PERIODEN_CONTROLCHART) return leeg;
+
+  const n = reeks.length;
+  const gemiddelde = reeks.reduce((a, b) => a + b, 0) / n;
+  const variance = reeks.reduce((a, b) => a + (b - gemiddelde) ** 2, 0) / (n - 1);
+  const sd = Math.sqrt(variance);
+  if (sd === 0) return { ...leeg, voldoendeData: true };
+
+  const k = CUSUM_K_SIGMA * sd;
+  const h = CUSUM_H_SIGMA * sd;
+  let sHoog = 0, sLaag = 0;
+  let maxHoog = 0, maxLaag = 0;
+  let changepointIndex: number | null = null;
+  let richting: "stijging" | "daling" | null = null;
+
+  for (let i = 0; i < n; i++) {
+    const afwijking = reeks[i] - gemiddelde;
+    sHoog = Math.max(0, sHoog + afwijking - k);
+    sLaag = Math.max(0, sLaag - afwijking - k);
+    maxHoog = Math.max(maxHoog, sHoog);
+    maxLaag = Math.max(maxLaag, sLaag);
+    if (changepointIndex === null) {
+      if (sHoog > h) { changepointIndex = i; richting = "stijging"; }
+      else if (sLaag > h) { changepointIndex = i; richting = "daling"; }
+    }
+  }
+  return { changepointIndex, richting, maxCusumPositief: maxHoog, maxCusumNegatief: maxLaag, voldoendeData: true };
+}
+
+export interface PChartResultaat {
+  baselineProportie: number;
+  actueleProportie: number;
+  ondergrens: number;
+  bovengrens: number;
+  buitenGrens: boolean;
+  richting: "boven" | "onder" | null;
+  voldoendeData: boolean;
+}
+
+// p-chart: toetst of een actuele proportie buiten de 3-sigma-grenzen valt
+// rond de baseline-proportie, gegeven de actuele steekproefgrootte n.
+export function berekenPChart(baselineProportie: number, actueleProportie: number, nActueel: number): PChartResultaat {
+  const leeg: PChartResultaat = {
+    baselineProportie, actueleProportie, ondergrens: 0, bovengrens: 1,
+    buitenGrens: false, richting: null, voldoendeData: false,
+  };
+  if (nActueel < MIN_N_PCHART || baselineProportie <= 0 || baselineProportie >= 1) return leeg;
+
+  const sigma = Math.sqrt((baselineProportie * (1 - baselineProportie)) / nActueel);
+  const ondergrens = Math.max(0, baselineProportie - 3 * sigma);
+  const bovengrens = Math.min(1, baselineProportie + 3 * sigma);
+  let buitenGrens = false;
+  let richting: "boven" | "onder" | null = null;
+  if (actueleProportie > bovengrens) { buitenGrens = true; richting = "boven"; }
+  else if (actueleProportie < ondergrens) { buitenGrens = true; richting = "onder"; }
+  return { baselineProportie, actueleProportie, ondergrens, bovengrens, buitenGrens, richting, voldoendeData: true };
+}
+
+export interface StructuurdriftResultaat {
+  metriek: string;
+  ijkpunt: number;
+  live: number;
+  drift: boolean;
+  toelichting: string;
+}
+
+// Structuurdrift tegen het UA-ijkpunt. Vergelijkt een live structuur-metriek
+// (bv. Tucker phi of omega) met de gevalideerde referentie.
+export function detecteerStructuurdrift(metriek: string, ijkpunt: number, live: number): StructuurdriftResultaat {
+  let drift = false;
+  let toelichting = "Binnen de verwachte marge t.o.v. het UA-ijkpunt.";
+  if (metriek.startsWith("tucker_phi")) {
+    if (live < DRIFT_PHI_MIN) {
+      drift = true;
+      toelichting = `Tucker phi ${live.toFixed(3)} onder de drempel ${DRIFT_PHI_MIN} — onvoldoende structuurreproductie.`;
+    }
+  } else if (metriek.startsWith("omega")) {
+    const relDaling = ijkpunt > 0 ? (ijkpunt - live) / ijkpunt : 0;
+    if (relDaling > DRIFT_OMEGA_REL_DALING) {
+      drift = true;
+      toelichting = `Omega ${live.toFixed(3)} is ${(relDaling * 100).toFixed(1)}% lager dan het ijkpunt ${ijkpunt.toFixed(3)} — betrouwbaarheidsdaling.`;
+    }
+  }
+  return { metriek, ijkpunt, live, drift, toelichting };
+}
+
+// ---------------------------------------------------------------------------
+// Orchestrator: draait de detectie op de live data + baseline en schrijft
+// gevonden signalen weg als observaties. Retourneert een samenvatting.
+// Idempotent: verwijdert eerst eerdere niet-gepubliceerde observaties.
+// ---------------------------------------------------------------------------
+export interface DetectieSamenvatting {
+  onderzocht: string[];
+  signalen: number;
+  overgeslagen: { dimensie: string; reden: string }[];
+  uitgevoerdOp: string;
+}
+
+export function draaiDetectie(sqlite: any): DetectieSamenvatting {
+  const samenvatting: DetectieSamenvatting = {
+    onderzocht: [], signalen: 0, overgeslagen: [], uitgevoerdOp: new Date().toISOString(),
+  };
+  if (!sqlite) return samenvatting;
+  maakTendensTabellen(sqlite);
+
+  // Verse detectie: verwijder eerdere, nog niet bevestigde/gepubliceerde observaties.
+  sqlite.prepare("DELETE FROM tendens_signaal WHERE status = 'observatie'").run();
+
+  const insertSignaal = sqlite.prepare(`
+    INSERT INTO tendens_signaal
+      (instrument, dimensie, sleutel, type, changepoint_datum, effectgrootte, richting, status, n, toelichting, gedetecteerd_op)
+    VALUES (@instrument, @dimensie, @sleutel, @type, @changepoint_datum, @effectgrootte, @richting, 'observatie', @n, @toelichting, datetime('now'))
+  `);
+
+  // --- Familie A/B: volume per maand (control chart + CUSUM) ---
+  const maandRijen = sqlite.prepare(`
+    SELECT strftime('%Y-%m', created_at) AS periode, COUNT(*) AS n
+    FROM afnames
+    WHERE created_at >= date('now', '-24 months')
+    GROUP BY periode ORDER BY periode ASC
+  `).all() as any[];
+  samenvatting.onderzocht.push("volume_maand");
+  const maandReeks = maandRijen.map((r) => r.n as number);
+  const maandPerioden = maandRijen.map((r) => r.periode as string);
+
+  if (maandReeks.length < MIN_PERIODEN_CONTROLCHART) {
+    samenvatting.overgeslagen.push({
+      dimensie: "volume_maand",
+      reden: `Onvoldoende perioden (${maandReeks.length}/${MIN_PERIODEN_CONTROLCHART}) voor een betrouwbare control chart.`,
+    });
+  } else {
+    const cc = berekenControlChart(maandReeks);
+    for (const u of cc.uitschieters) {
+      insertSignaal.run({
+        instrument: "platform", dimensie: "volume_maand", sleutel: maandPerioden[u.index] ?? "",
+        type: "niveau", changepoint_datum: maandPerioden[u.index] ?? null,
+        effectgrootte: cc.sd > 0 ? (u.waarde - cc.gemiddelde) / cc.sd : null,
+        richting: u.richting === "boven" ? "stijging" : "daling", n: u.waarde,
+        toelichting: `Volume ${u.waarde} in ${maandPerioden[u.index]} valt buiten de 3-sigma-grens (gem. ${cc.gemiddelde.toFixed(1)}, sd ${cc.sd.toFixed(1)}).`,
+      });
+      samenvatting.signalen += 1;
+    }
+    const cusum = berekenCusum(maandReeks);
+    if (cusum.changepointIndex !== null) {
+      insertSignaal.run({
+        instrument: "platform", dimensie: "volume_maand", sleutel: maandPerioden[cusum.changepointIndex] ?? "",
+        type: "changepoint", changepoint_datum: maandPerioden[cusum.changepointIndex] ?? null,
+        effectgrootte: null, richting: cusum.richting, n: maandReeks[cusum.changepointIndex] ?? 0,
+        toelichting: `CUSUM detecteert een ${cusum.richting} vanaf ${maandPerioden[cusum.changepointIndex]} (geleidelijke niveauverschuiving).`,
+      });
+      samenvatting.signalen += 1;
+    }
+  }
+
+  // --- Familie B: voltooiingsgraad (p-chart) ---
+  samenvatting.onderzocht.push("voltooiingsgraad");
+  const baselineGraad = sqlite.prepare(
+    "SELECT aandeel FROM tendens_snapshot WHERE dimensie = 'voltooiingsgraad' AND is_baseline = 1 ORDER BY berekend_op DESC LIMIT 1"
+  ).get() as any;
+  const totaalNu = (sqlite.prepare("SELECT COUNT(*) AS n FROM afnames").get() as any)?.n ?? 0;
+  const voltooidNu = (sqlite.prepare("SELECT COUNT(*) AS n FROM afnames WHERE status = 'voltooid'").get() as any)?.n ?? 0;
+  if (!baselineGraad || baselineGraad.aandeel == null) {
+    samenvatting.overgeslagen.push({ dimensie: "voltooiingsgraad", reden: "Geen baseline-proportie beschikbaar." });
+  } else if (totaalNu < MIN_N_PCHART) {
+    samenvatting.overgeslagen.push({
+      dimensie: "voltooiingsgraad",
+      reden: `Onvoldoende afnames (${totaalNu}/${MIN_N_PCHART}) voor een betrouwbare p-kaart.`,
+    });
+  } else {
+    const actueel = totaalNu > 0 ? voltooidNu / totaalNu : 0;
+    const p = berekenPChart(baselineGraad.aandeel as number, actueel, totaalNu);
+    if (p.buitenGrens) {
+      insertSignaal.run({
+        instrument: "platform", dimensie: "voltooiingsgraad", sleutel: "",
+        type: "proportie", changepoint_datum: null,
+        effectgrootte: p.actueleProportie - p.baselineProportie, richting: p.richting === "boven" ? "stijging" : "daling", n: totaalNu,
+        toelichting: `Voltooiingsgraad ${(actueel * 100).toFixed(1)}% valt buiten de p-kaartgrenzen [${(p.ondergrens * 100).toFixed(1)}%, ${(p.bovengrens * 100).toFixed(1)}%] rond de baseline ${(p.baselineProportie * 100).toFixed(1)}%.`,
+      });
+      samenvatting.signalen += 1;
+    }
+  }
+
+  // --- Familie C: structuurdrift tegen het UA-ijkpunt ---
+  samenvatting.onderzocht.push("structuur_ua");
+  // Een LIVE structuur-metriek vergt een volwaardige factoranalyse (>= drempel).
+  // Zolang die drempel niet gehaald is, is er geen betrouwbare live-metriek en
+  // wordt de familie eerlijk overgeslagen — er wordt NIETS verzonnen.
+  if (totaalNu < DREMPEL_FACTORANALYSE) {
+    samenvatting.overgeslagen.push({
+      dimensie: "structuur_ua",
+      reden: `Onvoldoende afnames (${totaalNu}/${DREMPEL_FACTORANALYSE}) voor een live structuur-metriek; vergelijking met het UA-ijkpunt is nog niet mogelijk.`,
+    });
+  }
+  // (Wanneer de drempel wél gehaald wordt, levert een aparte structuur-snapshot
+  //  de live phi/omega; detecteerStructuurdrift() vergelijkt die dan met UA_IJKPUNT.)
+
+  return samenvatting;
+}
+
 // ---------------------------------------------------------------------------
 // Registratie van de endpoints.
 // ---------------------------------------------------------------------------
@@ -262,7 +537,7 @@ export function registerTendensMonitoringRoutes(app: Express, db: any, storage: 
     const sq = getSqlite(db, storage);
     if (!sq) {
       return res.json({
-        beschikbaar: false, fase: "0-1", baselineAanwezig: false,
+        beschikbaar: false, fase: "0-2", baselineAanwezig: false,
         meetpunten: 0, signalen: { observatie: 0, bevestigd: 0, gepubliceerd: 0 },
         drempel: { factoranalyse: { benodigd: DREMPEL_FACTORANALYSE, huidig: 0, gehaald: false } },
         gegenereerdOp: new Date().toISOString(),
@@ -287,7 +562,7 @@ export function registerTendensMonitoringRoutes(app: Express, db: any, storage: 
 
       return res.json({
         beschikbaar: true,
-        fase: "0-1",
+        fase: "0-2",
         baselineAanwezig: baselineCount > 0,
         laatsteBaselineOp: laatsteBaseline,
         meetpunten: snapshotTotaal,
@@ -366,6 +641,42 @@ export function registerTendensMonitoringRoutes(app: Express, db: any, storage: 
     } catch (e) {
       console.error("[tendensen/baseline/herbereken]", e);
       return res.status(500).json({ error: "Berekenen mislukt." });
+    }
+  });
+
+  // POST detectie draaien (fase 2): control chart + CUSUM + p-chart +
+  // structuurdrift tegen het UA-ijkpunt. Schrijft observaties weg. Verzint
+  // niets — families zonder voldoende data worden eerlijk overgeslagen.
+  app.post("/api/inzichtcentrum/tendensen/detectie", (req, res) => {
+    if (!requireAdmin(req, res)) return;
+    const sq = getSqlite(db, storage);
+    if (!sq) return res.status(500).json({ error: "DB niet beschikbaar." });
+    try {
+      const resultaat = draaiDetectie(sq);
+      return res.json({ ok: true, ...resultaat });
+    } catch (e) {
+      console.error("[tendensen/detectie]", e);
+      return res.status(500).json({ error: "Detectie mislukt." });
+    }
+  });
+
+  // GET signalen: read-only lijst van gedetecteerde signalen (fase 2).
+  app.get("/api/inzichtcentrum/tendensen/signalen", (req, res) => {
+    if (!requireAdmin(req, res)) return;
+    const sq = getSqlite(db, storage);
+    if (!sq) return res.json({ signalen: [] });
+    try {
+      maakTendensTabellen(sq);
+      const rijen = sq.prepare(`
+        SELECT instrument, dimensie, sleutel, type, changepoint_datum, effectgrootte,
+               richting, status, n, toelichting, gedetecteerd_op
+        FROM tendens_signaal
+        ORDER BY gedetecteerd_op DESC, id DESC
+      `).all() as any[];
+      return res.json({ signalen: rijen });
+    } catch (e) {
+      console.error("[tendensen/signalen]", e);
+      return res.status(500).json({ error: "Ophalen mislukt." });
     }
   });
 }

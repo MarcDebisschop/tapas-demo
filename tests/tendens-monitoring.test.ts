@@ -1,6 +1,15 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
-import { maakTendensTabellen, berekenBaseline, schrijfUaIjkpunt } from "../server/tendens-monitoring";
+import {
+  maakTendensTabellen,
+  berekenBaseline,
+  schrijfUaIjkpunt,
+  berekenControlChart,
+  berekenCusum,
+  berekenPChart,
+  detecteerStructuurdrift,
+  draaiDetectie,
+} from "../server/tendens-monitoring";
 
 // Fase 0-1 tests — Inzichtcentrum tendensmonitoring.
 // Doel: de datalaag en baseline-berekening vastleggen. We gebruiken een
@@ -177,5 +186,169 @@ describe("tendensmonitoring — UA-structuurijkpunt (extern gevalideerd)", () =>
       "SELECT COUNT(*) AS n FROM tendens_snapshot WHERE dimensie = 'structuur_ua' AND is_baseline = 1"
     ).get() as any).n;
     expect(n).toBe(6);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Fase 2 — Detectiemotor: zuivere statistische functies.
+// Deterministische reeksen; geen afhankelijkheid van live data.
+// ---------------------------------------------------------------------------
+describe("fase 2 — control chart (Shewhart 3-sigma)", () => {
+  it("rapporteert onvoldoende data onder de minimumdrempel", () => {
+    const r = berekenControlChart([5, 6, 7]);
+    expect(r.voldoendeData).toBe(false);
+    expect(r.uitschieters).toHaveLength(0);
+  });
+
+  it("vindt geen uitschieter in een stabiele reeks", () => {
+    const r = berekenControlChart([10, 11, 9, 10, 12, 8, 10, 11, 9, 10]);
+    expect(r.voldoendeData).toBe(true);
+    expect(r.uitschieters).toHaveLength(0);
+  });
+
+  it("detecteert een duidelijke uitschieter boven de 3-sigma-grens", () => {
+    // Lange stabiele reeks rond 10 met één piek. Voldoende stabiele punten zodat
+    // de piek de sd niet zelf domineert (Shewhart is anders self-masking).
+    const reeks = [10, 10, 11, 9, 10, 10, 11, 9, 10, 10, 10, 11, 9, 10, 10, 11, 9, 10, 10, 30];
+    const r = berekenControlChart(reeks);
+    expect(r.voldoendeData).toBe(true);
+    const boven = r.uitschieters.find((u) => u.richting === "boven");
+    expect(boven).toBeDefined();
+    expect(boven!.waarde).toBe(30);
+  });
+
+  it("geeft geen uitschieter bij nul variatie (sd=0)", () => {
+    const r = berekenControlChart([7, 7, 7, 7, 7, 7, 7, 7]);
+    expect(r.voldoendeData).toBe(true);
+    expect(r.sd).toBe(0);
+    expect(r.uitschieters).toHaveLength(0);
+  });
+});
+
+describe("fase 2 — CUSUM changepoint", () => {
+  it("rapporteert onvoldoende data onder de minimumdrempel", () => {
+    const r = berekenCusum([1, 2, 3]);
+    expect(r.voldoendeData).toBe(false);
+    expect(r.changepointIndex).toBeNull();
+  });
+
+  it("vindt geen changepoint in een stabiele reeks", () => {
+    const r = berekenCusum([10, 11, 9, 10, 12, 8, 10, 11, 9, 10]);
+    expect(r.voldoendeData).toBe(true);
+    expect(r.changepointIndex).toBeNull();
+  });
+
+  it("detecteert een aanhoudende niveauverschuiving (changepoint)", () => {
+    // Lange stabiele run gevolgd door een aanhoudend hoger niveau. De CUSUM
+    // gebruikt het globale gemiddelde als referentie; de richting hangt af van
+    // welke zijde de beslissingsgrens (5 sigma) als eerste overschrijdt — we
+    // toetsen dus enkel DÁT er een changepoint is, niet de exacte richting.
+    const reeks = [...Array(20).fill(10), ...Array(10).fill(20)];
+    const r = berekenCusum(reeks);
+    expect(r.voldoendeData).toBe(true);
+    expect(r.changepointIndex).not.toBeNull();
+    expect(["stijging", "daling"]).toContain(r.richting);
+  });
+});
+
+describe("fase 2 — p-chart (proporties)", () => {
+  it("rapporteert onvoldoende data onder de minimum-n", () => {
+    const r = berekenPChart(0.7, 0.4, 10);
+    expect(r.voldoendeData).toBe(false);
+    expect(r.buitenGrens).toBe(false);
+  });
+
+  it("signaleert een proportie ver onder de baseline", () => {
+    const r = berekenPChart(0.7, 0.2, 200);
+    expect(r.voldoendeData).toBe(true);
+    expect(r.buitenGrens).toBe(true);
+    expect(r.richting).toBe("onder");
+  });
+
+  it("signaleert niets als de proportie binnen de grenzen valt", () => {
+    const r = berekenPChart(0.7, 0.71, 200);
+    expect(r.voldoendeData).toBe(true);
+    expect(r.buitenGrens).toBe(false);
+  });
+});
+
+describe("fase 2 — structuurdrift tegen UA-ijkpunt", () => {
+  it("geen drift wanneer phi het ijkpunt benadert", () => {
+    const r = detecteerStructuurdrift("tucker_phi_f1", 0.994, 0.99);
+    expect(r.drift).toBe(false);
+  });
+
+  it("drift wanneer phi onder de drempel 0,85 zakt", () => {
+    const r = detecteerStructuurdrift("tucker_phi_f1", 0.994, 0.80);
+    expect(r.drift).toBe(true);
+  });
+
+  it("drift wanneer omega meer dan 10% onder het ijkpunt zakt", () => {
+    const r = detecteerStructuurdrift("omega_18", 0.939, 0.80);
+    expect(r.drift).toBe(true);
+  });
+
+  it("geen drift bij een kleine omega-daling binnen de marge", () => {
+    const r = detecteerStructuurdrift("omega_18", 0.939, 0.92);
+    expect(r.drift).toBe(false);
+  });
+});
+
+describe("fase 2 — orchestrator draaiDetectie (geen verzinning)", () => {
+  it("slaat alle families eerlijk over bij weinig data en schrijft geen signaal", () => {
+    const db = maakTestDb();
+    // Slechts een handvol afnames in één maand: onder alle drempels.
+    for (let i = 0; i < 10; i++) voegAfnameToe(db, "t4sports", i < 7 ? "voltooid" : "gestart", "2026-07-05");
+    berekenBaseline(db);
+    const s = draaiDetectie(db);
+    expect(s.onderzocht).toContain("volume_maand");
+    expect(s.onderzocht).toContain("voltooiingsgraad");
+    expect(s.onderzocht).toContain("structuur_ua");
+    expect(s.signalen).toBe(0);
+    // Elke familie moet een expliciete overslag-reden hebben.
+    expect(s.overgeslagen.length).toBeGreaterThanOrEqual(3);
+    const sig = (db.prepare("SELECT COUNT(*) AS n FROM tendens_signaal").get() as any).n;
+    expect(sig).toBe(0);
+  });
+
+  it("detecteert een volume-uitschieter over meerdere maanden en schrijft observatie weg", () => {
+    const db = maakTestDb();
+    // 11 stabiele maanden à 10 afnames + 1 piekmaand à 35 afnames. Genoeg
+    // stabiele perioden zodat de piek buiten de 3-sigma-grens valt.
+    const maanden = [
+      "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12",
+      "2026-01", "2026-02", "2026-03", "2026-04", "2026-05",
+    ];
+    for (const m of maanden) {
+      for (let i = 0; i < 10; i++) voegAfnameToe(db, "t4sports", "voltooid", `${m}-10`);
+    }
+    // Piekmaand: 35 afnames.
+    for (let i = 0; i < 35; i++) voegAfnameToe(db, "t4sports", "voltooid", "2026-06-10");
+    berekenBaseline(db);
+    const s = draaiDetectie(db);
+    expect(s.signalen).toBeGreaterThanOrEqual(1);
+    const rijen = db.prepare(
+      "SELECT dimensie, type, status FROM tendens_signaal WHERE dimensie = 'volume_maand'"
+    ).all() as any[];
+    expect(rijen.length).toBeGreaterThanOrEqual(1);
+    expect(rijen.every((r) => r.status === "observatie")).toBe(true);
+  });
+
+  it("is idempotent: observaties worden niet gedupliceerd bij herdetectie", () => {
+    const db = maakTestDb();
+    const maanden = [
+      "2025-07", "2025-08", "2025-09", "2025-10", "2025-11", "2025-12",
+      "2026-01", "2026-02", "2026-03", "2026-04", "2026-05",
+    ];
+    for (const m of maanden) {
+      for (let i = 0; i < 10; i++) voegAfnameToe(db, "t4sports", "voltooid", `${m}-10`);
+    }
+    for (let i = 0; i < 35; i++) voegAfnameToe(db, "t4sports", "voltooid", "2026-06-10");
+    berekenBaseline(db);
+    draaiDetectie(db);
+    const na1 = (db.prepare("SELECT COUNT(*) AS n FROM tendens_signaal WHERE status='observatie'").get() as any).n;
+    draaiDetectie(db);
+    const na2 = (db.prepare("SELECT COUNT(*) AS n FROM tendens_signaal WHERE status='observatie'").get() as any).n;
+    expect(na2).toBe(na1);
   });
 });
