@@ -7,7 +7,8 @@
 
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "@/lib/queryClient";
 import { AppHeader } from "@/components/Brand";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,9 @@ import {
   Users,
   Building2,
   Clock,
+  Activity,
+  RefreshCw,
+  ShieldCheck,
 } from "lucide-react";
 import {
   TALEN,
@@ -384,6 +388,195 @@ function csvEscape(s: string): string {
 // -----------------------------------------------------------------------
 // Hoofdcomponent — gereconstrueerd uit KPe() in bundle
 // -----------------------------------------------------------------------
+// -----------------------------------------------------------------------
+// Fase 3 — Tendensen-blok.
+// Toont de status van de tendensmonitoring, het extern gevalideerde
+// UA-structuurijkpunt, en de gedetecteerde signalen. Verzint niets: waar
+// de motor "onvoldoende data" meldt, tonen we dat eerlijk. De detectieknop
+// draait de motor (control chart + CUSUM + p-kaart + structuurdrift).
+// -----------------------------------------------------------------------
+function richtingLabel(richting: string | null): string {
+  if (richting === "stijging") return "stijging";
+  if (richting === "daling") return "daling";
+  return "—";
+}
+
+function TendensenBlok() {
+  const { data: status, isLoading: statusLaadt } = useQuery<any>({
+    queryKey: ["/api/inzichtcentrum/tendensen/status"],
+  });
+  const { data: ijkpunt } = useQuery<any>({
+    queryKey: ["/api/inzichtcentrum/tendensen/ijkpunt"],
+  });
+  const { data: signalenData } = useQuery<any>({
+    queryKey: ["/api/inzichtcentrum/tendensen/signalen"],
+  });
+
+  const [laatsteRun, setLaatsteRun] = useState<any>(null);
+
+  const detectie = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/inzichtcentrum/tendensen/detectie");
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setLaatsteRun(data);
+      queryClient.invalidateQueries({ queryKey: ["/api/inzichtcentrum/tendensen/signalen"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inzichtcentrum/tendensen/status"] });
+    },
+  });
+
+  const signalen: any[] = signalenData?.signalen ?? [];
+  const ijkpuntWaarden: any[] = ijkpunt?.waarden ?? [];
+
+  return (
+    <Card className="mt-6">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Activity className="h-4 w-4 text-teal-600" aria-hidden />
+            Tendensen
+            {status?.fase && (
+              <Badge variant="outline" className="ml-1 text-[10px]">fase {status.fase}</Badge>
+            )}
+          </CardTitle>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => detectie.mutate()}
+            disabled={detectie.isPending}
+            data-testid="button-detectie-draaien"
+          >
+            <RefreshCw className={"h-3.5 w-3.5 mr-1.5 " + (detectie.isPending ? "animate-spin" : "")} aria-hidden />
+            {detectie.isPending ? "Bezig met detecteren…" : "Detectie draaien"}
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-muted-foreground">
+          Statistische bewaking van het platform: volume (regelkaart + CUSUM), voltooiingsgraad
+          (p-kaart) en structuurdrift tegen het gevalideerde UA-ijkpunt. Er worden uitsluitend
+          geaggregeerde cijfers gebruikt; onder de datadrempels toont het systeem eerlijk
+          “onvoldoende data” in plaats van een signaal te verzinnen.
+        </p>
+
+        {statusLaadt ? (
+          <div className="mt-4 space-y-2">
+            <Skeleton className="h-4 w-2/3" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        ) : (
+          <>
+            {/* Statuskaartjes */}
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="rounded-lg border bg-muted/30 p-3">
+                <div className="text-xs text-muted-foreground">Baseline</div>
+                <div className="text-sm font-medium text-foreground mt-0.5">
+                  {status?.baselineAanwezig ? `${status.baselineMeetpunten ?? 0} meetpunten` : "nog niet berekend"}
+                </div>
+              </div>
+              <div className="rounded-lg border bg-muted/30 p-3">
+                <div className="text-xs text-muted-foreground">Structuurijkpunt (UA)</div>
+                <div className="text-sm font-medium text-foreground mt-0.5 flex items-center gap-1.5">
+                  <ShieldCheck className="h-3.5 w-3.5 text-teal-600" aria-hidden />
+                  {status?.structuurIjkpunt?.aanwezig
+                    ? `${status.structuurIjkpunt.aantalWaarden} referentiewaarden`
+                    : "niet aanwezig"}
+                </div>
+              </div>
+              <div className="rounded-lg border bg-muted/30 p-3">
+                <div className="text-xs text-muted-foreground">Signalen</div>
+                <div className="text-sm font-medium text-foreground mt-0.5">
+                  {(status?.signalen?.observatie ?? 0) + (status?.signalen?.bevestigd ?? 0) + (status?.signalen?.gepubliceerd ?? 0)} totaal
+                </div>
+              </div>
+            </div>
+
+            {/* Resultaat van de laatste detectie-run */}
+            {laatsteRun && (
+              <div className="mt-4 rounded-lg border border-teal-200 bg-teal-50/60 p-3" data-testid="tekst-detectie-resultaat">
+                <div className="text-xs font-medium text-teal-800">
+                  Laatste detectie: {laatsteRun.signalen ?? 0} signaal/signalen gevonden
+                </div>
+                {Array.isArray(laatsteRun.overgeslagen) && laatsteRun.overgeslagen.length > 0 && (
+                  <ul className="mt-1.5 space-y-1 text-xs text-teal-900/80">
+                    {laatsteRun.overgeslagen.map((o: any, i: number) => (
+                      <li key={i}>· {o.dimensie}: {o.reden}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+
+            {/* Signalenlijst */}
+            <div className="mt-4">
+              <div className="text-xs font-medium text-foreground mb-2">Gedetecteerde signalen</div>
+              {signalen.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Geen signalen. Dit is verwacht zolang de datadrempels niet gehaald zijn.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {signalen.map((s: any, i: number) => (
+                    <div key={i} className="rounded-lg border p-3" data-testid={"signaal-" + i}>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant="secondary" className="text-[10px]">{s.dimensie}</Badge>
+                        <Badge variant="outline" className="text-[10px]">{s.type}</Badge>
+                        <Badge variant="outline" className="text-[10px]">{richtingLabel(s.richting)}</Badge>
+                        <span className="text-[10px] text-muted-foreground ml-auto">{s.status}</span>
+                      </div>
+                      <p className="text-sm text-foreground mt-1.5">{s.toelichting}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* UA-ijkpunt referentietabel */}
+            {ijkpuntWaarden.length > 0 && (
+              <div className="mt-5">
+                <div className="text-xs font-medium text-foreground mb-1">
+                  Structuurijkpunt — {ijkpunt?.bron}
+                </div>
+                <p className="text-[11px] text-muted-foreground mb-2">{ijkpunt?.toelichting}</p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm border-collapse">
+                    <thead>
+                      <tr className="text-left text-xs text-muted-foreground border-b">
+                        <th className="py-1.5 pr-3 font-medium">Metriek</th>
+                        <th className="py-1.5 pr-3 font-medium">Waarde</th>
+                        <th className="py-1.5 font-medium">Herkomst</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ijkpuntWaarden.map((w: any, i: number) => (
+                        <tr key={i} className="border-b last:border-0">
+                          <td className="py-1.5 pr-3 text-foreground">{w.label}</td>
+                          <td className="py-1.5 pr-3 tabular-nums text-foreground">
+                            {typeof w.waarde === "number" ? w.waarde.toFixed(3).replace(".", ",") : w.waarde}
+                          </td>
+                          <td className="py-1.5">
+                            <Badge
+                              variant={w.herkomst === "herbevestigd" ? "secondary" : "outline"}
+                              className="text-[10px]"
+                            >
+                              {w.herkomst}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function AdminInzichten() {
   const [taal, setTaal] = useState<Taal>(STANDAARD_TAAL);
   const n = maakVertaler(taal);
@@ -672,6 +865,9 @@ export default function AdminInzichten() {
                 />
               </div>
             </div>
+
+            {/* Fase 3 — Tendensen-blok */}
+            <TendensenBlok />
 
             {/* Credits sectie */}
             <Card className="mt-6">
