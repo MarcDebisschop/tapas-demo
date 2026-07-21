@@ -7,6 +7,7 @@ import { buildDuidingManagerRoutes } from "./duiding-manager";
 import { buildGidsManagerRoutes } from "./gids-manager";
 import { registerGidsPdfRoutes } from "./gids/routes";
 import { registerCoachesAcademyMailRoutes } from "./routes-coaches-academy-mail";
+import { registerTendensMonitoringRoutes } from "./tendens-monitoring";
 import { registerStmRoutes } from "./routes-stm";
 import { registerAdminStmVoortgangRoutes } from "./admin-stm-voortgang";
 import { registerT4RRoutes } from "./t4r/routes";
@@ -138,6 +139,10 @@ export async function registerRoutes(
 
   // Extra routes: coaches, academy, mailbeheer, inzichtcentrum
   registerCoachesAcademyMailRoutes(app, db, storage);
+
+  // Inzichtcentrum — Tendensmonitoring (fase 0-1): datalaag + baseline.
+  // Additief; maakt eigen tabellen idempotent aan, raakt bestaande niet.
+  registerTendensMonitoringRoutes(app, db, storage);
 
   // Publiek coach-contactformulier (NIEUW, aparte module — Regel 2).
   // Hergebruikt coach_register.email (admin-beheerbaar); fallback info@tapascity.com.
