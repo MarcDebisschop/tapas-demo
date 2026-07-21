@@ -37,6 +37,33 @@ const K_ANONIMITEIT = 5;
 // Drempels voor gevorderde analyses (spiegel van het bestaande overzicht).
 const DREMPEL_FACTORANALYSE = 300;
 
+// ---------------------------------------------------------------------------
+// UA-IJKPUNT — extern gevalideerde structuur-referentie (T4Sports).
+//
+// Dit is GEEN live-berekende waarde en mag dat ook niet zijn: het is de
+// gevalideerde uitkomst van de factoranalyse op de UA-export (T4S). Het dient
+// als vast referentiepunt waartegen latere structuurdrift (fase 2, familie C)
+// wordt afgezet. Elke waarde draagt zijn herkomst (bron) mee, zodat nooit
+// verward wordt met een live-cijfer.
+//
+// Herkomst per waarde:
+//   "herbevestigd" = deze sessie opnieuw uit de scripts gedraaid (hard).
+//   "gedocumenteerd" = uit de eerdere UA-analyse; niet live herbereken baar
+//                      omdat de ruwe itemmatrix hier niet aanwezig is.
+// ---------------------------------------------------------------------------
+const UA_IJKPUNT = {
+  bron: "UA-factoranalyse T4Sports (extern gevalideerd)",
+  vastgesteldOp: "2026-07",
+  waarden: [
+    { sleutel: "f1_variantie",      label: "Verklaarde variantie energie-as (Factor 1)", waarde: 0.232, herkomst: "herbevestigd" },
+    { sleutel: "omega_18",          label: "McDonald's omega energie-as (18 items)",       waarde: 0.939, herkomst: "herbevestigd" },
+    { sleutel: "omega_14_kern",     label: "McDonald's omega kern-energie-as (14 items)",  waarde: 0.946, herkomst: "herbevestigd" },
+    { sleutel: "tucker_phi_f1",     label: "Tucker's phi Factor 1 (reproductie)",          waarde: 0.994, herkomst: "herbevestigd" },
+    { sleutel: "tucker_phi_gem",    label: "Tucker's phi gemiddeld (11 factoren)",         waarde: 0.929, herkomst: "herbevestigd" },
+    { sleutel: "kmo",               label: "KMO (steekproefadequaatheid)",                waarde: 0.828, herkomst: "gedocumenteerd" },
+  ],
+} as const;
+
 // Haal de sqlite-instantie op (zelfde patroon als routes-coaches-academy-mail).
 function getSqlite(db: any, storage: any): any {
   return sqliteInstance ?? db?._db ?? storage?.sqlite ?? null;
@@ -179,7 +206,41 @@ export function berekenBaseline(sqlite: any): { meetpunten: number; onderdrukt: 
     n: totaal, gemiddelde: null, sd: null, aandeel: totaal > 0 ? voltooid / totaal : null,
   });
 
+  // (d) Structuur-ijkpunt uit de UA-factoranalyse (extern gevalideerd, T4Sports).
+  //     Vast referentiepunt voor structuurdrift (fase 2, familie C). Geen live
+  //     cijfer: de waarde staat in `gemiddelde`, de metriek in `sleutel`. n=0
+  //     want dit is geen steekproeftelling, dus geen k-anonimiteit van toepassing.
+  schrijfUaIjkpunt(sqlite);
+  for (const _ of UA_IJKPUNT.waarden) meetpunten += 1;
+
   return { meetpunten, onderdrukt };
+}
+
+// ---------------------------------------------------------------------------
+// Schrijf het UA-structuurijkpunt als baseline-snapshots weg (dimensie
+// "structuur_ua", instrument "t4sports"). Idempotent binnen een baseline-run:
+// oude structuur_ua-baselinerijen worden eerst verwijderd.
+// ---------------------------------------------------------------------------
+export function schrijfUaIjkpunt(sqlite: any): number {
+  if (!sqlite) return 0;
+  maakTendensTabellen(sqlite);
+
+  sqlite.prepare(
+    "DELETE FROM tendens_snapshot WHERE is_baseline = 1 AND dimensie = 'structuur_ua'"
+  ).run();
+
+  const insert = sqlite.prepare(`
+    INSERT INTO tendens_snapshot
+      (instrument, dimensie, sleutel, periode, n, gemiddelde, sd, aandeel, onderdrukt, is_baseline, berekend_op)
+    VALUES ('t4sports', 'structuur_ua', @sleutel, @periode, 0, @waarde, NULL, NULL, 0, 1, datetime('now'))
+  `);
+
+  let geschreven = 0;
+  for (const w of UA_IJKPUNT.waarden) {
+    insert.run({ sleutel: w.sleutel, periode: UA_IJKPUNT.vastgesteldOp, waarde: w.waarde });
+    geschreven += 1;
+  }
+  return geschreven;
 }
 
 // ---------------------------------------------------------------------------
@@ -188,7 +249,12 @@ export function berekenBaseline(sqlite: any): { meetpunten: number; onderdrukt: 
 export function registerTendensMonitoringRoutes(app: Express, db: any, storage: any): void {
   const sqlite = getSqlite(db, storage);
   // Fase 0: zorg dat de tabellen bestaan zodra de server start.
-  if (sqlite) maakTendensTabellen(sqlite);
+  if (sqlite) {
+    maakTendensTabellen(sqlite);
+    // Het UA-structuurijkpunt is een vaste referentie; zet het meteen klaar
+    // zodat het beschikbaar is ook nog vóór een eerste baseline-run.
+    try { schrijfUaIjkpunt(sqlite); } catch (e) { console.error("[tendensen] ijkpunt init", e); }
+  }
 
   // GET status: read-only overzicht van de tendenslaag. Verzint niets.
   app.get("/api/inzichtcentrum/tendensen/status", (req, res) => {
@@ -215,6 +281,10 @@ export function registerTendensMonitoringRoutes(app: Express, db: any, storage: 
 
       const afnamesTotaal = (sq.prepare("SELECT COUNT(*) AS n FROM afnames").get() as any)?.n ?? 0;
 
+      const ijkpuntCount = (sq.prepare(
+        "SELECT COUNT(*) AS n FROM tendens_snapshot WHERE is_baseline = 1 AND dimensie = 'structuur_ua'"
+      ).get() as any)?.n ?? 0;
+
       return res.json({
         beschikbaar: true,
         fase: "0-1",
@@ -223,6 +293,12 @@ export function registerTendensMonitoringRoutes(app: Express, db: any, storage: 
         meetpunten: snapshotTotaal,
         baselineMeetpunten: baselineCount,
         signalen,
+        structuurIjkpunt: {
+          bron: UA_IJKPUNT.bron,
+          vastgesteldOp: UA_IJKPUNT.vastgesteldOp,
+          aanwezig: ijkpuntCount > 0,
+          aantalWaarden: ijkpuntCount,
+        },
         drempel: {
           factoranalyse: {
             benodigd: DREMPEL_FACTORANALYSE,
@@ -258,6 +334,25 @@ export function registerTendensMonitoringRoutes(app: Express, db: any, storage: 
       console.error("[tendensen/baseline]", e);
       return res.status(500).json({ error: "Ophalen mislukt." });
     }
+  });
+
+  // GET structuur-ijkpunt: de vaste, extern gevalideerde UA-referentie met
+  // volledige herkomst per waarde. Read-only. Verzint niets — dit is de bron
+  // waartegen fase 2 structuurdrift zal afzetten.
+  app.get("/api/inzichtcentrum/tendensen/ijkpunt", (req, res) => {
+    if (!requireAdmin(req, res)) return;
+    return res.json({
+      bron: UA_IJKPUNT.bron,
+      vastgesteldOp: UA_IJKPUNT.vastgesteldOp,
+      toelichting:
+        "Extern gevalideerd structuurijkpunt uit de UA-factoranalyse (T4Sports). " +
+        "Vast referentiepunt voor structuurdrift; geen live-berekend cijfer. " +
+        "Herkomst 'herbevestigd' = opnieuw uit de bronscripts gedraaid; " +
+        "'gedocumenteerd' = uit de eerdere UA-analyse, ruwe itemmatrix niet live aanwezig.",
+      waarden: UA_IJKPUNT.waarden.map((w) => ({
+        sleutel: w.sleutel, label: w.label, waarde: w.waarde, herkomst: w.herkomst,
+      })),
+    });
   });
 
   // POST baseline (her)berekenen: draait fase 1 op de actuele afnames-data.

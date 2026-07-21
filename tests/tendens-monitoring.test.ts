@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import Database from "better-sqlite3";
-import { maakTendensTabellen, berekenBaseline } from "../server/tendens-monitoring";
+import { maakTendensTabellen, berekenBaseline, schrijfUaIjkpunt } from "../server/tendens-monitoring";
 
 // Fase 0-1 tests — Inzichtcentrum tendensmonitoring.
 // Doel: de datalaag en baseline-berekening vastleggen. We gebruiken een
@@ -66,6 +66,8 @@ describe("tendensmonitoring fase 1 — baseline", () => {
     expect(dimensies).toContain("volume_instrument");
     expect(dimensies).toContain("volume_maand");
     expect(dimensies).toContain("voltooiingsgraad");
+    // Baseline bevat ook het extern gevalideerde UA-structuurijkpunt.
+    expect(dimensies).toContain("structuur_ua");
   });
 
   it("berekent de voltooiingsgraad als correcte base-rate", () => {
@@ -122,5 +124,58 @@ describe("tendensmonitoring fase 1 — baseline", () => {
     ).get() as any;
     expect(graad.n).toBe(0);
     expect(graad.aandeel).toBeNull();
+  });
+});
+
+describe("tendensmonitoring — UA-structuurijkpunt (extern gevalideerd)", () => {
+  it("schrijft de zes gevalideerde UA-waarden weg als baseline-ijkpunt", () => {
+    const db = maakTestDb();
+    const aantal = schrijfUaIjkpunt(db);
+    expect(aantal).toBe(6);
+
+    const rijen = db.prepare(
+      "SELECT sleutel, gemiddelde, instrument, n, onderdrukt FROM tendens_snapshot WHERE dimensie = 'structuur_ua' AND is_baseline = 1"
+    ).all() as any[];
+    expect(rijen.length).toBe(6);
+    // Alle rijen horen bij het t4sports-instrument en zijn geen steekproef (n=0).
+    for (const r of rijen) {
+      expect(r.instrument).toBe("t4sports");
+      expect(r.n).toBe(0);
+      expect(r.onderdrukt).toBe(0);
+    }
+  });
+
+  it("bewaart de exacte gevalideerde referentiewaarden (geen afronding/verzinning)", () => {
+    const db = maakTestDb();
+    schrijfUaIjkpunt(db);
+    const haal = (sleutel: string) =>
+      (db.prepare("SELECT gemiddelde FROM tendens_snapshot WHERE dimensie='structuur_ua' AND sleutel=?").get(sleutel) as any)?.gemiddelde;
+
+    expect(haal("f1_variantie")).toBeCloseTo(0.232, 3);
+    expect(haal("omega_18")).toBeCloseTo(0.939, 3);
+    expect(haal("omega_14_kern")).toBeCloseTo(0.946, 3);
+    expect(haal("tucker_phi_f1")).toBeCloseTo(0.994, 3);
+    expect(haal("tucker_phi_gem")).toBeCloseTo(0.929, 3);
+    expect(haal("kmo")).toBeCloseTo(0.828, 3);
+  });
+
+  it("is idempotent: opnieuw schrijven dupliceert het ijkpunt niet", () => {
+    const db = maakTestDb();
+    schrijfUaIjkpunt(db);
+    schrijfUaIjkpunt(db);
+    const n = (db.prepare(
+      "SELECT COUNT(*) AS n FROM tendens_snapshot WHERE dimensie = 'structuur_ua' AND is_baseline = 1"
+    ).get() as any).n;
+    expect(n).toBe(6);
+  });
+
+  it("baseline-run neemt het ijkpunt mee", () => {
+    const db = maakTestDb();
+    for (let i = 0; i < 6; i++) voegAfnameToe(db, "t4sports", "voltooid", "2026-06-10");
+    berekenBaseline(db);
+    const n = (db.prepare(
+      "SELECT COUNT(*) AS n FROM tendens_snapshot WHERE dimensie = 'structuur_ua' AND is_baseline = 1"
+    ).get() as any).n;
+    expect(n).toBe(6);
   });
 });
