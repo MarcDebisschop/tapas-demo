@@ -14,6 +14,9 @@ import Home from "@/pages/home";
 import Start from "@/pages/start";
 import Deel1 from "@/pages/deel1";
 import Deel2 from "@/pages/deel2";
+import ReisT4Kids from "@/pages/reis-t4kids";
+import ReisT4KidsStart from "@/pages/reis-t4kids-start";
+import T4KidsRapport from "@/pages/t4kids-rapport";
 import Klaar from "@/pages/klaar";
 import Admin from "@/pages/admin";
 import AdminDetail from "@/pages/admin-detail";
@@ -99,6 +102,9 @@ function AppRouter() {
       <Route path="/dashboard/:token" component={Dashboard} />
       <Route path="/afname/:id/deel1" component={Deel1} />
       <Route path="/afname/:id/deel2" component={Deel2} />
+      <Route path="/reis/start" component={ReisT4KidsStart} />
+      <Route path="/reis/:id" component={ReisT4Kids} />
+      <Route path="/afname/:id/t4kids-rapport" component={T4KidsRapport} />
       <Route path="/afname/:id/klaar" component={Klaar} />
       <Route path="/admin">{() => <AdminLoginGate><Admin /></AdminLoginGate>}</Route>
       <Route path="/admin/credits">{() => <AdminLoginGate><AdminCredits /></AdminLoginGate>}</Route>
@@ -194,6 +200,8 @@ function isAdminRoute(): boolean {
       hash.startsWith("dashboard/") ||
       hash.startsWith("magic/") ||
       hash.startsWith("afname/") ||
+      hash.startsWith("deelnemer/") ||
+      hash.startsWith("reis/") ||
       hash.startsWith("t4r") ||
       hash.startsWith("teamscan") ||
       hash.startsWith("t4o") ||

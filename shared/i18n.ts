@@ -136,6 +136,51 @@ export const STRINGS = {
     es: "0 = agotado · 10 = lleno de energía. Sirve como punto de referencia para el cuestionario.",
     ru: "0 = истощён · 10 = полон энергии. Это служит точкой отсчёта для опросника.",
   },
+  // --- T4Kids-varianten (additief, Regel 2) ---------------------------------
+  // Kindvriendelijke sleutels (10-13 jaar), UITSLUITEND getoond wanneer het
+  // instrument "t4kids" is. Bestaande sleutels blijven de standaard/fallback.
+  deel_welkom_titel_t4kids: {
+    nl: "Welkom op jouw T4Kids Ontdekkingsreis",
+    fr: "Bienvenue dans ton voyage de découverte T4Kids",
+    en: "Welcome to your T4Kids Discovery Journey",
+    es: "Bienvenido a tu viaje de descubrimiento T4Kids",
+    ru: "Добро пожаловать в твоё путешествие-открытие T4Kids",
+  },
+  deel_welkom_intro_t4kids: {
+    nl: "Je gaat op ontdekkingsreis langs drie eilanden. Er zijn geen foute antwoorden — kies gewoon wat het best bij jou past. Je mag altijd iets overslaan of stoppen.",
+    fr: "Tu pars en voyage de découverte à travers trois îles. Il n'y a pas de mauvaises réponses — choisis simplement ce qui te correspond le mieux. Tu peux toujours passer une étape ou t'arrêter.",
+    en: "You are going on a discovery journey across three islands. There are no wrong answers — just choose what fits you best. You can always skip something or stop.",
+    es: "Te vas de viaje de descubrimiento por tres islas. No hay respuestas incorrectas — solo elige lo que mejor te encaje. Siempre puedes saltar algo o parar.",
+    ru: "Ты отправляешься в путешествие-открытие по трём островам. Неправильных ответов нет — просто выбирай то, что подходит тебе больше всего. Ты всегда можешь что-то пропустить или остановиться.",
+  },
+  veld_bedrijf_t4kids: {
+    nl: "School",
+    fr: "École",
+    en: "School",
+    es: "Escuela",
+    ru: "Школа",
+  },
+  veld_functie_t4kids: {
+    nl: "Klas / leerjaar",
+    fr: "Classe / année",
+    en: "Class / year",
+    es: "Clase / curso",
+    ru: "Класс / год обучения",
+  },
+  veld_baseline_t4kids: {
+    nl: "Hoe voel je je vandaag?",
+    fr: "Comment te sens-tu aujourd'hui ?",
+    en: "How do you feel today?",
+    es: "¿Cómo te sientes hoy?",
+    ru: "Как ты себя чувствуешь сегодня?",
+  },
+  veld_baseline_hint_t4kids: {
+    nl: "Kies de smiley die het best past — er is geen goed of fout.",
+    fr: "Choisis le smiley qui te correspond le mieux — il n'y a ni bien ni mal.",
+    en: "Choose the smiley that fits best — there is no right or wrong.",
+    es: "Elige el emoticono que mejor encaje — no hay bien ni mal.",
+    ru: "Выбери смайлик, который подходит лучше всего — здесь нет правильного или неправильного.",
+  },
   consent_titel: { nl: "Toestemming (GDPR)", fr: "Consentement (RGPD)", en: "Consent (GDPR)", es: "Consentimiento (RGPD)", ru: "Согласие (GDPR)" },
   consent_uitleg: {
     nl: "Je antwoorden worden centraal en beveiligd opgeslagen en uitsluitend gebruikt om jouw professioneel profiel en rapport te genereren. Je gegevens worden niet voor andere doeleinden verwerkt.",

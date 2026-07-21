@@ -1842,6 +1842,7 @@ export class DatabaseStorage implements IStorage {
     company?: string | null;
     role?: string | null;
     taal?: string | null;
+    instrumentId?: string | null;
   }): Promise<Afname> {
     const now = new Date().toISOString();
     // Tijdelijke unieke respondentCode; wordt na voltooiing/start verfijnd.
@@ -1858,6 +1859,7 @@ export class DatabaseStorage implements IStorage {
         consentGiven: false,
         baselineEnergy: 5,
         taal: data.taal ?? "nl",
+        instrumentId: data.instrumentId ?? null,
         status: "uitgenodigd",
         inviteToken: token,
         uitgenodigdAt: now,

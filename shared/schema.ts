@@ -117,6 +117,9 @@ export const inviteAfnameSchema = z.object({
   organisatieId: z.number().int().positive().optional(),
   // De beheerder kiest de afname-taal bij het aanmaken van de uitnodiging.
   taal: taalSchema.optional(),
+  // Instrument-routing: koppelt de uitnodiging aan een specifiek instrument
+  // (bijv. "t4teens", "t4students", "t4kids"). Zonder waarde -> standaard T4P-pad.
+  instrumentId: z.string().optional(),
 });
 export type InviteAfname = z.infer<typeof inviteAfnameSchema>;
 

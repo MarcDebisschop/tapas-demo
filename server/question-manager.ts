@@ -31,6 +31,7 @@ import { join } from "node:path";
 import { storage, db } from "./storage";
 import { MODULES as T4R_MODULES } from "./t4r/library";
 import { t4oInstrument } from "./t4organizations/instrument";
+import { T4KIDS_ITEMS_FLAT } from "./t4kids/itembank";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -413,6 +414,23 @@ function laadT4TeensItems(): VraagItem[] {
   }));
 }
 
+// ─── T4Kids — Ontdekkingsreis (10-13 jaar) ────────────────────────────────────
+// Bron: server/t4kids/itembank.ts (één bron van waarheid — geen duplicatie).
+// De platte itemlijst (interesseparen + archetypen + stellingen) wordt hier
+// enkel gemapt naar het VraagItem-formaat voor de question-manager.
+const T4KIDS_ITEMS_DEF = T4KIDS_ITEMS_FLAT;
+
+function laadT4KidsItems(): VraagItem[] {
+  return T4KIDS_ITEMS_DEF.map((d) => ({
+    itemId: d.id,
+    instrument: "tapas-t4kids",
+    family: d.domein,
+    construct: d.cluster,
+    tekst: { nl: d.tekst },
+    heeftOverride: false,
+  }));
+}
+
 // ─── SQLite voor overschrijvingen (lazy init) ─────────────────────────────────
 
 function getSqlite() {
@@ -652,6 +670,7 @@ const INSTRUMENT_LOADERS: Record<string, () => VraagItem[]> = {
   "tapas-driverscan":     laadDriverScanItems,
   "tapas-t4students":     laadT4StudentsItems,
   "tapas-t4teens":        laadT4TeensItems,
+  "tapas-t4kids":         laadT4KidsItems,
   "tapas-t4sports":       laadT4SportsModuleItems,
   "tapas-t4sports-basis": laadT4SportsBasisItems,
   "tapas-t4organizations": laadT4OrganizationsItems,

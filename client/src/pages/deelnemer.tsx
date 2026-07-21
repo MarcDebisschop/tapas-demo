@@ -84,8 +84,13 @@ export default function Deelnemer() {
   // teksten exact behouden. `tt(basis)` kiest de "<basis>_t4teens"-sleutel enkel
   // wanneer het instrument t4teens is, anders de originele sleutel.
   const isT4Teens = data?.instrumentId === "t4teens";
+  const isT4Kids = data?.instrumentId === "t4kids";
   const tt = (basisSleutel: string) =>
-    isT4Teens ? t(`${basisSleutel}_t4teens` as any) : t(basisSleutel as any);
+    isT4Kids
+      ? t(`${basisSleutel}_t4kids` as any)
+      : isT4Teens
+        ? t(`${basisSleutel}_t4teens` as any)
+        : t(basisSleutel as any);
 
   async function start() {
     if (!data) return;
@@ -109,7 +114,9 @@ export default function Deelnemer() {
       });
       const afname: Afname = await res.json();
       queryClient.invalidateQueries({ queryKey: ["/api/uitnodigingen", token] });
-      navigate(`/afname/${afname.id}/deel1`);
+      // T4Kids krijgt zijn eigen kindvriendelijke belevings-route; elk ander
+      // instrument volgt het bestaande deel1-pad ongewijzigd.
+      navigate(isT4Kids ? `/reis/${afname.id}` : `/afname/${afname.id}/deel1`);
     } catch (e: any) {
       const msg = e?.message ? String(e.message) : String(e);
       toast({ title: t("fout_start_titel"), description: msg, variant: "destructive" });

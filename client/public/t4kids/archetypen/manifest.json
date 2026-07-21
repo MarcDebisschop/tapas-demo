@@ -1,0 +1,174 @@
+{
+  "versie": 1,
+  "beschrijving": "T4Kids archetype-illustraties (aardappelfiguren)",
+  "archetypen": {
+    "T4K-A-01": {
+      "naam": "de detective",
+      "focus": "Abstraherend",
+      "bestand": "T4K-A-01_detective.png",
+      "emoji": "🔍"
+    },
+    "T4K-A-02": {
+      "naam": "de geleerde",
+      "focus": "Abstraherend",
+      "bestand": "T4K-A-02_geleerde.png",
+      "emoji": "📚"
+    },
+    "T4K-A-03": {
+      "naam": "de oplosser",
+      "focus": "Abstraherend",
+      "bestand": "T4K-A-03_oplosser.png",
+      "emoji": "🧩"
+    },
+    "T4K-A-04": {
+      "naam": "de wetenschapper",
+      "focus": "Abstraherend",
+      "bestand": "T4K-A-04_wetenschapper.png",
+      "emoji": "🔬"
+    },
+    "T4K-A-05": {
+      "naam": "de ontdekkingsreiziger",
+      "focus": "Abstraherend",
+      "bestand": "T4K-A-05_ontdekkingsreiziger.png",
+      "emoji": "🧭"
+    },
+    "T4K-A-06": {
+      "naam": "de uitvinder",
+      "focus": "Doelgericht-Creatief",
+      "bestand": "T4K-A-06_uitvinder.png",
+      "emoji": "💡"
+    },
+    "T4K-A-07": {
+      "naam": "de avonturier",
+      "focus": "Doelgericht-Creatief",
+      "bestand": "T4K-A-07_avonturier.png",
+      "emoji": "🗺️"
+    },
+    "T4K-A-08": {
+      "naam": "de pionier",
+      "focus": "Doelgericht-Creatief",
+      "bestand": "T4K-A-08_pionier.png",
+      "emoji": "🚀"
+    },
+    "T4K-A-09": {
+      "naam": "de dromer-met-plannen",
+      "focus": "Doelgericht-Creatief",
+      "bestand": "T4K-A-09_dromer-met-plannen.png",
+      "emoji": "💭"
+    },
+    "T4K-A-10": {
+      "naam": "de durver",
+      "focus": "Doelgericht-Creatief",
+      "bestand": "T4K-A-10_durver.png",
+      "emoji": "🎯"
+    },
+    "T4K-A-11": {
+      "naam": "de helper",
+      "focus": "Sociaal-gericht",
+      "bestand": "T4K-A-11_helper.png",
+      "emoji": "🤝"
+    },
+    "T4K-A-12": {
+      "naam": "de beschermer",
+      "focus": "Sociaal-gericht",
+      "bestand": "T4K-A-12_beschermer.png",
+      "emoji": "🛡️"
+    },
+    "T4K-A-13": {
+      "naam": "de gids",
+      "focus": "Sociaal-gericht",
+      "bestand": "T4K-A-13_gids.png",
+      "emoji": "🚩"
+    },
+    "T4K-A-14": {
+      "naam": "de verbinder",
+      "focus": "Sociaal-gericht",
+      "bestand": "T4K-A-14_verbinder.png",
+      "emoji": "🔗"
+    },
+    "T4K-A-15": {
+      "naam": "de redder",
+      "focus": "Sociaal-gericht",
+      "bestand": "T4K-A-15_redder.png",
+      "emoji": "🚑"
+    },
+    "T4K-A-16": {
+      "naam": "de bouwer",
+      "focus": "Uitvoerend",
+      "bestand": "T4K-A-16_bouwer.png",
+      "emoji": "🧱"
+    },
+    "T4K-A-17": {
+      "naam": "de kok",
+      "focus": "Uitvoerend",
+      "bestand": "T4K-A-17_kok.png",
+      "emoji": "🍳"
+    },
+    "T4K-A-18": {
+      "naam": "de ridder",
+      "focus": "Uitvoerend",
+      "bestand": "T4K-A-18_ridder.png",
+      "emoji": "⚔️"
+    },
+    "T4K-A-19": {
+      "naam": "de held(in)",
+      "focus": "Uitvoerend",
+      "bestand": "T4K-A-19_heldin.png",
+      "emoji": "🦸"
+    },
+    "T4K-A-20": {
+      "naam": "de knutselaar",
+      "focus": "Uitvoerend",
+      "bestand": "T4K-A-20_knutselaar.png",
+      "emoji": "✂️"
+    },
+    "T4K-A-21": {
+      "naam": "de leraar",
+      "focus": "Overdracht-gericht",
+      "bestand": "T4K-A-21_leraar.png",
+      "emoji": "🎓"
+    },
+    "T4K-A-22": {
+      "naam": "de verteller",
+      "focus": "Overdracht-gericht",
+      "bestand": "T4K-A-22_verteller.png",
+      "emoji": "📖"
+    },
+    "T4K-A-23": {
+      "naam": "de toneelspeler",
+      "focus": "Overdracht-gericht",
+      "bestand": "T4K-A-23_toneelspeler.png",
+      "emoji": "🎭"
+    },
+    "T4K-A-24": {
+      "naam": "de grappenmaker",
+      "focus": "Overdracht-gericht",
+      "bestand": "T4K-A-24_grappenmaker.png",
+      "emoji": "🤡"
+    },
+    "T4K-A-25": {
+      "naam": "de kunstenaar",
+      "focus": "Artistiek-Creatief",
+      "bestand": "T4K-A-25_kunstenaar.png",
+      "emoji": "🎨"
+    },
+    "T4K-A-26": {
+      "naam": "de danser(es)",
+      "focus": "Artistiek-Creatief",
+      "bestand": "T4K-A-26_danser.png",
+      "emoji": "💃"
+    },
+    "T4K-A-27": {
+      "naam": "de muziekmaker",
+      "focus": "Artistiek-Creatief",
+      "bestand": "T4K-A-27_muziekmaker.png",
+      "emoji": "🎵"
+    },
+    "T4K-A-28": {
+      "naam": "de schrijver",
+      "focus": "Artistiek-Creatief",
+      "bestand": "T4K-A-28_schrijver.png",
+      "emoji": "✍️"
+    }
+  }
+}

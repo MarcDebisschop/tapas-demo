@@ -216,17 +216,17 @@ export const INSTRUMENTENGIDS: GidsInstrument[] = [
     orientatie: "education",
     eyebrow: "Kinderen · talentontdekking",
     omschrijving:
-      "Een speels, leeftijdsspecifiek talentprofiel voor kinderen, in eenvoudige en beeldende taal, dat helpt om talenten en interesses vroeg zichtbaar te maken.",
+      "Een speelse talent-ontdekkingsreis voor kinderen (10–13 jaar): in drie korte modules ontdekken ze hun interesses, sterktes en drijfveren — als voorbereiding op de studiekeuze naar het secundair onderwijs.",
     beantwoordt:
-      "Waar word ik blij van? Waar ben ik goed in? Wat geeft mij energie op school en in mijn vrije tijd?",
+      "Waar krijg ik nu energie van? Welke dingen doe ik graag en gaan me vlot af? Wat vertelt dat over de richting die bij mij past?",
     gebruik:
-      "Voor vroege talentherkenning, ouder-kindgesprekken over interesses en een positieve start van studiekeuzeoriëntatie.",
-    doelgroep: "Kinderen 11–13 jaar, ouders, leerkrachten en zorgcoördinatoren.",
-    start: { label: "Ontdek T4Kids", route: "/studie/leerlingen", direct: false },
+      "Voor talentontdekking op het einde van de lagere school, voorbereiding van de studiekeuze naar het secundair, en het ouder-kindgesprek over interesses en zelfvertrouwen.",
+    doelgroep: "Kinderen 10–13 jaar, ouders, CLB & lagere-schoolteams.",
+    start: { label: "Ontdek T4Kids", route: "/reis/start", direct: false },
     rapportTeaser:
-      "Een kindvriendelijke T4Kids talentkaart met herkenbare beelden, die talenten en interesses in eenvoudige taal weergeeft.",
-    leeftijdsfocus: "11–13 jaar",
-    icoon: "Sparkles",
+      "Een kindvriendelijk, procesgericht talentbeeld in ‘nu’-taal, met een apart ouder-/coachdeel. Geen etiket, wel richting.",
+    leeftijdsfocus: "10–13 jaar · einde lager onderwijs",
+    icoon: "Compass",
   },
   {
     id: "t4teens",

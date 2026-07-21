@@ -36,6 +36,7 @@ import { dashboardCodeVanToken, voornaamVanNaam } from "../dashboard-code";
 import { buildGeneratorContract } from "../scoring";
 import { buildT4StudentsContract } from "../t4students/scoring";
 import { buildT4TeensContract } from "../t4teens/scoring";
+import { buildT4KidsContract } from "../t4kids/scoring";
 import { z } from "zod";
 
 // Genereert een leesbare respondentCode op basis van naam + jaar + volgnummer.
@@ -161,6 +162,7 @@ export function registerAfnameRoutes(app: Express): void {
       company: data.company ?? null,
       role: data.role ?? null,
       taal: normaliseerTaal(data.taal),
+      instrumentId: data.instrumentId ?? null,
     });
     if (data.organisatieId != null) {
       try {
@@ -300,7 +302,26 @@ export function registerAfnameRoutes(app: Express): void {
     // instrumentId "t4students". Het T4P-pad (en elk ander instrument) blijft
     // volledig ongewijzigd via buildGeneratorContract.
     let contract: any;
-    if (a.instrumentId === "t4students") {
+    if (a.instrumentId === "t4kids") {
+      // T4Kids: de galerij-keuzes (gekozen archetypen + "waarom" + top-3) reizen
+      // additief mee in de request-body. Het contract volgt dezelfde vorm als
+      // T4Students (constructRows/familyRows), maar met instrumentId "t4kids".
+      const keuzes =
+        req.body && typeof req.body.keuzes === "object" && req.body.keuzes
+          ? (req.body.keuzes as { archetypen?: { id: string; waarom?: string }[]; top3?: string[] })
+          : null;
+      contract = buildT4KidsContract({
+        respondentCode: a.respondentCode,
+        name: a.name,
+        company: a.company,
+        role: a.role,
+        consentScope: a.consentScope,
+        consentTimestamp: a.consentTimestamp,
+        responses,
+        keuzes,
+        taal: a.taal,
+      });
+    } else if (a.instrumentId === "t4students") {
       // Open reflectie-antwoorden reizen optioneel additief mee in de request.
       const reflectie =
         req.body && typeof req.body.reflectie === "object" && req.body.reflectie

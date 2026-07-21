@@ -150,7 +150,10 @@ export default function Admin() {
   const [pwBezig, setPwBezig] = useState(false);
 
   // Instruments query
-  const { data: instruments } = useQuery<{ id: number; naam: string; flowType: string }[]>({ queryKey: ["/api/instruments"] });
+  // De registry-endpoint (/api/instruments) levert instrumentId (string),
+  // name en flowType. Eerder stond hier ten onrechte { id:number; naam } —
+  // waardoor de instrumentkoppeling in de uitnodiging leeg bleef.
+  const { data: instruments } = useQuery<{ instrumentId: string; name: string; flowType: string }[]>({ queryKey: ["/api/instruments"] });
   const individueleInstruments = (instruments ?? []).filter((i) => i.flowType === "individual");
 
   const NIVEAU_OPTIES = ["cxo", "kader", "expert", "medewerker", "admin"];
@@ -601,7 +604,7 @@ export default function Admin() {
                     <SelectContent>
                       <SelectItem value="standaard">Standaard</SelectItem>
                       {individueleInstruments.map((i) => (
-                        <SelectItem key={i.id} value={String(i.id)}>{i.naam}</SelectItem>
+                        <SelectItem key={i.instrumentId} value={i.instrumentId}>{i.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
