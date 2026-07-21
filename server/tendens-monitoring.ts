@@ -519,6 +519,171 @@ export function draaiDetectie(sqlite: any): DetectieSamenvatting {
 }
 
 // ---------------------------------------------------------------------------
+// Fase 4 - Draft-generator wetenschappelijke duiding.
+//
+// Zet BEVESTIGDE (of gepubliceerde) signalen om in een wetenschappelijk
+// geformuleerde concepttekst met methodische onderbouwing en bronverwijzing.
+// Kernprincipes:
+//  - Alleen status 'bevestigd'/'gepubliceerd' telt mee. Losse 'observatie'-
+//    signalen zijn nog niet bevestigd en horen NIET in een duidingstekst.
+//  - Elk signaaltype krijgt de bijbehorende methode-onderbouwing + genummerde
+//    bronverwijzing (dezelfde peer-reviewed bronnen als het ontwerpdocument).
+//  - Verzint niets: zonder bevestigde signalen volgt een eerlijke lege draft.
+// ---------------------------------------------------------------------------
+
+// Vaste, peer-reviewed bronnen (identiek aan het ontwerpdocument Tendensmonitoring).
+const DRAFT_BRONNEN: { nr: number; tekst: string; url: string }[] = [
+  { nr: 1, tekst: "Statistische procesbeheersing - regelkaarten voor gedragswetenschappelijke data. Behavior Research Methods (Springer, 2021).", url: "https://link.springer.com/article/10.3758/s13428-021-01619-0" },
+  { nr: 2, tekst: "Univariate mean change point detection: penalization, CUSUM and optimality. Electronic Journal of Statistics, 14(1), 2020.", url: "https://projecteuclid.org/journals/electronic-journal-of-statistics/volume-14/issue-1/Univariate-mean-change-point-detection-Penalization-CUSUM-and-optimality/10.1214/20-EJS1710.pdf" },
+  { nr: 3, tekst: "A survey of methods for time series change point detection. Knowledge and Information Systems (PMC5464762), 2017.", url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC5464762/" },
+  { nr: 4, tekst: "Longitudinal measurement invariance within a confirmatory factor analysis framework. Assessment (PMC10363935), 2022.", url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC10363935/" },
+  { nr: 6, tekst: "McDonald's omega en betrouwbaarheid - reporting reliability, convergent and discriminant validity.", url: "https://scispace.com/pdf/reporting-reliability-convergent-and-discriminant-validity-3dn13k48.pdf" },
+];
+
+// Methode-onderbouwing per signaaltype: welke techniek, welke bronnummers.
+function methodeOnderbouwing(type: string): { methode: string; bronnen: number[] } {
+  switch (type) {
+    case "niveau":
+      return {
+        methode:
+          "Gedetecteerd met een Shewhart-regelkaart: een waarneming buiten de " +
+          "3-sigma-grens rond het referentiegemiddelde is statistisch onwaarschijnlijk " +
+          "onder natuurlijke variatie en wijst op een bijzondere oorzaak.",
+        bronnen: [1],
+      };
+    case "changepoint":
+      return {
+        methode:
+          "Gedetecteerd en gedateerd met de CUSUM-methode (cumulatieve som): deze " +
+          "lokaliseert het omslagpunt van een geleidelijke niveauverschuiving die een " +
+          "losse regelkaart nog niet als uitschieter zou markeren.",
+        bronnen: [2, 3],
+      };
+    case "proportie":
+      return {
+        methode:
+          "Gedetecteerd met een p-kaart: de actuele proportie valt buiten de " +
+          "3-sigma-grenzen die rond de baseline-proportie zijn berekend, gecorrigeerd " +
+          "voor de actuele steekproefgrootte.",
+        bronnen: [1],
+      };
+    case "structuur":
+      return {
+        methode:
+          "Gedetecteerd via structuurdrift tegen het gevalideerde UA-ijkpunt: " +
+          "factorcongruentie (Tucker phi) en interne consistentie (McDonald's omega) " +
+          "worden vergeleken met de referentiewaarden uit de UA-factoranalyse.",
+        bronnen: [4, 6],
+      };
+    default:
+      return { methode: "Gedetecteerd binnen de tendensmonitoring.", bronnen: [1] };
+  }
+}
+
+export interface DraftResultaat {
+  titel: string;
+  gegenereerdOp: string;
+  aantalBevestigd: number;
+  samenvatting: string;
+  secties: { kop: string; alineas: string[]; bronnen: number[] }[];
+  bronnenlijst: { nr: number; tekst: string; url: string }[];
+  leeg: boolean;
+}
+
+export function genereerDraft(sqlite: any): DraftResultaat {
+  const gegenereerdOp = new Date().toISOString();
+  const titel = "Tendensen in het TaPas-platform - concept duiding";
+
+  // Alleen BEVESTIGDE of GEPUBLICEERDE signalen tellen mee. Verzint niets.
+  const rijen = (sqlite
+    .prepare(
+      `SELECT instrument, dimensie, sleutel, type, changepoint_datum, effectgrootte,
+              richting, status, n, toelichting, gedetecteerd_op
+       FROM tendens_signaal
+       WHERE status IN ('bevestigd', 'gepubliceerd')
+       ORDER BY dimensie ASC, gedetecteerd_op ASC`
+    )
+    .all() as any[]) ?? [];
+
+  if (rijen.length === 0) {
+    return {
+      titel,
+      gegenereerdOp,
+      aantalBevestigd: 0,
+      leeg: true,
+      samenvatting:
+        "Er zijn op dit moment geen bevestigde tendenssignalen. Losse observaties " +
+        "worden pas in een duidingstekst opgenomen nadat ze zijn bevestigd. Zolang " +
+        "de datadrempels niet gehaald zijn (regelkaart minimaal 8 perioden, p-kaart " +
+        "minimaal 30 afnames, structuurvergelijking minimaal 300 afnames) blijft deze " +
+        "concepttekst bewust leeg - er wordt niets verondersteld of verzonnen.",
+      secties: [],
+      bronnenlijst: [],
+    };
+  }
+
+  // Groepeer per dimensie zodat de duiding thematisch gebundeld is.
+  const perDimensie = new Map<string, any[]>();
+  for (const r of rijen) {
+    const lijst = perDimensie.get(r.dimensie) ?? [];
+    lijst.push(r);
+    perDimensie.set(r.dimensie, lijst);
+  }
+
+  const dimensieKop: Record<string, string> = {
+    volume_maand: "Volume per maand",
+    voltooiingsgraad: "Voltooiingsgraad",
+    structuur_ua: "Structuurstabiliteit (UA-ijkpunt)",
+  };
+
+  const gebruikteBronnen = new Set<number>();
+  const secties: DraftResultaat["secties"] = [];
+
+  for (const dimensie of Array.from(perDimensie.keys())) {
+    const lijst = perDimensie.get(dimensie) ?? [];
+    const alineas: string[] = [];
+    const sectieBronnen = new Set<number>();
+    for (const s of lijst) {
+      const ond = methodeOnderbouwing(s.type);
+      ond.bronnen.forEach((b) => {
+        sectieBronnen.add(b);
+        gebruikteBronnen.add(b);
+      });
+      const cites = ond.bronnen.map((b) => `[${b}]`).join("");
+      const effect =
+        s.effectgrootte != null
+          ? ` De geschatte effectgrootte bedraagt ${Number(s.effectgrootte).toFixed(2).replace(".", ",")}.`
+          : "";
+      alineas.push(`${s.toelichting} ${ond.methode}${effect} ${cites}`);
+    }
+    secties.push({
+      kop: dimensieKop[dimensie] ?? dimensie,
+      alineas,
+      bronnen: Array.from(sectieBronnen).sort((a, b) => a - b),
+    });
+  }
+
+  const samenvatting =
+    `Deze concepttekst vat ${rijen.length} bevestigd(e) tendenssignaal/signalen samen, ` +
+    `verdeeld over ${perDimensie.size} dimensie(s). Elke bevinding is gedetecteerd met een ` +
+    `gevestigde statistische methode (regelkaart, CUSUM of p-kaart) en, waar van toepassing, ` +
+    `afgezet tegen het extern gevalideerde UA-structuurijkpunt. De genummerde verwijzingen ` +
+    `koppelen elke methode aan de onderliggende peer-reviewed bron.`;
+
+  const bronnenlijst = DRAFT_BRONNEN.filter((b) => gebruikteBronnen.has(b.nr));
+
+  return {
+    titel,
+    gegenereerdOp,
+    aantalBevestigd: rijen.length,
+    leeg: false,
+    samenvatting,
+    secties,
+    bronnenlijst,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Registratie van de endpoints.
 // ---------------------------------------------------------------------------
 export function registerTendensMonitoringRoutes(app: Express, db: any, storage: any): void {
@@ -537,7 +702,7 @@ export function registerTendensMonitoringRoutes(app: Express, db: any, storage: 
     const sq = getSqlite(db, storage);
     if (!sq) {
       return res.json({
-        beschikbaar: false, fase: "0-2", baselineAanwezig: false,
+        beschikbaar: false, fase: "0-4", baselineAanwezig: false,
         meetpunten: 0, signalen: { observatie: 0, bevestigd: 0, gepubliceerd: 0 },
         drempel: { factoranalyse: { benodigd: DREMPEL_FACTORANALYSE, huidig: 0, gehaald: false } },
         gegenereerdOp: new Date().toISOString(),
@@ -562,7 +727,7 @@ export function registerTendensMonitoringRoutes(app: Express, db: any, storage: 
 
       return res.json({
         beschikbaar: true,
-        fase: "0-2",
+        fase: "0-4",
         baselineAanwezig: baselineCount > 0,
         laatsteBaselineOp: laatsteBaseline,
         meetpunten: snapshotTotaal,
@@ -677,6 +842,22 @@ export function registerTendensMonitoringRoutes(app: Express, db: any, storage: 
     } catch (e) {
       console.error("[tendensen/signalen]", e);
       return res.status(500).json({ error: "Ophalen mislukt." });
+    }
+  });
+
+  // GET draft (fase 4): concept duidingstekst op basis van BEVESTIGDE signalen,
+  // met methodische onderbouwing en peer-reviewed bronverwijzing. Read-only.
+  // Verzint niets - zonder bevestigde signalen volgt een eerlijke lege draft.
+  app.get("/api/inzichtcentrum/tendensen/draft", (req, res) => {
+    if (!requireAdmin(req, res)) return;
+    const sq = getSqlite(db, storage);
+    if (!sq) return res.status(500).json({ error: "DB niet beschikbaar." });
+    try {
+      maakTendensTabellen(sq);
+      return res.json(genereerDraft(sq));
+    } catch (e) {
+      console.error("[tendensen/draft]", e);
+      return res.status(500).json({ error: "Genereren mislukt." });
     }
   });
 }

@@ -9,6 +9,7 @@ import {
   berekenPChart,
   detecteerStructuurdrift,
   draaiDetectie,
+  genereerDraft,
 } from "../server/tendens-monitoring";
 
 // Fase 0-1 tests — Inzichtcentrum tendensmonitoring.
@@ -350,5 +351,93 @@ describe("fase 2 — orchestrator draaiDetectie (geen verzinning)", () => {
     draaiDetectie(db);
     const na2 = (db.prepare("SELECT COUNT(*) AS n FROM tendens_signaal WHERE status='observatie'").get() as any).n;
     expect(na2).toBe(na1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Fase 4 - draft-generator (wetenschappelijke duiding). We toetsen dat de
+// generator UITSLUITEND bevestigde signalen gebruikt, de juiste methode +
+// bronverwijzing per type koppelt, en eerlijk leeg blijft zonder bevestiging.
+// ---------------------------------------------------------------------------
+function voegSignaalToe(
+  db: any,
+  opts: { dimensie: string; type: string; status: string; toelichting: string; effectgrootte?: number | null; richting?: string | null }
+) {
+  db.prepare(
+    `INSERT INTO tendens_signaal (instrument, dimensie, sleutel, type, changepoint_datum, effectgrootte, richting, status, n, toelichting, gedetecteerd_op)
+     VALUES ('platform', @dimensie, '', @type, NULL, @effectgrootte, @richting, @status, 10, @toelichting, datetime('now'))`
+  ).run({
+    dimensie: opts.dimensie,
+    type: opts.type,
+    status: opts.status,
+    toelichting: opts.toelichting,
+    effectgrootte: opts.effectgrootte ?? null,
+    richting: opts.richting ?? null,
+  });
+}
+
+describe("fase 4 - draft-generator (wetenschappelijke duiding)", () => {
+  let db: any;
+  beforeEach(() => {
+    db = maakTestDb();
+    maakTendensTabellen(db);
+  });
+
+  it("geeft een eerlijke lege draft zonder bevestigde signalen", () => {
+    // Alleen een observatie (niet bevestigd) mag NIET meetellen.
+    voegSignaalToe(db, { dimensie: "volume_maand", type: "niveau", status: "observatie", toelichting: "x" });
+    const draft = genereerDraft(db);
+    expect(draft.leeg).toBe(true);
+    expect(draft.aantalBevestigd).toBe(0);
+    expect(draft.secties.length).toBe(0);
+    expect(draft.bronnenlijst.length).toBe(0);
+    expect(draft.samenvatting).toContain("geen bevestigde");
+  });
+
+  it("neemt een bevestigd niveau-signaal op met regelkaart-methode en bron [1]", () => {
+    voegSignaalToe(db, {
+      dimensie: "volume_maand", type: "niveau", status: "bevestigd",
+      toelichting: "Volume 30 valt buiten de 3-sigma-grens.", effectgrootte: 4.2,
+    });
+    const draft = genereerDraft(db);
+    expect(draft.leeg).toBe(false);
+    expect(draft.aantalBevestigd).toBe(1);
+    expect(draft.secties.length).toBe(1);
+    expect(draft.secties[0].kop).toBe("Volume per maand");
+    const tekst = draft.secties[0].alineas.join(" ");
+    expect(tekst).toContain("Shewhart-regelkaart");
+    expect(tekst).toContain("[1]");
+    // effectgrootte met komma-decimaal
+    expect(tekst).toContain("4,20");
+    expect(draft.bronnenlijst.some((b) => b.nr === 1)).toBe(true);
+  });
+
+  it("koppelt een changepoint-signaal aan CUSUM en bronnen [2][3]", () => {
+    voegSignaalToe(db, {
+      dimensie: "volume_maand", type: "changepoint", status: "bevestigd",
+      toelichting: "CUSUM detecteert een stijging.", richting: "stijging",
+    });
+    const draft = genereerDraft(db);
+    const tekst = draft.secties[0].alineas.join(" ");
+    expect(tekst).toContain("CUSUM");
+    expect(tekst).toContain("[2][3]");
+    expect(draft.bronnenlijst.map((b) => b.nr).sort()).toEqual([2, 3]);
+  });
+
+  it("telt alleen bevestigde signalen, niet observaties", () => {
+    voegSignaalToe(db, { dimensie: "volume_maand", type: "niveau", status: "bevestigd", toelichting: "a" });
+    voegSignaalToe(db, { dimensie: "volume_maand", type: "niveau", status: "observatie", toelichting: "b" });
+    voegSignaalToe(db, { dimensie: "voltooiingsgraad", type: "proportie", status: "gepubliceerd", toelichting: "c" });
+    const draft = genereerDraft(db);
+    expect(draft.aantalBevestigd).toBe(2);
+    // twee dimensies met bevestigde/gepubliceerde signalen
+    expect(draft.secties.length).toBe(2);
+  });
+
+  it("neemt alleen daadwerkelijk gebruikte bronnen op in de bronnenlijst", () => {
+    voegSignaalToe(db, { dimensie: "voltooiingsgraad", type: "proportie", status: "bevestigd", toelichting: "p" });
+    const draft = genereerDraft(db);
+    // proportie gebruikt enkel bron [1]
+    expect(draft.bronnenlijst.map((b) => b.nr)).toEqual([1]);
   });
 });

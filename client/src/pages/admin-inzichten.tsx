@@ -33,6 +33,7 @@ import {
   Activity,
   RefreshCw,
   ShieldCheck,
+  FileText,
 } from "lucide-react";
 import {
   TALEN,
@@ -413,6 +414,7 @@ function TendensenBlok() {
   });
 
   const [laatsteRun, setLaatsteRun] = useState<any>(null);
+  const [draft, setDraft] = useState<any>(null);
 
   const detectie = useMutation({
     mutationFn: async () => {
@@ -424,6 +426,14 @@ function TendensenBlok() {
       queryClient.invalidateQueries({ queryKey: ["/api/inzichtcentrum/tendensen/signalen"] });
       queryClient.invalidateQueries({ queryKey: ["/api/inzichtcentrum/tendensen/status"] });
     },
+  });
+
+  const draftGenereren = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("GET", "/api/inzichtcentrum/tendensen/draft");
+      return res.json();
+    },
+    onSuccess: (data) => setDraft(data),
   });
 
   const signalen: any[] = signalenData?.signalen ?? [];
@@ -528,6 +538,50 @@ function TendensenBlok() {
                       <p className="text-sm text-foreground mt-1.5">{s.toelichting}</p>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+
+            {/* Fase 4 - concept duiding genereren */}
+            <div className="mt-5 border-t pt-4">
+              <div className="flex items-center justify-between gap-3 flex-wrap mb-2">
+                <div className="text-xs font-medium text-foreground">Concept-duiding (wetenschappelijk)</div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => draftGenereren.mutate()}
+                  disabled={draftGenereren.isPending}
+                  data-testid="button-draft-genereren"
+                >
+                  <FileText className={"h-3.5 w-3.5 mr-1.5 " + (draftGenereren.isPending ? "animate-pulse" : "")} aria-hidden />
+                  {draftGenereren.isPending ? "Bezig…" : "Concept-duiding genereren"}
+                </Button>
+              </div>
+              {draft && (
+                <div className="rounded-lg border bg-muted/20 p-4" data-testid="blok-draft">
+                  <div className="text-sm font-semibold text-foreground">{draft.titel}</div>
+                  <p className="text-sm text-muted-foreground mt-1.5">{draft.samenvatting}</p>
+                  {!draft.leeg && Array.isArray(draft.secties) && draft.secties.map((sec: any, i: number) => (
+                    <div key={i} className="mt-3">
+                      <div className="text-xs font-semibold text-foreground">{sec.kop}</div>
+                      {sec.alineas.map((a: string, j: number) => (
+                        <p key={j} className="text-sm text-foreground/90 mt-1 leading-relaxed">{a}</p>
+                      ))}
+                    </div>
+                  ))}
+                  {!draft.leeg && Array.isArray(draft.bronnenlijst) && draft.bronnenlijst.length > 0 && (
+                    <div className="mt-4">
+                      <div className="text-xs font-semibold text-foreground mb-1">Bronnen</div>
+                      <ol className="space-y-1">
+                        {draft.bronnenlijst.map((b: any) => (
+                          <li key={b.nr} className="text-[11px] text-muted-foreground">
+                            [{b.nr}] {b.tekst}{" "}
+                            <a href={b.url} target="_blank" rel="noreferrer" className="text-teal-600 underline break-all">{b.url}</a>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
