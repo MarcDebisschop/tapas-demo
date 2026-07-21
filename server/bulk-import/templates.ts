@@ -71,14 +71,6 @@ export const TEMPLATES: Record<string, InstrumentTemplate> = {
       "in. E-mail is verplicht.",
     velden: [...BASIS_VELDEN],
   },
-  t4kids: {
-    instrumentId: "t4kids",
-    titel: "T4Kids (11-13 jaar)",
-    instructie:
-      "Talentprofiel voor kinderen. Naam én e-mail van de ouder/voogd zijn " +
-      "VERPLICHT (ouderlijke toestemming voor minderjarige).",
-    velden: [...BASIS_VELDEN, ...OUDER_VELDEN_VERPLICHT],
-  },
   t4teens: {
     instrumentId: "t4teens",
     titel: "T4Teens (13-17 jaar)",

@@ -137,7 +137,7 @@ const motiefVoorSleutel = (s: MotiefSleutel): Motief =>
 function normaliseer(tekst: string): string {
   return (tekst || "")
     .toLowerCase()
-    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/[^0-9a-zA-Z\u00C0-\u024F\u1E00-\u1EFF\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -223,13 +223,13 @@ export function analyseerWoorden(figuren: WaaromFiguur[]): WoordAnalyse {
   // Rode draad: tel in hoeveel figuren elk motief voorkomt.
   const figurenPerMotief = new Map<MotiefSleutel, string[]>();
   for (const fm of figuurMotieven) {
-    for (const sleutel of fm.treffers.keys()) {
+    for (const sleutel of Array.from(fm.treffers.keys())) {
       const lijst = figurenPerMotief.get(sleutel) ?? [];
       lijst.push(fm.figuur.naam);
       figurenPerMotief.set(sleutel, lijst);
     }
   }
-  const rodeDraad = [...figurenPerMotief.entries()]
+  const rodeDraad = Array.from(figurenPerMotief.entries())
     .map(([sleutel, namen]) => ({ motief: motiefVoorSleutel(sleutel), figuren: namen.length }))
     .sort((a, b) => b.figuren - a.figuren)
     .slice(0, 2);
@@ -247,7 +247,7 @@ export function analyseerWoorden(figuren: WaaromFiguur[]): WoordAnalyse {
   let verbindend: WoordAnalyse["verbindend"] = null;
   for (const rd of rodeDraad) {
     const namen = figurenPerMotief.get(rd.motief.sleutel) ?? [];
-    const uniek = [...new Set(namen)];
+    const uniek = Array.from(new Set(namen));
     if (uniek.length >= 2) {
       verbindend = { motief: rd.motief, figuren: uniek };
       break;

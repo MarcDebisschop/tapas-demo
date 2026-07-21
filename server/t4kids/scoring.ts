@@ -266,7 +266,7 @@ export function buildT4KidsContract(opts: BuildT4KidsOpts): T4KidsContract {
   for (const focus of T4KIDS_FOCI) {
     const n = focusPicks[focus];
     constructRows.push({
-      construct: focus,
+      construct: String(focus),
       family: "Interesse",
       most: n,
       least: 0,
@@ -275,6 +275,7 @@ export function buildT4KidsContract(opts: BuildT4KidsOpts): T4KidsContract {
       avgEnergy: 0,
       energySource: "keuze",
       mostItems: n > 0 ? [FOCUS_ACTIVITEIT[focus]] : [],
+      toelichtingen: [],
     });
   }
   for (const [versneller, scores] of Object.entries(versnellerScores)) {
@@ -288,6 +289,7 @@ export function buildT4KidsContract(opts: BuildT4KidsOpts): T4KidsContract {
       avgEnergy: gem(scores),
       energySource: scores.length ? "item" : "geen",
       mostItems: [],
+      toelichtingen: [],
     });
   }
   for (const [driver, scores] of Object.entries(driverScores)) {
@@ -301,6 +303,7 @@ export function buildT4KidsContract(opts: BuildT4KidsOpts): T4KidsContract {
       avgEnergy: gem(scores),
       energySource: scores.length ? "item" : "geen",
       mostItems: [],
+      toelichtingen: [],
     });
   }
 
