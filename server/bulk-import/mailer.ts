@@ -101,6 +101,13 @@ function getTransporter(): nodemailer.Transporter {
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT ?? 587),
     secure: Number(process.env.SMTP_PORT ?? 587) === 465,
+    // C2 — expliciete timeouts (additief): zonder deze wacht nodemailer
+    // onbeperkt als de SMTP-host niet (tijdig) antwoordt, waardoor de
+    // verzend-request volledig blijft hangen. Met timeouts krijgen we binnen
+    // korte tijd een eerlijke 'fout'-status i.p.v. een hangende verbinding.
+    connectionTimeout: 15000,
+    greetingTimeout: 10000,
+    socketTimeout: 20000,
     auth:
       process.env.SMTP_USER || process.env.SMTP_PASS
         ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
