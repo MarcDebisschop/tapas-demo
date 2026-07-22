@@ -58,6 +58,7 @@ import Werk from "@/pages/werk";
 import Poort from "@/pages/poort";
 import Magic from "@/pages/magic";
 import VoorBegeleiders from "@/pages/voor-begeleiders";
+import Onderbouwing from "@/pages/onderbouwing";
 import AdminCoaches from "@/pages/admin-coaches";
 import AdminInzichten from "@/pages/admin-inzichten";
 import AdminAcademy from "@/pages/admin-academy";
@@ -124,6 +125,7 @@ function AppRouter() {
       <Route path="/admin/bulk-import">{() => <AdminLoginGate><AdminBulkImport /></AdminLoginGate>}</Route>
       <Route path="/admin/factuurhuisstijl">{() => <AdminLoginGate><AdminFactuurhuisstijl /></AdminLoginGate>}</Route>
       <Route path="/coaches" component={Coaches} />
+      <Route path="/onderbouwing" component={Onderbouwing} />
       <Route path="/academy/jester" component={AcademyJester} />
       <Route path="/academy" component={Academy} />
       {/* /coach/dashboard = practitioner-dashboard met STM */}

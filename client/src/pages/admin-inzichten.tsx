@@ -43,6 +43,7 @@ import {
   normaliseerTaal,
   type Taal,
 } from "@shared/i18n";
+import { OnderbouwingSectie } from "@/components/OnderbouwingSectie";
 
 
 // -----------------------------------------------------------------------
@@ -922,6 +923,9 @@ export default function AdminInzichten() {
 
             {/* Fase 3 — Tendensen-blok */}
             <TendensenBlok />
+
+            {/* Onderbouwing & validatie — documenten (admin ziet alles) */}
+            <OnderbouwingSectie isAdmin={true} n={n} />
 
             {/* Credits sectie */}
             <Card className="mt-6">

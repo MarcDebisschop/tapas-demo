@@ -14,6 +14,8 @@
 import type { Express } from "express";
 import type { Request, Response } from "express";
 import { sqlite as sqliteInstance } from "./storage";
+import { existsSync, createReadStream } from "node:fs";
+import { join } from "node:path";
 
 // Helperfunctie: haal de sqlite-instantie op
 // Gebruikt eerst de directe export, daarna fallback op db/storage parameters
@@ -697,6 +699,99 @@ export function registerCoachesAcademyMailRoutes(app: Express, db: any, storage:
     } catch (e) {
       console.error("[inzichtcentrum]", e);
       return res.status(500).json({ error: "Ophalen mislukt." });
+    }
+  });
+
+  // =========================================================================
+  // ONDERBOUWING & VALIDATIE — beveiligde documenten
+  //   Publieke stukken staan statisch in /onderbouwing/*.pdf (client/public).
+  //   Vertrouwelijke stukken worden hier geleverd:
+  //     - "op aanvraag": alleen na admin-login (of via aanvraagmail)
+  //     - "intern": alleen admin
+  //   Bestanden staan in server/data/onderbouwing/ (buiten public root).
+  // =========================================================================
+
+  // Register van vertrouwelijke onderbouwingsdocumenten (id -> bestand + niveau)
+  const ONDERBOUWING_DOCS: Record<string, { bestand: string; niveau: "op-aanvraag" | "intern"; titel: string }> = {
+    "methodevalidatie": {
+      bestand: "t4s-methodevalidatie.pdf",
+      niveau: "op-aanvraag",
+      titel: "Methodologisch validatierapport (reproduceerbaarheid)",
+    },
+    "data-exportgids": {
+      bestand: "data-exportgids-analyseplan.pdf",
+      niveau: "intern",
+      titel: "Data-exportgids & analyseplan",
+    },
+  };
+
+  function vindOnderbouwingBestand(bestand: string): string | null {
+    const kandidaten = [
+      join(process.cwd(), "server", "data", "onderbouwing", bestand),
+      join(process.cwd(), "dist", "data", "onderbouwing", bestand),
+      join(process.cwd(), "data", "onderbouwing", bestand),
+    ];
+    for (const p of kandidaten) if (existsSync(p)) return p;
+    return null;
+  }
+
+  // GET /api/onderbouwing/document/:id  → levert vertrouwelijk PDF (admin-only)
+  app.get("/api/onderbouwing/document/:id", (req, res) => {
+    if (!requireAdmin(req, res)) return;
+    const doc = ONDERBOUWING_DOCS[req.params.id];
+    if (!doc) return res.status(404).json({ error: "Document niet gevonden." });
+    const pad = vindOnderbouwingBestand(doc.bestand);
+    if (!pad) return res.status(404).json({ error: "Bestand niet beschikbaar." });
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="${doc.bestand}"`);
+    createReadStream(pad).pipe(res);
+  });
+
+  // POST /api/onderbouwing/aanvraag  → deelnemer/bezoeker vraagt toegang aan
+  //   tot een "op-aanvraag" document. Registreert de aanvraag; mailkoppeling
+  //   kan later via het bestaande mailsysteem. Publiek endpoint (geen admin).
+  app.post("/api/onderbouwing/aanvraag", (req, res) => {
+    const { document_id, naam, email, motivatie } = req.body ?? {};
+    if (!document_id || !email) {
+      return res.status(400).json({ error: "document_id en email zijn verplicht." });
+    }
+    const doc = ONDERBOUWING_DOCS[String(document_id)];
+    if (!doc || doc.niveau !== "op-aanvraag") {
+      return res.status(404).json({ error: "Onbekend document of niet aanvraagbaar." });
+    }
+    const sq = getSqlite(db, storage);
+    if (sq) {
+      try {
+        sq.prepare(`
+          CREATE TABLE IF NOT EXISTS onderbouwing_aanvragen (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            document_id TEXT NOT NULL,
+            naam TEXT,
+            email TEXT NOT NULL,
+            motivatie TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+          )
+        `).run();
+        sq.prepare(
+          "INSERT INTO onderbouwing_aanvragen (document_id, naam, email, motivatie) VALUES (?, ?, ?, ?)"
+        ).run(String(document_id), naam ?? null, String(email), motivatie ?? null);
+      } catch { /* niet-blokkerend */ }
+    }
+    res.json({ ok: true, bericht: "Aanvraag ontvangen. We nemen contact op via " + email + "." });
+  });
+
+  // GET /api/onderbouwing/aanvragen  → admin ziet openstaande aanvragen
+  app.get("/api/onderbouwing/aanvragen", (req, res) => {
+    if (!requireAdmin(req, res)) return;
+    const sq = getSqlite(db, storage);
+    if (!sq) return res.json([]);
+    try {
+      const rijen = sq.prepare(
+        "SELECT * FROM onderbouwing_aanvragen ORDER BY created_at DESC LIMIT 200"
+      ).all();
+      res.json(rijen);
+    } catch {
+      res.json([]);
     }
   });
 
