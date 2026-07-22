@@ -227,7 +227,7 @@
  * pagina-wrappers krijgen daarom een transparante achtergrond zodat het
  * merkteken doorschemert; de basiskleur komt van de body zelf.
  */
-body::after {
+.belevings-modus body::after {
   content: "";
   position: fixed;
   right: -5vw;
@@ -250,7 +250,7 @@ body::after {
   animation: earhart-drift 26s ease-in-out infinite alternate;
   will-change: transform;
 }
-.dark body::after {
+.dark.belevings-modus body::after {
   /* In dark mode duidelijker warm-rood: meer verzadiging en een wat verdere
    * hue-rotate richting rood, plus een lichte rode kleurlaag eroverheen via
    * een tweede achtergrond. En het toestel staat een tikje hoger geplaatst
@@ -273,7 +273,7 @@ body::after {
 
 /* Respecteer de voorkeur voor minder beweging: dan staat het toestel stil. */
 @media (prefers-reduced-motion: reduce) {
-  body::after {
+  .belevings-modus body::after {
     animation: none;
   }
 }

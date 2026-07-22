@@ -334,18 +334,20 @@ export default function Home() {
                 ))}
               </SelectContent>
             </Select>
-            <button
-              type="button"
-              onClick={startRondleiding}
-              data-testid="button-rondleiding"
-              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[hsl(var(--gold)/0.4)] px-2.5 text-sm font-medium text-[hsl(var(--gold))] transition hover:bg-[hsl(var(--gold)/0.08)]"
-              aria-label={t("hp_nav_flight_label")}
-            >
-              <Plane className="h-4 w-4" />
-              <span className="hidden sm:inline">
-                {t("hp_nav_flight_kort")}
-              </span>
-            </button>
+            {BELEVING && (
+              <button
+                type="button"
+                onClick={startRondleiding}
+                data-testid="button-rondleiding"
+                className="inline-flex h-9 items-center gap-1.5 rounded-md border border-[hsl(var(--gold)/0.4)] px-2.5 text-sm font-medium text-[hsl(var(--gold))] transition hover:bg-[hsl(var(--gold)/0.08)]"
+                aria-label={t("hp_nav_flight_label")}
+              >
+                <Plane className="h-4 w-4" />
+                <span className="hidden sm:inline">
+                  {t("hp_nav_flight_kort")}
+                </span>
+              </button>
+            )}
             {/* Admin-knop: iets prominenter met label zichtbaar op sm+ */}
             <Link href="/admin">
               <button
@@ -424,6 +426,7 @@ export default function Home() {
         {/* ---------------------------------------------------------------- */}
         {/* T4SPORTS DEMO LINK — directe toegang via hash-routing             */}
         {/* ---------------------------------------------------------------- */}
+        {BELEVING && (
         <section className="mt-10">
           <a
             href="#/t4sports"
@@ -463,6 +466,7 @@ export default function Home() {
             />
           </a>
         </section>
+        )}
 
         {/* FOOTER */}
         <footer className="mt-16 border-t border-border pt-6 sm:mt-24">
