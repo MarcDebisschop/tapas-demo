@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { AppHeader } from "@/components/Brand";
+import { BELEVING, CORE_MODE } from "@/lib/features";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -210,7 +211,9 @@ function PlatformOverzicht() {
       badges: ["Overzicht", "Fiches (PDF)", "Brochure"],
       duo: true,
     },
-  ];
+  ]
+    // In TaPas Core (BELEVING uit) tonen we de belevings-tegel (Academy) niet.
+    .filter((tegel) => BELEVING || tegel.href !== "/academy");
 
   return (
     <section data-tour="werelden" className="mt-16 scroll-mt-24 sm:mt-24">
@@ -389,7 +392,9 @@ export default function Home() {
                 {t("hp_hero_cta_kies")}
                 <ArrowRight className="ml-1.5 h-4 w-4" />
               </Button>
-              <Link href="/poort">
+              {/* In TaPas Core wijst de deelnemer-knop naar de sobere login /mijn
+                  (dezelfde backend); in het volledige platform naar de poort. */}
+              <Link href={CORE_MODE ? "/mijn" : "/poort"}>
                 <Button variant="outline" data-testid="button-ik-ben-deelnemer">
                   {t("hp_hero_cta_deelnemer")}
                 </Button>
@@ -411,8 +416,9 @@ export default function Home() {
         {/* op verzoek van Marc definitief verwijderd (behoud Lounge/Academy) */}
         {/* ---------------------------------------------------------------- */}
         <section id="kies" data-tour="suite" className="mt-16 scroll-mt-24 sm:mt-24">
-          {/* Lounge-uitnodiging — exact Kme() uit ZIP-8 bundle — NIET AANRAKEN */}
-          <LoungeWidget />
+          {/* Lounge-uitnodiging — exact Kme() uit ZIP-8 bundle — NIET AANRAKEN.
+              Belevingselement: enkel tonen in het volledige platform. */}
+          {BELEVING && <LoungeWidget />}
         </section>
 
         {/* ---------------------------------------------------------------- */}
@@ -466,8 +472,9 @@ export default function Home() {
         </footer>
       </main>
 
-      {/* Rondleiding — welkom-uitnodiging bij eerste bezoek, vlucht pas na klik — NIET AANRAKEN */}
-      <Rondleiding taal={uiTaal} autoStart={true} />
+      {/* Rondleiding — welkom-uitnodiging bij eerste bezoek, vlucht pas na klik — NIET AANRAKEN.
+          In TaPas Core start de belevings-rondleiding niet automatisch. */}
+      <Rondleiding taal={uiTaal} autoStart={BELEVING} />
     </div>
   );
 }

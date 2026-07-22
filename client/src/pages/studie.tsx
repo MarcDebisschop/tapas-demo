@@ -11,6 +11,7 @@
 
 import { useLocation, Link } from "wouter";
 import { AppHeader } from "@/components/Brand";
+import { CORE_MODE } from "@/lib/features";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -775,7 +776,8 @@ export function StudieLeerlingenPagina() {
                   <ArrowRight className="ml-1.5 h-4 w-4" />
                 </Button>
               </a>
-              <Link href="/poort/teens">
+              {/* In TaPas Core: sobere login /mijn; volledig platform: poort (teens-skin). */}
+              <Link href={CORE_MODE ? "/mijn" : "/poort/teens"}>
                 <Button variant="outline" data-testid="button-heb-code">
                   {t("studie_ll_btn_code")}
                 </Button>

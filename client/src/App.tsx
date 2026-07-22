@@ -77,6 +77,7 @@ import T4SportsDashboard from "@/pages/t4sports-dashboard";
 import T4SportsModules from "@/pages/t4sports-modules";
 import ScrollNaarBoven from "@/components/ScrollNaarBoven";
 import { TaalProvider } from "@/contexts/TaalContext";
+import { BELEVING } from "@/lib/features";
 
 function AdminStub({ titel, omschrijving }: { titel: string; omschrijving: string }) {
   return (
@@ -126,8 +127,9 @@ function AppRouter() {
       <Route path="/admin/factuurhuisstijl">{() => <AdminLoginGate><AdminFactuurhuisstijl /></AdminLoginGate>}</Route>
       <Route path="/coaches" component={Coaches} />
       <Route path="/onderbouwing" component={Onderbouwing} />
-      <Route path="/academy/jester" component={AcademyJester} />
-      <Route path="/academy" component={Academy} />
+      {/* BELEVING — TaPasAcademy (achter feature-flag; default uit in TaPas Core) */}
+      {BELEVING && <Route path="/academy/jester" component={AcademyJester} />}
+      {BELEVING && <Route path="/academy" component={Academy} />}
       {/* /coach/dashboard = practitioner-dashboard met STM */}
       <Route path="/coach/dashboard">{() => <CoachLoginGate><CoachDashboard /></CoachLoginGate>}</Route>
       {/* /coach = redirect naar /coach/dashboard */}
@@ -153,8 +155,9 @@ function AppRouter() {
       <Route path="/t4sports" component={T4SportsVragenlijst} />
       <Route path="/t4sports/dashboard/:token" component={T4SportsDashboard} />
       <Route path="/t4sports/modules/:afnameId" component={T4SportsModules} />
-      <Route path="/impact" component={ImpactHome} />
-      <Route path="/lounge" component={Lounge} />
+      {/* BELEVING — impact-etalage + TaPas Lounge (achter feature-flag) */}
+      {BELEVING && <Route path="/impact" component={ImpactHome} />}
+      {BELEVING && <Route path="/lounge" component={Lounge} />}
       {/* Wereld-shortcuts: redirect naar meest relevante bestaande pagina */}
       <Route path="/werk" component={Werk} />
       <Route path="/studie/scholen" component={StudieScholenPagina} />
@@ -168,10 +171,12 @@ function AppRouter() {
       <Route path="/koop/:instrument" component={Koop} />
       <Route path="/voor-deelnemers">{() => <Redirect to="/mijn" />}</Route>
       <Route path="/voor-begeleiders" component={VoorBegeleiders} />
-      {/* Cijferslot — toegangsschil voor het persoonlijk dashboard (drie skins) */}
-      <Route path="/poort" component={Poort} />
-      <Route path="/poort/:skin" component={Poort} />
-      {/* Magic-link inwisselaar — /#/magic/:token → redirect naar dashboard */}
+      {/* BELEVING — Cijferslot-toegangsschil (drie skins). In TaPas Core logt de
+          deelnemer sober in via /mijn (zelfde backend: POST /api/deelnemers/login). */}
+      {BELEVING && <Route path="/poort" component={Poort} />}
+      {BELEVING && <Route path="/poort/:skin" component={Poort} />}
+      {/* Magic-link inwisselaar — /#/magic/:token → redirect naar dashboard.
+          FUNCTIONEEL (geen beleving): blijft altijd actief, ook in TaPas Core. */}
       <Route path="/magic/:token" component={Magic} />
       <Route component={NotFound} />
     </Switch>
@@ -215,7 +220,9 @@ function isAdminRoute(): boolean {
 }
 
 function App() {
-  const [introDone, setIntroDone] = useState(() => isAdminRoute());
+  // In TaPas Core (BELEVING uit) wordt de poorten-intro volledig overgeslagen:
+  // de router mount direct en de bezoeker landt op de kale applicatie.
+  const [introDone, setIntroDone] = useState(() => !BELEVING || isAdminRoute());
 
   // Als de gebruiker tijdens de poorten-intro naar een admin/coach-route navigeert
   // (bijv. via de Admin-knop op de home-pagina), slaan we de intro direct over.

@@ -10,6 +10,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { AppHeader } from "@/components/Brand";
+import { BELEVING } from "@/lib/features";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -303,8 +304,9 @@ export default function Coaches() {
           </Card>
         )}
 
-        {/* JesterSectie — boven de coaches grid (zTe uit bundle) */}
-        <JesterSectie />
+        {/* JesterSectie — belevingselement (Jester-chat). Enkel in het volledige
+            platform; verborgen in TaPas Core (BELEVING uit). */}
+        {BELEVING && <JesterSectie />}
 
         {!isLoading && !isError && coaches.length > 0 && (
           <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-testid="grid-coaches">

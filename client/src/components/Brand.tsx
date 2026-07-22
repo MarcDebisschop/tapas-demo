@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { Moon, Sun } from "lucide-react";
 import { DEMO_MODE } from "@/lib/demoMode";
+import { PRODUCT_NAAM } from "@/lib/features";
 import { useTheme } from "./ThemeProvider";
 
 export function Logo({ className = "" }: { className?: string }) {
@@ -47,7 +48,7 @@ export function AppHeader({ right }: { right?: React.ReactNode }) {
           <a className="flex items-center gap-2 text-primary" data-testid="link-home">
             <Logo />
             <span className="text-base font-semibold tracking-tight text-foreground">
-              TaPas Platform
+              {PRODUCT_NAAM}
             </span>
           </a>
         </Link>
