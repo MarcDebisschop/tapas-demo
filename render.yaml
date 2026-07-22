@@ -3,11 +3,25 @@ services:
     name: tapas-platform-demo
     runtime: node
     region: frankfurt
-    plan: free
+    # LET OP: 'disk' vereist een BETAALD plan. Zet dit op 'starter' (of hoger)
+    # in het Render-dashboard; een gratis service kan geen persistente schijf
+    # gebruiken. Met een disk draait de service op max 1 instance (geen horizontale
+    # schaling) — voor deze pilot geen bezwaar.
+    plan: starter
     nodeVersion: 20.19.0
 
     buildCommand: pip3 install -r requirements.txt && npm install --legacy-peer-deps && npm run build
+    # data.db staat in .gitignore en wordt NIET meegedeployed: de code seedt/migreert
+    # de database zelf bij startup (server/storage.ts). Met TAPAS_DB_PATH -> /data/data.db
+    # gebeurt dat éénmalig op de persistente schijf; daarna overleven alle afnames
+    # (uitnodigingen + ingevulde vragenlijsten) elke herstart en deploy.
     startCommand: node dist/index.cjs
+
+    # Persistente schijf: data.db overleeft nu herstarts en deploys.
+    disk:
+      name: tapas-data
+      mountPath: /data
+      sizeGB: 1
 
     envVars:
       - key: NODE_ENV
@@ -16,5 +30,9 @@ services:
       # Render genereert eenmalig een veilige willekeurige waarde en bewaart die.
       - key: SESSION_SECRET
         generateValue: true
+      # Persistentie: dwingt SQLite naar de gemounte schijf (server/storage.ts
+      # regel 75 — TAPAS_DB_PATH-override wint altijd).
+      - key: TAPAS_DB_PATH
+        value: /data/data.db
       # VITE_DEMO_MODE is ingebakken via .env.production tijdens de build (DEMO_MODE=true)
       # PORT wordt automatisch door Render geïnjecteerd op 10000 — niet overschrijven
