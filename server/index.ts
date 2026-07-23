@@ -34,6 +34,12 @@ declare module "http" {
 
 app.use(
   express.json({
+    // Kandidaatrapporten (T4P-PDF's) worden base64-gecodeerd naar de
+    // extract-endpoint gestuurd en zijn al snel ~1-2 MB. De standaard
+    // Express-limiet van 100 kb is daarvoor te klein (413). We verruimen
+    // de JSON-limiet naar 12 MB zodat het inlezen van een volledig
+    // kandidaatrapport betrouwbaar werkt.
+    limit: "12mb",
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
