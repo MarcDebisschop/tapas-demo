@@ -1,5 +1,6 @@
-import { instrument } from "./instrument";
+import { instrument, kies } from "./instrument";
 import type { InstrumentBlock } from "./instrument";
+import { STANDAARD_TAAL } from "../shared/talen";
 
 // ---------------------------------------------------------------------------
 // Server-side scoringengine — getrouwe port van de gevalideerde JS-engine
@@ -85,7 +86,10 @@ function aggregate(responses: Responses): { rows: ConstructRow[]; famRows: Famil
       c.shown += 1;
       if (r.most === it.pos) {
         c.most += 1;
-        c.mostItems.push(it.text);
+        // Fix: los de (mogelijk meertalige) itemtekst op naar een NL-string.
+        // Voorheen werd het ruwe Vertaalbaar-object gepusht, wat later als
+        // "[object Object]" in de bronstellingen-secties (06/08/10) verscheen.
+        c.mostItems.push(kies(it.text, STANDAARD_TAAL));
         if (typeof r.toelichting === "string" && r.toelichting.trim()) {
           c.toelichtingen.push(r.toelichting.trim());
         }

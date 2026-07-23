@@ -186,6 +186,27 @@ const BRONNEN: { titel: string; url: string }[] = [
 
 export function bouwT4pBusinessProfiel(contract: any): T4pRapportInhoud {
   const p = contract?.participant ?? {};
+  // Taal van het contract, met terugval op NL. Wordt gebruikt om (mogelijk
+  // meertalige) bronstellingen naar één taal op te lossen.
+  const contractTaal: string = contract?.taal ?? "nl";
+  // Los een (mogelijk meertalig) tekstveld op naar een leesbare string.
+  // Achtergrond: het bevroren generatorContract kan `mostItems` bevatten als
+  // { nl, fr, en, ... }-objecten i.p.v. platte strings. Zonder deze resolutie
+  // rendert esc() zo'n object als "[object Object]" in de bronstellingen-secties
+  // (06/08/10). Deze helper is achterwaarts compatibel: strings blijven strings.
+  const citaatTekst = (veld: unknown): string => {
+    if (veld == null) return "";
+    if (typeof veld === "string") return veld;
+    if (typeof veld === "object") {
+      const o = veld as Record<string, unknown>;
+      const kandidaat =
+        (typeof o[contractTaal] === "string" && (o[contractTaal] as string)) ||
+        (typeof o.nl === "string" && (o.nl as string)) ||
+        Object.values(o).find((v) => typeof v === "string");
+      return typeof kandidaat === "string" ? kandidaat : "";
+    }
+    return String(veld);
+  };
   const main = contract?.sections?.main ?? {};
   const meta = main?.meta ?? {};
   const alleRows: ConstructRowLike[] = Array.isArray(main?.constructRows) ? main.constructRows : [];
@@ -456,9 +477,9 @@ export function bouwT4pBusinessProfiel(contract: any): T4pRapportInhoud {
   // 06 — Bronstellingen — motivatie ----------------------------------------
   const driverCitaten: string[] = [];
   drivers.forEach((r) => {
-    (r.mostItems ?? []).forEach((t) => driverCitaten.push(t));
+    (r.mostItems ?? []).forEach((t) => driverCitaten.push(citaatTekst(t)));
     (r.toelichtingen ?? []).forEach((t) =>
-      driverCitaten.push(`${t} (toelichting bij ${r.construct})`)
+      driverCitaten.push(`${citaatTekst(t)} (toelichting bij ${r.construct})`)
     );
   });
   secties.push({
@@ -516,7 +537,7 @@ export function bouwT4pBusinessProfiel(contract: any): T4pRapportInhoud {
 
   // 08 — Bronstellingen — aandacht -----------------------------------------
   const fociCitaten: string[] = [];
-  foci.forEach((r) => (r.mostItems ?? []).forEach((t) => fociCitaten.push(t)));
+  foci.forEach((r) => (r.mostItems ?? []).forEach((t) => fociCitaten.push(citaatTekst(t))));
   secties.push({
     nummer: "08",
     titel: "Bronstellingen — aandacht",
@@ -560,7 +581,7 @@ export function bouwT4pBusinessProfiel(contract: any): T4pRapportInhoud {
 
   // 10 — Bronstellingen — inzet --------------------------------------------
   const versnCitaten: string[] = [];
-  versnellers.forEach((r) => (r.mostItems ?? []).forEach((t) => versnCitaten.push(t)));
+  versnellers.forEach((r) => (r.mostItems ?? []).forEach((t) => versnCitaten.push(citaatTekst(t))));
   secties.push({
     nummer: "10",
     titel: "Bronstellingen — inzet",
