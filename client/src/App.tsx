@@ -137,8 +137,10 @@ function AppRouter() {
       {/* P6: Coach self-service accreditatie-aanvraag */}
       <Route path="/coach-aanvraag" component={CoachAanvraag} />
       <Route path="/admin/:id">{() => <AdminLoginGate><AdminDetail /></AdminLoginGate>}</Route>
-      <Route path="/t4r" component={T4RHome} />
-      <Route path="/t4r/sessie/:id" component={T4RSession} />
+      {/* Facilitator-only: /t4r startscherm + sessie achter de coach-login.
+          Deelnemerlink /r/:token blijft publiek (bezoekers vullen daar hun input in). */}
+      <Route path="/t4r">{() => <CoachLoginGate><T4RHome /></CoachLoginGate>}</Route>
+      <Route path="/t4r/sessie/:id">{() => <CoachLoginGate><T4RSession /></CoachLoginGate>}</Route>
       <Route path="/r/:token" component={T4RDeelnemer} />
       <Route path="/teamscan" component={TeamscanHome} />
       <Route path="/teamscan/sessie/:id" component={TeamscanSessie} />
@@ -149,8 +151,9 @@ function AppRouter() {
       <Route path="/t4o/r/:token" component={T4ODeelnemer} />
       <Route path="/2minscan" component={TwominscanAfname} />
       <Route path="/driverscan" component={DriverScanAfname} />
-      <Route path="/hdd" component={HddHome} />
-      <Route path="/hdd/rapport" component={HddRapport} />
+      {/* Facilitator-only: HDD (Human Due Diligence) achter de coach-login. */}
+      <Route path="/hdd">{() => <CoachLoginGate><HddHome /></CoachLoginGate>}</Route>
+      <Route path="/hdd/rapport">{() => <CoachLoginGate><HddRapport /></CoachLoginGate>}</Route>
       <Route path="/2minscan/rapport" component={TwominscanRapport} />
       <Route path="/t4sports" component={T4SportsVragenlijst} />
       <Route path="/t4sports/dashboard/:token" component={T4SportsDashboard} />

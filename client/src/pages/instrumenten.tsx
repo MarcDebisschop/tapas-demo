@@ -51,6 +51,13 @@ import {
 import { priveAankoopVoor } from "@/data/prive-aankoop";
 import { Lock, ShoppingCart } from "lucide-react";
 
+// Facilitator-instrumenten: collaboratieve trajecten die een begeleider/coach
+// opstart (niet zelf-afneembaar door een deelnemer). Hun startscherm zit achter
+// de coach-login (CoachLoginGate in App.tsx), zodat een bezoeker/deelnemer het
+// traject niet zomaar kan opstarten. Op de instrumentengids krijgen ze daarom
+// een expliciete "start als facilitator"-knop i.p.v. enkel de badge op aanvraag.
+const FACILITATOR_INSTRUMENTEN = new Set<string>(["t4recruitment", "hdd"]);
+
 // --- CSS-variabelen (hergebruik bestaande platformkleuren, NIET wijzigen) ---
 const WERK_VAR = "--werk";
 const STUDIE_VAR = "--studie";
@@ -259,6 +266,31 @@ function GidsKaart({
                 <ShoppingCart className="h-3.5 w-3.5" />
                 Koop &amp; start {instr.naam}
               </Button>
+            );
+          }
+          // Facilitator-instrument (T4Recruitment, HDD): collaboratief traject dat
+          // een begeleider opstart. Toon een expliciete start-knop naar het
+          // facilitatorscherm. Dat scherm zit achter de coach-login
+          // (CoachLoginGate), dus een deelnemer/bezoeker kan het niet zomaar
+          // opstarten — hij krijgt eerst het inlogscherm.
+          if (pa && !pa.koopbaar && FACILITATOR_INSTRUMENTEN.has(instr.id)) {
+            return (
+              <div className="flex flex-col gap-1.5">
+                <Button
+                  size="sm"
+                  className="gap-1.5"
+                  style={{ background: accent, color: "white" }}
+                  onClick={() => navigate(instr.start.route)}
+                  data-testid={`button-start-facilitator-${instr.id}`}
+                >
+                  {instr.start.label}
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+                <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                  <Lock className="h-3 w-3" />
+                  Enkel voor begeleiders — inloggen vereist
+                </span>
+              </div>
             );
           }
           // Enkel via organisatie / op aanvraag → neutrale badge, geen knop.
