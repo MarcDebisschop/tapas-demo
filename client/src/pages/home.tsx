@@ -215,6 +215,14 @@ function PlatformOverzicht() {
     // In TaPas Core (BELEVING uit) tonen we de belevings-tegel (Academy) niet.
     .filter((tegel) => BELEVING || tegel.href !== "/academy");
 
+  // Kolomaantal en containerbreedte volgen het aantal tegels, zodat de rij
+  // gecentreerd blijft in beide modi (4 tegels = volledig platform, 3 = Core).
+  // Tailwind vereist volledige klassenamen (geen dynamische string-interpolatie).
+  const gridKlasse =
+    tegels.length === 3
+      ? "mx-auto max-w-4xl sm:grid-cols-2 lg:grid-cols-3"
+      : "sm:grid-cols-2 lg:grid-cols-4";
+
   return (
     <section data-tour="werelden" className="mt-16 scroll-mt-24 sm:mt-24">
       <div className="mx-auto max-w-2xl text-center">
@@ -229,7 +237,7 @@ function PlatformOverzicht() {
         </p>
       </div>
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className={`mt-8 grid gap-4 ${gridKlasse}`}>
         {tegels.map((tegel) => (
           <a
             key={tegel.href}
