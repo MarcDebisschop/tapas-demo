@@ -390,6 +390,23 @@ sqlite.exec(`
     gewijzigd_door TEXT,
     updated_at TEXT NOT NULL
   );
+
+  -- Persistente verzendlog voor uitnodigings-/herinneringsmails.
+  -- Elke verzendpoging (echt, via Brevo-API, of gesimuleerd) schrijft hier een
+  -- rij. Zo is achteraf hard aantoonbaar wat er met een mail gebeurde en betekent
+  -- "verstuurd" pas iets als de mailserver/Brevo het bericht ook echt aanvaardde.
+  CREATE TABLE IF NOT EXISTS mail_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    respondent_code TEXT,
+    email TEXT NOT NULL,
+    instrument TEXT,
+    kanaal TEXT NOT NULL DEFAULT 'onbekend',   -- 'smtp' | 'brevo-api' | 'simulatie'
+    status TEXT NOT NULL,                       -- 'verstuurd' | 'gesimuleerd' | 'fout'
+    provider_message_id TEXT,
+    provider_response TEXT,
+    poging INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL
+  );
 `);
 
 // Migratie voor bestaande databases: chat-tegoeden op deelnemers (Fase 2).

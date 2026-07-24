@@ -29,6 +29,8 @@ export interface MailInput {
   link: string;
   instrument: string; // leesbare instrument-titel
   from?: string | null; // org-eigen afzender-override
+  respondentCode?: string | null; // voor de verzendlog (koppeling aan afname)
+  poging?: number; // 1 = eerste verzending, >1 = herverzending/herinnering
 }
 
 export type MailStatus = "verstuurd" | "gesimuleerd" | "fout";
@@ -37,6 +39,49 @@ export interface MailResultaat {
   status: MailStatus;
   gesimuleerd: boolean;
   melding?: string;
+  messageId?: string; // provider-messageId bij succes (verifieerbaar bewijs)
+  kanaal?: "smtp" | "brevo-api" | "simulatie";
+}
+
+// -----------------------------------------------------------------------------
+// Persistente verzendlog. Schrijft elke verzendpoging weg in tabel mail_log,
+// zodat achteraf hard aantoonbaar is wat er met een mail gebeurde. Faalt het
+// loggen zelf, dan mag dat de verzending niet breken (best-effort).
+// -----------------------------------------------------------------------------
+function logMail(args: {
+  respondentCode?: string | null;
+  email: string;
+  instrument?: string | null;
+  kanaal: "smtp" | "brevo-api" | "simulatie";
+  status: MailStatus;
+  messageId?: string | null;
+  response?: string | null;
+  poging?: number;
+}): void {
+  try {
+    sqlite
+      .prepare(
+        `INSERT INTO mail_log
+           (respondent_code, email, instrument, kanaal, status, provider_message_id, provider_response, poging, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        args.respondentCode ?? null,
+        args.email,
+        args.instrument ?? null,
+        args.kanaal,
+        args.status,
+        args.messageId ?? null,
+        args.response ?? null,
+        args.poging ?? 1,
+        new Date().toISOString(),
+      );
+  } catch (e) {
+    console.error(
+      `[bulk-import/mailer] Kon verzendlog niet wegschrijven voor ${args.email}: ` +
+        (e instanceof Error ? e.message : String(e)),
+    );
+  }
 }
 
 function smtpGeconfigureerd(): boolean {
@@ -136,21 +181,89 @@ export async function verstuurUitnodiging(input: MailInput): Promise<MailResulta
     console.log(
       `[bulk-import/mailer] SIMULATIE — mail NIET verstuurd. naar=${input.naar} van=${from} onderwerp="${subject}"`,
     );
-    return { status: "gesimuleerd", gesimuleerd: true };
+    logMail({
+      respondentCode: input.respondentCode,
+      email: input.naar,
+      instrument: input.instrument,
+      kanaal: "simulatie",
+      status: "gesimuleerd",
+      response: "SMTP niet geconfigureerd - mail gesimuleerd.",
+      poging: input.poging,
+    });
+    return { status: "gesimuleerd", gesimuleerd: true, kanaal: "simulatie" };
   }
 
   // C3 — Voorkeur: Brevo HTTP-API (werkt op Render free; SMTP is daar geblokkeerd).
   if (brevoApiGeconfigureerd()) {
-    return verstuurViaBrevoApi({ from, naar: input.naar, naam: input.naam, subject, text });
+    return verstuurViaBrevoApi({
+      from,
+      naar: input.naar,
+      naam: input.naam,
+      subject,
+      text,
+      respondentCode: input.respondentCode,
+      instrument: input.instrument,
+      poging: input.poging,
+    });
   }
 
   try {
-    await getTransporter().sendMail({ from, to: input.naar, subject, text });
-    return { status: "verstuurd", gesimuleerd: false };
+    // KERN-FIX: lees het nodemailer-resultaat uit i.p.v. blind "verstuurd" te
+    // retourneren. Alleen als het doeladres in `accepted` staat en NIET in
+    // `rejected`, is de mail door de server aanvaard. Zo betekent "verstuurd"
+    // ook echt dat de mailserver het bericht aannam (met messageId als bewijs).
+    const info = await getTransporter().sendMail({ from, to: input.naar, subject, text });
+    const accepted = (info.accepted ?? []).map((a: unknown) => String(a).toLowerCase());
+    const rejected = (info.rejected ?? []).map((a: unknown) => String(a).toLowerCase());
+    const doel = input.naar.toLowerCase();
+    const messageId = info.messageId ?? "";
+    const response = info.response ?? "";
+
+    if (rejected.includes(doel) || !accepted.includes(doel)) {
+      const melding = `SMTP weigerde het adres (accepted=[${accepted.join(", ")}], rejected=[${rejected.join(", ")}]). ${response}`.trim();
+      console.error(`[bulk-import/mailer] Verzending geweigerd voor ${input.naar}: ${melding}`);
+      logMail({
+        respondentCode: input.respondentCode,
+        email: input.naar,
+        instrument: input.instrument,
+        kanaal: "smtp",
+        status: "fout",
+        response: melding,
+        poging: input.poging,
+      });
+      return { status: "fout", gesimuleerd: false, melding, kanaal: "smtp" };
+    }
+
+    logMail({
+      respondentCode: input.respondentCode,
+      email: input.naar,
+      instrument: input.instrument,
+      kanaal: "smtp",
+      status: "verstuurd",
+      messageId,
+      response,
+      poging: input.poging,
+    });
+    return {
+      status: "verstuurd",
+      gesimuleerd: false,
+      messageId,
+      kanaal: "smtp",
+      melding: messageId ? `SMTP messageId=${messageId}` : "Verstuurd via SMTP.",
+    };
   } catch (e) {
     const melding = e instanceof Error ? e.message : "Onbekende SMTP-fout";
     console.error(`[bulk-import/mailer] Verzending mislukt naar ${input.naar}: ${melding}`);
-    return { status: "fout", gesimuleerd: false, melding };
+    logMail({
+      respondentCode: input.respondentCode,
+      email: input.naar,
+      instrument: input.instrument,
+      kanaal: "smtp",
+      status: "fout",
+      response: melding,
+      poging: input.poging,
+    });
+    return { status: "fout", gesimuleerd: false, melding, kanaal: "smtp" };
   }
 }
 
@@ -162,6 +275,9 @@ async function verstuurViaBrevoApi(args: {
   naam: string;
   subject: string;
   text: string;
+  respondentCode?: string | null;
+  instrument?: string | null;
+  poging?: number;
 }): Promise<MailResultaat> {
   const apiKey = process.env.BREVO_API_KEY!.trim();
   // Splits "Naam <email@x>" of val terug op puur e-mailadres.
@@ -196,19 +312,90 @@ async function verstuurViaBrevoApi(args: {
       } catch {
         /* body kan leeg zijn */
       }
+      logMail({
+        respondentCode: args.respondentCode,
+        email: args.naar,
+        instrument: args.instrument,
+        kanaal: "brevo-api",
+        status: "verstuurd",
+        messageId,
+        response: "Brevo-API HTTP 2xx (aanvaard).",
+        poging: args.poging,
+      });
       return {
         status: "verstuurd",
         gesimuleerd: false,
+        messageId,
+        kanaal: "brevo-api",
         melding: messageId ? `Brevo-API messageId=${messageId}` : "Verstuurd via Brevo-API.",
       };
     }
     const foutTekst = await resp.text().catch(() => "");
     const melding = `Brevo-API HTTP ${resp.status}: ${foutTekst.slice(0, 300)}`;
     console.error(`[bulk-import/mailer] Brevo-API verzending mislukt naar ${args.naar}: ${melding}`);
-    return { status: "fout", gesimuleerd: false, melding };
+    logMail({
+      respondentCode: args.respondentCode,
+      email: args.naar,
+      instrument: args.instrument,
+      kanaal: "brevo-api",
+      status: "fout",
+      response: melding,
+      poging: args.poging,
+    });
+    return { status: "fout", gesimuleerd: false, melding, kanaal: "brevo-api" };
   } catch (e) {
     const melding = e instanceof Error ? e.message : "Onbekende Brevo-API-fout";
     console.error(`[bulk-import/mailer] Brevo-API-fout naar ${args.naar}: ${melding}`);
-    return { status: "fout", gesimuleerd: false, melding };
+    logMail({
+      respondentCode: args.respondentCode,
+      email: args.naar,
+      instrument: args.instrument,
+      kanaal: "brevo-api",
+      status: "fout",
+      response: melding,
+      poging: args.poging,
+    });
+    return { status: "fout", gesimuleerd: false, melding, kanaal: "brevo-api" };
   }
+}
+
+// -----------------------------------------------------------------------------
+// Leeshulp voor het admin-overzicht: geeft de laatste verzendstatus per
+// respondent_code terug uit de verzendlog. Zo kan de UI een eerlijke mailstatus
+// tonen (verstuurd/geweigerd/gesimuleerd) los van de afname-status.
+// -----------------------------------------------------------------------------
+export interface MailLogRegel {
+  respondent_code: string | null;
+  email: string;
+  instrument: string | null;
+  kanaal: string;
+  status: MailStatus;
+  provider_message_id: string | null;
+  provider_response: string | null;
+  poging: number;
+  created_at: string;
+}
+
+export function laatsteMailStatusPerRespondent(): Record<string, MailLogRegel> {
+  const out: Record<string, MailLogRegel> = {};
+  try {
+    const rijen = sqlite
+      .prepare(
+        `SELECT respondent_code, email, instrument, kanaal, status,
+                provider_message_id, provider_response, poging, created_at
+           FROM mail_log
+          WHERE respondent_code IS NOT NULL
+          ORDER BY id ASC`,
+      )
+      .all() as MailLogRegel[];
+    for (const r of rijen) {
+      if (r.respondent_code) out[r.respondent_code] = r; // laatste wint (ASC)
+    }
+  } catch (e) {
+    console.error(
+      "[bulk-import/mailer] Kon verzendlog niet lezen: " +
+        (e instanceof Error ? e.message : String(e)),
+    );
+  }
+  return out;
 }

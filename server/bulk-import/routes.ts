@@ -24,7 +24,7 @@ import { storage, db, sqlite, CreditError } from "../storage";
 import { afnames, type Afname } from "@shared/schema";
 import { getTemplate, alleTemplates, TEMPLATES } from "./templates";
 import { templateAlsBuffer, parseUpload, type ParseFout } from "./excel";
-import { verstuurUitnodiging, isSimulatiemodus } from "./mailer";
+import { verstuurUitnodiging, isSimulatiemodus, laatsteMailStatusPerRespondent } from "./mailer";
 import { t4oStorage } from "../t4organizations/storage";
 import { T4O_GROEPEN, type T4OGroep } from "../t4organizations/schema";
 
@@ -304,7 +304,7 @@ async function verwerkT4O(
     let melding = "Respondent aangemaakt.";
     if (email) {
       const naam = volledigeNaam(r.waarden);
-      const mail = await verstuurUitnodiging({ naar: email, taal: r.waarden.taal || "nl", naam, link, instrument: titel, from: null });
+      const mail = await verstuurUitnodiging({ naar: email, taal: r.waarden.taal || "nl", naam, link, instrument: titel, from: null, respondentCode: respondent.token });
       mailStatus = mail.status;
       melding = mail.melding ?? (mail.gesimuleerd ? "Mail gesimuleerd (SMTP niet geconfigureerd)." : "Uitnodiging verstuurd.");
     }
@@ -557,6 +557,7 @@ export function registerBulkImportRoutes(app: Express): void {
         link,
         instrument: tpl.titel,
         from: afzender,
+        respondentCode: inv.respondentCode ?? inv.inviteToken,
       });
 
       resultaten.push({
@@ -578,6 +579,18 @@ export function registerBulkImportRoutes(app: Express): void {
       aantalOvergeslagen: resultaten.filter((r) => r.status === "overgeslagen").length,
       aantalFout: resultaten.filter((r) => r.status === "fout").length,
       resultaten,
+    });
+  });
+
+  // Verzendlog: eerlijke, verifieerbare mailstatus per respondent. De admin-UI
+  // kan hiermee tonen of "verstuurd" ook echt aanvaard werd (met messageId), of
+  // dat de mail geweigerd/gesimuleerd was. Retourneert ook of het platform nu in
+  // simulatiemodus draait, zodat de UI daar een duidelijke waarschuwing bij zet.
+  app.get("/api/admin/bulk-import/mail-log", (req, res) => {
+    if (!requireAdmin(req, res)) return;
+    res.json({
+      simulatiemodus: isSimulatiemodus(),
+      statusPerRespondent: laatsteMailStatusPerRespondent(),
     });
   });
 
