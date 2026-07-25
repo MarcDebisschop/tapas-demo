@@ -33,6 +33,7 @@ import {
   bewaartermijnSchema,
 } from "@shared/schema";
 import { valideerLeeftijdspoort } from "@shared/leeftijd";
+import { vereisAdmin } from "../admin-guard";
 import { dashboardCodeVanToken, voornaamVanNaam } from "../dashboard-code";
 import { buildGeneratorContract } from "../scoring";
 import { buildT4StudentsContract } from "../t4students/scoring";
@@ -483,7 +484,11 @@ export function registerAfnameRoutes(app: Express): void {
   // Fase C4c — GDPR: betrokkenenrechten
   // =========================================================================
 
-  app.get("/api/gdpr/afnames/:id/export", async (req, res) => {
+  // Toegangscontrole (AVG art. 32): al deze routes raken persoonsgegevens van
+  // betrokkenen. Ze zijn uitsluitend toegankelijk voor een ingelogde beheerder;
+  // zonder sessie volgt 401. Er bestaat geen zelfbedieningspad met eigen token,
+  // dus admin-only is hier de strengste en enige veilige lijn.
+  app.get("/api/gdpr/afnames/:id/export", vereisAdmin, async (req, res) => {
     if (DEMO_MODE) {
       return res.status(403).json({ error: "Niet beschikbaar in de publieke demo." });
     }
@@ -496,7 +501,7 @@ export function registerAfnameRoutes(app: Express): void {
     }
   });
 
-  app.get("/api/gdpr/afnames/:id/export.json", async (req, res) => {
+  app.get("/api/gdpr/afnames/:id/export.json", vereisAdmin, async (req, res) => {
     if (DEMO_MODE) {
       return res.status(403).json({ error: "Niet beschikbaar in de publieke demo." });
     }
@@ -511,7 +516,7 @@ export function registerAfnameRoutes(app: Express): void {
     }
   });
 
-  app.post("/api/gdpr/bewaartermijn", async (req, res) => {
+  app.post("/api/gdpr/bewaartermijn", vereisAdmin, async (req, res) => {
     const parsed = bewaartermijnSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
@@ -523,13 +528,13 @@ export function registerAfnameRoutes(app: Express): void {
     res.json(updated);
   });
 
-  app.post("/api/gdpr/afnames/:id/intrekken", async (req, res) => {
+  app.post("/api/gdpr/afnames/:id/intrekken", vereisAdmin, async (req, res) => {
     const updated = await storage.trekConsentIn(Number(req.params.id));
     if (!updated) return res.status(404).json({ error: "Afname niet gevonden" });
     res.json(updated);
   });
 
-  app.post("/api/gdpr/afnames/:id/anonimiseer", async (req, res) => {
+  app.post("/api/gdpr/afnames/:id/anonimiseer", vereisAdmin, async (req, res) => {
     const reden = typeof req.body?.reden === "string" ? req.body.reden : "verzoek betrokkene";
     const updated = await storage.anonimiseerAfname(Number(req.params.id), reden);
     if (!updated) return res.status(404).json({ error: "Afname niet gevonden" });
