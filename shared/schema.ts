@@ -119,6 +119,13 @@ export const insertAfnameSchema = createInsertSchema(afnames).pick({
   consentGiven: z.literal(true, {
     errorMap: () => ({ message: "Toestemming is verplicht om te starten" }),
   }),
+  // Leeftijdspoort (AVG art. 8). Optioneel in het schema zodat bestaande
+  // instrumenten ongewijzigd blijven; voor T4Kids/T4Teens dwingt de route de
+  // aanwezigheid af via valideerLeeftijdspoort.
+  leeftijdsband: z.enum(LEEFTIJDSBANDEN).optional(),
+  ouderlijkeToestemming: z.boolean().optional(),
+  ouderNaam: z.string().max(120).optional(),
+  ouderEmail: z.string().max(160).optional(),
 });
 
 export type InsertAfname = z.infer<typeof insertAfnameSchema>;

@@ -1551,6 +1551,15 @@ export interface NewAfname {
   consentIp?: string | null;
   consentUserAgent?: string | null;
   bewaartotDatum?: string | null;
+  // Leeftijdspoort en ouderlijke toestemming (AVG art. 8), optioneel zodat
+  // instrumenten zonder minderjarige doelgroep ongewijzigd blijven werken.
+  leeftijdsband?: string | null;
+  ouderlijkeToestemming?: boolean;
+  ouderlijkeToestemmingAt?: string | null;
+  ouderNaam?: string | null;
+  ouderEmail?: string | null;
+  ouderlijkeToestemmingIp?: string | null;
+  ouderlijkeToestemmingUserAgent?: string | null;
 }
 
 // Centrale GDPR-config: de versie van de privacyverklaring en de standaard
@@ -1818,6 +1827,13 @@ export class DatabaseStorage implements IStorage {
         baselineEnergy: data.baselineEnergy,
         taal: data.taal ?? "nl",
         instrumentId: data.instrumentId ?? null,
+        leeftijdsband: data.leeftijdsband ?? null,
+        ouderlijkeToestemming: data.ouderlijkeToestemming ?? false,
+        ouderlijkeToestemmingAt: data.ouderlijkeToestemmingAt ?? null,
+        ouderNaam: data.ouderNaam ?? null,
+        ouderEmail: data.ouderEmail ?? null,
+        ouderlijkeToestemmingIp: data.ouderlijkeToestemmingIp ?? null,
+        ouderlijkeToestemmingUserAgent: data.ouderlijkeToestemmingUserAgent ?? null,
         status: "deel1",
         createdAt: new Date().toISOString(),
       })

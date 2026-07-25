@@ -70,6 +70,20 @@ export function registerAfnameRoutes(app: Express): void {
     }
     const data = parsed.data;
 
+    // Leeftijdspoort (AVG art. 8) - ook hier afgedwongen, want de
+    // T4Kids-belevingsroute start haar afname rechtstreeks via deze route en
+    // niet via een uitnodigingslink.
+    const poort = valideerLeeftijdspoort({
+      instrumentId: data.instrumentId ?? null,
+      leeftijdsband: data.leeftijdsband ?? null,
+      ouderlijkeToestemming: data.ouderlijkeToestemming ?? false,
+      ouderNaam: data.ouderNaam ?? null,
+      ouderEmail: data.ouderEmail ?? null,
+    });
+    if (!poort.ok) {
+      return res.status(400).json({ error: poort.fout });
+    }
+
     // Saldo-check vóór aanmaak: als er een organisatie is meegegeven, moet die
     // bestaan én minstens één beschikbaar credit hebben.
     if (data.organisatieId != null) {
@@ -107,6 +121,13 @@ export function registerAfnameRoutes(app: Express): void {
       consentTimestamp: new Date().toISOString(),
       consentIp,
       consentUserAgent,
+      leeftijdsband: poort.band,
+      ouderlijkeToestemming: poort.ouderlijkeToestemmingVereist,
+      ouderlijkeToestemmingAt: poort.ouderlijkeToestemmingVereist ? new Date().toISOString() : null,
+      ouderNaam: poort.ouderlijkeToestemmingVereist ? (data.ouderNaam ?? "").trim() : null,
+      ouderEmail: poort.ouderlijkeToestemmingVereist ? (data.ouderEmail ?? "").trim() : null,
+      ouderlijkeToestemmingIp: poort.ouderlijkeToestemmingVereist ? consentIp : null,
+      ouderlijkeToestemmingUserAgent: poort.ouderlijkeToestemmingVereist ? consentUserAgent : null,
     });
 
     // Reserveer het credit (beschikbaar -> gereserveerd). Lukt dit niet, dan
