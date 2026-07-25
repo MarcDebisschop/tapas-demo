@@ -49,6 +49,7 @@ import type {
 } from '@shared/schema';
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
+import { pasEncryptieToe } from "./db-encryptie";
 import { randomBytes } from "crypto";
 import { eq, desc, and } from "drizzle-orm";
 import { existsSync, readFileSync } from "fs";
@@ -96,6 +97,10 @@ const DB_PAD = vindDatabasePad();
 console.log(`[tapas] SQLite database: ${DB_PAD}`);
 
 const sqlite = new Database(DB_PAD);
+// FIX 6 (AVG art. 32): encryptie-at-rest hook. No-op zolang TAPAS_DB_SLEUTEL niet
+// gezet is en de standaard better-sqlite3-driver in gebruik is. Zie
+// docs/GDPR-FIX6-encryptie-at-rest.md voor de volledige omschakeling.
+pasEncryptieToe(sqlite);
 sqlite.pragma("journal_mode = WAL");
 sqlite.pragma("synchronous = NORMAL");   // NP-5 fix 2026-06-30: veilig bij WAL
 sqlite.pragma("cache_size = -32000");    // NP-5 fix 2026-06-30: 32 MB pagina-cache
