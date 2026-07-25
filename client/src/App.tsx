@@ -78,6 +78,7 @@ import T4SportsModules from "@/pages/t4sports-modules";
 import ScrollNaarBoven from "@/components/ScrollNaarBoven";
 import { TaalProvider } from "@/contexts/TaalContext";
 import { BELEVING } from "@/lib/features";
+import { BelevingSchakelaar } from "@/components/BelevingSchakelaar";
 
 function AdminStub({ titel, omschrijving }: { titel: string; omschrijving: string }) {
   return (
@@ -246,6 +247,9 @@ function App() {
           <TaalProvider>
           <TooltipProvider>
             <Toaster />
+            {/* Runtime-toggle: wissel zonder rebuild tussen TaPas Core en het
+                volledige platform. Altijd zichtbaar, ook tijdens de intro. */}
+            <BelevingSchakelaar />
             {!introDone && (
               <>
                 <PoortenIntro onComplete={() => setIntroDone(true)} />
