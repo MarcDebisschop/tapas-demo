@@ -32,6 +32,7 @@ import {
   startViaLinkSchema,
   bewaartermijnSchema,
 } from "@shared/schema";
+import { valideerLeeftijdspoort } from "@shared/leeftijd";
 import { dashboardCodeVanToken, voornaamVanNaam } from "../dashboard-code";
 import { buildGeneratorContract } from "../scoring";
 import { buildT4StudentsContract } from "../t4students/scoring";
@@ -219,6 +220,23 @@ export function registerAfnameRoutes(app: Express): void {
       req.socket.remoteAddress ||
       null;
     const consentUserAgent = (req.headers["user-agent"] as string) ?? null;
+
+    // Leeftijdspoort (AVG art. 8) - server-side afgedwongen, niet enkel in de
+    // client. Het instrument komt uit de afname zelf zodat de deelnemer de
+    // poort niet kan omzeilen door een ander instrument te sturen. Voor
+    // niet-minderjarige instrumenten is dit altijd ok en verandert er niets.
+    const poort = valideerLeeftijdspoort({
+      instrumentId: a.instrumentId,
+      leeftijdsband: data.leeftijdsband ?? null,
+      ouderlijkeToestemming: data.ouderlijkeToestemming ?? false,
+      ouderNaam: data.ouderNaam ?? null,
+      ouderEmail: data.ouderEmail ?? null,
+    });
+    if (!poort.ok) {
+      return res.status(400).json({ error: poort.fout });
+    }
+
+    const nu = new Date().toISOString();
     const finalCode = makeRespondentCode(data.name, a.id);
     const updated = await storage.updateAfname(a.id, {
       name: data.name,
@@ -228,11 +246,22 @@ export function registerAfnameRoutes(app: Express): void {
       taal: normaliseerTaal(data.taal ?? a.taal),
       consentGiven: true,
       consentScope: "profiel-generatie + rapport",
-      consentTimestamp: new Date().toISOString(),
+      consentTimestamp: nu,
       consentIp,
       consentUserAgent,
       respondentCode: finalCode,
       status: "deel1",
+      // Leeftijdsband wordt enkel bewaard wanneer de poort geldt (dus voor
+      // T4Teens/T4Kids); andere instrumenten houden NULL.
+      leeftijdsband: poort.band,
+      // Bewijslast van de ouderlijke toestemming. Enkel gevuld wanneer die
+      // toestemming daadwerkelijk vereist was en gegeven werd.
+      ouderlijkeToestemming: poort.ouderlijkeToestemmingVereist,
+      ouderlijkeToestemmingAt: poort.ouderlijkeToestemmingVereist ? nu : null,
+      ouderNaam: poort.ouderlijkeToestemmingVereist ? (data.ouderNaam ?? "").trim() : null,
+      ouderEmail: poort.ouderlijkeToestemmingVereist ? (data.ouderEmail ?? "").trim() : null,
+      ouderlijkeToestemmingIp: poort.ouderlijkeToestemmingVereist ? consentIp : null,
+      ouderlijkeToestemmingUserAgent: poort.ouderlijkeToestemmingVereist ? consentUserAgent : null,
     });
     res.json(updated);
   });
