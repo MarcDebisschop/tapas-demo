@@ -17,6 +17,7 @@ import { registerToegangRoutes } from "./toegang/routes";
 import { registerDeelnemerRoutes } from "./routes-deelnemer";
 import { startCreditRecoveryJob } from "./credit-recovery";
 import { startBewaartermijnJob } from "./bewaartermijn-job";
+import { startInstrumentBackfill } from "./instrument-backfill";
 import { registerT4SportsRoutes } from "./t4sports/routes";
 import { registerT4SportsModuleRoutes } from "./t4sports/module-routes";
 import { registerCoachContactRoutes } from "./routes-coach-contact";
@@ -197,6 +198,10 @@ export async function registerRoutes(
   // Bewaartermijn-job: afnames met verstreken bewaartotDatum automatisch
   // anonimiseren (AVG art. 5.1.e opslagbeperking, art. 25 privacy by design).
   startBewaartermijnJob();
+
+  // Eenmalige, idempotente aanvulling van afnames.instrument_id voor bestaande
+  // rijen waar het instrument betrouwbaar uit het bevroren contract volgt.
+  startInstrumentBackfill();
 
   return httpServer;
 }

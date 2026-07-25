@@ -34,6 +34,7 @@ import {
 } from "@shared/schema";
 import { valideerLeeftijdspoort } from "@shared/leeftijd";
 import { vereisAdmin, adminIdVanSessie } from "../admin-guard";
+import { getDefaultDescriptor } from "../registry";
 import { schrijfAuditLog } from "../audit-log";
 import { dashboardCodeVanToken, voornaamVanNaam } from "../dashboard-code";
 import { buildGeneratorContract } from "../scoring";
@@ -41,6 +42,18 @@ import { buildT4StudentsContract } from "../t4students/scoring";
 import { buildT4TeensContract } from "../t4teens/scoring";
 import { buildT4KidsContract } from "../t4kids/scoring";
 import { z } from "zod";
+
+// Het instrument dat geldt wanneer de client er geen meestuurt.
+//
+// Dit is geen gok. Zowel de scoring (server/scoring.ts buildGeneratorContract)
+// als de rapportregistry behandelen een afname zonder instrumentId vandaag al
+// als het standaard-instrument: de else-tak hieronder in /connection bouwt het
+// T4P-contract. Door dat bij aanmaak ook echt in de kolom te zetten, komt de
+// opvolging per instrument overeen met wat de deelnemer feitelijk invult, in
+// plaats van alles op "Onbekend" te laten vallen.
+function standaardInstrumentId(): string {
+  return getDefaultDescriptor().instrumentId;
+}
 
 // Genereert een leesbare respondentCode op basis van naam + jaar + volgnummer.
 function makeRespondentCode(name: string, id: number): string {
@@ -118,7 +131,7 @@ export function registerAfnameRoutes(app: Express): void {
       role: data.role ?? null,
       baselineEnergy: data.baselineEnergy,
       taal: normaliseerTaal(data.taal),
-      instrumentId: data.instrumentId ?? null,
+      instrumentId: data.instrumentId ?? standaardInstrumentId(),
       consentScope: "profiel-generatie + rapport",
       consentTimestamp: new Date().toISOString(),
       consentIp,
@@ -186,7 +199,7 @@ export function registerAfnameRoutes(app: Express): void {
       company: data.company ?? null,
       role: data.role ?? null,
       taal: normaliseerTaal(data.taal),
-      instrumentId: data.instrumentId ?? null,
+      instrumentId: data.instrumentId ?? standaardInstrumentId(),
     });
     if (data.organisatieId != null) {
       try {

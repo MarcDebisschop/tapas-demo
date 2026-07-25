@@ -26,6 +26,11 @@ function genereerDashboardRapport(contract: unknown, afnameId: number, taal: str
   return genereerT4SportsRapportCompleet(contract, moduleResultaten, taal);
 }
 
+// Het instrument-id zoals het in server/registry.ts geregistreerd staat. Dit
+// is de waarde die in afnames.instrument_id belandt, zodat de opvolging per
+// instrument een T4Sports-afname als T4Sports telt.
+export const T4SPORTS_INSTRUMENT_ID = "t4sports";
+
 // Demo modus: geen echte LLM chat
 const DEMO_MODE = process.env.TAPAS_DEMO === "1";
 const CHAT_SIDECAR_URL = process.env.TAPAS_CHAT_SIDECAR ?? "http://127.0.0.1:8000";
@@ -84,7 +89,7 @@ export function registerT4SportsRoutes(app: Express): void {
   // =========================================================================
   app.get("/api/t4sports/instrument", (req, res) => {
     const taal = (req.query.taal as string) ?? "nl";
-    const desc = getDescriptor("t4sports");
+    const desc = getDescriptor(T4SPORTS_INSTRUMENT_ID);
     if (!desc?.instrument) return res.status(404).json({ error: "T4Sports instrument niet gevonden" });
     const clientView = clientInstrumentVan(desc.instrument, taal as any);
     res.json(clientView);
@@ -122,6 +127,9 @@ export function registerT4SportsRoutes(app: Express): void {
     const created = await storage.createAfname({
       organisatieId: data.organisatieId ?? null,
       respondentCode: `TMP-T4S-${Date.now()}`,
+      // Deze route is per definitie T4Sports; het instrument hoort dus in de
+      // kolom en niet enkel impliciet in de respondentCode of consentScope.
+      instrumentId: T4SPORTS_INSTRUMENT_ID,
       name: data.name,
       company: null,
       role: data.rol ?? null,
