@@ -44,6 +44,7 @@ import {
   type Taal,
 } from "@shared/i18n";
 import { OnderbouwingSectie } from "@/components/OnderbouwingSectie";
+import { OpvolgingPerInstrument } from "@/components/OpvolgingPerInstrument";
 
 
 // -----------------------------------------------------------------------
@@ -945,6 +946,10 @@ export default function AdminInzichten() {
             </Card>
           </>
         )}
+
+        {/* Opvolging per instrument - eigen organisatiefilter, los van de
+            tabkeuze hierboven. */}
+        <OpvolgingPerInstrument />
       </main>
     </div>
   );
