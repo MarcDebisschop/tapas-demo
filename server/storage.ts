@@ -56,6 +56,7 @@ import { resolve } from "path";
 import { renderRapportHtml } from "./rapportgenerator";
 import { kiesGenerator, heeftDedicatedGenerator } from "./rapport-registry";
 import { genereerAiDuiding, isLiveDuidingAan, DUIDING_INSTRUMENT } from "./duiding-manager";
+import { anonimiseringsPatch } from "./anonimisering";
 
 // -----------------------------------------------------------------------------
 // Database-pad: ROBUUST oplossen.
@@ -2853,20 +2854,11 @@ export class DatabaseStorage implements IStorage {
     if (!a) return undefined;
     if (a.geanonimiseerdAt) return a;
     const now = new Date().toISOString();
+    // Eén gedeelde definitie van de te wissen velden (server/anonimisering.ts),
+    // zodat deze implementatie niet opnieuw kan uiteenlopen met de repository.
     return db
       .update(afnames)
-      .set({
-        name: "[geanonimiseerd]",
-        company: null,
-        role: null,
-        mainResponses: null,
-        connectionAnswers: null,
-        generatorContract: null,
-        consentIp: null,
-        consentUserAgent: null,
-        geanonimiseerdAt: now,
-        consentScope: `geanonimiseerd: ${reden}`,
-      })
+      .set(anonimiseringsPatch(reden, now))
       .where(eq(afnames.id, afnameId))
       .returning()
       .get();

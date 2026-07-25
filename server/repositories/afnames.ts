@@ -14,6 +14,7 @@ import type { Afname } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 import { db } from "../storage";
 import { cryptoRandom } from "./db";
+import { anonimiseringsPatch } from "../anonimisering";
 
 // Re-export van constanten die elders gebruikt worden
 export const PRIVACY_VERKLARING_VERSIE = "v1.0 (2026-06)";
@@ -199,6 +200,12 @@ async function listRapportenVoorAfname(afnameId: number) {
     .all();
 }
 
+// Anonimisering (AVG art. 17). Wist elk veld dat een rij nog aan een persoon
+// kan koppelen. Bewust ook `deelnemerEmail` (dat is de directe sleutel naar het
+// deelnemersdashboard) en de volledige leeftijds-/oudergegevens: een grove
+// leeftijdsband van een kind samen met een schoolnaam blijft indirect
+// identificerend, dus bij twijfel wissen we ook die.
+// Idempotent: een reeds geanonimiseerde rij wordt onveranderd teruggegeven.
 export async function anonimiseerAfname(
   afnameId: number,
   _reden: string,
@@ -209,18 +216,7 @@ export async function anonimiseerAfname(
   const now = new Date().toISOString();
   return db
     .update(afnames)
-    .set({
-      name: "[geanonimiseerd]",
-      company: null,
-      role: null,
-      mainResponses: null,
-      connectionAnswers: null,
-      generatorContract: null,
-      consentIp: null,
-      consentUserAgent: null,
-      geanonimiseerdAt: now,
-      consentScope: `geanonimiseerd: ${_reden}`,
-    })
+    .set(anonimiseringsPatch(_reden, now))
     .where(eq(afnames.id, afnameId))
     .returning()
     .get();
