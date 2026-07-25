@@ -31,6 +31,11 @@ import { type Request, type Response } from "express";
 import { storage, db } from "./storage";
 import { isTapasBeeld } from "../shared/talent-constructs";
 import type { RapportInhoud } from "./rapportgenerator";
+import {
+  keurPayloadGoed,
+  bouwDoorgifteRegister,
+  type DoorgifteRegel,
+} from "./duiding-pseudonimisering";
 
 // ─── Helper: prior-check middleware (spiegel van question-manager.ts) ─────────
 
@@ -713,6 +718,14 @@ export function getAlleAnkers(taal: string, instrument: string = DUIDING_INSTRUM
 }
 
 // Globale aan/uit-vlag PER INSTRUMENT. Default = UIT (veilig voor de pilot).
+//
+// AVG-context (art. 44 e.v.): deze vlag aanzetten betekent dat profieldata naar
+// Google (Gemini API) gaat, buiten de EER. Aanzetten mag dus enkel wanneer er
+// een verwerkersovereenkomst met Google is, een doorgiftetoets is uitgevoerd en
+// de doorgifte in het verwerkingsregister van TaPasCity staat. De vlag wordt
+// bewust niet via een env-variabele gezet maar via een expliciete
+// override-rij, zodat de wijziging in het duidingbeheer-auditlog terechtkomt.
+// Zie duidingDoorgifteRegister() voor het controleerbare overzicht.
 export function isLiveDuidingAan(instrument: string = DUIDING_INSTRUMENT): boolean {
   const inst = normInstrument(instrument);
   return getOverride(scopeVoor(CONFIG_SCOPE, inst), LIVE_FLAG_DIMENSIE, LIVE_FLAG_TAAL) === "true";
@@ -836,6 +849,16 @@ export async function genereerAiDuiding(
 ): Promise<RapportInhoud | null> {
   try {
     const payload = bouwAiPayload(inhoud, contract);
+    // Defensieve pseudonimiseringspoort (AVG art. 5.1.c en art. 32): weiger de
+    // doorgifte zodra er iets identificeerbaars in de payload staat. Geen
+    // doorgifte betekent statische tekst, niet een mislukte afname.
+    const keuring = keurPayloadGoed(payload, contract);
+    if (!keuring.ok) {
+      console.error(
+        `[duiding] Doorgifte geweigerd door pseudonimiseringspoort: ${keuring.redenen.join("; ")}`,
+      );
+      return null;
+    }
     const antwoord = await roepGeminiAan(payload);
     if (!antwoord) return null;
 
@@ -865,6 +888,25 @@ export async function genereerAiDuiding(
   } catch {
     return null; // welke fout dan ook → statische fallback
   }
+}
+
+/**
+ * Keurt de payload die voor dit rapport naar Gemini zou gaan, zonder iets te
+ * verzenden. Bedoeld voor tests en voor een controleerbare, aantoonbare
+ * pseudonimiseringscheck (AVG art. 5.2): een beheerder kan hiermee vaststellen
+ * dat de payload geen persoonsgegevens bevat.
+ */
+export function keurDuidingPayload(inhoud: RapportInhoud, contract: any) {
+  return keurPayloadGoed(bouwAiPayload(inhoud, contract), contract);
+}
+
+/**
+ * Controleerbaar doorgifteregister (AVG art. 30): per instrument of live-duiding
+ * aan staat en dus of er profieldata naar Google gaat. Dit is de bron voor het
+ * verwerkingsregister en voor de admin-UI.
+ */
+export function duidingDoorgifteRegister(): DoorgifteRegel[] {
+  return bouwDoorgifteRegister(getDuidingInstrumenten(), (id) => isLiveDuidingAan(id));
 }
 
 // ─── T4Sports AI-duiding (ADDITIEF) ───────────────────────────────────────────
@@ -946,6 +988,15 @@ export async function verrijkT4SportsRapport(html: string, contract: any): Promi
 
     const taal = normTaal(contract?.taal);
     const payload = bouwT4SportsPayload(contract, taal);
+    // Zelfde pseudonimiseringspoort als het T4P-pad: dit is het tweede
+    // verzendpad naar Gemini en mag niet minder streng zijn.
+    const keuring = keurPayloadGoed(payload, contract);
+    if (!keuring.ok) {
+      console.error(
+        `[duiding] T4Sports-doorgifte geweigerd door pseudonimiseringspoort: ${keuring.redenen.join("; ")}`,
+      );
+      return html;
+    }
     const antwoord = await roepGeminiAan(payload);
     if (!antwoord) return html;
 
@@ -1000,6 +1051,16 @@ export function buildDuidingManagerRoutes(app: any) {
   // Additief: eigen segment, geregistreerd VÓÓR /:taal zodat het niet als taal matcht.
   app.get("/api/admin/duidingbeheer/instrumenten", requirePrior, async (_req: Request, res: Response) => {
     res.json({ instrumenten: getDuidingInstrumenten() });
+  });
+
+  // ── Doorgifteregister (AVG art. 30): welke instrumenten sturen data naar
+  // Google en welke niet. Eigen segment, ook vóór /:taal geregistreerd.
+  app.get("/api/admin/duidingbeheer/doorgifteregister", requirePrior, async (_req: Request, res: Response) => {
+    res.json({
+      verwerkingsverantwoordelijke: "TaPasCity, Wijnegem",
+      opgemaaktOp: new Date().toISOString(),
+      regels: duidingDoorgifteRegister(),
+    });
   });
 
   // ── Lees regie-prompt + ankers + aan/uit-vlag voor één taal (per instrument) ─
