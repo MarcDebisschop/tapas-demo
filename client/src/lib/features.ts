@@ -113,11 +113,44 @@ export function zetBeleving(aan: boolean): void {
     const url = new URL(window.location.href);
     const hadParam = url.searchParams.has("beleving");
     url.searchParams.delete("beleving");
+
+    // BELANGRIJK — 404 vermijden bij terugschakelen naar Core.
+    // De app gebruikt hash-routing (#/pad). Bepaalde routes bestaan alléén in
+    // het volledige platform (/academy, /academy/jester, /impact, /lounge,
+    // /poort, /poort/:skin). Wie op zo'n pagina staat en naar Core schakelt,
+    // zou na de herlaad op een niet-geregistreerde route belanden -> 404.
+    // Daarom sturen we bij het uitschakelen (aan === false) de hash terug naar
+    // de startpagina, die in beide modi bestaat. Inschakelen behoudt de hash:
+    // alle Core-routes bestaan ook in het volledige platform.
+    let hashGewijzigd = false;
+    if (!aan) {
+      const belevingPaden = [
+        /^#\/academy(\/|$)/,
+        /^#\/impact(\/|$)/,
+        /^#\/lounge(\/|$)/,
+        /^#\/poort(\/|$)/,
+      ];
+      const huidigeHash = url.hash || "";
+      if (belevingPaden.some((re) => re.test(huidigeHash))) {
+        url.hash = "#/";
+        hashGewijzigd = true;
+      }
+    }
+
     if (hadParam) {
-      // URL verandert echt → replace laadt de nieuwe URL en herlaadt.
+      // De query-parameter verandert -> replace laadt een echt andere URL en
+      // herlaadt het document (de hash is hierboven, indien nodig, al gezet).
       window.location.replace(url.toString());
+    } else if (hashGewijzigd) {
+      // Enkel de hash wijzigt. Een hash-only wijziging via replace() of href
+      // herlaadt het document NIET (browsers zien dit als in-page navigatie).
+      // Daarom zetten we eerst de hash en forceren daarna expliciet een
+      // volledige herlaad, zodat BELEVING opnieuw wordt bepaald en de
+      // belevings-modus-class in main.tsx correct wordt (her)toegepast.
+      window.location.hash = url.hash;
+      window.location.reload();
     } else {
-      // URL blijft identiek → expliciet herladen.
+      // URL blijft identiek -> expliciet herladen.
       window.location.reload();
     }
   } catch {
