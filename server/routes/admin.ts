@@ -17,7 +17,8 @@
 import type { Express } from "express";
 import { storage, db } from "../storage";
 import { verifieerWachtwoord } from "../auth/wachtwoord";
-import { vereisAdmin } from "../admin-guard";
+import { vereisAdmin, adminIdVanSessie } from "../admin-guard";
+import { schrijfAuditLog } from "../audit-log";
 
 // Demo-modus: identiek criterium als elders in de server (TAPAS_DEMO="1").
 // In demo blijft de login e-mail-only (wachtwoord wordt genegeerd), zodat de
@@ -134,6 +135,14 @@ export function registerAdminRoutes(app: Express): void {
     if (!a || !a.generatorContract) {
       return res.status(404).json({ error: "Geen generator-JSON beschikbaar" });
     }
+    // Aantoonbaarheid (AVG art. 5.2): een beheerder die profieldata downloadt,
+    // laat een spoor na.
+    schrijfAuditLog({
+      adminId: adminIdVanSessie(req),
+      actie: "afname_inzage",
+      afnameId: id,
+      detail: "download generator-contract",
+    });
     res.setHeader("Content-Type", "application/json");
     res.setHeader(
       "Content-Disposition",

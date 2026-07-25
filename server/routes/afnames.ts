@@ -33,7 +33,8 @@ import {
   bewaartermijnSchema,
 } from "@shared/schema";
 import { valideerLeeftijdspoort } from "@shared/leeftijd";
-import { vereisAdmin } from "../admin-guard";
+import { vereisAdmin, adminIdVanSessie } from "../admin-guard";
+import { schrijfAuditLog } from "../audit-log";
 import { dashboardCodeVanToken, voornaamVanNaam } from "../dashboard-code";
 import { buildGeneratorContract } from "../scoring";
 import { buildT4StudentsContract } from "../t4students/scoring";
@@ -494,6 +495,11 @@ export function registerAfnameRoutes(app: Express): void {
     }
     try {
       const pakket = await storage.gdprExport(Number(req.params.id));
+      schrijfAuditLog({
+        adminId: adminIdVanSessie(req),
+        actie: "gdpr_export",
+        afnameId: Number(req.params.id),
+      });
       res.json(pakket);
     } catch (e) {
       const msg = e instanceof CreditError ? e.message : "Export mislukt";
@@ -507,6 +513,11 @@ export function registerAfnameRoutes(app: Express): void {
     }
     try {
       const pakket = await storage.gdprExport(Number(req.params.id));
+      schrijfAuditLog({
+        adminId: adminIdVanSessie(req),
+        actie: "gdpr_export_download",
+        afnameId: Number(req.params.id),
+      });
       res.setHeader("Content-Type", "application/json");
       res.setHeader("Content-Disposition", `attachment; filename="gdpr-export_afname-${req.params.id}.json"`);
       res.send(JSON.stringify(pakket, null, 2));
@@ -525,12 +536,23 @@ export function registerAfnameRoutes(app: Express): void {
       bewaartotDatum: parsed.data.bewaartotDatum,
     });
     if (!updated) return res.status(404).json({ error: "Afname niet gevonden" });
+    schrijfAuditLog({
+      adminId: adminIdVanSessie(req),
+      actie: "bewaartermijn_wijziging",
+      afnameId: parsed.data.afnameId,
+      detail: `bewaartot ${parsed.data.bewaartotDatum}`,
+    });
     res.json(updated);
   });
 
   app.post("/api/gdpr/afnames/:id/intrekken", vereisAdmin, async (req, res) => {
     const updated = await storage.trekConsentIn(Number(req.params.id));
     if (!updated) return res.status(404).json({ error: "Afname niet gevonden" });
+    schrijfAuditLog({
+      adminId: adminIdVanSessie(req),
+      actie: "consent_intrekking",
+      afnameId: Number(req.params.id),
+    });
     res.json(updated);
   });
 
@@ -538,6 +560,12 @@ export function registerAfnameRoutes(app: Express): void {
     const reden = typeof req.body?.reden === "string" ? req.body.reden : "verzoek betrokkene";
     const updated = await storage.anonimiseerAfname(Number(req.params.id), reden);
     if (!updated) return res.status(404).json({ error: "Afname niet gevonden" });
+    schrijfAuditLog({
+      adminId: adminIdVanSessie(req),
+      actie: "anonimisering",
+      afnameId: Number(req.params.id),
+      detail: reden,
+    });
     res.json(updated);
   });
 }
