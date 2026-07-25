@@ -62,6 +62,10 @@ export interface Afname {
   herinnerdAt?: string | null;
   // Tussentijds bewaarde deel 1-antwoorden (JSON-string of geparset object).
   mainResponses?: string | AnswerState | null;
+  // Leeftijdspoort en ouderlijke toestemming (AVG art. 8). Enkel gevuld voor
+  // instrumenten met een minderjarige doelgroep.
+  leeftijdsband?: string | null;
+  ouderlijkeToestemming?: boolean;
 }
 
 // --- Fase C1: organisaties & credits ---

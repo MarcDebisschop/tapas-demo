@@ -32,6 +32,9 @@ import {
   startViaLinkSchema,
   bewaartermijnSchema,
 } from "@shared/schema";
+import { valideerLeeftijdspoort } from "@shared/leeftijd";
+import { vereisAdmin, adminIdVanSessie } from "../admin-guard";
+import { schrijfAuditLog } from "../audit-log";
 import { dashboardCodeVanToken, voornaamVanNaam } from "../dashboard-code";
 import { buildGeneratorContract } from "../scoring";
 import { buildT4StudentsContract } from "../t4students/scoring";
@@ -68,6 +71,20 @@ export function registerAfnameRoutes(app: Express): void {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
     }
     const data = parsed.data;
+
+    // Leeftijdspoort (AVG art. 8) - ook hier afgedwongen, want de
+    // T4Kids-belevingsroute start haar afname rechtstreeks via deze route en
+    // niet via een uitnodigingslink.
+    const poort = valideerLeeftijdspoort({
+      instrumentId: data.instrumentId ?? null,
+      leeftijdsband: data.leeftijdsband ?? null,
+      ouderlijkeToestemming: data.ouderlijkeToestemming ?? false,
+      ouderNaam: data.ouderNaam ?? null,
+      ouderEmail: data.ouderEmail ?? null,
+    });
+    if (!poort.ok) {
+      return res.status(400).json({ error: poort.fout });
+    }
 
     // Saldo-check vóór aanmaak: als er een organisatie is meegegeven, moet die
     // bestaan én minstens één beschikbaar credit hebben.
@@ -106,6 +123,13 @@ export function registerAfnameRoutes(app: Express): void {
       consentTimestamp: new Date().toISOString(),
       consentIp,
       consentUserAgent,
+      leeftijdsband: poort.band,
+      ouderlijkeToestemming: poort.ouderlijkeToestemmingVereist,
+      ouderlijkeToestemmingAt: poort.ouderlijkeToestemmingVereist ? new Date().toISOString() : null,
+      ouderNaam: poort.ouderlijkeToestemmingVereist ? (data.ouderNaam ?? "").trim() : null,
+      ouderEmail: poort.ouderlijkeToestemmingVereist ? (data.ouderEmail ?? "").trim() : null,
+      ouderlijkeToestemmingIp: poort.ouderlijkeToestemmingVereist ? consentIp : null,
+      ouderlijkeToestemmingUserAgent: poort.ouderlijkeToestemmingVereist ? consentUserAgent : null,
     });
 
     // Reserveer het credit (beschikbaar -> gereserveerd). Lukt dit niet, dan
@@ -219,6 +243,23 @@ export function registerAfnameRoutes(app: Express): void {
       req.socket.remoteAddress ||
       null;
     const consentUserAgent = (req.headers["user-agent"] as string) ?? null;
+
+    // Leeftijdspoort (AVG art. 8) - server-side afgedwongen, niet enkel in de
+    // client. Het instrument komt uit de afname zelf zodat de deelnemer de
+    // poort niet kan omzeilen door een ander instrument te sturen. Voor
+    // niet-minderjarige instrumenten is dit altijd ok en verandert er niets.
+    const poort = valideerLeeftijdspoort({
+      instrumentId: a.instrumentId,
+      leeftijdsband: data.leeftijdsband ?? null,
+      ouderlijkeToestemming: data.ouderlijkeToestemming ?? false,
+      ouderNaam: data.ouderNaam ?? null,
+      ouderEmail: data.ouderEmail ?? null,
+    });
+    if (!poort.ok) {
+      return res.status(400).json({ error: poort.fout });
+    }
+
+    const nu = new Date().toISOString();
     const finalCode = makeRespondentCode(data.name, a.id);
     const updated = await storage.updateAfname(a.id, {
       name: data.name,
@@ -228,11 +269,22 @@ export function registerAfnameRoutes(app: Express): void {
       taal: normaliseerTaal(data.taal ?? a.taal),
       consentGiven: true,
       consentScope: "profiel-generatie + rapport",
-      consentTimestamp: new Date().toISOString(),
+      consentTimestamp: nu,
       consentIp,
       consentUserAgent,
       respondentCode: finalCode,
       status: "deel1",
+      // Leeftijdsband wordt enkel bewaard wanneer de poort geldt (dus voor
+      // T4Teens/T4Kids); andere instrumenten houden NULL.
+      leeftijdsband: poort.band,
+      // Bewijslast van de ouderlijke toestemming. Enkel gevuld wanneer die
+      // toestemming daadwerkelijk vereist was en gegeven werd.
+      ouderlijkeToestemming: poort.ouderlijkeToestemmingVereist,
+      ouderlijkeToestemmingAt: poort.ouderlijkeToestemmingVereist ? nu : null,
+      ouderNaam: poort.ouderlijkeToestemmingVereist ? (data.ouderNaam ?? "").trim() : null,
+      ouderEmail: poort.ouderlijkeToestemmingVereist ? (data.ouderEmail ?? "").trim() : null,
+      ouderlijkeToestemmingIp: poort.ouderlijkeToestemmingVereist ? consentIp : null,
+      ouderlijkeToestemmingUserAgent: poort.ouderlijkeToestemmingVereist ? consentUserAgent : null,
     });
     res.json(updated);
   });
@@ -433,12 +485,21 @@ export function registerAfnameRoutes(app: Express): void {
   // Fase C4c — GDPR: betrokkenenrechten
   // =========================================================================
 
-  app.get("/api/gdpr/afnames/:id/export", async (req, res) => {
+  // Toegangscontrole (AVG art. 32): al deze routes raken persoonsgegevens van
+  // betrokkenen. Ze zijn uitsluitend toegankelijk voor een ingelogde beheerder;
+  // zonder sessie volgt 401. Er bestaat geen zelfbedieningspad met eigen token,
+  // dus admin-only is hier de strengste en enige veilige lijn.
+  app.get("/api/gdpr/afnames/:id/export", vereisAdmin, async (req, res) => {
     if (DEMO_MODE) {
       return res.status(403).json({ error: "Niet beschikbaar in de publieke demo." });
     }
     try {
       const pakket = await storage.gdprExport(Number(req.params.id));
+      schrijfAuditLog({
+        adminId: adminIdVanSessie(req),
+        actie: "gdpr_export",
+        afnameId: Number(req.params.id),
+      });
       res.json(pakket);
     } catch (e) {
       const msg = e instanceof CreditError ? e.message : "Export mislukt";
@@ -446,12 +507,17 @@ export function registerAfnameRoutes(app: Express): void {
     }
   });
 
-  app.get("/api/gdpr/afnames/:id/export.json", async (req, res) => {
+  app.get("/api/gdpr/afnames/:id/export.json", vereisAdmin, async (req, res) => {
     if (DEMO_MODE) {
       return res.status(403).json({ error: "Niet beschikbaar in de publieke demo." });
     }
     try {
       const pakket = await storage.gdprExport(Number(req.params.id));
+      schrijfAuditLog({
+        adminId: adminIdVanSessie(req),
+        actie: "gdpr_export_download",
+        afnameId: Number(req.params.id),
+      });
       res.setHeader("Content-Type", "application/json");
       res.setHeader("Content-Disposition", `attachment; filename="gdpr-export_afname-${req.params.id}.json"`);
       res.send(JSON.stringify(pakket, null, 2));
@@ -461,7 +527,7 @@ export function registerAfnameRoutes(app: Express): void {
     }
   });
 
-  app.post("/api/gdpr/bewaartermijn", async (req, res) => {
+  app.post("/api/gdpr/bewaartermijn", vereisAdmin, async (req, res) => {
     const parsed = bewaartermijnSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
@@ -470,19 +536,36 @@ export function registerAfnameRoutes(app: Express): void {
       bewaartotDatum: parsed.data.bewaartotDatum,
     });
     if (!updated) return res.status(404).json({ error: "Afname niet gevonden" });
+    schrijfAuditLog({
+      adminId: adminIdVanSessie(req),
+      actie: "bewaartermijn_wijziging",
+      afnameId: parsed.data.afnameId,
+      detail: `bewaartot ${parsed.data.bewaartotDatum}`,
+    });
     res.json(updated);
   });
 
-  app.post("/api/gdpr/afnames/:id/intrekken", async (req, res) => {
+  app.post("/api/gdpr/afnames/:id/intrekken", vereisAdmin, async (req, res) => {
     const updated = await storage.trekConsentIn(Number(req.params.id));
     if (!updated) return res.status(404).json({ error: "Afname niet gevonden" });
+    schrijfAuditLog({
+      adminId: adminIdVanSessie(req),
+      actie: "consent_intrekking",
+      afnameId: Number(req.params.id),
+    });
     res.json(updated);
   });
 
-  app.post("/api/gdpr/afnames/:id/anonimiseer", async (req, res) => {
+  app.post("/api/gdpr/afnames/:id/anonimiseer", vereisAdmin, async (req, res) => {
     const reden = typeof req.body?.reden === "string" ? req.body.reden : "verzoek betrokkene";
     const updated = await storage.anonimiseerAfname(Number(req.params.id), reden);
     if (!updated) return res.status(404).json({ error: "Afname niet gevonden" });
+    schrijfAuditLog({
+      adminId: adminIdVanSessie(req),
+      actie: "anonimisering",
+      afnameId: Number(req.params.id),
+      detail: reden,
+    });
     res.json(updated);
   });
 }

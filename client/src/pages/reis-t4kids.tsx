@@ -309,6 +309,10 @@ export default function ReisT4Kids() {
   // Naam van het kind komt uit de afname (view?.name is de instrument-titel, niet de invuller).
   const naam = (afname?.name ?? "").trim().split(/\s+/)[0] || "ontdekker";
 
+  // Leeftijdspoort (AVG art. 8): T4Kids vereist altijd een leeftijdsband en
+  // ouderlijke toestemming. Zolang de afname nog laadt tonen we niets extra.
+  const poortOntbreekt = !!afname && (!afname.leeftijdsband || !afname.ouderlijkeToestemming);
+
   // Tappie-bevestiging tonen, dan automatisch terug naar de kaart.
   useEffect(() => {
     if (badge === null) return;
@@ -462,14 +466,25 @@ export default function ReisT4Kids() {
                 <strong>geen foute antwoorden</strong>, en je mag altijd iets overslaan of stoppen. Je bepaalt
                 zelf welk eiland je eerst bezoekt.
               </p>
-              <Button
-                size="lg"
-                className="mt-6 bg-cyan-500 text-lg font-bold text-slate-900 hover:bg-cyan-400"
-                onClick={() => setFase("kaart")}
-                data-testid="button-start-reis"
-              >
-                Start mijn reis! 🚀
-              </Button>
+              {/* Leeftijdspoort (AVG art. 8): zonder leeftijdsband en ouderlijke
+                  toestemming op de afname gaat de reis niet verder. De server
+                  weigert zo'n afname al bij het aanmaken; dit is de zichtbare,
+                  vriendelijke bevestiging voor het kind. */}
+              {poortOntbreekt ? (
+                <p className="mt-6 text-[17px] font-bold text-amber-300" data-testid="text-poort-ontbreekt">
+                  Voor deze reis moet een ouder of voogd eerst toestemming geven. Vraag je begeleider
+                  om de reis samen met je ouder opnieuw te starten.
+                </p>
+              ) : (
+                <Button
+                  size="lg"
+                  className="mt-6 bg-cyan-500 text-lg font-bold text-slate-900 hover:bg-cyan-400"
+                  onClick={() => setFase("kaart")}
+                  data-testid="button-start-reis"
+                >
+                  Start mijn reis! 🚀
+                </Button>
+              )}
             </div>
           </motion.div>
         )}

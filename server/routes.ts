@@ -16,6 +16,7 @@ import { registerHddRoutes } from "./hdd/routes";
 import { registerToegangRoutes } from "./toegang/routes";
 import { registerDeelnemerRoutes } from "./routes-deelnemer";
 import { startCreditRecoveryJob } from "./credit-recovery";
+import { startBewaartermijnJob } from "./bewaartermijn-job";
 import { registerT4SportsRoutes } from "./t4sports/routes";
 import { registerT4SportsModuleRoutes } from "./t4sports/module-routes";
 import { registerCoachContactRoutes } from "./routes-coach-contact";
@@ -188,6 +189,10 @@ export async function registerRoutes(
 
   // Credit-recovery job: verlopen afnames vrijgeven (item 1.6, 2026-06-30)
   startCreditRecoveryJob(6);
+
+  // Bewaartermijn-job: afnames met verstreken bewaartotDatum automatisch
+  // anonimiseren (AVG art. 5.1.e opslagbeperking, art. 25 privacy by design).
+  startBewaartermijnJob();
 
   return httpServer;
 }

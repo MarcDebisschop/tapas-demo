@@ -2,6 +2,7 @@ import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { TALEN, type Taal, STANDAARD_TAAL } from "./talen";
+import { LEEFTIJDSBANDEN } from "./leeftijd";
 
 // ---------------------------------------------------------------------------
 // Taal (Fase E — meertaligheid)
@@ -82,6 +83,22 @@ export const afnames = sqliteTable("afnames", {
   // Instrument-ID: welk instrument werd afgenomen (bijv. 't4p', 't4teens', 't4sports').
   // Nullable voor legacy-afnames die aangemaakt werden vóór deze kolom bestond.
   instrumentId: text("instrument_id"),
+  // --- Leeftijdspoort en ouderlijke toestemming (AVG art. 8) ---------------
+  // Strikt additief en nullable: bestaande afnames houden NULL en blijven
+  // ongewijzigd werken. Enkel de minderjarige instrumenten (T4Teens, T4Kids)
+  // vullen deze velden. Zie shared/leeftijd.ts voor de beleidsregels.
+  //
+  // Grove leeftijdsband ("10-12", "13-15", "16-17", "18+") in plaats van een
+  // geboortedatum: dataminimalisatie (AVG art. 5.1.c).
+  leeftijdsband: text("leeftijdsband"),
+  // Bewijslast van de toestemminggever bij kinderen onder de drempel.
+  ouderlijkeToestemming: integer("ouderlijke_toestemming", { mode: "boolean" }).notNull().default(false),
+  ouderlijkeToestemmingAt: text("ouderlijke_toestemming_at"),
+  ouderNaam: text("ouder_naam"),
+  ouderEmail: text("ouder_email"),
+  // Bron-IP en user-agent van de ouder op het moment van toestemming (bewijs).
+  ouderlijkeToestemmingIp: text("ouderlijke_toestemming_ip"),
+  ouderlijkeToestemmingUserAgent: text("ouderlijke_toestemming_user_agent"),
   createdAt: text("created_at").notNull(),
   completedAt: text("completed_at"),
 });
@@ -102,6 +119,13 @@ export const insertAfnameSchema = createInsertSchema(afnames).pick({
   consentGiven: z.literal(true, {
     errorMap: () => ({ message: "Toestemming is verplicht om te starten" }),
   }),
+  // Leeftijdspoort (AVG art. 8). Optioneel in het schema zodat bestaande
+  // instrumenten ongewijzigd blijven; voor T4Kids/T4Teens dwingt de route de
+  // aanwezigheid af via valideerLeeftijdspoort.
+  leeftijdsband: z.enum(LEEFTIJDSBANDEN).optional(),
+  ouderlijkeToestemming: z.boolean().optional(),
+  ouderNaam: z.string().max(120).optional(),
+  ouderEmail: z.string().max(160).optional(),
 });
 
 export type InsertAfname = z.infer<typeof insertAfnameSchema>;
@@ -136,6 +160,15 @@ export const startViaLinkSchema = z.object({
   consentGiven: z.literal(true, {
     errorMap: () => ({ message: "Toestemming is verplicht om te starten" }),
   }),
+  // --- Leeftijdspoort (additief, AVG art. 8) --------------------------------
+  // Optioneel op schemaniveau zodat bestaande instrumenten (T4P, T4Sports,
+  // T4Students) exact blijven werken. Voor T4Teens en T4Kids wordt de
+  // aanwezigheid en samenhang server-side afgedwongen via
+  // valideerLeeftijdspoort() in shared/leeftijd.ts - daar zit de echte poort.
+  leeftijdsband: z.enum(LEEFTIJDSBANDEN).optional(),
+  ouderlijkeToestemming: z.boolean().optional(),
+  ouderNaam: z.string().max(120).optional(),
+  ouderEmail: z.string().max(160).optional(),
 });
 export type StartViaLink = z.infer<typeof startViaLinkSchema>;
 

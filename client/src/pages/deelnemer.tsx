@@ -19,6 +19,8 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Afname } from "@/lib/types";
 import { ShieldCheck, AlertCircle, CheckCircle2, Loader2, Globe, Info } from "lucide-react";
+import { Leeftijdspoort, LEEG_POORT_STAAT, type LeeftijdspoortStaat } from "@/components/Leeftijdspoort";
+import { valideerLeeftijdspoort } from "@shared/leeftijd";
 import {
   TALEN,
   TAAL_NAMEN,
@@ -58,6 +60,9 @@ export default function Deelnemer() {
   const [submitting, setSubmitting] = useState(false);
   const [prefilled, setPrefilled] = useState(false);
   const [taal, setTaal] = useState<Taal>(STANDAARD_TAAL);
+  // Leeftijdspoort (AVG art. 8). Blijft leeg en ongebruikt voor instrumenten
+  // zonder minderjarige doelgroep.
+  const [poort, setPoort] = useState<LeeftijdspoortStaat>(LEEG_POORT_STAAT);
 
   const { data, isLoading, isError } = useQuery<UitnodigingView>({
     queryKey: ["/api/uitnodigingen", token],
@@ -102,6 +107,19 @@ export default function Deelnemer() {
       toast({ title: t("fout_consent_titel"), description: t("fout_consent"), variant: "destructive" });
       return;
     }
+    // Leeftijdspoort: dezelfde regels als de server, zodat de deelnemer een
+    // heldere melding krijgt in plaats van een 400 verderop.
+    const poortResultaat = valideerLeeftijdspoort({
+      instrumentId: data.instrumentId,
+      leeftijdsband: poort.leeftijdsband,
+      ouderlijkeToestemming: poort.ouderlijkeToestemming,
+      ouderNaam: poort.ouderNaam,
+      ouderEmail: poort.ouderEmail,
+    });
+    if (!poortResultaat.ok) {
+      toast({ title: t("consent_titel"), description: poortResultaat.fout, variant: "destructive" });
+      return;
+    }
     setSubmitting(true);
     try {
       const res = await apiRequest("POST", `/api/uitnodigingen/${token}/start`, {
@@ -111,6 +129,10 @@ export default function Deelnemer() {
         baselineEnergy: baseline,
         consentGiven: true,
         taal,
+        leeftijdsband: poort.leeftijdsband ?? undefined,
+        ouderlijkeToestemming: poort.ouderlijkeToestemming || undefined,
+        ouderNaam: poort.ouderNaam.trim() || undefined,
+        ouderEmail: poort.ouderEmail.trim() || undefined,
       });
       const afname: Afname = await res.json();
       queryClient.invalidateQueries({ queryKey: ["/api/uitnodigingen", token] });
@@ -267,15 +289,23 @@ export default function Deelnemer() {
               <p className="text-xs text-muted-foreground">{tt("veld_baseline_hint")}</p>
             </div>
 
+            {/* Leeftijdspoort: enkel zichtbaar bij T4Teens/T4Kids (AVG art. 8). */}
+            <Leeftijdspoort
+              instrumentId={data.instrumentId}
+              taal={taal}
+              staat={poort}
+              onWijzig={setPoort}
+            />
+
             <div className="rounded-md border border-border bg-muted/40 p-4">
               <div className="flex items-start gap-3">
                 <ShieldCheck className="mt-0.5 h-5 w-5 flex-shrink-0 text-accent" />
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-foreground">{t("consent_titel")}</p>
-                  <p className="text-sm text-muted-foreground">{t("consent_uitleg")}</p>
+                  <p className="text-sm text-muted-foreground">{tt("consent_uitleg")}</p>
                   <label className="flex items-center gap-2 pt-1 text-sm text-foreground">
                     <Checkbox checked={consent} onCheckedChange={(c) => setConsent(Boolean(c))} data-testid="checkbox-consent" />
-                    {t("consent_checkbox")}
+                    {tt("consent_checkbox")}
                   </label>
                 </div>
               </div>

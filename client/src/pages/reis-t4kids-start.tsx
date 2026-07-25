@@ -24,15 +24,35 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { Afname } from "@/lib/types";
 import { Compass, Sparkles } from "lucide-react";
+import { Leeftijdspoort, LEEG_POORT_STAAT, type LeeftijdspoortStaat } from "@/components/Leeftijdspoort";
+import { valideerLeeftijdspoort } from "@shared/leeftijd";
 
 export default function ReisT4KidsStart() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [naam, setNaam] = useState("");
   const [bezig, setBezig] = useState(false);
+  // Leeftijdspoort en ouderlijke toestemming (AVG art. 8). T4Kids richt zich op
+  // 10-13 jaar en vereist dus altijd toestemming van een ouder of voogd.
+  const [poort, setPoort] = useState<LeeftijdspoortStaat>(LEEG_POORT_STAAT);
 
   async function start() {
     if (bezig) return;
+    const poortResultaat = valideerLeeftijdspoort({
+      instrumentId: "t4kids",
+      leeftijdsband: poort.leeftijdsband,
+      ouderlijkeToestemming: poort.ouderlijkeToestemming,
+      ouderNaam: poort.ouderNaam,
+      ouderEmail: poort.ouderEmail,
+    });
+    if (!poortResultaat.ok) {
+      toast({
+        title: "Nog even dit",
+        description: poortResultaat.fout,
+        variant: "destructive",
+      });
+      return;
+    }
     setBezig(true);
     try {
       const res = await apiRequest("POST", "/api/afnames", {
@@ -41,6 +61,10 @@ export default function ReisT4KidsStart() {
         consentGiven: true,
         taal: "nl",
         instrumentId: "t4kids",
+        leeftijdsband: poort.leeftijdsband ?? undefined,
+        ouderlijkeToestemming: poort.ouderlijkeToestemming || undefined,
+        ouderNaam: poort.ouderNaam.trim() || undefined,
+        ouderEmail: poort.ouderEmail.trim() || undefined,
       });
       const afname: Afname = await res.json();
       navigate(`/reis/${afname.id}`);
@@ -69,7 +93,7 @@ export default function ReisT4KidsStart() {
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
           Je gaat op reis langs drie eilanden. Onderweg ontdek je waar jij nu
           energie van krijgt en welke dingen je graag doet. Er zijn geen punten
-          en geen goed of fout — gewoon jouw keuzes. Klaar? Zet je naam erbij en
+          en geen goed of fout - gewoon jouw keuzes. Klaar? Zet je naam erbij en
           vertrek.
         </p>
 
@@ -88,6 +112,14 @@ export default function ReisT4KidsStart() {
                 Dit komt bovenaan je eigen ontdekkingsboekje te staan.
               </p>
             </div>
+
+            <Leeftijdspoort
+              instrumentId="t4kids"
+              taal="nl"
+              staat={poort}
+              onWijzig={setPoort}
+            />
+
             <Button
               onClick={start}
               disabled={bezig}

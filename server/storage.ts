@@ -49,6 +49,7 @@ import type {
 } from '@shared/schema';
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
+import { pasEncryptieToe } from "./db-encryptie";
 import { randomBytes } from "crypto";
 import { eq, desc, and } from "drizzle-orm";
 import { existsSync, readFileSync } from "fs";
@@ -56,6 +57,7 @@ import { resolve } from "path";
 import { renderRapportHtml } from "./rapportgenerator";
 import { kiesGenerator, heeftDedicatedGenerator } from "./rapport-registry";
 import { genereerAiDuiding, isLiveDuidingAan, DUIDING_INSTRUMENT } from "./duiding-manager";
+import { anonimiseringsPatch } from "./anonimisering";
 
 // -----------------------------------------------------------------------------
 // Database-pad: ROBUUST oplossen.
@@ -95,6 +97,10 @@ const DB_PAD = vindDatabasePad();
 console.log(`[tapas] SQLite database: ${DB_PAD}`);
 
 const sqlite = new Database(DB_PAD);
+// FIX 6 (AVG art. 32): encryptie-at-rest hook. No-op zolang TAPAS_DB_SLEUTEL niet
+// gezet is en de standaard better-sqlite3-driver in gebruik is. Zie
+// docs/GDPR-FIX6-encryptie-at-rest.md voor de volledige omschakeling.
+pasEncryptieToe(sqlite);
 sqlite.pragma("journal_mode = WAL");
 sqlite.pragma("synchronous = NORMAL");   // NP-5 fix 2026-06-30: veilig bij WAL
 sqlite.pragma("cache_size = -32000");    // NP-5 fix 2026-06-30: 32 MB pagina-cache
@@ -431,6 +437,15 @@ try {
   if (!heeft("deelnemer_email")) add(`ALTER TABLE afnames ADD COLUMN deelnemer_email TEXT;`);
   // Instrument-ID: welk instrument werd afgenomen (bijv. 't4p', 't4teens', 't4sports').
   if (!heeft("instrument_id")) add(`ALTER TABLE afnames ADD COLUMN instrument_id TEXT;`);
+  // Leeftijdspoort en ouderlijke toestemming (AVG art. 8). Strikt additief en
+  // nullable: bestaande rijen houden NULL en blijven ongewijzigd werken.
+  if (!heeft("leeftijdsband")) add(`ALTER TABLE afnames ADD COLUMN leeftijdsband TEXT;`);
+  if (!heeft("ouderlijke_toestemming")) add(`ALTER TABLE afnames ADD COLUMN ouderlijke_toestemming INTEGER NOT NULL DEFAULT 0;`);
+  if (!heeft("ouderlijke_toestemming_at")) add(`ALTER TABLE afnames ADD COLUMN ouderlijke_toestemming_at TEXT;`);
+  if (!heeft("ouder_naam")) add(`ALTER TABLE afnames ADD COLUMN ouder_naam TEXT;`);
+  if (!heeft("ouder_email")) add(`ALTER TABLE afnames ADD COLUMN ouder_email TEXT;`);
+  if (!heeft("ouderlijke_toestemming_ip")) add(`ALTER TABLE afnames ADD COLUMN ouderlijke_toestemming_ip TEXT;`);
+  if (!heeft("ouderlijke_toestemming_user_agent")) add(`ALTER TABLE afnames ADD COLUMN ouderlijke_toestemming_user_agent TEXT;`);
 } catch {
   // negeerbaar in nieuwe databases
 }
@@ -1542,6 +1557,15 @@ export interface NewAfname {
   consentIp?: string | null;
   consentUserAgent?: string | null;
   bewaartotDatum?: string | null;
+  // Leeftijdspoort en ouderlijke toestemming (AVG art. 8), optioneel zodat
+  // instrumenten zonder minderjarige doelgroep ongewijzigd blijven werken.
+  leeftijdsband?: string | null;
+  ouderlijkeToestemming?: boolean;
+  ouderlijkeToestemmingAt?: string | null;
+  ouderNaam?: string | null;
+  ouderEmail?: string | null;
+  ouderlijkeToestemmingIp?: string | null;
+  ouderlijkeToestemmingUserAgent?: string | null;
 }
 
 // Centrale GDPR-config: de versie van de privacyverklaring en de standaard
@@ -1809,6 +1833,13 @@ export class DatabaseStorage implements IStorage {
         baselineEnergy: data.baselineEnergy,
         taal: data.taal ?? "nl",
         instrumentId: data.instrumentId ?? null,
+        leeftijdsband: data.leeftijdsband ?? null,
+        ouderlijkeToestemming: data.ouderlijkeToestemming ?? false,
+        ouderlijkeToestemmingAt: data.ouderlijkeToestemmingAt ?? null,
+        ouderNaam: data.ouderNaam ?? null,
+        ouderEmail: data.ouderEmail ?? null,
+        ouderlijkeToestemmingIp: data.ouderlijkeToestemmingIp ?? null,
+        ouderlijkeToestemmingUserAgent: data.ouderlijkeToestemmingUserAgent ?? null,
         status: "deel1",
         createdAt: new Date().toISOString(),
       })
@@ -2828,20 +2859,11 @@ export class DatabaseStorage implements IStorage {
     if (!a) return undefined;
     if (a.geanonimiseerdAt) return a;
     const now = new Date().toISOString();
+    // Eén gedeelde definitie van de te wissen velden (server/anonimisering.ts),
+    // zodat deze implementatie niet opnieuw kan uiteenlopen met de repository.
     return db
       .update(afnames)
-      .set({
-        name: "[geanonimiseerd]",
-        company: null,
-        role: null,
-        mainResponses: null,
-        connectionAnswers: null,
-        generatorContract: null,
-        consentIp: null,
-        consentUserAgent: null,
-        geanonimiseerdAt: now,
-        consentScope: `geanonimiseerd: ${reden}`,
-      })
+      .set(anonimiseringsPatch(reden, now))
       .where(eq(afnames.id, afnameId))
       .returning()
       .get();
