@@ -30,6 +30,7 @@ import { buildInstrumentBeschikbaarheidRoutes } from "./instrument-beschikbaarhe
 // Domeinrouters (item 1.1, Fase 5)
 import { registerInstrumentRoutes } from "./routes/instrumenten";
 import { registerAdminRoutes } from "./routes/admin";
+import { registerOpvolgingRoutes } from "./routes/opvolging";
 import { registerInteresseRoutes } from "./routes/interesse";
 import { registerAfnameRoutes } from "./routes/afnames";
 import { registerFinancieelRoutes } from "./routes/financieel";
@@ -54,6 +55,9 @@ export async function registerRoutes(
 
   // --- Admin: login, sessie, afnames-overzicht ---
   registerAdminRoutes(app);
+
+  // --- Opvolging per instrument (niveau 1 admin, niveau 2 organisatie) ---
+  registerOpvolgingRoutes(app);
 
   // --- Financieel: organisaties, credits, billers, betalingen, facturen,
   //     creditnota's, bestuursrapportage ---
