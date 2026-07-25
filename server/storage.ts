@@ -431,6 +431,15 @@ try {
   if (!heeft("deelnemer_email")) add(`ALTER TABLE afnames ADD COLUMN deelnemer_email TEXT;`);
   // Instrument-ID: welk instrument werd afgenomen (bijv. 't4p', 't4teens', 't4sports').
   if (!heeft("instrument_id")) add(`ALTER TABLE afnames ADD COLUMN instrument_id TEXT;`);
+  // Leeftijdspoort en ouderlijke toestemming (AVG art. 8). Strikt additief en
+  // nullable: bestaande rijen houden NULL en blijven ongewijzigd werken.
+  if (!heeft("leeftijdsband")) add(`ALTER TABLE afnames ADD COLUMN leeftijdsband TEXT;`);
+  if (!heeft("ouderlijke_toestemming")) add(`ALTER TABLE afnames ADD COLUMN ouderlijke_toestemming INTEGER NOT NULL DEFAULT 0;`);
+  if (!heeft("ouderlijke_toestemming_at")) add(`ALTER TABLE afnames ADD COLUMN ouderlijke_toestemming_at TEXT;`);
+  if (!heeft("ouder_naam")) add(`ALTER TABLE afnames ADD COLUMN ouder_naam TEXT;`);
+  if (!heeft("ouder_email")) add(`ALTER TABLE afnames ADD COLUMN ouder_email TEXT;`);
+  if (!heeft("ouderlijke_toestemming_ip")) add(`ALTER TABLE afnames ADD COLUMN ouderlijke_toestemming_ip TEXT;`);
+  if (!heeft("ouderlijke_toestemming_user_agent")) add(`ALTER TABLE afnames ADD COLUMN ouderlijke_toestemming_user_agent TEXT;`);
 } catch {
   // negeerbaar in nieuwe databases
 }
