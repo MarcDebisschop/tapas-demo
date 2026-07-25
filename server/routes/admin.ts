@@ -19,6 +19,12 @@ import { storage, db } from "../storage";
 import { verifieerWachtwoord } from "../auth/wachtwoord";
 import { vereisAdmin, adminIdVanSessie } from "../admin-guard";
 import { schrijfAuditLog } from "../audit-log";
+import { alleInstrumenten } from "../registry";
+import {
+  parseOrganisatieId,
+  filterAfnames,
+  ONBEKEND_LABEL,
+} from "../opvolging-per-instrument";
 
 // Demo-modus: identiek criterium als elders in de server (TAPAS_DEMO="1").
 // In demo blijft de login e-mail-only (wachtwoord wordt genegeerd), zodat de
@@ -89,10 +95,36 @@ export function registerAdminRoutes(app: Express): void {
   });
 
   // --- Admin: lijst van afnames ---
-  app.get("/api/admin/afnames", vereisAdmin, async (_req, res) => {
+  // ADDITIEF: optionele filters `instrument` en `organisatie_id`. Zonder
+  // filters is het gedrag exact zoals voordien (alle afnames, zelfde volgorde).
+  // Per rij komen instrumentId/instrumentLabel en organisatieId/organisatieNaam
+  // mee, zodat de UI per instrument kan groeperen zonder extra bevragingen.
+  app.get("/api/admin/afnames", vereisAdmin, async (req, res) => {
     const list = await storage.listAfnames();
+
+    const instrumentFilter = String(req.query.instrument ?? "").trim();
+    const ruweOrg = req.query.organisatie_id;
+    let orgFilter: number | null = null;
+    if (ruweOrg !== undefined && String(ruweOrg).trim() !== "") {
+      orgFilter = parseOrganisatieId(ruweOrg);
+      // Een ongeldige filterwaarde stil negeren zou ongefilterd alles tonen.
+      if (orgFilter === null) {
+        return res.status(400).json({ error: "Ongeldige organisatie_id." });
+      }
+    }
+
+    const labels = new Map(alleInstrumenten().map((d) => [d.instrumentId, d.name]));
+    const orgNamen = new Map(
+      (await storage.listOrganisaties()).map((o) => [o.id, o.naam] as const),
+    );
+
+    const gefilterd = filterAfnames(list, {
+      instrument: instrumentFilter,
+      organisatieId: orgFilter,
+    });
+
     res.json(
-      list.map((a) => ({
+      gefilterd.map((a) => ({
         id: a.id,
         respondentCode: a.respondentCode,
         name: a.name,
@@ -105,6 +137,12 @@ export function registerAdminRoutes(app: Express): void {
         inviteToken: a.inviteToken,
         uitgenodigdAt: a.uitgenodigdAt,
         herinnerdAt: a.herinnerdAt,
+        instrumentId: a.instrumentId ?? null,
+        instrumentLabel: a.instrumentId
+          ? (labels.get(a.instrumentId) ?? a.instrumentId)
+          : ONBEKEND_LABEL,
+        organisatieId: a.organisatieId ?? null,
+        organisatieNaam: a.organisatieId ? (orgNamen.get(a.organisatieId) ?? null) : null,
       })),
     );
   });
