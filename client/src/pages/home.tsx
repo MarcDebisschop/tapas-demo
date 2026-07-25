@@ -189,7 +189,7 @@ function PlatformOverzicht() {
       href: "/studie",
       kleurVar: "--studie",
       icon: <BookOpen className="h-5 w-5" />,
-      badges: ["T4Students", "T4Teens"],
+      badges: ["T4Kids", "T4Teens", "T4Students"],
     },
     {
       label: t("hp_acad_open"),
@@ -392,21 +392,15 @@ export default function Home() {
               {t("hp_hero_intro")}
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button
-                data-testid="button-kies-ingang"
-                data-tour="start-cta"
-                onClick={() => {
-                  document.getElementById("kies")?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
-              >
-                {t("hp_hero_cta_kies")}
-                <ArrowRight className="ml-1.5 h-4 w-4" />
-              </Button>
-              {/* In TaPas Core wijst de deelnemer-knop naar de sobere login /mijn
-                  (dezelfde backend); in het volledige platform naar de poort. */}
+              {/* 'Kies je wereld' verwijderd: de drie tegels eronder maken de
+                  keuze al meteen zichtbaar, dus die knop was redundant.
+                  De dashboard-knop is nu de enige (primaire) CTA. In TaPas Core
+                  wijst ze naar de sobere login /mijn (dezelfde backend); in het
+                  volledige platform naar de poort. */}
               <Link href={CORE_MODE ? "/mijn" : "/poort"}>
-                <Button variant="outline" data-testid="button-ik-ben-deelnemer">
+                <Button data-testid="button-ik-ben-deelnemer" data-tour="start-cta">
                   {t("hp_hero_cta_deelnemer")}
+                  <ArrowRight className="ml-1.5 h-4 w-4" />
                 </Button>
               </Link>
             </div>
