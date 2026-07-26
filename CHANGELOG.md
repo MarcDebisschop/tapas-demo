@@ -1,0 +1,153 @@
+# Changelog
+
+Alle noemenswaardige wijzigingen aan TaPas CORE staan in dit bestand.
+
+De opzet volgt [Keep a Changelog](https://keepachangelog.com/nl/1.1.0/) en de
+versienummering volgt [semantische versionering](https://semver.org/lang/nl/).
+Het beleid achter versienummers, releaseritme en de release-gate staat in
+[docs/RELEASEBELEID.md](docs/RELEASEBELEID.md).
+
+## Over het startpunt van deze changelog
+
+Deze changelog begint bij versie 2.5.0. Dat vraagt om uitleg, want er is geen
+oudere changelog om op voort te bouwen.
+
+De feitelijke situatie in de repository op het moment van schrijven:
+
+- `package.json` staat op `"version": "2.4.0"` en dat nummer staat er sinds de
+  oudste zichtbare commit (`f761736`, 23-07-2026). Het is nooit verhoogd.
+- Er bestaat geen enkele git-tag. Er is dus nooit een release formeel
+  vastgelegd, ook 2.4.0 niet.
+
+Daarom is 2.4.0 hieronder opgenomen als vertrekpunt en niet als release: het is
+de staat van de code zoals die al bestond, zonder dat we kunnen nagaan wat er
+precies in zat. Alles wat daarna is gebeurd - en dat is veel - staat onder
+2.5.0. Een nieuw nummer bedenken dat de historie mooier voorstelt dan ze is,
+zou de changelog onbetrouwbaar maken vanaf dag een.
+
+Waarom 2.5.0 en niet 3.0.0: semantische versionering vraagt een hoofdversie bij
+een breuk in de publieke interface. De enige echte gedragsbreuk is dat
+`/api/organisatie/opvolging-per-instrument` de querywaarde `?organisatie_id=`
+niet meer volgt. Die parameter was geen ondersteund contract maar een lek: elke
+bezoeker kon er de cijfers van een willekeurige organisatie mee opvragen. Er
+zijn geen externe afnemers van deze API. Zou die er wel zijn, dan was dit een
+hoofdversie geweest.
+
+## [2.5.0] - 2026-07-26
+
+Nog niet getagd. Deze versie wordt vrijgegeven zodra de bijhorende pull request
+in `main` is samengevoegd.
+
+### Beveiliging
+
+- Organisatie-scoping doorgevoerd over de hele API (fase 1 tot en met 8). De
+  organisatie wordt bepaald door de sessie en niet langer door de URL. Het
+  onderzoek begon bij `/api/organisatie/opvolging-per-instrument`, dat de
+  organisatie uit `?organisatie_id=` haalde en zo de cijfers van elke
+  organisatie prijsgaf aan wie het nummer raadde.
+- Authenticatie gedicht op endpoints die zonder controle bereikbaar waren
+  (`server/routes/admin.ts`, `afnames.ts`, `financieel.ts`, `rapporten.ts`,
+  `routes-stm.ts`).
+- Scope-kern toegevoegd (`server/scope-guard.ts`): `bepaalScope`,
+  `vereisScope` en `vereisPrior`. Prior wordt centraal beslist als de vlag
+  `isPrior` EN de prior-organisatie; de vlag alleen is nergens meer de enige
+  toets.
+- `listAfnames` eist een scope en filtert in SQL. Scope "geen" faalt luid in
+  plaats van stil een lege lijst terug te geven, want een lege lijst is niet van
+  een fout te onderscheiden.
+- Snelheidsbegrenzing uitgebreid naar `/api/organisatie/login`. Dat pad ontbrak
+  in de lijst van de `authLimiter` (`server/index.ts`) en was dus het enige
+  loginpad zonder rem op brute kracht.
+- Organisatie-identiteit als harde koppeling: `beheerders.organisatieId` als
+  foreign key naast het bestaande vrije-tekstveld, plus een eigen
+  organisatie-login.
+- Poort op de branding-velden: een logo-adres belandt in een `src`-attribuut,
+  dus zijn enkel `https:`, `http:` en een pad binnen de site toegelaten.
+  `javascript:` en `data:` worden geweigerd.
+
+### Toegevoegd
+
+- Organisatieportaal (`client/src/pages/organisatie-dashboard.tsx`) achter een
+  eigen login: eigen deelnemers, eigen afnames, eigen opvolging.
+- Organisatie-personalisatie: logo, achtergrondafbeelding, achtergrondkleur,
+  quote en de organisatienaam in de header.
+- Het Amelia-Earhart-watermerk verschijnt uitsluitend voor TaPasCity (prior).
+  De beslissing valt in de pure functie `brandingBesluit` in
+  `shared/branding.ts`, niet in een component: het is een merk- en
+  identiteitsregel en geen stijlkeuze, en zo is ze toetsbaar en niet te
+  omzeilen door een scherm te herschrijven.
+- Elke nieuwe afname legt vast WIE haar aanmaakte, uit de sessie. Dat staat los
+  van `organisatieId`, dat zegt wiens credits ze kost.
+- Scope-isolatiematrix (`tests/fase8-scope-isolatie-matrix.test.ts`): twaalf
+  endpoints maal vier kerngevallen, plus een dekkingscontrole die van elk
+  endpoint in de omgezette routers een guard eist.
+- Opvolging per instrument voor beheer en organisatie.
+- GDPR-verharding: leeftijdspoort met ouderlijke toestemming, centrale
+  admin-guard op alle `/api/gdpr`-routes, anonimisering via een gedeelde
+  velddefinitie, automatische anonimisering na de bewaartermijn, een
+  append-only audit-log, een pseudonimiseringspoort met doorgifteregister voor
+  de AI-duiding, en de hook voor encryptie-at-rest.
+- Deze changelog, `docs/RELEASEBELEID.md` en `docs/TECHNISCHE-SCHULD.md`.
+- Encryptie-at-rest is auditbaar geworden. De hook wordt nu op alle acht
+  databank-handles aangeroepen in plaats van op een deel ervan, en bij het
+  opstarten meldt de app expliciet of encryptie ACTIEF is of als no-op draait.
+  Dat laatste is de kern: de standaard `better-sqlite3` negeert `PRAGMA key`
+  zonder te klagen, dus een gezette sleutel zonder cipher-driver is de
+  gevaarlijkste toestand die er is. `actief` vraagt daarom sleutel EN
+  cipher-driver. Een test houdt de lijst van acht handles gelijk aan wat er
+  feitelijk in `server/` een databank opent, zodat een nieuwe handle die de hook
+  vergeet de suite laat falen. Encryptie blijft uit; aanzetten is een
+  productiebeslissing.
+- `tests/i18n-dekking.test.ts`: bewaakt dat elke sleutel die de code opvraagt
+  bestaat, dat elke taal dezelfde sleutelset heeft, en dat geen vertaling een
+  accolade-plaatshouder laat vallen.
+
+### Gerepareerd
+
+- Het organisatieportaal crashte bij het openen: het dashboard las
+  `opvolging.rijen` terwijl de server het veld `instrumenten` levert.
+- Twee ontbrekende vertaalsleutels, `iz_drempel_stand` en
+  `iz_drempel_beschikbaar_vanaf`. Het scherm met de onderzoeksdrempels toonde
+  de kale sleutelnaam. De compiler kon dit niet vangen omdat dat scherm zijn
+  vertaalfunctie als prop binnenkrijgt, getypeerd als `(s: string) => string`.
+- `afnames.instrument_id` wordt bij aanmaak gevuld; bestaande rijen zijn
+  aangevuld.
+
+### Gewijzigd
+
+- Het beheerscherm volgt de scope die `/api/admin/me` teruggeeft in plaats van
+  zelf op `isPrior` te beslissen.
+- De publieke startpagina toont geen organisatielijst meer. Die lijst was zelf
+  het lek: ze gaf aan iedere bezoeker prijs welke organisaties klant zijn.
+- `t4r-home.tsx` staat achter de CoachLoginGate.
+- De billers- en organisaties-code is uit `server/storage.ts` gehaald en staat
+  nu enkel nog in `server/repositories/`. De map bestond al, maar werd door
+  niemand aangeroepen: het waren kopieen van de god-module, met alle kans op
+  stil uiteenlopen. De klasse `DatabaseStorage` delegeert er nu echt naartoe en
+  de kopie is verwijderd. De publieke interface is ongewijzigd, dus
+  `import { storage } from "./storage"` blijft werken.
+- Vier typefouten opgelost zonder gedragswijziging (`Array.from` in plaats van
+  het uitspreiden van een `Map` of `Set`, en een ontbrekend parametertype). De
+  telling gaat van 77 naar 73; de rest staat met reden in
+  `docs/TECHNISCHE-SCHULD.md`.
+- Alle migraties in deze versie zijn additief en idempotent, achter een
+  `PRAGMA table_info`-bestaanscontrole. Geen enkele `DROP`, geen `NOT NULL` op
+  een nieuwe kolom. Beide migraties zijn tweemaal gevalideerd op een kopie van
+  `data.db`, met controle op rijaantallen en `integrity_check`.
+
+## [2.4.0] - vertrekpunt
+
+Geen release maar de staat van de code bij de oudste zichtbare commit
+(`f761736`, 23-07-2026). Er is geen tag en geen changelog uit die tijd, dus is
+dit geen volledige opsomming. Wat feitelijk in de code is terug te vinden:
+
+- Wachtwoorden via `crypto.scrypt` met salt (`server/auth/wachtwoord.ts`).
+- Sessies in een SQLite-store op dezelfde better-sqlite3-databank als de app,
+  in plaats van de standaard MemoryStore, zodat sessies een herstart overleven.
+- `helmet` als security-headers-laag. CSP staat bewust uit; een te strikte CSP
+  zou de bestaande frontend breken.
+- Snelheidsbegrenzing op de auth- en token-endpoints.
+- Runtime-toggle tussen TaPas CORE en het volledige belevingsplatform, zonder
+  hercompilatie.
+
+[2.5.0]: https://github.com/MarcDebisschop/tapas-demo/commits/main

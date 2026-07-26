@@ -16,10 +16,15 @@
 
 import Database from "better-sqlite3";
 import { join } from "node:path";
+import { pasEncryptieToe } from "./db-encryptie";
 
 // Gebruik dezelfde data.db als de hoofdapp (WAL laat meerdere handles toe).
 const DB_PAD = join(process.cwd(), "data.db");
 const stmDb = new Database(DB_PAD);
+// FIX 6 (AVG art. 32): dezelfde encryptie-hook als in storage.ts. Bij Optie B
+// moet ELKE handle de sleutel toepassen; eén handle die het vergeet opent het
+// bestand zonder sleutel. No-op zolang TAPAS_DB_SLEUTEL niet gezet is.
+pasEncryptieToe(stmDb, "server/stm-storage.ts");
 stmDb.pragma("journal_mode = WAL");
 stmDb.pragma("synchronous = NORMAL");
 stmDb.pragma("cache_size = -4000"); // 4 MB voor STM

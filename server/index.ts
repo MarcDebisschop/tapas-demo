@@ -8,6 +8,7 @@ import betterSqlite3SessionStore from "better-sqlite3-session-store";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { sqlite } from "./storage";
+import { logEncryptieStatus } from "./db-encryptie";
 import { createServer } from "node:http";
 
 const app = express();
@@ -264,6 +265,12 @@ app.use((req, res, next) => {
     },
     () => {
       log(`serving on port ${port}`);
+      // FIX 6 (AVG art. 32): meld hier, en niet bij het openen van de databank,
+      // of encryptie-at-rest actief is. Op dit punt zijn alle modules geladen die
+      // zelf een databank-handle openen, dus telt de melding ze allemaal mee.
+      // Bewust luidruchtig: draait de hook als no-op, dan hoort dat in het log te
+      // staan in plaats van stil aangenomen te worden.
+      logEncryptieStatus();
     },
   );
 })();
