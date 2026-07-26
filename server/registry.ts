@@ -608,7 +608,9 @@ export function tarievenSamengevoegd(overrides: TariefOverride[]): TariefRegel[]
     };
   });
 
-  for (const o of perId.values()) {
+  // Array.from: het tsconfig-doel staat het doorlopen van een Map-iterator niet
+  // toe. Zelfde uitkomst, geen gedragswijziging.
+  for (const o of Array.from(perId.values())) {
     const { tariefOmschrijving, creditPerStuk } = maakTariefOmschrijving(
       o.model,
       o.creditCost,

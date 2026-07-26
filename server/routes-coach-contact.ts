@@ -58,8 +58,10 @@ function rateLimited(ip: string): boolean {
   rlHits.set(ip, eerder);
   // Occasioneel oude IP's opruimen om geheugen te sparen.
   if (rlHits.size > 5000) {
-    for (const [k, v] of rlHits) {
-      if (v.every((t) => now - t >= RL_WINDOW_MS)) rlHits.delete(k);
+    // Array.from en geen rechtstreekse iteratie: het tsconfig-doel staat het
+    // doorlopen van een Map niet toe. Zelfde uitkomst, geen gedragswijziging.
+    for (const [k, v] of Array.from(rlHits)) {
+      if (v.every((t: number) => now - t >= RL_WINDOW_MS)) rlHits.delete(k);
     }
   }
   return false;

@@ -120,7 +120,9 @@ function aggregate(responses: Responses): { rows: ConstructRow[]; famRows: Famil
     avgEnergy: v.energyVals.length
       ? round2(v.energyVals.reduce((a, b) => a + b, 0) / v.energyVals.length)
       : 0,
-    energySource: [...v.energySource].join("+") || "geen",
+    // Array.from en geen spread: het tsconfig-doel laat het uitspreiden van een
+    // Set niet toe. Zelfde uitkomst, geen gedragswijziging.
+    energySource: Array.from(v.energySource).join("+") || "geen",
     mostItems: v.mostItems,
     toelichtingen: v.toelichtingen,
   }));
