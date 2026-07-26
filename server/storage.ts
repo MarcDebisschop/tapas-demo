@@ -179,6 +179,9 @@ sqlite.exec(`
     huisstijl_logo TEXT,
     huisstijl_kleur TEXT,
     huisstijl_footer TEXT,
+    login_email TEXT,
+    wachtwoord_hash TEXT,
+    login_actief INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL
   );
 
@@ -365,6 +368,7 @@ sqlite.exec(`
     naam TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
     organisatie TEXT NOT NULL DEFAULT 'TaPasCity',
+    organisatie_id INTEGER,
     is_prior INTEGER NOT NULL DEFAULT 0,
     toegevoegd_door TEXT,
     actief INTEGER NOT NULL DEFAULT 1,
@@ -458,6 +462,30 @@ try {
   const heeft = (n: string) => cols.some((c) => c.name === n);
   const add = (sql: string) => { try { sqlite.exec(sql); } catch { /* bestaat al */ } };
   if (!heeft("wachtwoord_hash")) add(`ALTER TABLE beheerders ADD COLUMN wachtwoord_hash TEXT;`);
+  // Organisatie-scoping fase 2: harde koppeling naar organisaties.id. Het
+  // vrije-tekstveld `organisatie` blijft bestaan en wordt niet aangeraakt.
+  if (!heeft("organisatie_id")) add(`ALTER TABLE beheerders ADD COLUMN organisatie_id INTEGER;`);
+} catch {
+  // negeerbaar in nieuwe databases
+}
+
+// Migratie voor bestaande databases: organisatie-login (ADDITIEF, fase 2 van de
+// organisatie-scoping). De unieke index op login_email komt apart, omdat SQLite
+// geen UNIQUE-kolom kan toevoegen via ALTER TABLE. De index is partieel zodat
+// meerdere organisaties zonder login (NULL) naast elkaar kunnen bestaan.
+try {
+  const cols = sqlite.prepare(`PRAGMA table_info(organisaties)`).all() as Array<{ name: string }>;
+  const heeft = (n: string) => cols.some((c) => c.name === n);
+  const add = (sql: string) => { try { sqlite.exec(sql); } catch { /* bestaat al */ } };
+  if (!heeft("login_email")) add(`ALTER TABLE organisaties ADD COLUMN login_email TEXT;`);
+  if (!heeft("wachtwoord_hash")) add(`ALTER TABLE organisaties ADD COLUMN wachtwoord_hash TEXT;`);
+  if (!heeft("login_actief")) {
+    add(`ALTER TABLE organisaties ADD COLUMN login_actief INTEGER NOT NULL DEFAULT 0;`);
+  }
+  add(
+    `CREATE UNIQUE INDEX IF NOT EXISTS organisaties_login_email_uniek
+       ON organisaties(login_email) WHERE login_email IS NOT NULL;`,
+  );
 } catch {
   // negeerbaar in nieuwe databases
 }

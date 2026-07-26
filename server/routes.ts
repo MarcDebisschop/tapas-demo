@@ -18,6 +18,8 @@ import { registerDeelnemerRoutes } from "./routes-deelnemer";
 import { startCreditRecoveryJob } from "./credit-recovery";
 import { startBewaartermijnJob } from "./bewaartermijn-job";
 import { startInstrumentBackfill } from "./instrument-backfill";
+import { startOrganisatieKoppeling } from "./organisatie-koppeling";
+import { registerOrganisatieAuthRoutes } from "./routes/organisatie-auth";
 import { registerT4SportsRoutes } from "./t4sports/routes";
 import { registerT4SportsModuleRoutes } from "./t4sports/module-routes";
 import { registerCoachContactRoutes } from "./routes-coach-contact";
@@ -56,6 +58,9 @@ export async function registerRoutes(
 
   // --- Admin: login, sessie, afnames-overzicht ---
   registerAdminRoutes(app);
+
+  // --- Organisatie-login: eigen e-mail + wachtwoord, zet organisatieId ---
+  registerOrganisatieAuthRoutes(app);
 
   // --- Opvolging per instrument (niveau 1 admin, niveau 2 organisatie) ---
   registerOpvolgingRoutes(app);
@@ -202,6 +207,10 @@ export async function registerRoutes(
   // Eenmalige, idempotente aanvulling van afnames.instrument_id voor bestaande
   // rijen waar het instrument betrouwbaar uit het bevroren contract volgt.
   startInstrumentBackfill();
+
+  // Eenmalige, idempotente naam-match van beheerders.organisatie naar
+  // organisaties.id. Wat niet eenduidig matcht blijft NULL en wordt gelogd.
+  startOrganisatieKoppeling();
 
   return httpServer;
 }

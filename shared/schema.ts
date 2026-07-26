@@ -280,11 +280,29 @@ export const organisaties = sqliteTable("organisaties", {
   huisstijlLogo: text("huisstijl_logo"),
   huisstijlKleur: text("huisstijl_kleur"),
   huisstijlFooter: text("huisstijl_footer"),
+  // Organisatie-login (fase 2 van de organisatie-scoping). Een organisatie kan
+  // rechtstreeks inloggen met een eigen e-mailadres en wachtwoord en krijgt dan
+  // dezelfde scope als een beheerder die aan die organisatie hangt. Alle drie
+  // additief: nullable of standaard uit, zodat bestaande rijen ongemoeid
+  // blijven en login pas werkt wanneer ze bewust wordt aangezet.
+  loginEmail: text("login_email").unique(),
+  wachtwoordHash: text("wachtwoord_hash"),
+  loginActief: integer("login_actief", { mode: "boolean" }).notNull().default(false),
   createdAt: text("created_at").notNull(),
 });
 
+// De login-velden zijn bewust weggelaten: inloggegevens van een organisatie
+// mogen nooit via het gewone aanmaak-/wijzigformulier gezet kunnen worden.
+// Daar komt in fase 3 een aparte, prior-only actie voor.
 export const insertOrganisatieSchema = createInsertSchema(organisaties)
-  .omit({ id: true, createdAt: true, factuurType: true })
+  .omit({
+    id: true,
+    createdAt: true,
+    factuurType: true,
+    loginEmail: true,
+    wachtwoordHash: true,
+    loginActief: true,
+  })
   .extend({
     naam: z.string().min(1, "Naam is verplicht"),
     type: z.enum(["bedrijf", "school", "coach", "particulier"]).default("bedrijf"),
@@ -791,6 +809,12 @@ export const beheerders = sqliteTable("beheerders", {
   // Organisatie waartoe de beheerder behoort (vrije tekst zodat de demo geen
   // harde organisatie-FK nodig heeft). Prior beheerders horen bij TaPasCity.
   organisatie: text("organisatie").notNull().default("TaPasCity"),
+  // Harde koppeling naar organisaties.id (fase 2 van de organisatie-scoping).
+  // Dit is de enige bron waarop de scope zich baseert. Het vrije-tekstveld
+  // hierboven BLIJFT bestaan: de demo en de prior-bepaling steunen erop.
+  // Nullable, want prior-beheerders horen bij geen enkele klantorganisatie en
+  // niet elke bestaande rij is automatisch te matchen.
+  organisatieId: integer("organisatie_id").references(() => organisaties.id),
   // Prior beheerder = mag andere beheerders toevoegen en toegang beslissen.
   // ALTIJD iemand van TaPasCity.
   isPrior: integer("is_prior", { mode: "boolean" }).notNull().default(false),
