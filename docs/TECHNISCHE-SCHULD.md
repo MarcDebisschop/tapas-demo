@@ -160,15 +160,27 @@ verbergen.
 
 ## 5. Grote modules
 
-`server/storage.ts` is met **3.646 regels** de grootste module. De ontvlechting
-naar `server/repositories/` is begonnen en telt daar nu 2.143 regels over tien
-bestanden.
+`server/storage.ts` is met **3.606 regels** de grootste module. De map
+`server/repositories/` telt 2.143 regels over tien bestanden.
+
+Die map vroeg eerst opheldering. Ze bestond al, maar werd door niemand
+aangeroepen: `grep -n "from \"./repositories" server/storage.ts` gaf geen enkele
+treffer. Het waren dus KOPIEEN van de code in de god-module, geen extracties, en
+`server/rapport-registry.ts:5` benoemt dat ook als "een duplicaat in
+repositories/rapporten.ts". Dat is erger dan een lange module: wie de repository
+aanpast verandert niets, wie de storage aanpast laat de kopie stil verouderen.
+
+In deze pull request zijn twee clusters echt aangesloten (billers en
+organisaties) en is hun kopie in `storage.ts` verwijderd; vandaar 3.646 -> 3.606.
+De overige zes bestanden blijven staan als startpunt, met in
+`server/repositories/README.md` per bestand of het is aangesloten en de
+waarschuwing dat de niet-aangesloten kopieen verouderd zijn.
 
 De grootste bestanden op de peildatum:
 
 | Bestand | Regels |
 |---|---|
-| `server/storage.ts` | 3.646 |
+| `server/storage.ts` | 3.606 |
 | `client/src/pages/dashboard.tsx` | 1.884 |
 | `shared/i18n.ts` | 1.808 |
 | `client/src/pages/admin-credits.tsx` | 1.664 |
@@ -178,11 +190,18 @@ De grootste bestanden op de peildatum:
 `shared/i18n.ts` hoort in die lijst niet thuis als schuld: dat is een
 vertaaltabel en die is nu eenmaal lang.
 
-Voorstel: `server/storage.ts` cluster per cluster verder ontvlechten volgens het
-patroon dat `server/repositories/` al gebruikt, met de publieke interface intact
-via een re-export zodat aanroepers niet breken. Alleen clusters met testdekking,
-en per stap de volledige suite. Wat in deze pull request is verplaatst staat in
-de bijhorende commit; het vervolg blijft hier open staan.
+Voorstel voor het vervolg: cluster per cluster op dezelfde manier aansluiten, en
+per cluster de kopie in `storage.ts` verwijderen. Blijft de kopie staan, dan is
+het probleem verdubbeld in plaats van opgelost. Alleen clusters met testdekking,
+en per stap de volledige suite.
+
+Bewust gestopt na twee clusters. De zes overige zijn niet zomaar te verhuizen:
+`storage.ts` is sinds hun aanmaak gewijzigd, onder andere door de
+organisatie-scoping die `listAfnames` een verplichte scope gaf. Elk van die
+bestanden moet dus eerst regel per regel tegen `storage.ts` worden gelegd voor
+het mag worden aangesloten. Dat is per cluster een eigen ingreep met eigen
+tests, en zes clusters in een pull request zou precies de grote sprong zijn die
+hier vermeden moet worden.
 
 De grote schermbestanden zijn een aparte kwestie. Ze combineren opvraging,
 berekening en weergave, en het project heeft geen DOM-testomgeving waardoor ze
