@@ -192,8 +192,9 @@ export interface RapportSamenvatting {
   createdAt: string;
 }
 
+// De dashboardtoken hoort hier bewust NIET meer bij: die wordt sinds fase 1
+// apart en geauditeerd opgehaald via /api/admin/afnames/:id/dashboardtoken.
 export interface AdminAfnameDetail extends Afname {
-  dashboardToken?: string | null;
   consentGiven: boolean;
   consentScope: string | null;
   consentTimestamp: string | null;

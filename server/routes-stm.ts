@@ -22,6 +22,10 @@
 import type { Express, Request, Response } from "express";
 import { stmSessieOpslagen, type StmSessieRecord } from "./stm-storage";
 import { kwaliteitOpslag, seedDemoKwaliteit } from "./kwaliteit-storage";
+import { verifieerWachtwoord } from "./auth/wachtwoord";
+
+// Demo-modus: identiek criterium als in server/routes/admin.ts.
+const DEMO_MODE = process.env.TAPAS_DEMO === "1";
 
 // ---------------------------------------------------------------------------
 // Type-definities
@@ -512,11 +516,30 @@ export function registerStmRoutes(app: Express, storage: any): void {
   // ── Coach login ─────────────────────────────────────────────────────────
 
   app.post("/api/coach/login", async (req, res) => {
-    const { email } = req.body || {};
+    const { email, wachtwoord } = req.body || {};
     if (!email) return res.status(400).json({ error: "E-mail verplicht." });
     const beheerder = await storage.getBeheerderByEmail(email.trim().toLowerCase());
     if (!beheerder || !beheerder.actief) {
       return res.status(401).json({ error: "Geen actief account gevonden." });
+    }
+    // De coachsessie geeft dezelfde praktijkrechten als een adminsessie
+    // (`getPractitionerId` valt terug op coachId). Ze mag dus niet met een
+    // e-mailadres alleen te verkrijgen zijn. Zelfde regel als de admin-login:
+    // in demo blijft het e-mail-only, daarbuiten is een wachtwoord verplicht.
+    if (!DEMO_MODE) {
+      if (!wachtwoord) {
+        return res.status(401).json({ error: "E-mailadres of wachtwoord onjuist." });
+      }
+      if (!beheerder.wachtwoordHash) {
+        return res.status(403).json({
+          error:
+            "Voor dit account is nog geen wachtwoord ingesteld. Neem contact op met de hoofdbeheerder.",
+        });
+      }
+      const geldig = await verifieerWachtwoord(String(wachtwoord), beheerder.wachtwoordHash);
+      if (!geldig) {
+        return res.status(401).json({ error: "E-mailadres of wachtwoord onjuist." });
+      }
     }
     (req.session as any).coachId = beheerder.id;
     req.session.save((err: unknown) => {

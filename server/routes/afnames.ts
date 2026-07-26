@@ -163,11 +163,30 @@ export function registerAfnameRoutes(app: Express): void {
   });
 
   // --- Afname ophalen (voor hervatten / admin) ---
+  //
+  // Dit endpoint kan NIET achter `vereisAdmin`: de deelnemer zelf bevraagt het
+  // tijdens het invullen (deel1, deel2, reis-t4kids) om de bevroren taal en het
+  // instrument te kennen, en die deelnemer heeft geen adminsessie. Tot fase 1
+  // gaf het echter de VOLLEDIGE rij terug aan iedereen die een id kon raden,
+  // inclusief antwoorden, generatorcontract, e-mailadres en organisatie.
+  //
+  // Oplossing: een beheerder krijgt de volledige rij, elke andere oproeper
+  // enkel de velden die de vragenlijst echt nodig heeft. Deny by default geldt
+  // dus op veldniveau in plaats van op endpointniveau.
   app.get("/api/afnames/:id", async (req, res) => {
     const id = Number(req.params.id);
     const a = await storage.getAfname(id);
     if (!a) return res.status(404).json({ error: "Afname niet gevonden" });
-    res.json(a);
+    if (adminIdVanSessie(req) !== null) return res.json(a);
+    res.json({
+      id: a.id,
+      status: a.status,
+      taal: a.taal,
+      instrumentId: a.instrumentId ?? null,
+      name: a.name,
+      leeftijdsband: a.leeftijdsband ?? null,
+      ouderlijkeToestemming: a.ouderlijkeToestemming ?? null,
+    });
   });
 
   // =========================================================================
@@ -175,7 +194,9 @@ export function registerAfnameRoutes(app: Express): void {
   // =========================================================================
 
   // Beheerder: maak een uitnodiging (link) aan.
-  app.post("/api/uitnodigingen", async (req, res) => {
+  // Stond tot fase 1 open: iedereen kon uitnodigingen aanmaken en zo credits
+  // van een willekeurige organisatie opsouperen.
+  app.post("/api/uitnodigingen", vereisAdmin, async (req, res) => {
     const parsed = inviteAfnameSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });

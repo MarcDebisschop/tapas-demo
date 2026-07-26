@@ -10,6 +10,7 @@
  *   POST /api/admin/logout
  *   GET  /api/admin/afnames
  *   GET  /api/admin/afnames/:id
+ *   GET  /api/admin/afnames/:id/dashboardtoken
  *   GET  /api/admin/afnames/:id/contract.json
  *   GET  /api/admin/interesse
  */
@@ -148,7 +149,28 @@ export function registerAdminRoutes(app: Express): void {
   });
 
   // --- Admin: volledig profiel + generator-JSON van één afname ---
-  app.get("/api/admin/afnames/:id", async (req, res) => {
+  //
+  // Stond tot fase 1 volledig open: iedereen kon met een oplopend id het
+  // volledige profiel van elke deelnemer opvragen. De respons bevatte boven-
+  // dien de `dashboardToken` van de deelnemer, en die token geeft rechtstreeks
+  // toegang tot het persoonlijke dashboard. Die token zit nu achter een eigen,
+  // geauditeerde actie (zie hieronder), net zoals contract.json.
+  app.get("/api/admin/afnames/:id", vereisAdmin, async (req, res) => {
+    const id = Number(req.params.id);
+    const a = await storage.getAfname(id);
+    if (!a) return res.status(404).json({ error: "Afname niet gevonden" });
+    res.json({
+      ...a,
+      mainResponses: a.mainResponses ? JSON.parse(a.mainResponses) : null,
+      connectionAnswers: a.connectionAnswers ? JSON.parse(a.connectionAnswers) : null,
+      generatorContract: a.generatorContract ? JSON.parse(a.generatorContract) : null,
+    });
+  });
+
+  // --- Admin: dashboardtoken van de deelnemer, expliciet en geauditeerd ---
+  // Aparte actie omdat deze token toegang geeft tot het deelnemersdashboard.
+  // Aantoonbaarheid (AVG art. 5.2): elke opvraging laat een spoor na.
+  app.get("/api/admin/afnames/:id/dashboardtoken", vereisAdmin, async (req, res) => {
     const id = Number(req.params.id);
     const a = await storage.getAfname(id);
     if (!a) return res.status(404).json({ error: "Afname niet gevonden" });
@@ -157,13 +179,13 @@ export function registerAdminRoutes(app: Express): void {
       const deelnemer = await storage.getDeelnemerByEmail(a.deelnemerEmail);
       if (deelnemer) dashboardToken = deelnemer.dashboardToken;
     }
-    res.json({
-      ...a,
-      dashboardToken,
-      mainResponses: a.mainResponses ? JSON.parse(a.mainResponses) : null,
-      connectionAnswers: a.connectionAnswers ? JSON.parse(a.connectionAnswers) : null,
-      generatorContract: a.generatorContract ? JSON.parse(a.generatorContract) : null,
+    schrijfAuditLog({
+      adminId: adminIdVanSessie(req),
+      actie: "afname_inzage",
+      afnameId: id,
+      detail: "opvraging dashboardtoken",
     });
+    res.json({ dashboardToken });
   });
 
   // --- Download generator-JSON als bestand ---

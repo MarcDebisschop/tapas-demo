@@ -149,6 +149,19 @@ export default function AdminDetail() {
     queryKey: ["/api/admin/afnames", id],
   });
 
+  // De dashboardtoken zit sinds fase 1 niet meer in het detail-antwoord: ze
+  // geeft rechtstreeks toegang tot het deelnemersdashboard en wordt daarom
+  // apart en geauditeerd opgevraagd.
+  const { data: tokenData } = useQuery<{ dashboardToken: string | null }>({
+    queryKey: ["/api/admin/afnames", id, "dashboardtoken"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", `/api/admin/afnames/${id}/dashboardtoken`);
+      return res.json();
+    },
+    enabled: Number.isFinite(id) && id > 0,
+  });
+  const dashboardToken = tokenData?.dashboardToken ?? null;
+
   const contract = data?.generatorContract ?? null;
   const contractText = contract ? JSON.stringify(contract, null, 2) : "";
 
@@ -296,9 +309,9 @@ export default function AdminDetail() {
               </Card>
 
               {/* Gesproken duiding voor de coach (zakelijk, coaching-toon, eigen paywall) */}
-              {data.dashboardToken && (
+              {dashboardToken && (
                 <UitlegPaneel
-                  token={data.dashboardToken}
+                  token={dashboardToken}
                   taal={normaliseerTaal(data.taal ?? "nl")}
                   toon="coach"
                 />

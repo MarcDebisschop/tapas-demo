@@ -51,6 +51,7 @@ import {
 } from "@shared/schema";
 import { isTalentFocusConstruct } from "@shared/talent-constructs";
 import { renderFactuurPdf } from "../facturen/factuur-pdf";
+import { vereisAdmin } from "../admin-guard";
 
 // Facturatie-uitbreiding: leid de effectieve betaalstatus af. Een 'openstaande'
 // factuur met een vervaldatum die vóór vandaag ligt, geldt als 'vervallen'.
@@ -74,17 +75,17 @@ function creditsUitPayload(pakketId?: string, credits?: number): number | null {
 
 export function registerFinancieelRoutes(app: Express): void {
   // --- Creditpakketten (config) ---
-  app.get("/api/creditpakketten", (_req, res) => {
+  app.get("/api/creditpakketten", vereisAdmin, (_req, res) => {
     res.json(CREDITPAKKETTEN);
   });
 
   // --- Organisaties: lijst met saldo ---
-  app.get("/api/organisaties", async (_req, res) => {
+  app.get("/api/organisaties", vereisAdmin, async (_req, res) => {
     res.json(await storage.listOrganisaties());
   });
 
   // --- Organisatie: detail ---
-  app.get("/api/organisaties/:id", async (req, res) => {
+  app.get("/api/organisaties/:id", vereisAdmin, async (req, res) => {
     const id = Number(req.params.id);
     const org = await storage.getOrganisatie(id);
     if (!org) return res.status(404).json({ error: "Organisatie niet gevonden" });
@@ -93,7 +94,7 @@ export function registerFinancieelRoutes(app: Express): void {
   });
 
   // --- Organisatie aanmaken ---
-  app.post("/api/organisaties", async (req, res) => {
+  app.post("/api/organisaties", vereisAdmin, async (req, res) => {
     const parsed = insertOrganisatieSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
@@ -103,7 +104,7 @@ export function registerFinancieelRoutes(app: Express): void {
   });
 
   // --- Saldo van één organisatie ---
-  app.get("/api/organisaties/:id/saldo", async (req, res) => {
+  app.get("/api/organisaties/:id/saldo", vereisAdmin, async (req, res) => {
     const id = Number(req.params.id);
     const org = await storage.getOrganisatie(id);
     if (!org) return res.status(404).json({ error: "Organisatie niet gevonden" });
@@ -111,7 +112,7 @@ export function registerFinancieelRoutes(app: Express): void {
   });
 
   // --- Organisatietendenzen: geaggregeerd, niet-individueel teambeeld ---
-  app.get("/api/organisaties/:id/tendenzen", async (req, res) => {
+  app.get("/api/organisaties/:id/tendenzen", vereisAdmin, async (req, res) => {
     const id = Number(req.params.id);
     const org = await storage.getOrganisatie(id);
     if (!org) return res.status(404).json({ error: "Organisatie niet gevonden" });
@@ -197,7 +198,7 @@ export function registerFinancieelRoutes(app: Express): void {
   });
 
   // --- Credits handmatig opladen ---
-  app.post("/api/credits/opladen", async (req, res) => {
+  app.post("/api/credits/opladen", vereisAdmin, async (req, res) => {
     const parsed = laadCreditsSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
@@ -210,7 +211,7 @@ export function registerFinancieelRoutes(app: Express): void {
   });
 
   // --- Credits overdragen tussen organisaties ---
-  app.post("/api/credits/overdracht", async (req, res) => {
+  app.post("/api/credits/overdracht", vereisAdmin, async (req, res) => {
     const parsed = overdrachtSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
@@ -226,23 +227,23 @@ export function registerFinancieelRoutes(app: Express): void {
   });
 
   // --- Creditgrootboek (transacties), optioneel gefilterd op organisatie ---
-  app.get("/api/credits/transacties", async (req, res) => {
+  app.get("/api/credits/transacties", vereisAdmin, async (req, res) => {
     const orgId = req.query.organisatieId ? Number(req.query.organisatieId) : undefined;
     res.json(await storage.listTransacties(orgId));
   });
 
   // --- Billers (facturerende entiteiten) ---
-  app.get("/api/billers", async (_req, res) => {
+  app.get("/api/billers", vereisAdmin, async (_req, res) => {
     res.json(await storage.listBillers());
   });
 
-  app.get("/api/billers/actief", async (_req, res) => {
+  app.get("/api/billers/actief", vereisAdmin, async (_req, res) => {
     const b = await storage.getActieveBiller();
     if (!b) return res.status(404).json({ error: "Geen actieve biller" });
     res.json(b);
   });
 
-  app.post("/api/billers", async (req, res) => {
+  app.post("/api/billers", vereisAdmin, async (req, res) => {
     const parsed = insertBillerSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
@@ -252,7 +253,7 @@ export function registerFinancieelRoutes(app: Express): void {
   });
 
   // Entiteitswissel: maak één biller actief (sluit de vorige af).
-  app.post("/api/billers/:id/activeer", async (req, res) => {
+  app.post("/api/billers/:id/activeer", vereisAdmin, async (req, res) => {
     const id = Number(req.params.id);
     const b = await storage.activeerBiller(id);
     if (!b) return res.status(404).json({ error: "Biller niet gevonden" });
@@ -262,7 +263,7 @@ export function registerFinancieelRoutes(app: Express): void {
   // -------------------------------------------------------------------------
   // Facturatie-uitbreiding — huisstijl per biller (logo, kleur, footer)
   // -------------------------------------------------------------------------
-  app.put("/api/billers/:id/huisstijl", async (req, res) => {
+  app.put("/api/billers/:id/huisstijl", vereisAdmin, async (req, res) => {
     const parsed = billerHuisstijlSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
@@ -275,7 +276,7 @@ export function registerFinancieelRoutes(app: Express): void {
   // -------------------------------------------------------------------------
   // Facturatie-uitbreiding — huisstijl-override per organisatie
   // -------------------------------------------------------------------------
-  app.put("/api/organisaties/:id/huisstijl", async (req, res) => {
+  app.put("/api/organisaties/:id/huisstijl", vereisAdmin, async (req, res) => {
     const parsed = organisatieHuisstijlSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
@@ -289,7 +290,7 @@ export function registerFinancieelRoutes(app: Express): void {
   // Fase C2 — Betaalintegratie (Mollie) & credits opladen via betaling
   // =========================================================================
 
-  app.post("/api/betalingen", async (req, res) => {
+  app.post("/api/betalingen", vereisAdmin, async (req, res) => {
     const parsed = startBetalingSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
@@ -304,7 +305,7 @@ export function registerFinancieelRoutes(app: Express): void {
   });
 
   // Webhook-equivalent: bevestig een geslaagde betaling.
-  app.post("/api/betalingen/:id/bevestig", async (req, res) => {
+  app.post("/api/betalingen/:id/bevestig", vereisAdmin, async (req, res) => {
     const id = Number(req.params.id);
     const methode = typeof req.body?.methode === "string" ? req.body.methode : undefined;
     try {
@@ -318,19 +319,19 @@ export function registerFinancieelRoutes(app: Express): void {
   });
 
   // Markeer een betaling als mislukt.
-  app.post("/api/betalingen/:id/mislukt", async (req, res) => {
+  app.post("/api/betalingen/:id/mislukt", vereisAdmin, async (req, res) => {
     const id = Number(req.params.id);
     const b = await storage.markeerBetalingMislukt(id);
     if (!b) return res.status(404).json({ error: "Betaling niet gevonden" });
     res.json(b);
   });
 
-  app.get("/api/betalingen", async (req, res) => {
+  app.get("/api/betalingen", vereisAdmin, async (req, res) => {
     const orgId = req.query.organisatieId ? Number(req.query.organisatieId) : undefined;
     res.json(await storage.listBetalingen(orgId));
   });
 
-  app.get("/api/betalingen/:id", async (req, res) => {
+  app.get("/api/betalingen/:id", vereisAdmin, async (req, res) => {
     const b = await storage.getBetaling(Number(req.params.id));
     if (!b) return res.status(404).json({ error: "Betaling niet gevonden" });
     res.json(b);
@@ -340,12 +341,12 @@ export function registerFinancieelRoutes(app: Express): void {
   // Fase C2-C3 — Facturen (provider-neutraal, Peppol-klaar)
   // =========================================================================
 
-  app.get("/api/facturen", async (req, res) => {
+  app.get("/api/facturen", vereisAdmin, async (req, res) => {
     const orgId = req.query.organisatieId ? Number(req.query.organisatieId) : undefined;
     res.json(await storage.listFacturen(orgId));
   });
 
-  app.get("/api/facturen/:id", async (req, res) => {
+  app.get("/api/facturen/:id", vereisAdmin, async (req, res) => {
     const f = await storage.getFactuur(Number(req.params.id));
     if (!f) return res.status(404).json({ error: "Factuur niet gevonden" });
     res.json({
@@ -358,7 +359,7 @@ export function registerFinancieelRoutes(app: Express): void {
   });
 
   // Download het Peppol/UBL-document als JSON-bestand.
-  app.get("/api/facturen/:id/peppol.json", async (req, res) => {
+  app.get("/api/facturen/:id/peppol.json", vereisAdmin, async (req, res) => {
     const f = await storage.getFactuur(Number(req.params.id));
     if (!f || !f.peppolDocument) {
       return res.status(404).json({ error: "Geen Peppol-document beschikbaar voor deze factuur" });
@@ -371,7 +372,7 @@ export function registerFinancieelRoutes(app: Express): void {
   // -------------------------------------------------------------------------
   // Facturatie-uitbreiding — betaalstatus handmatig wijzigen
   // -------------------------------------------------------------------------
-  app.patch("/api/facturen/:id/betaalstatus", async (req, res) => {
+  app.patch("/api/facturen/:id/betaalstatus", vereisAdmin, async (req, res) => {
     const parsed = betaalstatusSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
@@ -389,7 +390,7 @@ export function registerFinancieelRoutes(app: Express): void {
   // -------------------------------------------------------------------------
   // Facturatie-uitbreiding — visuele PDF-factuur (huisstijl toegepast)
   // -------------------------------------------------------------------------
-  app.get("/api/facturen/:id/pdf", async (req, res) => {
+  app.get("/api/facturen/:id/pdf", vereisAdmin, async (req, res) => {
     const f = await storage.getFactuur(Number(req.params.id));
     if (!f) return res.status(404).json({ error: "Factuur niet gevonden" });
 
@@ -441,7 +442,7 @@ export function registerFinancieelRoutes(app: Express): void {
   // Fase C4a — Creditnota's
   // =========================================================================
 
-  app.post("/api/creditnotas", async (req, res) => {
+  app.post("/api/creditnotas", vereisAdmin, async (req, res) => {
     const parsed = creditnotaSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
@@ -465,12 +466,12 @@ export function registerFinancieelRoutes(app: Express): void {
     }
   });
 
-  app.get("/api/creditnotas", async (req, res) => {
+  app.get("/api/creditnotas", vereisAdmin, async (req, res) => {
     const orgId = req.query.organisatieId ? Number(req.query.organisatieId) : undefined;
     res.json(await storage.listCreditnotas(orgId));
   });
 
-  app.get("/api/creditnotas/:id", async (req, res) => {
+  app.get("/api/creditnotas/:id", vereisAdmin, async (req, res) => {
     const c = await storage.getCreditnota(Number(req.params.id));
     if (!c) return res.status(404).json({ error: "Creditnota niet gevonden" });
     res.json({
@@ -482,7 +483,7 @@ export function registerFinancieelRoutes(app: Express): void {
     });
   });
 
-  app.get("/api/creditnotas/:id/peppol.json", async (req, res) => {
+  app.get("/api/creditnotas/:id/peppol.json", vereisAdmin, async (req, res) => {
     const c = await storage.getCreditnota(Number(req.params.id));
     if (!c || !c.peppolDocument) {
       return res.status(404).json({ error: "Geen Peppol-document beschikbaar voor deze creditnota" });
@@ -494,17 +495,21 @@ export function registerFinancieelRoutes(app: Express): void {
 
   // =========================================================================
   // Fase C4b — Bestuursrapportage (Raad van Bestuur / investeerders)
+  //
+  // TODO prior-only vanaf fase 3/5: deze drie endpoints tonen platformbrede
+  // cijfers over alle organisaties heen. Zodra `vereisPrior` bestaat, vervangt
+  // die hier `vereisAdmin`. Een organisatie mag deze cijfers nooit zien.
   // =========================================================================
 
-  app.get("/api/bestuur/kpis", async (_req, res) => {
+  app.get("/api/bestuur/kpis", vereisAdmin, async (_req, res) => {
     res.json(await storage.bestuursKpis());
   });
 
-  app.get("/api/bestuur/boekhoudexport", async (_req, res) => {
+  app.get("/api/bestuur/boekhoudexport", vereisAdmin, async (_req, res) => {
     res.json(await storage.boekhoudExport());
   });
 
-  app.get("/api/bestuur/boekhoudexport.csv", async (_req, res) => {
+  app.get("/api/bestuur/boekhoudexport.csv", vereisAdmin, async (_req, res) => {
     const regels = await storage.boekhoudExport();
     const kolommen = [
       "documenttype", "nummer", "datum", "klant", "klantBtw",
