@@ -59,6 +59,17 @@ import { kiesGenerator, heeftDedicatedGenerator } from "./rapport-registry";
 import { genereerAiDuiding, isLiveDuidingAan, DUIDING_INSTRUMENT } from "./duiding-manager";
 import { anonimiseringsPatch } from "./anonimisering";
 import { type Scope, organisatieFilterVanScope } from "./scope";
+// Ontvlechting van deze god-module (spoor 3). De repositories bestonden al maar
+// werden door NIEMAND aangeroepen: het waren kopieen van de code hieronder, met
+// alle kans op uiteenlopen. Vanaf hier delegeert de klasse er echt naartoe en is
+// de kopie in dit bestand verwijderd. De publieke interface blijft gelijk, dus
+// `import { storage } from "./storage"` werkt ongewijzigd.
+//
+// De kringverwijzing (deze module -> repository -> deze module) is opzettelijk en
+// veilig: de repositories lezen `db` en `sqlite` pas BINNEN hun functies, dus na
+// de initialisatie hieronder.
+import * as billersRepo from "./repositories/billers";
+import * as organisatiesRepo from "./repositories/organisaties";
 
 // -----------------------------------------------------------------------------
 // Database-pad: ROBUUST oplossen.
@@ -1975,90 +1986,39 @@ export class DatabaseStorage implements IStorage {
       .get();
   }
 
-  // --- Billers -------------------------------------------------------------
+  // --- Billers ---------------------------------------------------------------
+  // Verplaatst naar server/repositories/billers.ts (spoor 3). De methodes blijven
+  // bestaan zodat aanroepers niet breken; enkel de implementatie is verhuisd.
   async listBillers(): Promise<BillerEntiteit[]> {
-    return db.select().from(billerEntiteiten).orderBy(desc(billerEntiteiten.id)).all();
+    return billersRepo.listBillers();
   }
 
   async getActieveBiller(): Promise<BillerEntiteit | undefined> {
-    return db
-      .select()
-      .from(billerEntiteiten)
-      .where(eq(billerEntiteiten.actief, true))
-      .orderBy(desc(billerEntiteiten.id))
-      .get();
+    return billersRepo.getActieveBiller();
   }
 
   async createBiller(data: InsertBiller): Promise<BillerEntiteit> {
-    return db
-      .insert(billerEntiteiten)
-      .values({
-        ...data,
-        geldigVan: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-      })
-      .returning()
-      .get();
+    return billersRepo.createBiller(data);
   }
 
-  // Activeer één biller: sluit de huidige actieve af (geldigTot) en zet de
-  // nieuwe actief. Dit is de entiteitswissel (bv. 2BQ CONSULT -> PMV-entiteit).
   async activeerBiller(id: number): Promise<BillerEntiteit | undefined> {
-    const tx = sqlite.transaction(() => {
-      const now = new Date().toISOString();
-      // Sluit alle huidige actieve billers af.
-      db.update(billerEntiteiten)
-        .set({ actief: false, geldigTot: now })
-        .where(eq(billerEntiteiten.actief, true))
-        .run();
-      // Heractiveer de gekozen biller.
-      db.update(billerEntiteiten)
-        .set({ actief: true, geldigTot: null })
-        .where(eq(billerEntiteiten.id, id))
-        .run();
-    });
-    tx();
-    return db.select().from(billerEntiteiten).where(eq(billerEntiteiten.id, id)).get();
+    return billersRepo.activeerBiller(id);
   }
 
-  // --- Organisaties --------------------------------------------------------
+  // --- Organisaties ----------------------------------------------------------
+  // Verplaatst naar server/repositories/organisaties.ts (spoor 3).
+  // `listOrganisaties` krijgt `saldoSync` als argument mee: de repository mag de
+  // credits-repository niet importeren, want dat zou een kringverwijzing geven.
   async listOrganisaties(): Promise<Array<Organisatie & { saldo: CreditSaldo }>> {
-    const orgs = db.select().from(organisaties).orderBy(desc(organisaties.id)).all();
-    return orgs.map((o) => ({ ...o, saldo: this.saldoSync(o.id) }));
+    return organisatiesRepo.listOrganisaties((id) => this.saldoSync(id));
   }
 
   async getOrganisatie(id: number): Promise<Organisatie | undefined> {
-    return db.select().from(organisaties).where(eq(organisaties.id, id)).get();
+    return organisatiesRepo.getOrganisatie(id);
   }
 
   async createOrganisatie(data: InsertOrganisatie): Promise<Organisatie> {
-    // Afgeleid: peppol-bereikbare organisaties krijgen factuurType 'peppol'.
-    const factuurType = data.peppolBereikbaar ? "peppol" : "pdf";
-    const org = db
-      .insert(organisaties)
-      .values({
-        naam: data.naam,
-        type: data.type,
-        btwNummer: data.btwNummer || null,
-        kboNummer: data.kboNummer || null,
-        peppolId: data.peppolId || null,
-        peppolBereikbaar: data.peppolBereikbaar ?? false,
-        factuurType,
-        contactpersoon: data.contactpersoon || null,
-        email: data.email || null,
-        adres: data.adres || null,
-        postcode: data.postcode || null,
-        gemeente: data.gemeente || null,
-        land: data.land || "België",
-        createdAt: new Date().toISOString(),
-      })
-      .returning()
-      .get();
-    // Initialiseer een nulsaldo zodat elke organisatie altijd een saldoregel heeft.
-    db.insert(creditSaldi)
-      .values({ organisatieId: org.id, beschikbaar: 0, gereserveerd: 0, verbruikt: 0, updatedAt: new Date().toISOString() })
-      .run();
-    return org;
+    return organisatiesRepo.createOrganisatie(data);
   }
 
   // --- Credits: synchrone helper voor saldo (gebruikt binnen transacties) --
