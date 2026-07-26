@@ -713,6 +713,11 @@ export const STRINGS = {
   iz_coachnetwerk_per_accreditatie: { nl: "Accreditaties per instrument", fr: "Accréditations par instrument", en: "Accreditations by instrument", es: "Acreditaciones por instrumento", ru: "Аккредитации по инструментам" },
   iz_drempel_gehaald: { nl: "Drempel bereikt — in voorbereiding", fr: "Seuil atteint — en préparation", en: "Threshold reached — in preparation", es: "Umbral alcanzado — en preparación", ru: "Порог достигнут — в подготовке" },
   iz_drempel_voorbereiding: { nl: "In voorbereiding", fr: "En préparation", en: "In preparation", es: "En preparación", ru: "В подготовке" },
+  // De drempel telt VOLTOOIDE AFNAMES (server: drempels.huidig = afnamesTotaal).
+  // De accolade-plaatshouders {huidig} en {benodigd} worden in de client met
+  // een replace() gevuld en moeten daarom in ALLE talen letterlijk voorkomen.
+  iz_drempel_stand: { nl: "{huidig} van {benodigd} afnames", fr: "{huidig} sur {benodigd} évaluations", en: "{huidig} of {benodigd} assessments", es: "{huidig} de {benodigd} evaluaciones", ru: "{huidig} из {benodigd} оценок" },
+  iz_drempel_beschikbaar_vanaf: { nl: "Beschikbaar vanaf {benodigd} afnames", fr: "Disponible à partir de {benodigd} évaluations", en: "Available from {benodigd} assessments", es: "Disponible a partir de {benodigd} evaluaciones", ru: "Доступно от {benodigd} оценок" },
   iz_bevindingen_titel: { nl: "Kerninzichten", fr: "Constats clés", en: "Key findings", es: "Hallazgos clave", ru: "Ключевые выводы" },
   iz_bevindingen_intro: { nl: "Automatisch afgeleid uit de zichtbare verdelingen. Strikt beschrijvend.", fr: "Dérivé automatiquement des répartitions visibles. Strictement descriptif.", en: "Automatically derived from the visible distributions. Strictly descriptive.", es: "Derivado automáticamente de las distribuciones visibles. Estrictamente descriptivo.", ru: "Автоматически выведено из видимых распределений. Строго описательно." },
   iz_bevindingen_geen: { nl: "Nog te weinig data voor kerninzichten.", fr: "Encore trop peu de données pour des constats clés.", en: "Still too little data for key findings.", es: "Aún hay muy pocos datos para hallazgos clave.", ru: "Пока недостаточно данных для ключевых выводов." },
