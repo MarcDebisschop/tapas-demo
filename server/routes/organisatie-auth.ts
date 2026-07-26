@@ -17,12 +17,15 @@
  * Routes:
  *   POST /api/organisatie/login
  *   POST /api/organisatie/logout
- *   GET  /api/organisatie/me
+ *   GET   /api/organisatie/me
+ *   PATCH /api/organisatie/branding
  */
 
 import type { Express, Request } from "express";
 import { sqlite } from "../storage";
 import { verifieerWachtwoord } from "../auth/wachtwoord";
+import { vereisScope, scopeVanVerzoek } from "../scope-guard";
+import { schoonBranding, type Branding } from "@shared/branding";
 
 // Demo-modus: identiek criterium als in server/routes/admin.ts. In demo blijft
 // de login e-mail-only zodat de publieke demo blijft werken; daarbuiten is een
@@ -46,6 +49,23 @@ export function organisatieIdVanSessie(req: Request): number | null {
   if (ruw == null) return null;
   const id = Number(ruw);
   return Number.isFinite(id) && id > 0 ? id : null;
+}
+
+/** Leest de vier personalisatievelden (fase 9) van een organisatie. */
+export function leesBranding(id: number): Branding {
+  const rij = sqlite
+    .prepare(
+      `SELECT branding_logo_url, branding_achtergrond_url,
+              branding_achtergrond_kleur, branding_quote
+         FROM organisaties WHERE id = ?`,
+    )
+    .get(id) as Record<string, string | null> | undefined;
+  return {
+    logoUrl: rij?.branding_logo_url ?? null,
+    achtergrondUrl: rij?.branding_achtergrond_url ?? null,
+    achtergrondKleur: rij?.branding_achtergrond_kleur ?? null,
+    quote: rij?.branding_quote ?? null,
+  };
 }
 
 function zoekOpLoginEmail(email: string): OrganisatieLoginRij | undefined {
@@ -108,6 +128,45 @@ export function registerOrganisatieAuthRoutes(app: Express): void {
     if (!org || org.login_actief !== 1) {
       return res.status(401).json({ error: "Sessie verlopen." });
     }
-    res.json({ ok: true, organisatieId: org.id, naam: org.naam });
+    res.json({ ok: true, organisatieId: org.id, naam: org.naam, branding: leesBranding(org.id) });
+  });
+
+  /**
+   * De organisatie past haar eigen uiterlijk aan.
+   *
+   * Het te wijzigen id komt uit de SCOPE en niet uit de body. Een
+   * `organisatieId` in de body wordt genegeerd voor een organisatie; enkel de
+   * prior mag er een meegeven, want die beheert namens klanten. Zonder die
+   * splitsing zou elke organisatie het portaal van een andere kunnen
+   * herschilderen, en dat is een zichtbaardere aanval dan hij klinkt.
+   */
+  app.patch("/api/organisatie/branding", vereisScope, async (req, res) => {
+    const scope = scopeVanVerzoek(req);
+    let doelId: number | null = null;
+    if (scope.soort === "organisatie") {
+      doelId = scope.organisatieId;
+    } else if (scope.soort === "prior") {
+      const gevraagd = Number((req.body ?? {}).organisatieId);
+      if (!Number.isFinite(gevraagd) || gevraagd <= 0) {
+        return res.status(400).json({ error: "Geef op welke organisatie u aanpast." });
+      }
+      doelId = gevraagd;
+    }
+    if (doelId === null) return res.status(403).json({ error: "Geen organisatie in beeld." });
+
+    const bestaat = sqlite.prepare(`SELECT id FROM organisaties WHERE id = ?`).get(doelId);
+    if (!bestaat) return res.status(404).json({ error: "Organisatie niet gevonden." });
+
+    const schoon = schoonBranding(req.body);
+    sqlite
+      .prepare(
+        `UPDATE organisaties
+            SET branding_logo_url = ?, branding_achtergrond_url = ?,
+                branding_achtergrond_kleur = ?, branding_quote = ?
+          WHERE id = ?`,
+      )
+      .run(schoon.logoUrl, schoon.achtergrondUrl, schoon.achtergrondKleur, schoon.quote, doelId);
+
+    res.json({ ok: true, organisatieId: doelId, branding: schoon });
   });
 }

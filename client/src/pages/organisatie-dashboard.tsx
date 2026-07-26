@@ -11,11 +11,17 @@
 // terugkrijgt.
 // ---------------------------------------------------------------------------
 
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppHeader } from "@/components/Brand";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useOrganisatieAuth } from "@/components/OrganisatieLoginGate";
-import { Building2, Users, LogOut, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { QUOTE_MAX } from "@shared/branding";
+import { Building2, Users, LogOut, Loader2, Palette } from "lucide-react";
 
 interface Afname {
   id: number;
@@ -37,6 +43,106 @@ interface Opvolging {
   organisatieNaam: string | null;
   rijen: OpvolgingRij[];
   totalen: { totaal: number; voltooid: number };
+}
+
+/**
+ * Personalisatie (fase 9). Er wordt bewust GEEN organisatie meegestuurd: de
+ * server neemt de organisatie uit de sessie. Een veld leegmaken en bewaren
+ * wist de instelling; dat is het enige wat "weghalen" kan betekenen.
+ */
+function BrandingInstellingen() {
+  const { organisatie } = useOrganisatieAuth();
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const b = organisatie.branding;
+  const [logoUrl, setLogoUrl] = useState(b?.logoUrl ?? "");
+  const [achtergrondUrl, setAchtergrondUrl] = useState(b?.achtergrondUrl ?? "");
+  const [achtergrondKleur, setAchtergrondKleur] = useState(b?.achtergrondKleur ?? "");
+  const [quote, setQuote] = useState(b?.quote ?? "");
+  const [bezig, setBezig] = useState(false);
+
+  async function bewaren(e: React.FormEvent) {
+    e.preventDefault();
+    setBezig(true);
+    try {
+      await apiRequest("PATCH", "/api/organisatie/branding", {
+        logoUrl,
+        achtergrondUrl,
+        achtergrondKleur,
+        quote,
+      });
+      await qc.invalidateQueries({ queryKey: ["/api/organisatie/me"] });
+      toast({ title: "Bewaard", description: "Uw personalisatie is aangepast." });
+    } catch {
+      toast({
+        title: "Bewaren mislukt",
+        description: "Probeer het later opnieuw.",
+        variant: "destructive",
+      });
+    } finally {
+      setBezig(false);
+    }
+  }
+
+  return (
+    <section className="mt-8">
+      <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+        <Palette className="h-4 w-4" />
+        Uw personalisatie
+      </h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Een adres van een afbeelding (https of een pad binnen de site) en een kleur als
+        <code className="mx-1">#rrggbb</code>. Laat een veld leeg om het weg te halen.
+      </p>
+      <form onSubmit={bewaren} className="mt-3 flex flex-col gap-4" data-testid="formulier-branding">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="branding-logo">Logo</Label>
+          <Input
+            id="branding-logo"
+            value={logoUrl}
+            onChange={(ev) => setLogoUrl(ev.target.value)}
+            placeholder="https://... of /img/logo.png"
+            data-testid="input-branding-logo"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="branding-achtergrond">Achtergrondafbeelding</Label>
+          <Input
+            id="branding-achtergrond"
+            value={achtergrondUrl}
+            onChange={(ev) => setAchtergrondUrl(ev.target.value)}
+            placeholder="https://..."
+            data-testid="input-branding-achtergrond"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="branding-kleur">Achtergrondkleur</Label>
+          <Input
+            id="branding-kleur"
+            value={achtergrondKleur}
+            onChange={(ev) => setAchtergrondKleur(ev.target.value)}
+            placeholder="#f4f1ea"
+            data-testid="input-branding-kleur"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="branding-quote">Quote</Label>
+          <Input
+            id="branding-quote"
+            value={quote}
+            maxLength={QUOTE_MAX}
+            onChange={(ev) => setQuote(ev.target.value)}
+            placeholder="Een korte zin die bij uw organisatie hoort."
+            data-testid="input-branding-quote"
+          />
+        </div>
+        <Button type="submit" disabled={bezig} className="self-start" data-testid="button-branding-bewaren">
+          {bezig && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Bewaren
+        </Button>
+      </form>
+    </section>
+  );
 }
 
 export default function OrganisatieDashboard() {
@@ -67,6 +173,14 @@ export default function OrganisatieDashboard() {
             >
               U bekijkt: {organisatie.naam}
             </p>
+            {/* De quote als platte tekst, discreet onder de context. Bewust
+                geen HTML: de server strookt de scherpe haken er al uit, en
+                dit houdt het veld ook hier ongevaarlijk. */}
+            {organisatie.branding?.quote && (
+              <p className="mt-1 text-sm italic text-muted-foreground" data-testid="tekst-organisatiequote">
+                {organisatie.branding.quote}
+              </p>
+            )}
           </div>
           <Button variant="outline" size="sm" onClick={afmelden} data-testid="button-organisatie-logout">
             <LogOut className="mr-2 h-4 w-4" />
@@ -124,6 +238,8 @@ export default function OrganisatieDashboard() {
             </p>
           )}
         </section>
+
+        <BrandingInstellingen />
       </main>
     </div>
   );

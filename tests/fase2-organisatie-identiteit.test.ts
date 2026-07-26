@@ -195,7 +195,12 @@ describe("organisatie-login", () => {
         naam TEXT NOT NULL,
         login_email TEXT,
         wachtwoord_hash TEXT,
-        login_actief INTEGER NOT NULL DEFAULT 0
+        login_actief INTEGER NOT NULL DEFAULT 0,
+        -- Personalisatie uit fase 9: /api/organisatie/me leest die velden mee.
+        branding_logo_url TEXT,
+        branding_achtergrond_url TEXT,
+        branding_achtergrond_kleur TEXT,
+        branding_quote TEXT
       );
     `);
     const hash = await hashWachtwoord("geheim");

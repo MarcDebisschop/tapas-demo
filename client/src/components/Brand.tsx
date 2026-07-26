@@ -3,6 +3,8 @@ import { Moon, Sun } from "lucide-react";
 import { DEMO_MODE } from "@/lib/demoMode";
 import { PRODUCT_NAAM } from "@/lib/features";
 import { useTheme } from "./ThemeProvider";
+import { useOrganisatieMij } from "@/lib/organisatie-branding";
+import { headerTitel } from "@shared/branding";
 
 export function Logo({ className = "" }: { className?: string }) {
   return (
@@ -35,6 +37,11 @@ export function Logo({ className = "" }: { className?: string }) {
 
 export function AppHeader({ right }: { right?: React.ReactNode }) {
   const { theme, toggle } = useTheme();
+  // De organisatie van de sessie, indien er een is. Null voor de prior en voor
+  // iedereen zonder organisatiesessie; dan blijft de header ongewijzigd.
+  const { data: mij } = useOrganisatieMij();
+  const titel = headerTitel(PRODUCT_NAAM, mij?.naam ?? null);
+  const eigenLogo = mij?.branding?.logoUrl ?? null;
   return (
     <>
     {DEMO_MODE && (
@@ -46,9 +53,23 @@ export function AppHeader({ right }: { right?: React.ReactNode }) {
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
         <Link href="/">
           <a className="flex items-center gap-2 text-primary" data-testid="link-home">
-            <Logo />
-            <span className="text-base font-semibold tracking-tight text-foreground">
-              {PRODUCT_NAAM}
+            {/* Het eigen logo van de organisatie vervangt de kompasroos. Nooit
+                het Earhart-vliegtuig: dat is het merkteken van TaPasCity. */}
+            {eigenLogo ? (
+              <img
+                src={eigenLogo}
+                alt=""
+                className="h-7 w-7 object-contain"
+                data-testid="afbeelding-organisatielogo"
+              />
+            ) : (
+              <Logo />
+            )}
+            <span
+              className="text-base font-semibold tracking-tight text-foreground"
+              data-testid="tekst-producttitel"
+            >
+              {titel}
             </span>
           </a>
         </Link>

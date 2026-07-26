@@ -434,6 +434,30 @@
  * ------------------------------------------------------------------------- */
 .poort-pagina { background: var(--poort-bg) !important }
 body:has(.poort-pagina)::after { display: none !important }
+
+/* ---------------------------------------------------------------------------
+ * Organisatie-personalisatie (fase 9) - watermerk-suppressor
+ *
+ * Het Earhart-vliegtuigje is het merkteken van TaPasCity zelf. Op het portaal
+ * van een KLANT hoort het niet: dat zou het merk van de een op het scherm van
+ * de ander plakken. Zodra `organisatie-branding` op documentElement staat gaat
+ * het dus uit, ook wanneer die organisatie zelf geen achtergrond instelde. Dan
+ * is de effen basisachtergrond het antwoord, en dat is beter dan andermans
+ * merkteken.
+ *
+ * De regel staat NA `.belevings-modus body::after` en is bovendien
+ * `!important`, zodat de volgorde van de classes op documentElement niet
+ * uitmaakt.
+ * ------------------------------------------------------------------------- */
+.organisatie-branding body::after { display: none !important }
+.organisatie-branding body {
+  background-color: var(--organisatie-achtergrond-kleur, hsl(var(--background)));
+  background-image: var(--organisatie-achtergrond-afbeelding, none);
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  background-attachment: fixed;
+}
 .academy-observatorium{--acad-bg: 210 45% 8%;--acad-bg-2: 209 42% 11%;--acad-kaart: 209 38% 14%;--acad-rand: 205 30% 26%;--acad-tekst: 210 30% 92%;--acad-kop: 0 0% 100%;--acad-meta: 205 18% 70%;--acad-goud: 38 60% 62%;--acad-teal: 165 38% 55%;background-color:hsl(var(--acad-bg));color:hsl(var(--acad-tekst))}
 .academy-observatorium header{background-color:hsl(var(--acad-bg-2));border-color:hsl(var(--acad-rand))}
 .academy-observatorium .academy-kop,.academy-observatorium .academy-kaart-kop{color:hsl(var(--acad-kop))}

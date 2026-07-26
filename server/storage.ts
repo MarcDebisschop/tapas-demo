@@ -183,6 +183,10 @@ sqlite.exec(`
     login_email TEXT,
     wachtwoord_hash TEXT,
     login_actief INTEGER NOT NULL DEFAULT 0,
+    branding_logo_url TEXT,
+    branding_achtergrond_url TEXT,
+    branding_achtergrond_kleur TEXT,
+    branding_quote TEXT,
     created_at TEXT NOT NULL
   );
 
@@ -492,6 +496,12 @@ try {
     `CREATE UNIQUE INDEX IF NOT EXISTS organisaties_login_email_uniek
        ON organisaties(login_email) WHERE login_email IS NOT NULL;`,
   );
+  // Personalisatie (ADDITIEF, fase 9). Alle vier nullable zonder default: een
+  // bestaande organisatie houdt gewoon geen branding.
+  if (!heeft("branding_logo_url")) add(`ALTER TABLE organisaties ADD COLUMN branding_logo_url TEXT;`);
+  if (!heeft("branding_achtergrond_url")) add(`ALTER TABLE organisaties ADD COLUMN branding_achtergrond_url TEXT;`);
+  if (!heeft("branding_achtergrond_kleur")) add(`ALTER TABLE organisaties ADD COLUMN branding_achtergrond_kleur TEXT;`);
+  if (!heeft("branding_quote")) add(`ALTER TABLE organisaties ADD COLUMN branding_quote TEXT;`);
 } catch {
   // negeerbaar in nieuwe databases
 }

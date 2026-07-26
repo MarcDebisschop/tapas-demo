@@ -300,6 +300,15 @@ export const organisaties = sqliteTable("organisaties", {
   loginEmail: text("login_email").unique(),
   wachtwoordHash: text("wachtwoord_hash"),
   loginActief: integer("login_actief", { mode: "boolean" }).notNull().default(false),
+  // Personalisatie van het SCHERM (fase 9). Bewust los van `huisstijl*`
+  // hierboven: die geldt voor DOCUMENTEN (facturen). Zou een organisatie met
+  // een portaalinstelling ongemerkt haar facturen veranderen, dan was dat een
+  // verrassing die niemand vraagt. Alle vier nullable: geen branding is de
+  // normale toestand en bestaande rijen blijven ongemoeid.
+  brandingLogoUrl: text("branding_logo_url"),
+  brandingAchtergrondUrl: text("branding_achtergrond_url"),
+  brandingAchtergrondKleur: text("branding_achtergrond_kleur"),
+  brandingQuote: text("branding_quote"),
   createdAt: text("created_at").notNull(),
 });
 

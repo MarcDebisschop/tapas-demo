@@ -48,6 +48,7 @@ import Instrumenten from "@/pages/instrumenten";
 import Brochure from "@/pages/brochure";
 import AdminInstrumentengids from "@/pages/admin-instrumentengids";
 import { AdminLoginGate } from "@/components/AdminLoginGate";
+import { OrganisatieBranding } from "@/lib/organisatie-branding";
 import { OrganisatieLoginGate } from "@/components/OrganisatieLoginGate";
 import OrganisatieDashboard from "@/pages/organisatie-dashboard";
 import Koop from "@/pages/koop";
@@ -252,6 +253,9 @@ function App() {
           <TaalProvider>
           <TooltipProvider>
             <Toaster />
+            {/* Houdt de achtergrond en het watermerk gelijk met de sessie: bij
+                een organisatie gaat het Earhart-merkteken uit (fase 9). */}
+            <OrganisatieBranding />
             {/* Runtime-toggle: wissel zonder rebuild tussen TaPas Core en het
                 volledige platform. Altijd zichtbaar, ook tijdens de intro. */}
             <BelevingSchakelaar />

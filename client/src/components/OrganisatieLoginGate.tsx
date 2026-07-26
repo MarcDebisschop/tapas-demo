@@ -21,11 +21,14 @@ import { Label } from "@/components/ui/label";
 import { AppHeader } from "@/components/Brand";
 import { Building2, LogIn, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import type { Branding } from "@shared/branding";
 
 export interface OrganisatieProfiel {
   ok: boolean;
   organisatieId: number;
   naam: string;
+  /** Personalisatie (fase 9). Altijd aanwezig, velden mogen null zijn. */
+  branding: Branding;
 }
 
 interface OrganisatieAuthCtx {
