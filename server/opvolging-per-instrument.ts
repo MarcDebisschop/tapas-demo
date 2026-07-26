@@ -12,6 +12,8 @@
 // bedienen. Alle cijfers komen uit echte kolommen; er wordt niets geschat.
 // =============================================================================
 
+import { type Scope, organisatieFilterVanScope } from "./scope";
+
 // Afnames zonder instrumentId (oudere rijen) krijgen een eigen groep. We raden
 // nooit welk instrument het geweest zou zijn.
 export const ONBEKEND_INSTRUMENT_ID = "onbekend";
@@ -203,6 +205,10 @@ interface SqliteAchtig {
  * automatisch buiten, wat precies de bedoeling is - die zijn particulier en
  * horen bij geen enkele organisatie.
  */
+export function leesAfnameRijenVoorScope(sq: SqliteAchtig, scope: Scope): AfnameRij[] {
+  return leesAfnameRijen(sq, organisatieFilterVanScope(scope, "leesAfnameRijen"));
+}
+
 export function leesAfnameRijen(
   sq: SqliteAchtig,
   organisatieId: number | null,

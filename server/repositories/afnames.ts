@@ -15,6 +15,7 @@ import { eq, desc } from "drizzle-orm";
 import { db } from "../storage";
 import { cryptoRandom } from "./db";
 import { anonimiseringsPatch } from "../anonimisering";
+import { type Scope, organisatieFilterVanScope } from "../scope";
 
 // Re-export van constanten die elders gebruikt worden
 export const PRIVACY_VERKLARING_VERSIE = "v1.0 (2026-06)";
@@ -79,8 +80,18 @@ export async function getAfnameByCode(code: string): Promise<Afname | undefined>
   return db.select().from(afnames).where(eq(afnames.respondentCode, code)).get();
 }
 
-export async function listAfnames(): Promise<Afname[]> {
-  return db.select().from(afnames).orderBy(desc(afnames.id)).all();
+/**
+ * Alle afnames binnen de scope. De scope is VERPLICHT: een oproeper die er
+ * geen heeft, hoort geen afnames te krijgen. Het filter zit in de SQL en niet
+ * in een `.filter()` erna, zodat gegevens van een andere organisatie het
+ * proces nooit binnenkomen.
+ */
+export async function listAfnames(scope: Scope): Promise<Afname[]> {
+  const orgFilter = organisatieFilterVanScope(scope, "listAfnames");
+  const vraag = db.select().from(afnames);
+  return orgFilter === null
+    ? vraag.orderBy(desc(afnames.id)).all()
+    : vraag.where(eq(afnames.organisatieId, orgFilter)).orderBy(desc(afnames.id)).all();
 }
 
 export async function updateAfname(

@@ -255,7 +255,7 @@ describe("prior-only endpoints", () => {
   });
 
   it("importeert vereisPrior uit de scope-kern", () => {
-    expect(bron).toContain('import { vereisPrior } from "../scope-guard";');
+    expect(bron).toMatch(/import \{[^}]*\bvereisPrior\b[^}]*\} from "\.\.\/scope-guard";/);
   });
 });
 

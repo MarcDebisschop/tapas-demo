@@ -106,13 +106,16 @@ describe("elk endpoint in financieel.ts en rapporten.ts staat achter vereisAdmin
   }
 
   it("financieel.ts: alle 32 endpoints", () => {
-    // Fase 3 verscherpte drie van de 32 van vereisAdmin naar vereisPrior. De
-    // eis blijft dat geen enkele registratie zonder guard staat; welke van de
-    // twee het is, bewaakt de fase-3 suite.
+    // Fase 3 verscherpte drie van de 32 naar vereisPrior, fase 4 zette de
+    // tendenzen op vereisScope. De eis blijft dat geen enkele registratie
+    // zonder guard staat; welke guard het precies is, bewaken de suites van
+    // fase 3 en 4.
     const gevonden = registraties("server/routes/financieel.ts");
     expect(gevonden.length).toBe(32);
     for (const [, , pad, rest] of gevonden) {
-      expect(rest, `route ${pad} mist een guard`).toMatch(/vereisAdmin|vereisPrior/);
+      expect(rest, `route ${pad} mist een guard`).toMatch(
+        /vereisAdmin|vereisPrior|vereisScope/,
+      );
     }
   });
 

@@ -58,6 +58,7 @@ import { renderRapportHtml } from "./rapportgenerator";
 import { kiesGenerator, heeftDedicatedGenerator } from "./rapport-registry";
 import { genereerAiDuiding, isLiveDuidingAan, DUIDING_INSTRUMENT } from "./duiding-manager";
 import { anonimiseringsPatch } from "./anonimisering";
+import { type Scope, organisatieFilterVanScope } from "./scope";
 
 // -----------------------------------------------------------------------------
 // Database-pad: ROBUUST oplossen.
@@ -1628,7 +1629,8 @@ export interface IStorage {
   createAfname(data: NewAfname): Promise<Afname>;
   getAfname(id: number): Promise<Afname | undefined>;
   getAfnameByCode(code: string): Promise<Afname | undefined>;
-  listAfnames(): Promise<Afname[]>;
+  // Scope is VERPLICHT: zonder scope geen afnames. Zie server/scope.ts.
+  listAfnames(scope: Scope): Promise<Afname[]>;
   updateAfname(id: number, patch: Partial<Afname>): Promise<Afname | undefined>;
 
   // Deelnemerslink / uitnodiging (Fase D)
@@ -1883,8 +1885,12 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(afnames).where(eq(afnames.respondentCode, code)).get();
   }
 
-  async listAfnames(): Promise<Afname[]> {
-    return db.select().from(afnames).orderBy(desc(afnames.id)).all();
+  async listAfnames(scope: Scope): Promise<Afname[]> {
+    const orgFilter = organisatieFilterVanScope(scope, "listAfnames");
+    const vraag = db.select().from(afnames);
+    return orgFilter === null
+      ? vraag.orderBy(desc(afnames.id)).all()
+      : vraag.where(eq(afnames.organisatieId, orgFilter)).orderBy(desc(afnames.id)).all();
   }
 
   async updateAfname(id: number, patch: Partial<Afname>): Promise<Afname | undefined> {

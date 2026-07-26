@@ -19,6 +19,7 @@ import type { Express } from "express";
 import { storage, db } from "../storage";
 import { verifieerWachtwoord } from "../auth/wachtwoord";
 import { vereisAdmin, adminIdVanSessie } from "../admin-guard";
+import { vereisScope, scopeVanVerzoek } from "../scope-guard";
 import { schrijfAuditLog } from "../audit-log";
 import { alleInstrumenten } from "../registry";
 import {
@@ -100,8 +101,11 @@ export function registerAdminRoutes(app: Express): void {
   // filters is het gedrag exact zoals voordien (alle afnames, zelfde volgorde).
   // Per rij komen instrumentId/instrumentLabel en organisatieId/organisatieNaam
   // mee, zodat de UI per instrument kan groeperen zonder extra bevragingen.
-  app.get("/api/admin/afnames", vereisAdmin, async (req, res) => {
-    const list = await storage.listAfnames();
+  app.get("/api/admin/afnames", vereisScope, async (req, res) => {
+    // De scope komt uit de sessie. `organisatie_id` hieronder is voor de prior
+    // een FILTER binnen wat hij toch al mag zien, nooit een manier om buiten
+    // de eigen scope te kijken: de datalaag heeft de rijen dan al beperkt.
+    const list = await storage.listAfnames(scopeVanVerzoek(req));
 
     const instrumentFilter = String(req.query.instrument ?? "").trim();
     const ruweOrg = req.query.organisatie_id;

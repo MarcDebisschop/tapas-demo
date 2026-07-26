@@ -52,7 +52,7 @@ import {
 import { isTalentFocusConstruct } from "@shared/talent-constructs";
 import { renderFactuurPdf } from "../facturen/factuur-pdf";
 import { vereisAdmin } from "../admin-guard";
-import { vereisPrior } from "../scope-guard";
+import { vereisPrior, vereisScope, scopeVanVerzoek } from "../scope-guard";
 
 // Facturatie-uitbreiding: leid de effectieve betaalstatus af. Een 'openstaande'
 // factuur met een vervaldatum die vóór vandaag ligt, geldt als 'vervallen'.
@@ -113,11 +113,17 @@ export function registerFinancieelRoutes(app: Express): void {
   });
 
   // --- Organisatietendenzen: geaggregeerd, niet-individueel teambeeld ---
-  app.get("/api/organisaties/:id/tendenzen", vereisAdmin, async (req, res) => {
+  app.get("/api/organisaties/:id/tendenzen", vereisScope, async (req, res) => {
     const id = Number(req.params.id);
+    // Het id in het pad mag de scope niet verruimen: een organisatie ziet enkel
+    // haar eigen tendenzen, de prior die van iedereen.
+    const scope = scopeVanVerzoek(req);
+    if (scope.soort === "organisatie" && scope.organisatieId !== id) {
+      return res.status(403).json({ error: "Geen toegang tot deze organisatie." });
+    }
     const org = await storage.getOrganisatie(id);
     if (!org) return res.status(404).json({ error: "Organisatie niet gevonden" });
-    const alle = await storage.listAfnames();
+    const alle = await storage.listAfnames(scope);
     const voltooid = alle.filter(
       (a) => a.organisatieId === id && a.status === "voltooid" && a.generatorContract
     );

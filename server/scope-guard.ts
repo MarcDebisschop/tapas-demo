@@ -28,14 +28,12 @@ import { storage } from "./storage";
 import { adminIdVanSessie } from "./admin-guard";
 import { organisatieIdVanSessie } from "./routes/organisatie-auth";
 import { PRIOR_ORGANISATIE } from "@shared/platformdelen";
+import { type Scope, SCOPE_PRIOR, SCOPE_GEEN } from "./scope";
 
-export type Scope =
-  | { soort: "prior" }
-  | { soort: "organisatie"; organisatieId: number }
-  | { soort: "geen" };
-
-export const SCOPE_PRIOR: Scope = { soort: "prior" };
-export const SCOPE_GEEN: Scope = { soort: "geen" };
+// Het type en de datalaag-primitieven wonen in `./scope`, zodat de datalaag ze
+// kan gebruiken zonder deze module (en dus `storage`) binnen te halen. Hier
+// opnieuw exporteren zodat oproepers niet hoeven te weten waar wat staat.
+export { type Scope, SCOPE_PRIOR, SCOPE_GEEN, ScopeFout, organisatieFilterVanScope } from "./scope";
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
