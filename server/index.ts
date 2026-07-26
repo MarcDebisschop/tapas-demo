@@ -76,6 +76,7 @@ app.use(
     "/api/deelnemers/login",
     "/api/deelnemers/token-login",
     "/api/deelnemers/magic",
+    "/api/organisatie/login",
   ],
   authLimiter,
 );
