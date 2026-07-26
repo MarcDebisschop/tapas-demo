@@ -12,6 +12,7 @@ import type {
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
 import { eq } from "drizzle-orm";
+import { pasEncryptieToe } from "../db-encryptie";
 
 /**
  * Human Due Diligence-storage.
@@ -25,6 +26,10 @@ import { eq } from "drizzle-orm";
  */
 
 const sqlite = new Database("data.db");
+// FIX 6 (AVG art. 32): dezelfde encryptie-hook als in storage.ts. Bij Optie B
+// moet ELKE handle de sleutel toepassen; eén handle die het vergeet opent het
+// bestand zonder sleutel. No-op zolang TAPAS_DB_SLEUTEL niet gezet is.
+pasEncryptieToe(sqlite, "server/hdd/storage.ts");
 sqlite.pragma("journal_mode = WAL");
 sqlite.pragma("synchronous = NORMAL");   // NP-5 fix 2026-06-30
 sqlite.pragma("cache_size = -8000");     // NP-5 fix 2026-06-30: 8 MB voor HDD

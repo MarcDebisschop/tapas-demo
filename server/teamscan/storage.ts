@@ -14,6 +14,7 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
 import { eq, and } from "drizzle-orm";
 import { randomBytes } from "crypto";
+import { pasEncryptieToe } from "../db-encryptie";
 
 /**
  * TaPas Teamscan-storage.
@@ -24,6 +25,10 @@ import { randomBytes } from "crypto";
  */
 
 const sqlite = new Database("data.db");
+// FIX 6 (AVG art. 32): dezelfde encryptie-hook als in storage.ts. Bij Optie B
+// moet ELKE handle de sleutel toepassen; eén handle die het vergeet opent het
+// bestand zonder sleutel. No-op zolang TAPAS_DB_SLEUTEL niet gezet is.
+pasEncryptieToe(sqlite, "server/teamscan/storage.ts");
 sqlite.pragma("journal_mode = WAL");
 
 sqlite.exec(`

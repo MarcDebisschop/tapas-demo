@@ -21,6 +21,7 @@ import { storage } from "../storage";
 import { verrijkT4SportsRapport } from "../duiding-manager";
 import { scoreModule, getModuleDefinitie, getAlleModuleIds } from "./module-scoring";
 import type { ModuleAntwoord, ModuleResultaat } from "./module-scoring";
+import { pasEncryptieToe } from "../db-encryptie";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Eigen database voor module-resultaten (zelfde DB-bestand als hoofdplatform)
@@ -28,6 +29,10 @@ import type { ModuleAntwoord, ModuleResultaat } from "./module-scoring";
 
 const DB_PATH = resolve(process.env.DATABASE_PATH ?? "./data.db");
 const moduleDb = new Database(DB_PATH);
+// FIX 6 (AVG art. 32): dezelfde encryptie-hook als in storage.ts. Bij Optie B
+// moet ELKE handle de sleutel toepassen; eén handle die het vergeet opent het
+// bestand zonder sleutel. No-op zolang TAPAS_DB_SLEUTEL niet gezet is.
+pasEncryptieToe(moduleDb, "server/t4sports/module-routes.ts");
 
 // Maak de tabel aan als die nog niet bestaat (idempotent)
 moduleDb.exec(`

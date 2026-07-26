@@ -100,8 +100,10 @@ console.log(`[tapas] SQLite database: ${DB_PAD}`);
 const sqlite = new Database(DB_PAD);
 // FIX 6 (AVG art. 32): encryptie-at-rest hook. No-op zolang TAPAS_DB_SLEUTEL niet
 // gezet is en de standaard better-sqlite3-driver in gebruik is. Zie
-// docs/GDPR-FIX6-encryptie-at-rest.md voor de volledige omschakeling.
-pasEncryptieToe(sqlite);
+// docs/GDPR-FIX6-encryptie-at-rest.md voor de volledige omschakeling. De naam
+// dient enkel de opstartmelding, die vertelt op hoeveel handles de sleutel echt
+// is toegepast.
+pasEncryptieToe(sqlite, "server/storage.ts");
 sqlite.pragma("journal_mode = WAL");
 sqlite.pragma("synchronous = NORMAL");   // NP-5 fix 2026-06-30: veilig bij WAL
 sqlite.pragma("cache_size = -32000");    // NP-5 fix 2026-06-30: 32 MB pagina-cache
