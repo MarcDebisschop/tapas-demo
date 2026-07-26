@@ -37,6 +37,9 @@ export interface NewAfname {
   bewaartotDatum?: string | null;
   baselineEnergy: number;
   taal?: string | null;
+  // Verzender (fase 6). Uit de sessie afgeleid door de route, nooit uit de body.
+  aangemaaktDoorBeheerderId?: number | null;
+  aangemaaktDoorOrganisatieId?: number | null;
 }
 
 export async function createAfname(data: NewAfname): Promise<Afname> {
@@ -65,6 +68,8 @@ export async function createAfname(data: NewAfname): Promise<Afname> {
         ).toISOString(),
       baselineEnergy: data.baselineEnergy,
       taal: data.taal ?? "nl",
+      aangemaaktDoorBeheerderId: data.aangemaaktDoorBeheerderId ?? null,
+      aangemaaktDoorOrganisatieId: data.aangemaaktDoorOrganisatieId ?? null,
       status: "deel1",
       createdAt: new Date().toISOString(),
     })
@@ -109,6 +114,8 @@ export async function maakUitnodiging(data: {
   company?: string | null;
   role?: string | null;
   taal?: string | null;
+  aangemaaktDoorBeheerderId?: number | null;
+  aangemaaktDoorOrganisatieId?: number | null;
 }): Promise<Afname> {
   const now = new Date().toISOString();
   const token = `${cryptoRandom(8)}-${cryptoRandom(8)}-${cryptoRandom(8)}`;
@@ -124,6 +131,8 @@ export async function maakUitnodiging(data: {
       consentGiven: false,
       baselineEnergy: 5,
       taal: data.taal ?? "nl",
+      aangemaaktDoorBeheerderId: data.aangemaaktDoorBeheerderId ?? null,
+      aangemaaktDoorOrganisatieId: data.aangemaaktDoorOrganisatieId ?? null,
       status: "uitgenodigd",
       inviteToken: token,
       uitgenodigdAt: now,

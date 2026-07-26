@@ -99,6 +99,18 @@ export const afnames = sqliteTable("afnames", {
   // Bron-IP en user-agent van de ouder op het moment van toestemming (bewijs).
   ouderlijkeToestemmingIp: text("ouderlijke_toestemming_ip"),
   ouderlijkeToestemmingUserAgent: text("ouderlijke_toestemming_user_agent"),
+  // --- Verzender (organisatie-scoping fase 6) ------------------------------
+  // WIE heeft deze afname aangemaakt, naast de vraag wiens credit ze kost
+  // (`organisatieId`). Die twee lopen uiteen: de prior kan een afname aanmaken
+  // die op de credits van een klant staat, en een particuliere afname heeft
+  // wel een verzender maar geen betalende organisatie.
+  //
+  // Beide velden worden op het aanmaakmoment uit de SESSIE afgeleid en nooit
+  // uit de body: een oproeper die zijn eigen verzender mag opgeven, kan het
+  // spoor uitwissen. Nullable en additief, want het deelnemerspad heeft geen
+  // sessie en bestaande rijen houden NULL.
+  aangemaaktDoorBeheerderId: integer("aangemaakt_door_beheerder_id"),
+  aangemaaktDoorOrganisatieId: integer("aangemaakt_door_organisatie_id"),
   createdAt: text("created_at").notNull(),
   completedAt: text("completed_at"),
 });

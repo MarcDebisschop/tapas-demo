@@ -5,7 +5,7 @@
 import type { Express } from "express";
 import { z } from "zod";
 import { storage, CreditError } from "../storage";
-import { bepaalScope, schrijfOrganisatieId } from "../scope-guard";
+import { bepaalScope, schrijfOrganisatieId, verzenderVanVerzoek } from "../scope-guard";
 import { clientInstrumentVan } from "../instrument";
 import { getDescriptor } from "../registry";
 import { buildT4SportsContract } from "./scoring";
@@ -141,6 +141,7 @@ export function registerT4SportsRoutes(app: Express): void {
 
     const created = await storage.createAfname({
       organisatieId: data.organisatieId ?? null,
+      ...(await verzenderVanVerzoek(req)),
       respondentCode: `TMP-T4S-${Date.now()}`,
       // Deze route is per definitie T4Sports; het instrument hoort dus in de
       // kolom en niet enkel impliciet in de respondentCode of consentScope.

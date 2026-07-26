@@ -21,7 +21,7 @@
 import type { Express, Request, Response } from "express";
 import { randomBytes } from "node:crypto";
 import { storage, db, sqlite, CreditError } from "../storage";
-import { vereisScope, scopeVanVerzoek, schrijfOrganisatieId } from "../scope-guard";
+import { vereisScope, scopeVanVerzoek, schrijfOrganisatieId, verzenderVanVerzoek } from "../scope-guard";
 import { afnames, type Afname } from "@shared/schema";
 import { getTemplate, alleTemplates, TEMPLATES } from "./templates";
 import { templateAlsBuffer, parseUpload, type ParseFout } from "./excel";
@@ -114,6 +114,8 @@ async function maakBulkUitnodiging(data: {
   taal?: string | null;
   email?: string | null;
   instrumentId?: string | null;
+  aangemaaktDoorBeheerderId?: number | null;
+  aangemaaktDoorOrganisatieId?: number | null;
 }): Promise<Afname> {
   const now = new Date().toISOString();
   const token = `${bulkToken(8)}-${bulkToken(8)}-${bulkToken(8)}`;
@@ -129,6 +131,8 @@ async function maakBulkUitnodiging(data: {
       consentGiven: false,
       baselineEnergy: 5,
       taal: data.taal ?? "nl",
+      aangemaaktDoorBeheerderId: data.aangemaaktDoorBeheerderId ?? null,
+      aangemaaktDoorOrganisatieId: data.aangemaaktDoorOrganisatieId ?? null,
       status: "uitgenodigd",
       inviteToken: token,
       uitgenodigdAt: now,
@@ -398,6 +402,8 @@ export function registerBulkImportRoutes(app: Express): void {
     const keuze = schrijfOrganisatieId(scope, gevraagd);
     if (!keuze.ok) return res.status(403).json({ error: keuze.fout });
     const organisatieId: number | null = keuze.organisatieId;
+    // Een keer bepaald voor de hele import; elke rij krijgt dezelfde verzender.
+    const verzender = await verzenderVanVerzoek(req);
 
     // Gratis verzending ZONDER organisatie kost geen credits en blijft
     // voorbehouden aan de prior. Een organisatie-scope levert hier altijd een
@@ -515,6 +521,7 @@ export function registerBulkImportRoutes(app: Express): void {
           taal,
           email,
           instrumentId,
+          ...verzender,
         });
       } catch (e) {
         resultaten.push({

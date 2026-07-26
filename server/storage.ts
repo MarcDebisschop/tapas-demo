@@ -451,6 +451,11 @@ try {
   if (!heeft("ouder_email")) add(`ALTER TABLE afnames ADD COLUMN ouder_email TEXT;`);
   if (!heeft("ouderlijke_toestemming_ip")) add(`ALTER TABLE afnames ADD COLUMN ouderlijke_toestemming_ip TEXT;`);
   if (!heeft("ouderlijke_toestemming_user_agent")) add(`ALTER TABLE afnames ADD COLUMN ouderlijke_toestemming_user_agent TEXT;`);
+  // Organisatie-scoping fase 6: wie maakte de afname aan. Strikt additief en
+  // nullable; bestaande rijen houden NULL, want die verzender is achteraf niet
+  // betrouwbaar te reconstrueren en raden zou het spoor vervalsen.
+  if (!heeft("aangemaakt_door_beheerder_id")) add(`ALTER TABLE afnames ADD COLUMN aangemaakt_door_beheerder_id INTEGER;`);
+  if (!heeft("aangemaakt_door_organisatie_id")) add(`ALTER TABLE afnames ADD COLUMN aangemaakt_door_organisatie_id INTEGER;`);
 } catch {
   // negeerbaar in nieuwe databases
 }
@@ -1595,6 +1600,9 @@ export interface NewAfname {
   ouderEmail?: string | null;
   ouderlijkeToestemmingIp?: string | null;
   ouderlijkeToestemmingUserAgent?: string | null;
+  // Verzender (fase 6). Door de route uit de sessie afgeleid, nooit uit de body.
+  aangemaaktDoorBeheerderId?: number | null;
+  aangemaaktDoorOrganisatieId?: number | null;
 }
 
 // Centrale GDPR-config: de versie van de privacyverklaring en de standaard
@@ -1640,6 +1648,8 @@ export interface IStorage {
     company?: string | null;
     role?: string | null;
     taal?: string | null;
+    aangemaaktDoorBeheerderId?: number | null;
+    aangemaaktDoorOrganisatieId?: number | null;
   }): Promise<Afname>;
   getAfnameByToken(token: string): Promise<Afname | undefined>;
   markeerHerinnerd(id: number): Promise<Afname | undefined>;
@@ -1870,6 +1880,8 @@ export class DatabaseStorage implements IStorage {
         ouderEmail: data.ouderEmail ?? null,
         ouderlijkeToestemmingIp: data.ouderlijkeToestemmingIp ?? null,
         ouderlijkeToestemmingUserAgent: data.ouderlijkeToestemmingUserAgent ?? null,
+        aangemaaktDoorBeheerderId: data.aangemaaktDoorBeheerderId ?? null,
+        aangemaaktDoorOrganisatieId: data.aangemaaktDoorOrganisatieId ?? null,
         status: "deel1",
         createdAt: new Date().toISOString(),
       })
@@ -1908,6 +1920,8 @@ export class DatabaseStorage implements IStorage {
     role?: string | null;
     taal?: string | null;
     instrumentId?: string | null;
+    aangemaaktDoorBeheerderId?: number | null;
+    aangemaaktDoorOrganisatieId?: number | null;
   }): Promise<Afname> {
     const now = new Date().toISOString();
     // Tijdelijke unieke respondentCode; wordt na voltooiing/start verfijnd.
@@ -1925,6 +1939,8 @@ export class DatabaseStorage implements IStorage {
         baselineEnergy: 5,
         taal: data.taal ?? "nl",
         instrumentId: data.instrumentId ?? null,
+        aangemaaktDoorBeheerderId: data.aangemaaktDoorBeheerderId ?? null,
+        aangemaaktDoorOrganisatieId: data.aangemaaktDoorOrganisatieId ?? null,
         status: "uitgenodigd",
         inviteToken: token,
         uitgenodigdAt: now,

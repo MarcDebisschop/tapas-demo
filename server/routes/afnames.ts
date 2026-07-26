@@ -40,6 +40,7 @@ import {
   valtBinnenScope,
   schrijfOrganisatieId,
   bepaalScope,
+  verzenderVanVerzoek,
 } from "../scope-guard";
 import { getDefaultDescriptor } from "../registry";
 import { schrijfAuditLog } from "../audit-log";
@@ -149,6 +150,9 @@ export function registerAfnameRoutes(app: Express): void {
     const consentUserAgent = (req.headers["user-agent"] as string) ?? null;
     const created = await storage.createAfname({
       organisatieId: data.organisatieId ?? null,
+      // De verzender komt uit de sessie. Op het deelnemerspad is er geen
+      // sessie en blijven beide velden null.
+      ...(await verzenderVanVerzoek(req)),
       respondentCode: tempCode,
       name: data.name,
       company: data.company ?? null,
@@ -246,6 +250,7 @@ export function registerAfnameRoutes(app: Express): void {
     }
     const inv = await storage.maakUitnodiging({
       organisatieId: data.organisatieId ?? null,
+      ...(await verzenderVanVerzoek(req)),
       name: data.name ?? null,
       company: data.company ?? null,
       role: data.role ?? null,

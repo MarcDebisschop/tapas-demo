@@ -68,6 +68,31 @@ function beheerderIdVanSessie(req: Request): number | null {
 }
 
 /**
+ * De verzender van een nieuw record: WIE maakt dit aan. Los van de vraag wiens
+ * credit het kost (`schrijfOrganisatieId`), want die twee lopen uiteen. De
+ * prior kan een afname aanmaken die op de credits van een klant staat, en een
+ * particuliere afname heeft wel een verzender maar geen betalende organisatie.
+ *
+ * Beide velden komen uit de SESSIE en nooit uit de body: een oproeper die zijn
+ * eigen verzender mag opgeven, kan het spoor uitwissen. Op het deelnemerspad
+ * bestaat geen sessie en blijven beide velden null; dat is de eerlijke waarde
+ * en geen ontbrekend gegeven.
+ */
+export async function verzenderVanVerzoek(req: Request): Promise<{
+  aangemaaktDoorBeheerderId: number | null;
+  aangemaaktDoorOrganisatieId: number | null;
+}> {
+  const beheerderId = beheerderIdVanSessie(req);
+  const scope = await bepaalScope(req);
+  return {
+    aangemaaktDoorBeheerderId: beheerderId,
+    // De organisatie van de VERZENDER, niet die van het record. Voor de prior
+    // is dat null: hij hoort bij het platform en niet bij een klant.
+    aangemaaktDoorOrganisatieId: scope.soort === "organisatie" ? scope.organisatieId : null,
+  };
+}
+
+/**
  * Leidt de scope af uit de sessie. De volgorde is bewust: een beheerder-sessie
  * wint van een organisatie-sessie, want de beheerder is de specifiekere
  * identiteit wanneer iemand toevallig allebei heeft.
