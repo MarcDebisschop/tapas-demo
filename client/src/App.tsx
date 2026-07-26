@@ -48,6 +48,8 @@ import Instrumenten from "@/pages/instrumenten";
 import Brochure from "@/pages/brochure";
 import AdminInstrumentengids from "@/pages/admin-instrumentengids";
 import { AdminLoginGate } from "@/components/AdminLoginGate";
+import { OrganisatieLoginGate } from "@/components/OrganisatieLoginGate";
+import OrganisatieDashboard from "@/pages/organisatie-dashboard";
 import Koop from "@/pages/koop";
 import AdminPrijzen from "@/pages/admin-prijzen";
 import AdminBulkImport from "@/pages/admin-bulk-import";
@@ -126,6 +128,9 @@ function AppRouter() {
       <Route path="/admin/prijzen">{() => <AdminLoginGate><AdminPrijzen /></AdminLoginGate>}</Route>
       <Route path="/admin/bulk-import">{() => <AdminLoginGate><AdminBulkImport /></AdminLoginGate>}</Route>
       <Route path="/admin/factuurhuisstijl">{() => <AdminLoginGate><AdminFactuurhuisstijl /></AdminLoginGate>}</Route>
+      {/* Organisatieportaal (fase 7): eigen sessie, los van de admin-sessie.
+          De organisatie komt uit die sessie en staat bewust niet in het pad. */}
+      <Route path="/organisatie">{() => <OrganisatieLoginGate><OrganisatieDashboard /></OrganisatieLoginGate>}</Route>
       <Route path="/coaches" component={Coaches} />
       <Route path="/onderbouwing" component={Onderbouwing} />
       {/* BELEVING — TaPasAcademy (achter feature-flag; default uit in TaPas Core) */}

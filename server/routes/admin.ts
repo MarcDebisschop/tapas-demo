@@ -19,7 +19,7 @@ import type { Express } from "express";
 import { storage, db } from "../storage";
 import { verifieerWachtwoord } from "../auth/wachtwoord";
 import { vereisAdmin, adminIdVanSessie } from "../admin-guard";
-import { vereisScope, scopeVanVerzoek } from "../scope-guard";
+import { vereisScope, scopeVanVerzoek, bepaalScope } from "../scope-guard";
 import { schrijfAuditLog } from "../audit-log";
 import { alleInstrumenten } from "../registry";
 import {
@@ -80,11 +80,26 @@ export function registerAdminRoutes(app: Express): void {
       const beheerder = await storage.getBeheerder(Number(adminId));
       if (!beheerder || !beheerder.actief)
         return res.status(401).json({ message: "Sessie verlopen." });
+      // De frontend moet weten WAT ze mag tonen. `isPrior` alleen volstaat
+      // niet: fase 3 beslist prior centraal op `isPrior` EN de
+      // prior-organisatie, en een scherm dat enkel naar de vlag kijkt zou
+      // ruimer zijn dan de server. Daarom sturen we de scope zelf mee, uit
+      // dezelfde bron als de guards.
+      const scope = await bepaalScope(req);
+      const organisatieId = scope.soort === "organisatie" ? scope.organisatieId : null;
       res.json({
         ok: true,
         naam: beheerder.naam,
         email: beheerder.email,
+        // Blijft staan voor bestaande oproepers; nieuwe schermen horen naar
+        // `scope` te kijken.
         isPrior: beheerder.isPrior,
+        scope: scope.soort,
+        organisatieId,
+        organisatieNaam:
+          organisatieId === null
+            ? null
+            : ((await storage.getOrganisatie(organisatieId))?.naam ?? null),
       });
     } catch {
       res.status(401).json({ message: "Niet ingelogd." });

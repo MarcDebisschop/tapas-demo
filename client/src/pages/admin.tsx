@@ -126,8 +126,19 @@ export default function Admin() {
 
   const { data, isLoading } = useQuery<Afname[]>({ queryKey: ["/api/admin/afnames"] });
   const { data: organisaties } = useQuery<OrganisatieMetSaldo[]>({ queryKey: ["/api/organisaties"] });
-  const { data: mijnProfiel } = useQuery<{ isPrior: boolean }>({ queryKey: ["/api/admin/me"] });
-  const isPrior = mijnProfiel?.isPrior === true;
+  // De scope komt van de server, uit dezelfde bron als de guards. `isPrior`
+  // alleen volstaat niet: prior is `isPrior` EN de prior-organisatie, dus een
+  // scherm dat enkel naar de vlag kijkt zou ruimer zijn dan wat de server
+  // toestaat. Zichtbaarheid is hier een kwestie van rust in het scherm; de
+  // echte grendel zit op de server.
+  const { data: mijnProfiel } = useQuery<{
+    isPrior: boolean;
+    scope?: "prior" | "organisatie" | "geen";
+    organisatieId?: number | null;
+    organisatieNaam?: string | null;
+  }>({ queryKey: ["/api/admin/me"] });
+  const isPrior = mijnProfiel?.scope === "prior";
+  const eigenOrganisatieNaam = mijnProfiel?.organisatieNaam ?? null;
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [invName, setInvName] = useState("");
@@ -253,7 +264,10 @@ export default function Admin() {
     setCreatedLink(null);
   }
 
-  const openOrganisaties = organisaties && organisaties.length > 0;
+  // Enkel de prior kiest vrij een afnemer. Een organisatiebeheerder heeft maar
+  // een mogelijke keuze en de server legt die toch al op; een dropdown met een
+  // enkel item suggereert onterecht dat er iets te kiezen valt.
+  const openOrganisaties = isPrior && organisaties && organisaties.length > 0;
 
   return (
     <div className="min-h-[100dvh] bg-background">
@@ -302,6 +316,15 @@ export default function Admin() {
       <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">{t("admin_titel")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">{t("admin_intro")}</p>
+
+        {/* Organisatiecontext: maak zichtbaar wiens gegevens dit scherm toont,
+            zodat niemand platformcijfers vermoedt waar er organisatiecijfers
+            staan. */}
+        {eigenOrganisatieNaam && (
+          <p className="mt-1 text-sm font-medium text-foreground" data-testid="tekst-organisatiecontext">
+            U bekijkt: {eigenOrganisatieNaam}
+          </p>
+        )}
 
         {/* ---------------------------------------------------------------- */}
         {/* CLUSTERTEGELS — R32: 4 groepen, alle data-testid's bewaard       */}
@@ -356,6 +379,11 @@ export default function Admin() {
                   <CreditCard className="h-3.5 w-3.5 shrink-0" /> Credits &amp; saldo
                 </a>
               </Link>
+              {/* Instrument-prijzen en factuur-huisstijl gelden platformbreed
+                  en horen dus bij de prior. Credits en saldo blijven wel
+                  staan: dat is het eigen saldo van de organisatie. */}
+              {isPrior && (
+                <>
               <Link href="/admin/prijzen">
                 <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-prijzen">
                   <Euro className="h-3.5 w-3.5 shrink-0" /> Instrument-prijzen
@@ -366,6 +394,8 @@ export default function Admin() {
                   <Palette className="h-3.5 w-3.5 shrink-0" /> Factuur-huisstijl
                 </a>
               </Link>
+                </>
+              )}
             </div>
           </div>
 
