@@ -94,7 +94,7 @@ werkkopie, voor de pull request en nog eens voor het taggen.
 npx vitest run
 ```
 
-Stand op 26-07-2026: **343 tests over 26 bestanden, alles groen.** Deze
+Stand op 26-07-2026: **366 tests over 27 bestanden, alles groen.** Deze
 telling mag stijgen, nooit dalen. Een test verwijderen of overslaan is een
 beslissing die in de pull request verantwoord moet worden, niet iets wat
 onderweg gebeurt.
@@ -127,11 +127,12 @@ Wat de suite dekt, in lagen:
 npx tsc --noEmit
 ```
 
-Stand op 26-07-2026: **77 fouten.** Dat is geen doel maar een bekende schuld,
+Stand op 26-07-2026: **73 fouten.** Dat is geen doel maar een bekende schuld,
 vastgelegd zodat ze niet stilletjes groeit. De regel is eenvoudig: de telling
-mag na een wijziging niet hoger zijn dan ervoor. Lager mag altijd.
+mag na een wijziging niet hoger zijn dan ervoor. Lager mag altijd; de telling
+stond op 77 en vier zijn opgelost.
 
-Waarom niet eerst opruimen: een deel van die 77 zit in code waar geen test op
+Waarom niet eerst opruimen: een deel van die 73 zit in code waar geen test op
 staat, en typefouten repareren zonder vangnet is precies het soort ingreep waar
 gedrag stilletjes verandert. De resterende fouten en het voorstel per groep
 staan in [TECHNISCHE-SCHULD.md](TECHNISCHE-SCHULD.md).

@@ -87,7 +87,17 @@ in `main` is samengevoegd.
   velddefinitie, automatische anonimisering na de bewaartermijn, een
   append-only audit-log, een pseudonimiseringspoort met doorgifteregister voor
   de AI-duiding, en de hook voor encryptie-at-rest.
-- Deze changelog en `docs/RELEASEBELEID.md`.
+- Deze changelog, `docs/RELEASEBELEID.md` en `docs/TECHNISCHE-SCHULD.md`.
+- Encryptie-at-rest is auditbaar geworden. De hook wordt nu op alle acht
+  databank-handles aangeroepen in plaats van op een deel ervan, en bij het
+  opstarten meldt de app expliciet of encryptie ACTIEF is of als no-op draait.
+  Dat laatste is de kern: de standaard `better-sqlite3` negeert `PRAGMA key`
+  zonder te klagen, dus een gezette sleutel zonder cipher-driver is de
+  gevaarlijkste toestand die er is. `actief` vraagt daarom sleutel EN
+  cipher-driver. Een test houdt de lijst van acht handles gelijk aan wat er
+  feitelijk in `server/` een databank opent, zodat een nieuwe handle die de hook
+  vergeet de suite laat falen. Encryptie blijft uit; aanzetten is een
+  productiebeslissing.
 - `tests/i18n-dekking.test.ts`: bewaakt dat elke sleutel die de code opvraagt
   bestaat, dat elke taal dezelfde sleutelset heeft, en dat geen vertaling een
   accolade-plaatshouder laat vallen.
@@ -110,6 +120,16 @@ in `main` is samengevoegd.
 - De publieke startpagina toont geen organisatielijst meer. Die lijst was zelf
   het lek: ze gaf aan iedere bezoeker prijs welke organisaties klant zijn.
 - `t4r-home.tsx` staat achter de CoachLoginGate.
+- De billers- en organisaties-code is uit `server/storage.ts` gehaald en staat
+  nu enkel nog in `server/repositories/`. De map bestond al, maar werd door
+  niemand aangeroepen: het waren kopieen van de god-module, met alle kans op
+  stil uiteenlopen. De klasse `DatabaseStorage` delegeert er nu echt naartoe en
+  de kopie is verwijderd. De publieke interface is ongewijzigd, dus
+  `import { storage } from "./storage"` blijft werken.
+- Vier typefouten opgelost zonder gedragswijziging (`Array.from` in plaats van
+  het uitspreiden van een `Map` of `Set`, en een ontbrekend parametertype). De
+  telling gaat van 77 naar 73; de rest staat met reden in
+  `docs/TECHNISCHE-SCHULD.md`.
 - Alle migraties in deze versie zijn additief en idempotent, achter een
   `PRAGMA table_info`-bestaanscontrole. Geen enkele `DROP`, geen `NOT NULL` op
   een nieuwe kolom. Beide migraties zijn tweemaal gevalideerd op een kopie van
