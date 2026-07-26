@@ -52,6 +52,7 @@ import {
 import { isTalentFocusConstruct } from "@shared/talent-constructs";
 import { renderFactuurPdf } from "../facturen/factuur-pdf";
 import { vereisAdmin } from "../admin-guard";
+import { vereisPrior } from "../scope-guard";
 
 // Facturatie-uitbreiding: leid de effectieve betaalstatus af. Een 'openstaande'
 // factuur met een vervaldatum die vóór vandaag ligt, geldt als 'vervallen'.
@@ -496,20 +497,20 @@ export function registerFinancieelRoutes(app: Express): void {
   // =========================================================================
   // Fase C4b — Bestuursrapportage (Raad van Bestuur / investeerders)
   //
-  // TODO prior-only vanaf fase 3/5: deze drie endpoints tonen platformbrede
-  // cijfers over alle organisaties heen. Zodra `vereisPrior` bestaat, vervangt
-  // die hier `vereisAdmin`. Een organisatie mag deze cijfers nooit zien.
+  // Prior-only (fase 3): deze drie endpoints tonen platformbrede cijfers over
+  // alle organisaties heen. Een organisatie mag die nooit zien, ook niet in
+  // geaggregeerde vorm, want met weinig klanten is een totaal herleidbaar.
   // =========================================================================
 
-  app.get("/api/bestuur/kpis", vereisAdmin, async (_req, res) => {
+  app.get("/api/bestuur/kpis", vereisPrior, async (_req, res) => {
     res.json(await storage.bestuursKpis());
   });
 
-  app.get("/api/bestuur/boekhoudexport", vereisAdmin, async (_req, res) => {
+  app.get("/api/bestuur/boekhoudexport", vereisPrior, async (_req, res) => {
     res.json(await storage.boekhoudExport());
   });
 
-  app.get("/api/bestuur/boekhoudexport.csv", vereisAdmin, async (_req, res) => {
+  app.get("/api/bestuur/boekhoudexport.csv", vereisPrior, async (_req, res) => {
     const regels = await storage.boekhoudExport();
     const kolommen = [
       "documenttype", "nummer", "datum", "klant", "klantBtw",

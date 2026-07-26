@@ -20,6 +20,7 @@ import { startBewaartermijnJob } from "./bewaartermijn-job";
 import { startInstrumentBackfill } from "./instrument-backfill";
 import { startOrganisatieKoppeling } from "./organisatie-koppeling";
 import { registerOrganisatieAuthRoutes } from "./routes/organisatie-auth";
+import { registerOrganisatieBeheerRoutes } from "./routes/organisatie-beheer";
 import { registerT4SportsRoutes } from "./t4sports/routes";
 import { registerT4SportsModuleRoutes } from "./t4sports/module-routes";
 import { registerCoachContactRoutes } from "./routes-coach-contact";
@@ -61,6 +62,7 @@ export async function registerRoutes(
 
   // --- Organisatie-login: eigen e-mail + wachtwoord, zet organisatieId ---
   registerOrganisatieAuthRoutes(app);
+  registerOrganisatieBeheerRoutes(app);
 
   // --- Opvolging per instrument (niveau 1 admin, niveau 2 organisatie) ---
   registerOpvolgingRoutes(app);

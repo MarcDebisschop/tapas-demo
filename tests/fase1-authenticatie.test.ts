@@ -106,10 +106,13 @@ describe("elk endpoint in financieel.ts en rapporten.ts staat achter vereisAdmin
   }
 
   it("financieel.ts: alle 32 endpoints", () => {
+    // Fase 3 verscherpte drie van de 32 van vereisAdmin naar vereisPrior. De
+    // eis blijft dat geen enkele registratie zonder guard staat; welke van de
+    // twee het is, bewaakt de fase-3 suite.
     const gevonden = registraties("server/routes/financieel.ts");
     expect(gevonden.length).toBe(32);
     for (const [, , pad, rest] of gevonden) {
-      expect(rest, `route ${pad} mist vereisAdmin`).toContain("vereisAdmin");
+      expect(rest, `route ${pad} mist een guard`).toMatch(/vereisAdmin|vereisPrior/);
     }
   });
 
@@ -121,11 +124,13 @@ describe("elk endpoint in financieel.ts en rapporten.ts staat achter vereisAdmin
     }
   });
 
-  it("markeert de bestuurscijfers voor prior-only in een latere fase", () => {
-    // Platformbrede cijfers mogen straks niet naar een organisatie. De TODO
-    // houdt dat punt zichtbaar tot fase 3/5 hem vervangt door vereisPrior.
+  it("heeft de prior-only TODO van fase 1 opgelost", () => {
+    // Fase 1 liet hier een TODO staan voor de platformbrede cijfers. Fase 3
+    // heeft die vervangen door een echte vereisPrior-guard, dus de marker mag
+    // niet meer bestaan: een blijvende TODO zou een openstaand lek suggereren
+    // dat er niet meer is.
     const bron = readFileSync("server/routes/financieel.ts", "utf8");
-    expect(bron).toContain("TODO prior-only vanaf fase 3/5");
+    expect(bron).not.toContain("TODO prior-only vanaf fase 3/5");
   });
 });
 
