@@ -41,7 +41,10 @@ interface OpvolgingRij {
 interface Opvolging {
   organisatieId: number | null;
   organisatieNaam: string | null;
-  rijen: OpvolgingRij[];
+  // De server levert dit veld onder de naam `instrumenten` (zie
+  // server/routes/opvolging.ts). Eerder stond hier `rijen`, wat niet bestond
+  // en het hele portaal liet crashen op `.map` van undefined.
+  instrumenten: OpvolgingRij[];
   totalen: { totaal: number; voltooid: number };
 }
 
@@ -201,7 +204,7 @@ export default function OrganisatieDashboard() {
                   </tr>
                 </thead>
                 <tbody data-testid="tabel-opvolging">
-                  {opvolging.rijen.map((r) => (
+                  {(opvolging.instrumenten ?? []).map((r) => (
                     <tr key={r.instrumentId} className="border-t border-border">
                       <td className="px-4 py-2 text-foreground">{r.label}</td>
                       <td className="px-4 py-2 text-muted-foreground">{r.totaal}</td>
