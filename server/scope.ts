@@ -52,3 +52,46 @@ export function organisatieFilterVanScope(scope: Scope, functie: string): number
   if (scope.soort === "prior") return null;
   return scope.organisatieId;
 }
+
+/**
+ * Valt een record dat bij `organisatieId` hoort binnen deze scope? Voor
+ * losse records (een afname, een rapport) waar geen lijstquery aan te pas
+ * komt.
+ *
+ * Een record zonder organisatie (`null`) is particulier en hoort bij geen
+ * enkele organisatie; enkel de prior ziet het. Zou een organisatie het wel
+ * zien, dan zou elke organisatie alle particuliere afnames kunnen lezen.
+ */
+/**
+ * Bepaalt onder welke organisatie een NIEUW record mag worden weggeschreven.
+ *
+ * De prior houdt vrije keuze; hij bedient alle organisaties. Een organisatie
+ * krijgt haar eigen id opgelegd, ongeacht wat er in de body stond. Een
+ * afwijkende waarde in de body wordt GEWEIGERD en niet stil overschreven: stil
+ * overschrijven zou de oproeper laten geloven dat zijn invoer is aanvaard,
+ * terwijl er iets anders in de databank belandt.
+ */
+export function schrijfOrganisatieId(
+  scope: Scope,
+  gevraagd: number | null | undefined,
+): { ok: true; organisatieId: number | null } | { ok: false; fout: string } {
+  if (scope.soort === "geen") {
+    // Zonder scope mag er wel iets aangemaakt worden, maar niet OP NAAM van een
+    // organisatie. Dat is het deelnemerspad: een particuliere afname hoort bij
+    // geen enkele organisatie en kost dus ook niemands credits.
+    return gevraagd == null
+      ? { ok: true, organisatieId: null }
+      : { ok: false, fout: "Geen toegang tot deze organisatie." };
+  }
+  if (scope.soort === "prior") return { ok: true, organisatieId: gevraagd ?? null };
+  if (gevraagd != null && gevraagd !== scope.organisatieId) {
+    return { ok: false, fout: "U kunt enkel voor uw eigen organisatie aanmaken." };
+  }
+  return { ok: true, organisatieId: scope.organisatieId };
+}
+
+export function valtBinnenScope(scope: Scope, organisatieId: number | null | undefined): boolean {
+  if (scope.soort === "geen") return false;
+  if (scope.soort === "prior") return true;
+  return organisatieId != null && organisatieId === scope.organisatieId;
+}

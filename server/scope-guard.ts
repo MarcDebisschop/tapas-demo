@@ -33,7 +33,15 @@ import { type Scope, SCOPE_PRIOR, SCOPE_GEEN } from "./scope";
 // Het type en de datalaag-primitieven wonen in `./scope`, zodat de datalaag ze
 // kan gebruiken zonder deze module (en dus `storage`) binnen te halen. Hier
 // opnieuw exporteren zodat oproepers niet hoeven te weten waar wat staat.
-export { type Scope, SCOPE_PRIOR, SCOPE_GEEN, ScopeFout, organisatieFilterVanScope } from "./scope";
+export {
+  type Scope,
+  SCOPE_PRIOR,
+  SCOPE_GEEN,
+  ScopeFout,
+  organisatieFilterVanScope,
+  valtBinnenScope,
+  schrijfOrganisatieId,
+} from "./scope";
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace

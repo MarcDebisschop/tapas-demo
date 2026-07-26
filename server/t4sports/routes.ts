@@ -5,6 +5,7 @@
 import type { Express } from "express";
 import { z } from "zod";
 import { storage, CreditError } from "../storage";
+import { bepaalScope, schrijfOrganisatieId } from "../scope-guard";
 import { clientInstrumentVan } from "../instrument";
 import { getDescriptor } from "../registry";
 import { buildT4SportsContract } from "./scoring";
@@ -103,7 +104,21 @@ export function registerT4SportsRoutes(app: Express): void {
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
     }
-    const data = parsed.data;
+    // Zelfde afweging als bij POST /api/afnames: deze route is publiek voor de
+    // deelnemer, dus de organisatie in de body moet gescoped worden. Zonder
+    // scope mag er geen organisatie aangeduid worden, anders kan een anonieme
+    // oproeper de credits van een willekeurige organisatie opsouperen.
+    const scope = await bepaalScope(req);
+    const keuze = schrijfOrganisatieId(scope, parsed.data.organisatieId);
+    if (!keuze.ok) {
+      return res.status(403).json({
+        error:
+          scope.soort === "geen"
+            ? "Een afname op naam van een organisatie vraagt een uitnodiging."
+            : keuze.fout,
+      });
+    }
+    const data = { ...parsed.data, organisatieId: keuze.organisatieId ?? undefined };
 
     // Credits checken
     if (data.organisatieId != null) {

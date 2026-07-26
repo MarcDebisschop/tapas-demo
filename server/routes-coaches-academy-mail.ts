@@ -14,6 +14,7 @@
 import type { Express } from "express";
 import type { Request, Response } from "express";
 import { sqlite as sqliteInstance } from "./storage";
+import { vereisScope, scopeVanVerzoek } from "./scope-guard";
 import { existsSync, createReadStream } from "node:fs";
 import { join } from "node:path";
 
@@ -600,13 +601,21 @@ export function registerCoachesAcademyMailRoutes(app: Express, db: any, storage:
   // INZICHTCENTRUM — Analytics dashboard
   // =========================================================================
 
-  app.get("/api/inzichtcentrum/overzicht", (req, res) => {
-    if (!requireAdmin(req, res)) return;
+  app.get("/api/inzichtcentrum/overzicht", vereisScope, (req, res) => {
     const sq = getSqlite(db, storage);
     if (!sq) return res.json(leegInzichtoverzicht("platform", null));
 
     try {
-      const orgId = req.query.organisatie_id ? Number(req.query.organisatie_id) : null;
+      const scope = scopeVanVerzoek(req);
+      // De as komt uit de scope. Voor de prior blijft `organisatie_id` een
+      // filter binnen wat hij toch al mag zien; een organisatie krijgt altijd
+      // haar eigen as, ongeacht wat er in de query stond.
+      const orgId =
+        scope.soort === "organisatie"
+          ? scope.organisatieId
+          : req.query.organisatie_id
+            ? Number(req.query.organisatie_id)
+            : null;
 
       // Basis tellingen
       const afnamesTotaal = (sq.prepare("SELECT COUNT(*) AS n FROM afnames").get() as any)?.n ?? 0;
@@ -693,6 +702,41 @@ export function registerCoachesAcademyMailRoutes(app: Express, db: any, storage:
         overzicht.totalen.afnamesTotaal = orgAfnames;
         overzicht.totalen.afnamesVoltooid = orgVoltooid;
         overzicht.totalen.organisaties = orgId ? 1 : orgCount;
+      }
+
+      // Platformbrede deelcijfers zijn niet naar een organisatie te herleiden
+      // maar gaan wel over alle klanten samen. Enkel de prior krijgt ze; een
+      // organisatie krijgt lege reeksen in plaats van cijfers over het geheel.
+      if (scope.soort !== "prior") {
+        overzicht.totalen.deelnemers = 0;
+        overzicht.gender = [];
+        overzicht.sector = [];
+        overzicht.coachNetwerk = {
+          totaalActief: 0,
+          perLand: [],
+          perRegio: [],
+          perAccreditatie: [],
+        };
+        // De drempels tellen naar platformmijlpalen (factoranalyse, radar,
+        // brug) en horen dus bij het platform, niet bij een klant.
+        overzicht.drempels = {
+          factoranalyse: { benodigd: 300, huidig: 0, gehaald: false },
+          radar: { benodigd: 150, huidig: 0, gehaald: false },
+          brug: { benodigd: 500, huidig: 0, gehaald: false },
+        };
+        // De evolutie is per maand over alle afnames; herbereken ze gescoped.
+        const orgEvolutie = sq.prepare(`
+          SELECT strftime('%Y-%m', created_at) AS maand, COUNT(*) AS aantal
+          FROM afnames
+          WHERE organisatie_id = ? AND created_at >= date('now', '-12 months')
+          GROUP BY maand
+          ORDER BY maand ASC
+        `).all(orgId) as any[];
+        overzicht.evolutie = orgEvolutie.map((e: any) => ({
+          maand: e.maand,
+          aantal: e.aantal,
+          onderdrukt: false,
+        }));
       }
 
       return res.json(overzicht);

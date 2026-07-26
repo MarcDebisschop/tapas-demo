@@ -21,6 +21,7 @@
 import type { Express, Request, Response } from "express";
 import { randomBytes } from "node:crypto";
 import { storage, db, sqlite, CreditError } from "../storage";
+import { vereisScope, scopeVanVerzoek, schrijfOrganisatieId } from "../scope-guard";
 import { afnames, type Afname } from "@shared/schema";
 import { getTemplate, alleTemplates, TEMPLATES } from "./templates";
 import { templateAlsBuffer, parseUpload, type ParseFout } from "./excel";
@@ -47,16 +48,9 @@ function requireAdmin(req: Request, res: Response): boolean {
 // zodat het bestaande credit-model geldt. Deze helper wijzigt niets aan de
 // bestaande flow; ze levert enkel de isPrior-status van de ingelogde admin.
 // ---------------------------------------------------------------------------
-async function isPriorAdmin(req: Request): Promise<boolean> {
-  const adminId = (req.session as any)?.adminId;
-  if (!adminId) return false;
-  try {
-    const beheerder = await storage.getBeheerder(Number(adminId));
-    return !!beheerder && beheerder.actief === true && beheerder.isPrior === true;
-  } catch {
-    return false;
-  }
-}
+// Prior wordt centraal beslist in server/scope-guard.ts. De vroegere lokale
+// versie hier keek enkel naar `isPrior` en niet naar de prior-organisatie, en
+// was dus zwakker dan de rest van het platform.
 
 // ---------------------------------------------------------------------------
 // Org-eigen afzender-tabel (idempotent aangemaakt in de nieuwe module).
@@ -388,25 +382,28 @@ export function registerBulkImportRoutes(app: Express): void {
   });
 
   // --- Verwerk: maak uitnodigingen aan + verstuur/queue mail ---
-  app.post("/api/admin/bulk-import/verwerk", async (req, res) => {
-    if (!requireAdmin(req, res)) return;
+  app.post("/api/admin/bulk-import/verwerk", vereisScope, async (req, res) => {
     const instrumentId = String(req.body?.instrumentId ?? "");
     const tpl = getTemplate(instrumentId);
     if (!tpl) return res.status(400).json({ error: "Onbekend of niet-ondersteund instrument." });
 
-    const organisatieId: number | null =
+    // De organisatie komt uit de scope. Een organisatie die een ander id
+    // meestuurt krijgt 403; anders zou ze in bulk uitnodigingen op kosten van
+    // een andere organisatie kunnen versturen.
+    const gevraagd =
       req.body?.organisatieId != null && Number.isFinite(Number(req.body.organisatieId))
         ? Number(req.body.organisatieId)
         : null;
+    const scope = scopeVanVerzoek(req);
+    const keuze = schrijfOrganisatieId(scope, gevraagd);
+    if (!keuze.ok) return res.status(403).json({ error: keuze.fout });
+    const organisatieId: number | null = keuze.organisatieId;
 
-    // -----------------------------------------------------------------------
-    // BEVEILIGING (additief): gratis verzending ZONDER organisatie (geen
-    // credits) is voorbehouden aan de hoofdbeheerder (isPrior). Een gewone
-    // admin die geen organisatie kiest, krijgt 403 en moet een organisatie
-    // selecteren zodat het bestaande credit-model geldt. Verandert niets aan
-    // de flow met een gekozen organisatie of voor prior-beheerders.
-    // -----------------------------------------------------------------------
-    if (organisatieId == null && !(await isPriorAdmin(req))) {
+    // Gratis verzending ZONDER organisatie kost geen credits en blijft
+    // voorbehouden aan de prior. Een organisatie-scope levert hier altijd een
+    // organisatieId op, dus deze tak raakt enkel de prior die er zelf geen
+    // koos.
+    if (organisatieId == null && scope.soort !== "prior") {
       return res.status(403).json({
         error:
           "Gratis verzending zonder organisatie is voorbehouden aan de hoofdbeheerder. " +

@@ -10,25 +10,22 @@
  *   NIVEAU 2 - één organisatie, hard gescoped:
  *     GET /api/organisatie/opvolging-per-instrument?organisatie_id=<id>
  *
- * BEVEILIGING VAN NIVEAU 2 (bewuste keuze, zie ook de PR-omschrijving):
- * Dit platform heeft vandaag GEEN organisatie-authenticatie. Nagekeken en niet
- * gevonden: er is geen req.session.organisatieId (de sessie kent enkel adminId,
- * coachId en platformSessieId), de tabel `organisaties` heeft geen wachtwoord-
- * of tokenkolom, en `beheerders.organisatie` is vrije tekst zonder koppeling
- * naar organisaties.id. Er bestaat dus geen enkele server-geverifieerde bron
- * voor "welke organisatie ben jij".
+ * BEVEILIGING (fase 5 van de organisatie-scoping):
+ * Beide endpoints staan achter `vereisScope`. De scope komt uit de SESSIE en
+ * nooit uit de query. Voordien haalde niveau 2 de organisatie uit
+ * `?organisatie_id=`, en dat betekende dat elke admin-sessie de cijfers van
+ * elke organisatie kon opvragen.
  *
- * Daarom is de organisatie-endpoint NIET publiek gemaakt. Hij staat achter
- * dezelfde admin-guard als niveau 1 en vereist een expliciete, gevalideerde
- * organisatie_id. Zo kan niemand zonder authenticatie organisatiecijfers
- * opvragen. Een echte organisatie-login blijft een openstaand punt; zodra die
- * er is, hoeft enkel `bepaalOrganisatieScope` de id uit de sessie te halen in
- * plaats van uit de query.
+ * Niveau 1 (alle organisaties samen) is daarmee vanzelf prior-only: een
+ * organisatie die dat pad aanroept krijgt haar eigen cijfers, niet die van het
+ * platform. Voor de prior blijft `organisatie_id` een FILTER binnen wat hij
+ * toch al mag zien.
  */
 
 import type { Express, Request, Response } from "express";
 import { sqlite } from "../storage";
-import { vereisAdmin } from "../admin-guard";
+import { vereisScope, scopeVanVerzoek } from "../scope-guard";
+import { organisatieFilterVanScope } from "../scope";
 import { alleInstrumenten } from "../registry";
 import {
   aggregeerPerInstrument,
@@ -58,14 +55,21 @@ function organisatieNaam(id: number): string | null {
 
 export function registerOpvolgingRoutes(app: Express): void {
   // ── NIVEAU 1: admin, alle organisaties of gefilterd op één ────────────────
-  app.get("/api/admin/opvolging-per-instrument", vereisAdmin, (req: Request, res: Response) => {
+  app.get("/api/admin/opvolging-per-instrument", vereisScope, (req: Request, res: Response) => {
     try {
-      // Voor de admin is organisatie_id een FILTER en dus optioneel. Een
-      // meegegeven maar ongeldige waarde negeren we niet stilzwijgend: dat zou
-      // ongemerkt de cijfers van alle organisaties tonen.
+      const scope = scopeVanVerzoek(req);
+
+      // Niveau 1 (alle organisaties samen) is hiermee vanzelf prior-only. Een
+      // organisatie die dit pad aanroept zakt naar haar eigen cijfers in plaats
+      // van een fout te krijgen: zo kan een verkeerde URL nooit meer opleveren
+      // dan de scope toestaat.
+      let organisatieId = organisatieFilterVanScope(scope, "opvolging-admin");
+
+      // Voor de prior is organisatie_id een FILTER binnen wat hij toch al mag
+      // zien. Een meegegeven maar ongeldige waarde negeren we niet
+      // stilzwijgend: dat zou ongemerkt de cijfers van alle organisaties tonen.
       const ruw = req.query.organisatie_id;
-      let organisatieId: number | null = null;
-      if (ruw !== undefined && String(ruw).trim() !== "") {
+      if (scope.soort === "prior" && ruw !== undefined && String(ruw).trim() !== "") {
         organisatieId = parseOrganisatieId(ruw);
         if (organisatieId === null) {
           return res.status(400).json({ error: "Ongeldige organisatie_id." });
@@ -76,7 +80,7 @@ export function registerOpvolgingRoutes(app: Express): void {
       const { rijen: perInstrument, totalen } = aggregeerPerInstrument(rijen, instrumentLabels());
 
       return res.json({
-        niveau: "admin",
+        niveau: scope.soort === "prior" ? "admin" : "organisatie",
         organisatieId,
         organisatieNaam: organisatieId === null ? null : organisatieNaam(organisatieId),
         gegenereerdOp: new Date().toISOString(),
@@ -90,16 +94,22 @@ export function registerOpvolgingRoutes(app: Express): void {
   });
 
   // ── NIVEAU 2: één organisatie, altijd hard gescoped ───────────────────────
-  app.get("/api/organisatie/opvolging-per-instrument", vereisAdmin, (req: Request, res: Response) => {
+  app.get("/api/organisatie/opvolging-per-instrument", vereisScope, (req: Request, res: Response) => {
     try {
-      // Hier is organisatie_id VERPLICHT en moet ze geldig zijn. Zonder geldige
-      // id doen we geen enkele query: ontbrekende scope mag nooit "toon alles"
-      // betekenen.
-      const organisatieId = parseOrganisatieId(req.query.organisatie_id);
+      const scope = scopeVanVerzoek(req);
+
+      // DE KERN VAN DE FIX: de organisatie komt uit de sessie. Een
+      // `?organisatie_id=` in de URL kan de uitkomst niet meer beinvloeden.
+      // Voor de prior, die geen eigen organisatie heeft, is die parameter wel
+      // de enige manier om te zeggen welke organisatie hij wil bekijken.
+      let organisatieId: number | null = organisatieFilterVanScope(scope, "opvolging-organisatie");
       if (organisatieId === null) {
-        return res.status(400).json({
-          error: "organisatie_id is verplicht en moet een positief geheel getal zijn.",
-        });
+        organisatieId = parseOrganisatieId(req.query.organisatie_id);
+        if (organisatieId === null) {
+          return res.status(400).json({
+            error: "organisatie_id is verplicht en moet een positief geheel getal zijn.",
+          });
+        }
       }
 
       const naam = organisatieNaam(organisatieId);

@@ -120,10 +120,12 @@ describe("elk endpoint in financieel.ts en rapporten.ts staat achter vereisAdmin
   });
 
   it("rapporten.ts: alle 6 endpoints", () => {
+    // Fase 5 verscherpte deze zes van vereisAdmin naar vereisScope: een
+    // rapport erft de scope van de afname waaruit het komt.
     const gevonden = registraties("server/routes/rapporten.ts");
     expect(gevonden.length).toBe(6);
     for (const [, , pad, rest] of gevonden) {
-      expect(rest, `route ${pad} mist vereisAdmin`).toContain("vereisAdmin");
+      expect(rest, `route ${pad} mist een guard`).toMatch(/vereisAdmin|vereisScope/);
     }
   });
 
@@ -222,14 +224,17 @@ describe("GET /api/afnames/:id", () => {
     });
   });
 
-  it("weigert POST /api/uitnodigingen zonder admin-sessie", async () => {
+  it("weigert POST /api/uitnodigingen zonder sessie", async () => {
+    // Fase 5 zette deze route van vereisAdmin op vereisScope, dus het antwoord
+    // is nu 403 ("geen scope") in plaats van 401 ("geen adminsessie"). Beide
+    // betekenen: geen toegang zonder aantoonbare identiteit.
     await metServer(app(), async (basis) => {
       const res = await fetch(`${basis}/api/uitnodigingen`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: "Iemand" }),
       });
-      expect(res.status).toBe(401);
+      expect(res.status).toBe(403);
     });
   });
 });

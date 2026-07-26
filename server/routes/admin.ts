@@ -105,12 +105,19 @@ export function registerAdminRoutes(app: Express): void {
     // De scope komt uit de sessie. `organisatie_id` hieronder is voor de prior
     // een FILTER binnen wat hij toch al mag zien, nooit een manier om buiten
     // de eigen scope te kijken: de datalaag heeft de rijen dan al beperkt.
-    const list = await storage.listAfnames(scopeVanVerzoek(req));
+    const scope = scopeVanVerzoek(req);
+    const list = await storage.listAfnames(scope);
 
     const instrumentFilter = String(req.query.instrument ?? "").trim();
     const ruweOrg = req.query.organisatie_id;
     let orgFilter: number | null = null;
     if (ruweOrg !== undefined && String(ruweOrg).trim() !== "") {
+      // Enkel de prior kan zinvol op organisatie filteren. Bij een
+      // organisatie-scope weigeren we de parameter in plaats van hem te
+      // negeren: stil negeren zou de indruk wekken dat het filter werkte.
+      if (scope.soort !== "prior") {
+        return res.status(403).json({ error: "Filteren op organisatie is voorbehouden aan de hoofdbeheerder." });
+      }
       orgFilter = parseOrganisatieId(ruweOrg);
       // Een ongeldige filterwaarde stil negeren zou ongefilterd alles tonen.
       if (orgFilter === null) {

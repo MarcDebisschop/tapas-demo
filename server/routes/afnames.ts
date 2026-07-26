@@ -21,7 +21,7 @@
  *   POST /api/gdpr/afnames/:id/anonimiseer    — afname anonimiseren
  */
 
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { storage, CreditError } from "../storage";
 import { normaliseerTaal } from "@shared/i18n";
 import {
@@ -34,6 +34,13 @@ import {
 } from "@shared/schema";
 import { valideerLeeftijdspoort } from "@shared/leeftijd";
 import { vereisAdmin, adminIdVanSessie } from "../admin-guard";
+import {
+  vereisScope,
+  scopeVanVerzoek,
+  valtBinnenScope,
+  schrijfOrganisatieId,
+  bepaalScope,
+} from "../scope-guard";
 import { getDefaultDescriptor } from "../registry";
 import { schrijfAuditLog } from "../audit-log";
 import { dashboardCodeVanToken, voornaamVanNaam } from "../dashboard-code";
@@ -83,7 +90,24 @@ export function registerAfnameRoutes(app: Express): void {
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
     }
-    const data = parsed.data;
+
+    // Deze route heeft GEEN vereisScope: de deelnemersroutes (deel1, deel2,
+    // reis-t4kids) starten hun afname hier en hebben per definitie geen sessie.
+    // De organisatie in de body is daarom wel gescoped: wie geen scope heeft
+    // mag geen organisatie aanduiden, want anders kan een anonieme bezoeker de
+    // credits van een willekeurige organisatie opsouperen. De juiste weg voor
+    // een organisatie-afname is een uitnodiging met token.
+    const scope = await bepaalScope(req);
+    const keuze = schrijfOrganisatieId(scope, parsed.data.organisatieId);
+    if (!keuze.ok) {
+      return res.status(403).json({
+        error:
+          scope.soort === "geen"
+            ? "Een afname op naam van een organisatie vraagt een uitnodiging."
+            : keuze.fout,
+      });
+    }
+    const data = { ...parsed.data, organisatieId: keuze.organisatieId ?? undefined };
 
     // Leeftijdspoort (AVG art. 8) - ook hier afgedwongen, want de
     // T4Kids-belevingsroute start haar afname rechtstreeks via deze route en
@@ -196,12 +220,18 @@ export function registerAfnameRoutes(app: Express): void {
   // Beheerder: maak een uitnodiging (link) aan.
   // Stond tot fase 1 open: iedereen kon uitnodigingen aanmaken en zo credits
   // van een willekeurige organisatie opsouperen.
-  app.post("/api/uitnodigingen", vereisAdmin, async (req, res) => {
+  app.post("/api/uitnodigingen", vereisScope, async (req, res) => {
     const parsed = inviteAfnameSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
     }
-    const data = parsed.data;
+    const gevraagd = parsed.data;
+    // De organisatie komt uit de scope, niet uit de body. Een organisatie die
+    // een ander id meestuurt krijgt 403; anders zou ze uitnodigingen op kosten
+    // van een andere organisatie kunnen aanmaken.
+    const keuze = schrijfOrganisatieId(scopeVanVerzoek(req), gevraagd.organisatieId);
+    if (!keuze.ok) return res.status(403).json({ error: keuze.fout });
+    const data = { ...gevraagd, organisatieId: keuze.organisatieId ?? undefined };
     // Saldo-check + reservering wanneer er een organisatie is.
     if (data.organisatieId != null) {
       const org = await storage.getOrganisatie(data.organisatieId);
@@ -520,13 +550,28 @@ export function registerAfnameRoutes(app: Express): void {
   // =========================================================================
 
   // Toegangscontrole (AVG art. 32): al deze routes raken persoonsgegevens van
-  // betrokkenen. Ze zijn uitsluitend toegankelijk voor een ingelogde beheerder;
-  // zonder sessie volgt 401. Er bestaat geen zelfbedieningspad met eigen token,
-  // dus admin-only is hier de strengste en enige veilige lijn.
-  app.get("/api/gdpr/afnames/:id/export", vereisAdmin, async (req, res) => {
+  // betrokkenen. Ze staan achter `vereisScope`, en daarbovenop controleert
+  // `afnameBuitenScope` per afname of ze binnen de scope van de oproeper valt.
+  // Zonder die tweede controle zou een organisatie via een gegokt id de
+  // persoonsgegevens van een andere organisatie kunnen exporteren of wissen.
+  //
+  // Buiten scope levert 404 op en niet 403: een 403 zou bevestigen dat de
+  // afname bestaat, en dat is op zich al informatie over een andere
+  // organisatie.
+  async function afnameBuitenScope(req: Request, res: Response, id: number): Promise<boolean> {
+    const afname = await storage.getAfname(id);
+    if (!afname || !valtBinnenScope(scopeVanVerzoek(req), afname.organisatieId)) {
+      res.status(404).json({ error: "Afname niet gevonden" });
+      return true;
+    }
+    return false;
+  }
+
+  app.get("/api/gdpr/afnames/:id/export", vereisScope, async (req, res) => {
     if (DEMO_MODE) {
       return res.status(403).json({ error: "Niet beschikbaar in de publieke demo." });
     }
+    if (await afnameBuitenScope(req, res, Number(req.params.id))) return;
     try {
       const pakket = await storage.gdprExport(Number(req.params.id));
       schrijfAuditLog({
@@ -541,10 +586,11 @@ export function registerAfnameRoutes(app: Express): void {
     }
   });
 
-  app.get("/api/gdpr/afnames/:id/export.json", vereisAdmin, async (req, res) => {
+  app.get("/api/gdpr/afnames/:id/export.json", vereisScope, async (req, res) => {
     if (DEMO_MODE) {
       return res.status(403).json({ error: "Niet beschikbaar in de publieke demo." });
     }
+    if (await afnameBuitenScope(req, res, Number(req.params.id))) return;
     try {
       const pakket = await storage.gdprExport(Number(req.params.id));
       schrijfAuditLog({
@@ -561,11 +607,12 @@ export function registerAfnameRoutes(app: Express): void {
     }
   });
 
-  app.post("/api/gdpr/bewaartermijn", vereisAdmin, async (req, res) => {
+  app.post("/api/gdpr/bewaartermijn", vereisScope, async (req, res) => {
     const parsed = bewaartermijnSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
     }
+    if (await afnameBuitenScope(req, res, parsed.data.afnameId)) return;
     const updated = await storage.updateAfname(parsed.data.afnameId, {
       bewaartotDatum: parsed.data.bewaartotDatum,
     });
@@ -579,7 +626,8 @@ export function registerAfnameRoutes(app: Express): void {
     res.json(updated);
   });
 
-  app.post("/api/gdpr/afnames/:id/intrekken", vereisAdmin, async (req, res) => {
+  app.post("/api/gdpr/afnames/:id/intrekken", vereisScope, async (req, res) => {
+    if (await afnameBuitenScope(req, res, Number(req.params.id))) return;
     const updated = await storage.trekConsentIn(Number(req.params.id));
     if (!updated) return res.status(404).json({ error: "Afname niet gevonden" });
     schrijfAuditLog({
@@ -590,8 +638,9 @@ export function registerAfnameRoutes(app: Express): void {
     res.json(updated);
   });
 
-  app.post("/api/gdpr/afnames/:id/anonimiseer", vereisAdmin, async (req, res) => {
+  app.post("/api/gdpr/afnames/:id/anonimiseer", vereisScope, async (req, res) => {
     const reden = typeof req.body?.reden === "string" ? req.body.reden : "verzoek betrokkene";
+    if (await afnameBuitenScope(req, res, Number(req.params.id))) return;
     const updated = await storage.anonimiseerAfname(Number(req.params.id), reden);
     if (!updated) return res.status(404).json({ error: "Afname niet gevonden" });
     schrijfAuditLog({

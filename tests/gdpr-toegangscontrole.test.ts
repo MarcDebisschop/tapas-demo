@@ -60,7 +60,7 @@ describe("GDPR-toegangscontrole", () => {
     const registraties = [...bron.matchAll(/app\.(get|post|put|patch|delete)\(\s*"(\/api\/gdpr\/[^"]*)"\s*,\s*([^\n]*)/g)];
     expect(registraties.length).toBeGreaterThanOrEqual(5);
     for (const [, , pad, rest] of registraties) {
-      expect(rest, `route ${pad} mist vereisAdmin`).toContain("vereisAdmin");
+      expect(rest, `route ${pad} mist een guard`).toMatch(/vereisAdmin|vereisScope/);
     }
   });
 });

@@ -52,7 +52,7 @@ import {
 import { isTalentFocusConstruct } from "@shared/talent-constructs";
 import { renderFactuurPdf } from "../facturen/factuur-pdf";
 import { vereisAdmin } from "../admin-guard";
-import { vereisPrior, vereisScope, scopeVanVerzoek } from "../scope-guard";
+import { vereisPrior, vereisScope, scopeVanVerzoek, valtBinnenScope } from "../scope-guard";
 
 // Facturatie-uitbreiding: leid de effectieve betaalstatus af. Een 'openstaande'
 // factuur met een vervaldatum die vóór vandaag ligt, geldt als 'vervallen'.
@@ -81,13 +81,23 @@ export function registerFinancieelRoutes(app: Express): void {
   });
 
   // --- Organisaties: lijst met saldo ---
-  app.get("/api/organisaties", vereisAdmin, async (_req, res) => {
-    res.json(await storage.listOrganisaties());
+  app.get("/api/organisaties", vereisScope, async (req, res) => {
+    // Een organisatie krijgt een lijst van precies zichzelf. De namen en saldi
+    // van andere klanten zijn bedrijfsgegevens en horen niet in een lijst die
+    // enkel bedoeld is om een keuzelijst te vullen.
+    const scope = scopeVanVerzoek(req);
+    const alle = await storage.listOrganisaties();
+    res.json(scope.soort === "prior" ? alle : alle.filter((o) => valtBinnenScope(scope, o.id)));
   });
 
   // --- Organisatie: detail ---
-  app.get("/api/organisaties/:id", vereisAdmin, async (req, res) => {
+  app.get("/api/organisaties/:id", vereisScope, async (req, res) => {
     const id = Number(req.params.id);
+    // Een organisatie ziet enkel haar eigen detail en saldo; het id in het pad
+    // kan de scope niet verruimen.
+    if (!valtBinnenScope(scopeVanVerzoek(req), id)) {
+      return res.status(404).json({ error: "Organisatie niet gevonden" });
+    }
     const org = await storage.getOrganisatie(id);
     if (!org) return res.status(404).json({ error: "Organisatie niet gevonden" });
     const saldo = await storage.getSaldo(id);
@@ -105,8 +115,11 @@ export function registerFinancieelRoutes(app: Express): void {
   });
 
   // --- Saldo van één organisatie ---
-  app.get("/api/organisaties/:id/saldo", vereisAdmin, async (req, res) => {
+  app.get("/api/organisaties/:id/saldo", vereisScope, async (req, res) => {
     const id = Number(req.params.id);
+    if (!valtBinnenScope(scopeVanVerzoek(req), id)) {
+      return res.status(404).json({ error: "Organisatie niet gevonden" });
+    }
     const org = await storage.getOrganisatie(id);
     if (!org) return res.status(404).json({ error: "Organisatie niet gevonden" });
     res.json(await storage.getSaldo(id));
