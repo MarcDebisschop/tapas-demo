@@ -34,5 +34,13 @@ services:
       # regel 75 — TAPAS_DB_PATH-override wint altijd).
       - key: TAPAS_DB_PATH
         value: /data/data.db
+      # Nodig voor de Vlaamse Sulafat-stem via Gemini TTS (server/tts.py, pad 1).
+      # Zonder deze sleutel valt tts.py terug op de interne pplx-SDK, en die
+      # bestaat enkel in de sandbox: op Render geeft dat een 500 en zwijgt de stem.
+      # sync: false betekent dat Render de waarde niet uit dit bestand haalt maar
+      # er expliciet om vraagt in het dashboard. De sleutel is een geheim en hoort
+      # dus nooit in git; de sleutel kan zo ook niet stil ontbreken.
+      - key: GEMINI_API_KEY
+        sync: false
       # VITE_DEMO_MODE is ingebakken via .env.production tijdens de build (DEMO_MODE=true)
       # PORT wordt automatisch door Render geïnjecteerd op 10000 — niet overschrijven

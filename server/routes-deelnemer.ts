@@ -32,6 +32,32 @@ import {
 const DEMO_MODE = process.env.TAPAS_DEMO === "1";
 const CHAT_SIDECAR_URL = process.env.TAPAS_CHAT_SIDECAR ?? "http://127.0.0.1:8000";
 
+/**
+ * Waarschuwt eenmalig wanneer GEMINI_API_KEY ontbreekt.
+ *
+ * Zonder die sleutel valt `server/tts.py` terug op de interne pplx-SDK. Die
+ * bestaat enkel in de sandbox, dus op productie eindigt elke /api/tts in een 500
+ * en zwijgt de stem. De stderr van het python-script wordt wel doorgelogd, maar
+ * pas nadat de spawn is gelukt en tussen de andere uitvoer; bij een levende
+ * sidecar wordt het script zelfs niet aangeroepen. Daarom hier een eigen,
+ * ondubbelzinnige regel.
+ *
+ * Eenmalig: bij elke aanroep loggen zou de log volspammen zonder iets toe te
+ * voegen. Enkel loggen, geen gedragswijziging: het verzoek loopt gewoon door.
+ */
+let ttsSleutelGewaarschuwd = false;
+function waarschuwBijOntbrekendeGeminiSleutel(): void {
+  if (ttsSleutelGewaarschuwd) return;
+  if ((process.env.GEMINI_API_KEY ?? "").trim()) return;
+  ttsSleutelGewaarschuwd = true;
+  console.warn(
+    "[tts] WAARSCHUWING: GEMINI_API_KEY ontbreekt of is leeg - de Vlaamse " +
+      "Sulafat-stem werkt niet op productie; server/tts.py valt terug op de " +
+      "sandbox-only pplx-SDK. Zet GEMINI_API_KEY in het Render-dashboard " +
+      "(staat als sync: false in render.yaml).",
+  );
+}
+
 function demoChatReply(taal: string, profielContext?: string, vraag?: string): string {
   const t = (taal || "nl").toLowerCase();
   const ctx = (profielContext || "").trim();
@@ -654,6 +680,7 @@ export function registerDeelnemerRoutes(app: Express): void {
   // Geen token vereist (tekst komt van de client, niet uit de DB).
   // =========================================================================
   app.post("/api/tts", async (req, res) => {
+    waarschuwBijOntbrekendeGeminiSleutel();
     const tekst: string = (req.body?.tekst ?? "").trim();
     if (!tekst) return res.status(400).json({ error: "tekst vereist" });
     if (tekst.length > 4000) return res.status(400).json({ error: "tekst te lang (max 4000 tekens)" });

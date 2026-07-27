@@ -234,7 +234,17 @@ if __name__ == "__main__":
             sys.stderr.write(f"[tts] REST API definitief mislukt: {e}\n")
             sys.exit(1)
     else:
-        sys.stderr.write("[tts] Geen GEMINI_API_KEY — Pad 2: pplx interne SDK (sandbox)\n")
+        # Deze tak is sandbox-only. Op Render bestaat de pplx-SDK niet, dus loopt
+        # dit uit op een ImportError -> exitcode 1 -> 500 op /api/tts -> de stem
+        # zwijgt zonder dat iets in de log uitlegt waarom. Vandaar deze expliciete
+        # waarschuwing in plaats van een gewone statusregel.
+        sys.stderr.write(
+            "[tts] WAARSCHUWING: GEMINI_API_KEY ontbreekt of is leeg - de Vlaamse "
+            "Sulafat-stem werkt niet op productie. Terugval op de pplx-SDK, die "
+            "enkel in de sandbox bestaat. Zet GEMINI_API_KEY in het "
+            "Render-dashboard (zie render.yaml).\n"
+        )
+        sys.stderr.write("[tts] Pad 2: pplx interne SDK (sandbox)\n")
         try:
             audio = asyncio.run(genereer_via_pplx(tekst))
             sys.stdout.buffer.write(audio)
