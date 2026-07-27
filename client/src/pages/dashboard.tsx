@@ -714,8 +714,18 @@ export default function Dashboard() {
                                   <Eye className="mr-2 h-4 w-4" /> {k(STR.bekijkenKnop, taal)}
                                 </Button>
                               </a>
+                              {/* Bewust /pdf en niet /download. De /download-route
+                                  serveert enkel een PDF wanneer het rapport er al
+                                  een opgeslagen heeft; is dat veld leeg of afwezig,
+                                  dan geeft ze stil een .html-bestand terug onder de
+                                  knop "downloaden". Bij de rapporten uit
+                                  showcase-seed.json ontbreekt dat veld, dus kreeg de
+                                  deelnemer altijd HTML in plaats van zijn profiel.
+                                  /pdf genereert de PDF wel echt via renderRapportPdf
+                                  en houdt de HTML-download enkel als vangnet bij een
+                                  renderfout. */}
                               <a
-                                href={`${API_BASE}/api/rapporten/${rapport.id}/download`}
+                                href={`${API_BASE}/api/rapporten/${rapport.id}/pdf`}
                                 data-testid={`link-rapport-download-${rapport.id}`}
                               >
                                 <Button size="sm">
