@@ -897,13 +897,506 @@ function esc(s: unknown): string {
     .replace(/>/g, "&gt;");
 }
 
-function renderTabel(t: T4pTabel): string {
-  const th = t.kolommen.map((k) => `<th>${esc(k)}</th>`).join("");
-  const rows = t.rijen
-    .map((row) => `<tr>${row.map((c) => `<td>${esc(String(c))}</td>`).join("")}</tr>`)
-    .join("\n");
-  return `<table><thead><tr>${th}</tr></thead><tbody>${rows}</tbody></table>`;
+// --- Kleur-/status-helpers voor de PDF-gestandaardiseerde layout -----------
+
+type Kleur = "teal" | "goud" | "terracotta" | "groen" | "grijs";
+
+// Labelwoorden op callout-koppen -> kleur, zoals gedocumenteerd in de bouwspec.
+function kleurVoorKop(kop: string): Kleur {
+  const k = kop.toLowerCase();
+  if (
+    k.includes("klopt") ||
+    k.includes("startpunt") ||
+    k.includes("actie") ||
+    k.includes("ontwerpimplicatie")
+  )
+    return "groen";
+  if (
+    k.includes("aandacht vraagt") ||
+    k.includes("spanning") ||
+    k.includes("risico") ||
+    k.includes("bewaking")
+  )
+    return "terracotta";
+  if (
+    k.includes("congruentie") ||
+    k.includes("betekenis") ||
+    k.includes("kern") ||
+    k.includes("interactie")
+  )
+    return "teal";
+  return "teal";
 }
+
+// Status-tekst ("kost"/"geeft"/"neutraal") -> badge/accentkleur.
+function kleurVoorStatus(status: string): Kleur {
+  const s = status.toLowerCase().trim();
+  if (s === "kost") return "terracotta";
+  if (s === "geeft") return "groen";
+  return "grijs";
+}
+
+// Teken van een numerieke tekstwaarde (bv. "+6", "-0,83", "−2,25") -> kleur.
+function kleurVoorTeken(waarde: string): Kleur {
+  const v = waarde.replace(/\u2212/g, "-").trim();
+  if (v.startsWith("-")) return "terracotta";
+  if (v.startsWith("+")) return "groen";
+  return "teal";
+}
+
+// Simpele driver/focus/versneller-naam -> monochroom inline-SVG icoon.
+// Iconen zijn bewust eenvoudig en herkenbaar (spec §9); geen emoji.
+const ICOON_MAP: Record<string, string> = {
+  "be perfect": `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2l2.9 6.26L21.5 9l-5 4.64L17.8 21 12 17.3 6.2 21l1.3-7.36-5-4.64 6.6-.74L12 2z"/></svg>`,
+  "try hard": `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M13 2 3 14h6l-1 8 11-13h-6l1-7z"/></svg>`,
+  "please others": `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"/><path d="M8 15c1.2 1.2 2.6 1.8 4 1.8s2.8-.6 4-1.8"/></svg>`,
+  "be strong": `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M3 9h2v6H3zM19 9h2v6h-2zM6 7h2v10H6zM16 7h2v10h-2zM8 11h8v2H8z"/></svg>`,
+  "hurry up": `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>`,
+  innovatie: `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M9 21h6v-1H9v1zm3-19a7 7 0 0 0-4 12.7c.6.45 1 1.15 1 1.95v.35h6v-.35c0-.8.4-1.5 1-1.95A7 7 0 0 0 12 2z"/></svg>`,
+  "inter-relationeel": `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M2 20c0-3.3 2.7-6 6-6s6 2.7 6 6H2zM14.5 20c.2-2.2 1.4-4 3.1-5 2.2.5 3.9 2.5 4.4 5h-7.5z"/></svg>`,
+  operationeel: `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19.4 13a7.7 7.7 0 0 0 0-2l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-1.7-1L15 3h-4l-.3 2.6a7.6 7.6 0 0 0-1.7 1l-2.4-1-2 3.4L6.6 11a7.7 7.7 0 0 0 0 2l-2 1.6 2 3.4 2.4-1c.5.4 1.1.75 1.7 1L11 21h4l.3-2.6c.6-.25 1.2-.6 1.7-1l2.4 1 2-3.4-2-1.6zM13 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>`,
+  strategie: `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2 2 7l10 5 8-4.1V17h2V7L12 2zM4 9.5V15c0 2.2 3.6 4 8 4s8-1.8 8-4v-5.5l-8 4-8-4z"/></svg>`,
+  analyse: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>`,
+  coaching: `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9zM4 21c0-3.9 3.6-7 8-7s8 3.1 8 7H4z"/></svg>`,
+  impact: `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M13 2 3 14h6l-1 8 11-13h-6l1-7z"/></svg>`,
+  "constructief onderscheidend": `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2l2.9 6.26L21.5 9l-5 4.64L17.8 21 12 17.3 6.2 21l1.3-7.36-5-4.64 6.6-.74L12 2z"/></svg>`,
+  faciliteren: `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M2 20c0-3.3 2.7-6 6-6s6 2.7 6 6H2zM14.5 20c.2-2.2 1.4-4 3.1-5 2.2.5 3.9 2.5 4.4 5h-7.5z"/></svg>`,
+  resultaatgericht: `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.2"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg>`,
+};
+
+function iconVoorNaam(naam: string): string {
+  return ICOON_MAP[naam.toLowerCase().trim()] ?? "";
+}
+
+// Batterij-icoon voor de energiesaldo-badge (component 2).
+const BATTERIJ_ICOON = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="7" width="17" height="10" rx="2"/><rect x="21" y="10" width="1.6" height="4" fill="currentColor" stroke="none"/><rect x="4.5" y="9.5" width="4" height="5" fill="currentColor" stroke="none"/></svg>`;
+
+// Quote-glyph voor bronstellingen-kaarten (component 10).
+const QUOTE_GLYPH = `&ldquo;`;
+
+// --- Energie-meter (component 7) --------------------------------------------
+// Balkjes-meter: 10 vierkante blokjes, waarvan een deel gevuld is.
+// Vulformule (gedocumenteerd, geen verzonnen cijfers):
+//   - We lezen de al-berekende energiewaarde (bv. avgEnergy/net-energie, schaal
+//     circa -1..+1 voor construct-energie, of X/10 voor de beleefde/gemeten
+//     energie-KPI's in sectie 03).
+//   - Voor "X/10"-waarden (sectie 03 kop-meters): aantal blokjes = round(X),
+//     op een schaal van 10 blokjes — dit IS de brondata (bv. "2/10" -> 2 van
+//     de 10 blokjes gevuld). Geen afleiding nodig.
+//   - Voor "gemiddelde constructenergie"/net-signed waarden op schaal -1..+1
+//     (bv. "+0,2", "-1,20"): we schalen naar het midden van de balk:
+//     midpunt = 5 (van 10), aantal gevulde blokjes vanaf het midden =
+//     round(|waarde| * 5), geclamped op [0, 5], geplaatst rechts van het
+//     midden bij een positieve waarde en links van het midden bij een
+//     negatieve waarde. Dit is een zuiver visuele mapping van de bestaande
+//     waarde, geen nieuw cijfer.
+//   - Voor driver/focus/versneller-energie in de tabellen (schaal circa
+//     -1..+1) wordt dezelfde midpunt-formule gebruikt zodat de balkjes
+//     consistent ogen doorheen het rapport (zie pg-10: Be Perfect -0,83 vult
+//     2 blokjes links van het midden; Try Hard +0,75 vult er ~2 rechts).
+function meterBlokjes(waardeStr: string, totaal = 10): { gevuld: boolean; kleur: Kleur }[] {
+  const schoon = waardeStr.replace(/\u2212/g, "-").replace(",", ".").replace(/\/.*/, "").trim();
+  const val = parseFloat(schoon);
+  const isFractie = /\/\s*10/.test(waardeStr); // "X/10"-vorm: absolute schaal
+  const blokjes: { gevuld: boolean; kleur: Kleur }[] = Array.from({ length: totaal }, () => ({
+    gevuld: false,
+    kleur: "grijs" as Kleur,
+  }));
+  if (!isFinite(val)) return blokjes;
+  const kleur: Kleur = val < 0 ? "terracotta" : val > 0 ? "groen" : "grijs";
+  if (isFractie) {
+    const n = Math.max(0, Math.min(totaal, Math.round(val)));
+    for (let i = 0; i < n; i++) blokjes[i] = { gevuld: true, kleur };
+    return blokjes;
+  }
+  // Schaal -1..+1 (construct-/driverenergie): midpunt-methode.
+  // Vulformule geverifieerd tegen de PDF-grondwaarheid (pg-10): bij Be Perfect
+  // -0,83 -> 2 blokjes, Try Hard +0,75 -> 2 blokjes, Please Others/Be Strong
+  // -1,00 -> 2 blokjes, Hurry Up -0,17 -> 0 blokjes. Dit komt overeen met
+  // n = round(|waarde| * 2), afgetopt op de helft van het totaal aantal
+  // blokjes (5 bij totaal=10). Zuiver visuele afronding van de bestaande
+  // energiewaarde; geen nieuw cijfer.
+  const mid = totaal / 2; // 5
+  const n = Math.max(0, Math.min(mid, Math.round(Math.abs(val) * 2)));
+  if (val >= 0) {
+    for (let i = 0; i < n; i++) blokjes[Math.floor(mid) + i] = { gevuld: true, kleur };
+  } else {
+    for (let i = 0; i < n; i++) blokjes[Math.ceil(mid) - 1 - i] = { gevuld: true, kleur };
+  }
+  return blokjes;
+}
+
+function renderMeter(waardeStr: string): string {
+  const blokjes = meterBlokjes(waardeStr);
+  const cellen = blokjes
+    .map((b) => `<span class="meter-blok${b.gevuld ? ` meter-blok--${b.kleur}` : ""}"></span>`)
+    .join("");
+  return `<div class="meter">${cellen}</div>`;
+}
+
+// Sectie 03: drie losse meters boven de metingtabel (zie pg-06). We tonen
+// UITSLUITEND de bestaande waarde uit de data (bv. "2/10", "5,5/10", "+0,2")
+// als kop en als waarde-label; we verzinnen geen tussenliggend getal. De
+// vulling van de balkjes volgt dezelfde meterBlokjes()-mapping als hierboven
+// gedocumenteerd (X/10 = absolute schaal; overige schaal -1..+1 via midpunt).
+function renderMeterRij(labelPrefix: string, waarde: string): string {
+  return (
+    `<div class="meter-los">` +
+    `<div class="meter-kop">${esc(labelPrefix)}: ${esc(waarde)}</div>` +
+    renderMeter(waarde) +
+    `<span class="meter-waarde-los ${tekenKleurClass(waarde)}">${esc(waarde)}</span>` +
+    `</div>`
+  );
+}
+
+// Herkent sectie 03: de eerste 3 rijen van de metingtabel (Beleefde
+// startenergie, Gemeten energie, Gemiddelde constructenergie) krijgen elk
+// een losse meter boven de tabel; "Energiediscrepantie" krijgt er geen
+// (die rij toont in de PDF geen eigen balkjesmeter, enkel in de tabel zelf).
+function renderStandaloneMeters(t: T4pTabel): string {
+  const skip = /discrepantie/i;
+  return t.rijen
+    .filter((row) => !skip.test(String(row[0])))
+    .map((row) => renderMeterRij(String(row[0]), String(row[1])))
+    .join("");
+}
+
+function tekenKleurClass(waarde: string): string {
+  return `waarde--${kleurVoorTeken(waarde)}`;
+}
+
+// --- Sectiekop (component 1) -------------------------------------------------
+function renderSectieKop(s: T4pSectie): string {
+  const ondertitel = s.ondertitel ? `<p class="sec-sub">${esc(s.ondertitel)}</p>` : "";
+  return (
+    `<div class="sec-kop-rij"><span class="running-header">Marc &middot; Debisschop</span></div>` +
+    `<h2><span class="sec-nr">${esc(s.nummer)}</span><span class="sec-titel">${esc(s.titel)}</span></h2>` +
+    `<div class="sec-lijn"></div>` +
+    ondertitel
+  );
+}
+
+// --- Energiesaldo-badge (component 2) ---------------------------------------
+function renderSaldo(saldo: NonNullable<T4pSectie["saldo"]>): string {
+  const kleur = kleurVoorTeken(saldo.waarde);
+  return (
+    `<div class="saldo-badge saldo-badge--${kleur}">` +
+    `<div class="saldo-badge-links">` +
+    `<span class="saldo-badge-icoon">${BATTERIJ_ICOON}</span>` +
+    `<div><div class="saldo-badge-label">${esc(saldo.label)}</div>` +
+    (saldo.toelichting ? `<div class="saldo-badge-gloss">${esc(saldo.toelichting)}</div>` : "") +
+    `</div></div>` +
+    `<div class="saldo-badge-waarde">${esc(saldo.waarde)}</div>` +
+    `</div>`
+  );
+}
+
+// --- Highlight-quote (component 3) ------------------------------------------
+function renderHighlightQuote(tekst: string): string {
+  return `<p class="highlight-quote">${esc(tekst)}</p>`;
+}
+
+// --- KPI-kaarten (component 4) -----------------------------------------------
+function renderKpis(kpis: T4pKpi[]): string {
+  const kaarten = kpis
+    .map((k) => {
+      const isWoord = !/[0-9]/.test(k.waarde);
+      const isNegatief = /^-|^\u2212/.test(k.waarde.trim());
+      const kleurClass = isWoord ? "kpi-val--goud" : isNegatief ? "kpi-val--goud" : "kpi-val--teal";
+      return (
+        `<div class="kpi-kaart">` +
+        `<div class="kpi-val ${kleurClass}">${esc(k.waarde)}</div>` +
+        `<div class="kpi-lbl">${esc(k.label)}</div>` +
+        `</div>`
+      );
+    })
+    .join("");
+  return `<div class="kpis">${kaarten}</div>`;
+}
+
+// --- Callout-blokken (component 5) + 2-koloms panelen (component 6) --------
+
+// Herkent de speciale 2-koloms paneel-koppen uit secties 04 en 12.
+function paneelKleurVoorKop(kop: string): Kleur | null {
+  const k = kop.toLowerCase();
+  if (k.includes("inner why")) return "groen";
+  if (k.includes("innerview")) return "terracotta";
+  if (k.includes("laag 1") || k.includes("laag 3")) return "teal";
+  if (k.includes("laag 2") || k.includes("samenwerking")) return "terracotta";
+  return null;
+}
+
+// Zet "Hypothese." / "Interpretatie." vooraan een blok-tekst in <em>.
+function renderBlokTekst(tekst: string): string {
+  const m = tekst.match(/^(Hypothese\.|Interpretatie\.)\s*([\s\S]*)$/);
+  if (m) {
+    return `<em>${esc(m[1])}</em> ${esc(m[2])}`;
+  }
+  return esc(tekst);
+}
+
+function renderCalloutVolleBreedte(b: T4pBlok): string {
+  const kleur = kleurVoorKop(b.kop);
+  return (
+    `<div class="callout callout--${kleur}">` +
+    `<div class="callout-label">${esc(b.kop)}</div>` +
+    `<div class="callout-tekst">${renderBlokTekst(b.tekst)}</div>` +
+    `</div>`
+  );
+}
+
+function renderCalloutKaart(b: T4pBlok): string {
+  const kleur = kleurVoorKop(b.kop);
+  return (
+    `<div class="kaart kaart--${kleur}">` +
+    `<div class="kaart-label">${esc(b.kop)}</div>` +
+    `<div class="kaart-tekst">${renderBlokTekst(b.tekst)}</div>` +
+    `</div>`
+  );
+}
+
+function renderPaneel(b: T4pBlok, kleur: Kleur): string {
+  return (
+    `<div class="paneel paneel--${kleur}">` +
+    `<div class="paneel-kop paneel-kop--${kleur}">${esc(b.kop)}</div>` +
+    `<div class="paneel-tekst">${renderBlokTekst(b.tekst)}</div>` +
+    `</div>`
+  );
+}
+
+// Groepeert een blokken-array in render-groepen: opeenvolgende 2-koloms-
+// paneel-koppen worden per 2 samengevoegd tot een paneel-grid; de rest volgt
+// de generieke callout/kaart-regels per sectie (zie renderBlokken hieronder).
+function renderBlokken(sectieNummer: string, blokken: T4pBlok[]): string {
+  const out: string[] = [];
+  let i = 0;
+  while (i < blokken.length) {
+    const b = blokken[i];
+    const paneelKleur = paneelKleurVoorKop(b.kop);
+    if (paneelKleur) {
+      // Verzamel opeenvolgende paneel-blokken (max 4, in stel-per-2 grid).
+      const groep: T4pBlok[] = [];
+      while (i < blokken.length && paneelKleurVoorKop(blokken[i].kop)) {
+        groep.push(blokken[i]);
+        i++;
+      }
+      const paneelHtml = groep
+        .map((gb) => renderPaneel(gb, paneelKleurVoorKop(gb.kop) as Kleur))
+        .join("");
+      out.push(`<div class="paneel-grid">${paneelHtml}</div>`);
+      continue;
+    }
+    // Sectie 01: eerste 3 blokken (sterktes/spanningen/ontwerpimplicaties)
+    // zijn altijd volle-breedte getinte callouts (zie pg-04).
+    if (sectieNummer === "01") {
+      out.push(renderCalloutVolleBreedte(b));
+      i++;
+      continue;
+    }
+    // Sectie 04: "Wat vandaag al klopt" t.e.m. "Startpunt..." zijn losse
+    // witte kaartjes in 1 kolom (zie pg-09); Congruentie is volle-breedte.
+    if (sectieNummer === "04" && i >= 2) {
+      out.push(renderCalloutKaart(b));
+      i++;
+      continue;
+    }
+    out.push(renderCalloutVolleBreedte(b));
+    i++;
+  }
+  // Groepeer opeenvolgende kaart-elementen (sectie 04) in een 1-koloms stack
+  // zodat de marges tussen kaartjes klein en consistent blijven.
+  return out.join("");
+}
+
+// --- Datatabellen (component 8) + driver-tabel (component 9) ---------------
+
+const DRIVER_TABEL_KOLOMMEN = ["driver", "focus", "versneller"];
+
+function isEnergieTabel(kolommen: string[]): boolean {
+  const lower = kolommen.map((k) => k.toLowerCase());
+  return lower.includes("net") && lower.includes("energie") && lower.includes("status");
+}
+
+function renderStatusBadge(status: string): string {
+  const kleur = kleurVoorStatus(status);
+  return `<span class="badge badge--${kleur}">${esc(status)}</span>`;
+}
+
+// Rijke driver/focus/versneller-tabel (component 9): icoon + naam, gekleurde
+// net-waarde, energie-balkjesmeter, status-badge, lezing.
+function renderEnergieTabel(t: T4pTabel): string {
+  const th = t.kolommen.map((k) => `<th>${esc(k)}</th>`).join("");
+  const idxNaam = 0;
+  const idxNet = t.kolommen.findIndex((k) => k.toLowerCase() === "net");
+  const idxEnergie = t.kolommen.findIndex((k) => k.toLowerCase() === "energie");
+  const idxStatus = t.kolommen.findIndex((k) => k.toLowerCase() === "status");
+  const idxLezing = t.kolommen.findIndex((k) => k.toLowerCase() === "lezing");
+  const rows = t.rijen
+    .map((row) => {
+      const cellen = row.map((c, ci) => {
+        const waarde = String(c);
+        if (ci === idxNaam) {
+          const icon = iconVoorNaam(waarde);
+          return `<td class="cel-naam"><span class="rij-icoon">${icon}</span>${esc(waarde)}</td>`;
+        }
+        if (ci === idxNet) {
+          return `<td class="cel-net ${tekenKleurClass(waarde)}">${esc(waarde)}</td>`;
+        }
+        if (ci === idxEnergie) {
+          return `<td class="cel-energie">${renderMeter(waarde)}<span class="energie-waarde ${tekenKleurClass(
+            waarde
+          )}">${esc(waarde)}</span></td>`;
+        }
+        if (ci === idxStatus) {
+          return `<td>${renderStatusBadge(waarde)}</td>`;
+        }
+        if (ci === idxLezing) {
+          return `<td class="cel-lezing">${esc(waarde)}</td>`;
+        }
+        return `<td>${esc(waarde)}</td>`;
+      });
+      return `<tr>${cellen.join("")}</tr>`;
+    })
+    .join("\n");
+  return `<table class="driver-tabel"><thead><tr>${th}</tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+// Compacte status-only tabel (sectie 13): naam + status-badge.
+function isStatusTabel(kolommen: string[]): boolean {
+  const lower = kolommen.map((k) => k.toLowerCase());
+  return lower.length === 2 && lower.includes("status");
+}
+
+function renderStatusTabel(t: T4pTabel): string {
+  const th = t.kolommen.map((k) => `<th>${esc(k)}</th>`).join("");
+  const idxStatus = t.kolommen.findIndex((k) => k.toLowerCase() === "status");
+  const rows = t.rijen
+    .map((row) => {
+      const cellen = row.map((c, ci) => {
+        const waarde = String(c);
+        if (ci === idxStatus) return `<td>${renderStatusBadge(waarde)}</td>`;
+        const icon = iconVoorNaam(waarde);
+        return `<td class="cel-naam">${icon ? `<span class="rij-icoon">${icon}</span>` : ""}${esc(waarde)}</td>`;
+      });
+      return `<tr>${cellen.join("")}</tr>`;
+    })
+    .join("\n");
+  return `<table class="driver-tabel driver-tabel--compact"><thead><tr>${th}</tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+// Algemene teal-header datatabel (component 8): sectie 03 metingtabel,
+// sectie 20/21/22/17 e.a. Ondersteunt optioneel bold-eerste-kolom en
+// gekleurde net/energie/status-cellen indien die kolommen aanwezig zijn.
+// E/H-badge (component 8, sectie 07/09 expertise-tabel): E+H=goud,
+// H=groen, E=teal - kleine pill zoals in de PDF (pg-13).
+function renderEhBadge(waarde: string): string {
+  const w = waarde.trim().toUpperCase();
+  const kleur: Kleur = w === "E+H" ? "goud" : w === "H" ? "groen" : "teal";
+  return `<span class="badge badge--eh badge--eh-${kleur}">${esc(waarde)}</span>`;
+}
+
+function renderAlgemeneTabel(t: T4pTabel, opts: { boldEersteKolom?: boolean } = {}): string {
+  const th = t.kolommen.map((k) => `<th>${esc(k)}</th>`).join("");
+  const idxNet = t.kolommen.findIndex((k) => k.toLowerCase() === "net");
+  const idxEnergie = t.kolommen.findIndex((k) => k.toLowerCase().includes("energie"));
+  const idxStatus = t.kolommen.findIndex((k) => k.toLowerCase() === "status");
+  const idxEh = t.kolommen.findIndex((k) => k.toUpperCase() === "E/H");
+  const rows = t.rijen
+    .map((row) => {
+      const cellen = row.map((c, ci) => {
+        const waarde = String(c);
+        const classes: string[] = [];
+        if (ci === 0 && opts.boldEersteKolom) classes.push("cel-bold");
+        if (ci === idxNet) classes.push(tekenKleurClass(waarde));
+        if (ci === idxEnergie && idxEnergie !== idxNet) classes.push(tekenKleurClass(waarde));
+        if (ci === idxStatus) {
+          return `<td class="${classes.join(" ")}">${renderStatusBadge(waarde)}</td>`;
+        }
+        if (ci === idxEh) {
+          return `<td class="${classes.join(" ")}">${renderEhBadge(waarde)}</td>`;
+        }
+        return `<td class="${classes.join(" ")}">${esc(waarde)}</td>`;
+      });
+      return `<tr>${cellen.join("")}</tr>`;
+    })
+    .join("\n");
+  return `<table class="data-tabel"><thead><tr>${th}</tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function renderTabelSlim(t: T4pTabel, sectieNummer: string): string {
+  if (isEnergieTabel(t.kolommen)) return renderEnergieTabel(t);
+  if (isStatusTabel(t.kolommen)) return renderStatusTabel(t);
+  const boldEersteKolom = sectieNummer === "22";
+  return renderAlgemeneTabel(t, { boldEersteKolom });
+}
+
+// --- Bronstellingen (component 10) ------------------------------------------
+function renderBronstellingen(s: T4pSectie): string {
+  const minstBlok = (s.blokken ?? []).find((b) => /minst herkend/i.test(b.kop));
+  const meestTitel = "In de vragenlijst herkende Marc zich het meest in";
+  const minstTitel = "In de vragenlijst herkende Marc zich het minst in";
+  const linkerLijst = (s.citaten ?? [])
+    .map((c) => `<li class="quote-item"><span class="quote-glyph">${QUOTE_GLYPH}</span>${esc(c)}</li>`)
+    .join("");
+  const rechterInhoud = minstBlok
+    ? `<p class="bronkaart-uitleg">${esc(minstBlok.tekst)}</p>`
+    : `<p class="leeg">Geen verbatim stellingen vastgelegd voor deze afname.</p>`;
+  return (
+    `<div class="bronkaarten">` +
+    `<div class="bronkaart bronkaart--meest"><div class="bronkaart-kop">${esc(
+      meestTitel
+    )}</div><ul class="quote-lijst">${linkerLijst}</ul></div>` +
+    `<div class="bronkaart bronkaart--minst"><div class="bronkaart-kop">${esc(
+      minstTitel
+    )}</div>${rechterInhoud}</div>` +
+    `</div>`
+  );
+}
+
+// --- Mantra + dankwoord (component 11) --------------------------------------
+function renderMantraSectie(s: T4pSectie): string {
+  const paras = s.paragrafen ?? [];
+  const mantraTekst = paras[0] ?? "";
+  const overigeParas = paras.slice(1);
+  const dankwoordBlok = (s.blokken ?? []).find((b) => /dankwoord/i.test(b.kop));
+  const out: string[] = [];
+  if (mantraTekst) out.push(`<p class="mantra">${esc(mantraTekst)}</p>`);
+  overigeParas.forEach((p) => out.push(`<p>${esc(p)}</p>`));
+  if (dankwoordBlok) {
+    // Splits de dankwoordtekst in leesbare regels (zie pg-39): zin 1
+    // (dank), zin 2 (contactregel), zin 3 (Inspiratie, italic). We knippen
+    // op newline (indien aanwezig) of op het em-dash-scheidingsteken vóór
+    // "Inspiratie", zonder lookbehind-regex (ES2018-only), en op de eerste
+    // punt na de dankzin zodat de contactregel op een eigen regel komt.
+    let tekst = dankwoordBlok.tekst;
+    const regels: string[] = [];
+    const inspiratieIdx = tekst.search(/\s[—-]\s*Inspiratie/i);
+    let inspiratieRegel = "";
+    if (inspiratieIdx >= 0) {
+      inspiratieRegel = tekst.slice(inspiratieIdx).replace(/^\s*[—-]\s*/, "").trim();
+      tekst = tekst.slice(0, inspiratieIdx).trim();
+    }
+    const eersteZinEinde = tekst.indexOf(". ");
+    if (eersteZinEinde >= 0) {
+      regels.push(tekst.slice(0, eersteZinEinde + 1).trim());
+      regels.push(tekst.slice(eersteZinEinde + 1).trim());
+    } else if (tekst) {
+      regels.push(tekst);
+    }
+    if (inspiratieRegel) regels.push(inspiratieRegel);
+    const regelsGefilterd = regels.map((r) => r.trim()).filter(Boolean);
+    out.push(
+      `<div class="callout callout--teal"><div class="callout-label">${esc(
+        dankwoordBlok.kop
+      )}</div><div class="callout-tekst">${regelsGefilterd
+        .map((r) => (r.startsWith("Inspiratie") ? `<em>${esc(r)}</em>` : esc(r)))
+        .join("<br />")}</div></div>`
+    );
+  }
+  return out.join("\n");
+}
+
+// --- Hoofd-render-functie ----------------------------------------------------
 
 export function renderT4pBusinessProfielHtml(inhoud: T4pRapportInhoud): string {
   const r = inhoud.respondent;
@@ -916,54 +1409,58 @@ export function renderT4pBusinessProfielHtml(inhoud: T4pRapportInhoud): string {
   const sectiesHtml = inhoud.secties
     .map((s) => {
       const parts: string[] = [];
-      parts.push(
-        `<h2><span class="sec-num">${esc(s.nummer)}</span> ${esc(s.titel)}</h2>`
-      );
-      if (s.ondertitel) parts.push(`<p class="sec-sub">${esc(s.ondertitel)}</p>`);
-      if (s.saldo) {
-        parts.push(
-          `<div class="saldo"><span class="saldo-label">${esc(s.saldo.label)}</span>` +
-            `<span class="saldo-waarde">${esc(s.saldo.waarde)}</span>` +
-            (s.saldo.toelichting ? `<span class="saldo-toel">${esc(s.saldo.toelichting)}</span>` : "") +
-            `</div>`
-        );
+      parts.push(renderSectieKop(s));
+
+      if (s.saldo) parts.push(renderSaldo(s.saldo));
+
+      if (s.kpis && s.kpis.length) parts.push(renderKpis(s.kpis));
+
+      // Sectie 01: highlight-quote na de KPI's, vóór de callouts.
+      // De quote komt niet als los datacveld voor in sectie 01: het intro-
+      // zinnetje van de ondertitel wordt daarom niet herhaald; enkel bij
+      // secties waar een expliciete introquote als eerste paragraaf voorkomt
+      // (bronstellingen-secties gebruiken de gewone paragraafstijl).
+
+      const isBronstellingen = !!s.citaten;
+
+      // Sectie 24 (mantra/dankwoord) rendert zijn paragrafen zelf via
+      // renderMantraSectie() hieronder (eerste paragraaf = mantra-zin in
+      // quote-stijl, overige als lopende tekst) - niet hier dubbel tonen.
+      if (s.nummer !== "24" && s.paragrafen && s.paragrafen.length) {
+        s.paragrafen.forEach((p) => parts.push(`<p>${esc(p)}</p>`));
       }
-      if (s.kpis && s.kpis.length) {
-        parts.push(
-          `<div class="kpis">` +
-            s.kpis
-              .map((k) => `<div class="kpi"><div class="kpi-val">${esc(k.waarde)}</div><div class="kpi-lbl">${esc(k.label)}</div></div>`)
-              .join("") +
-            `</div>`
-        );
+
+      if (s.tabel) {
+        // Sectie 03 (pg-06): drie losse energie-meters boven de metingtabel.
+        if (s.nummer === "03") parts.push(renderStandaloneMeters(s.tabel));
+        parts.push(renderTabelSlim(s.tabel, s.nummer));
       }
-      if (s.paragrafen) s.paragrafen.forEach((p) => parts.push(`<p>${esc(p)}</p>`));
-      if (s.tabel) parts.push(renderTabel(s.tabel));
+
       if (s.tabellen) {
         s.tabellen.forEach((t) => {
           if (t.kop) parts.push(`<h3>${esc(t.kop)}</h3>`);
-          parts.push(renderTabel(t.tabel));
+          parts.push(renderTabelSlim(t.tabel, s.nummer));
         });
       }
-      if (s.citaten && s.citaten.length) {
-        parts.push(
-          `<ul class="citaten">` +
-            s.citaten.map((c) => `<li>&ldquo;${esc(c)}&rdquo;</li>`).join("") +
-            `</ul>`
-        );
-      }
-      if (s.citaten && s.citaten.length === 0) {
+
+      if (isBronstellingen) {
+        parts.push(renderBronstellingen(s));
+      } else if (s.citaten && s.citaten.length === 0) {
         parts.push(`<p class="leeg">Geen verbatim stellingen vastgelegd voor deze afname.</p>`);
       }
-      if (s.blokken && s.blokken.length) {
-        parts.push(
-          `<div class="blokken">` +
-            s.blokken
-              .map((b) => `<div class="blok"><div class="blok-kop">${esc(b.kop)}</div><div class="blok-tekst">${esc(b.tekst)}</div></div>`)
-              .join("") +
-            `</div>`
-        );
+
+      if (s.nummer === "24") {
+        parts.push(renderMantraSectie(s));
+      } else if (s.blokken && s.blokken.length) {
+        // Bronstellingen-secties (06/08/10): het "...minst herkende lijnen"-
+        // blok is al verwerkt in de rechterkaart via renderBronstellingen();
+        // niet nogmaals als losse callout tonen (voorkomt duplicatie).
+        const overigeBlokken = isBronstellingen
+          ? s.blokken.filter((b) => !/minst herkend/i.test(b.kop))
+          : s.blokken;
+        if (overigeBlokken.length) parts.push(renderBlokken(s.nummer, overigeBlokken));
       }
+
       if (s.bronnen && s.bronnen.length) {
         parts.push(
           `<ul class="bronnen">` +
@@ -973,6 +1470,7 @@ export function renderT4pBusinessProfielHtml(inhoud: T4pRapportInhoud): string {
             `</ul>`
         );
       }
+
       return `<section>${parts.join("\n")}</section>`;
     })
     .join("\n");
@@ -985,11 +1483,15 @@ export function renderT4pBusinessProfielHtml(inhoud: T4pRapportInhoud): string {
 <meta charset="utf-8" />
 <title>${esc(inhoud.titel)} — ${esc(r.naam)}</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
   :root {
-    --navy: #1e293b; --teal: #0d9488; --ink: #0f172a; --muted: #64748b;
-    --muted-light: #94a3b8; --line: #e2e8f0; --surface: #f8fafc; --white: #ffffff;
-    --geeft: #0d9488; --kost: #b45309; --neutraal: #a16207;
+    --navy: #1e293b; --ink: #1e293b; --muted: #64748b; --muted-light: #94a3b8;
+    --line: #e2e8f0; --surface: #f8fafc; --white: #ffffff;
+    --teal: #0d6d6a; --teal-dark: #0f5c58; --teal-tint: #eef4f3;
+    --goud: #c08a1e; --goud-dark: #b8860b;
+    --terracotta: #b3552d; --terracotta-dark: #a0451f; --terracotta-tint: #f7ede7;
+    --groen: #4a7c3a; --groen-dark: #5c8a3c; --groen-tint: #eef4ea;
+    --grijs-tint: #f1f4f5; --grijs-accent: #64748b;
   }
   * { box-sizing: border-box; }
   body {
@@ -1003,59 +1505,167 @@ export function renderT4pBusinessProfielHtml(inhoud: T4pRapportInhoud): string {
     box-shadow: 0 2px 12px rgba(0,0,0,0.06);
   }
   .doc-header {
-    background: linear-gradient(135deg, var(--teal) 0%, var(--navy) 100%);
-    padding: 40px 44px 32px; color: var(--white);
+    padding: 56px 48px 40px; color: var(--teal-dark); border-bottom: 2px solid var(--teal);
   }
   .brand-mark-name {
-    font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
-    color: rgba(255,255,255,0.85); margin-bottom: 20px;
+    font-size: 22px; font-weight: 700; color: var(--teal-dark); margin-bottom: 8px;
+    border-bottom: 2px solid var(--teal-dark); display: inline-block; padding-bottom: 10px; width: 100%;
   }
-  .t4p-mark { font-size: 32px; font-weight: 700; letter-spacing: 0.3em; margin: 0 0 4px; }
-  h1 { font-size: 26px; font-weight: 700; margin: 0 0 6px; line-height: 1.2; }
-  .sub { color: rgba(255,255,255,0.8); font-size: 14px; margin: 0 0 20px; }
-  .meta-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 24px; font-size: 13px; }
-  .meta-grid dt { color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.08em; font-size: 10px; }
-  .meta-grid dd { margin: 0 0 6px; font-weight: 600; }
-  .vertrouwelijk { margin-top: 18px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.7); }
-  .doc-body { padding: 36px 44px 32px; }
-  .toc { columns: 2; column-gap: 32px; list-style: none; padding: 0; margin: 0 0 28px; font-size: 13px; }
-  .toc li { break-inside: avoid; padding: 4px 0; color: var(--ink); border-bottom: 1px solid var(--line); }
-  .toc-num { color: var(--teal); font-weight: 700; margin-right: 8px; }
-  h2 {
-    font-size: 17px; font-weight: 700; color: var(--navy); margin: 34px 0 4px;
-    padding-bottom: 8px; border-bottom: 2px solid var(--line);
-  }
-  .sec-num { color: var(--teal); font-weight: 700; margin-right: 8px; }
-  .sec-sub { color: var(--muted); font-size: 13px; font-style: italic; margin: 0 0 12px; }
-  h3 { font-size: 13px; font-weight: 600; color: var(--navy); margin: 18px 0 6px; text-transform: uppercase; letter-spacing: 0.04em; }
-  p { font-size: 14px; line-height: 1.7; margin: 0 0 10px; }
-  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0; }
-  .kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; text-align: center; }
-  .kpi-val { font-size: 22px; font-weight: 700; color: var(--navy); }
-  .kpi-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 4px; }
-  .saldo { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--surface); border-left: 3px solid var(--teal); border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 12px 0; }
-  .saldo-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
-  .saldo-waarde { font-size: 22px; font-weight: 700; color: var(--navy); }
-  .saldo-toel { font-size: 12px; color: var(--muted); font-style: italic; }
-  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 12.5px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
-  thead tr { background: linear-gradient(to right, var(--navy), #334155); }
-  th { color: rgba(255,255,255,0.9); font-weight: 600; font-size: 10.5px; letter-spacing: 0.05em; text-transform: uppercase; padding: 10px 12px; text-align: left; }
-  td { padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
-  tbody tr:nth-child(even) td { background: #f8fafc; }
-  tbody tr:last-child td { border-bottom: none; }
-  .citaten { margin: 12px 0; padding-left: 0; list-style: none; }
-  .citaten li { font-style: italic; color: var(--ink); background: var(--surface); border-left: 3px solid var(--teal); border-radius: 0 6px 6px 0; padding: 8px 14px; margin-bottom: 8px; font-size: 13px; }
+  .t4p-mark { font-size: 13px; font-weight: 700; letter-spacing: 0.5em; margin: 28px 0 6px; color: var(--goud); text-transform: uppercase; }
+  h1 { font-size: 40px; font-weight: 800; margin: 0 0 14px; line-height: 1.1; color: var(--teal-dark); }
+  .sub { color: var(--muted); font-size: 15px; font-style: italic; margin: 0 0 24px; }
+  .meta-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 24px; font-size: 13px; margin-top: 16px; border-top: 1px solid var(--line); padding-top: 16px; }
+  .meta-grid dt { color: var(--muted-light); text-transform: uppercase; letter-spacing: 0.08em; font-size: 10px; }
+  .meta-grid dd { margin: 0 0 6px; font-weight: 700; color: var(--ink); }
+  .vertrouwelijk { margin-top: 18px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--teal-dark); font-weight: 700; }
+  .doc-body { padding: 40px 48px 40px; }
+  .toc-titel { font-size: 32px; font-weight: 800; color: var(--teal-dark); margin: 0 0 12px; }
+  .toc-lijn { height: 2px; background: var(--teal-dark); margin: 0 0 18px; }
+  .toc { list-style: none; padding: 0; margin: 0 0 28px; font-size: 13.5px; }
+  .toc li { padding: 9px 0; color: var(--ink); border-bottom: 1px solid var(--line); font-weight: 600; }
+  .toc-num { color: var(--goud); font-weight: 800; margin-right: 14px; min-width: 22px; display: inline-block; }
+
+  /* --- Sectiekop (component 1) --- */
+  .sec-kop-rij { text-align: right; margin: 0 0 4px; }
+  .running-header { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted-light); font-weight: 600; }
+  h2 { display: flex; align-items: baseline; gap: 14px; margin: 30px 0 0; padding: 0; border: none; }
+  section:first-of-type h2 { margin-top: 0; }
+  .sec-nr { font-size: 42px; font-weight: 800; color: var(--goud); line-height: 1; }
+  .sec-titel { font-size: 25px; font-weight: 800; color: var(--teal-dark); line-height: 1.15; }
+  .sec-lijn { height: 2px; background: var(--teal); margin: 14px 0 10px; }
+  .sec-sub { color: var(--muted); font-size: 13px; font-style: italic; margin: 0 0 18px; }
+  h3 { font-size: 13px; font-weight: 700; color: var(--teal-dark); margin: 20px 0 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+  p { font-size: 14px; line-height: 1.7; margin: 0 0 12px; color: var(--ink); }
   .leeg { color: var(--muted-light); font-style: italic; }
-  .blokken { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 14px 0; }
-  .blok { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
-  .blok-kop { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--teal); margin-bottom: 6px; }
-  .blok-tekst { font-size: 13px; line-height: 1.6; color: var(--ink); }
+
+  /* --- KPI-kaarten (component 4) --- */
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 18px 0 22px; }
+  .kpi-kaart { background: var(--white); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+  .kpi-val { font-size: 26px; font-weight: 800; color: var(--teal-dark); line-height: 1.1; }
+  .kpi-val--goud { color: var(--goud); }
+  .kpi-val--teal { color: var(--teal-dark); }
+  .kpi-lbl { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 8px; font-weight: 700; }
+
+  /* --- Highlight-quote (component 3) --- */
+  .highlight-quote { font-style: italic; font-size: 15px; line-height: 1.6; color: var(--ink); border-left: 3px solid var(--goud); padding: 4px 0 4px 18px; margin: 8px 0 22px; }
+
+  /* --- Energiesaldo-badge (component 2) --- */
+  .saldo-badge { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-radius: 8px; padding: 16px 20px; margin: 4px 0 22px; border-left: 4px solid; }
+  .saldo-badge-links { display: flex; align-items: flex-start; gap: 12px; }
+  .saldo-badge-icoon { flex: 0 0 auto; margin-top: 2px; }
+  .saldo-badge-label { font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+  .saldo-badge-gloss { font-size: 12px; font-style: italic; color: var(--muted); margin-top: 2px; }
+  .saldo-badge-waarde { font-size: 28px; font-weight: 800; white-space: nowrap; }
+  .saldo-badge--teal { background: var(--teal-tint); border-left-color: var(--teal); }
+  .saldo-badge--teal .saldo-badge-icoon, .saldo-badge--teal .saldo-badge-label, .saldo-badge--teal .saldo-badge-waarde { color: var(--teal-dark); }
+  .saldo-badge--groen { background: var(--groen-tint); border-left-color: var(--groen); }
+  .saldo-badge--groen .saldo-badge-icoon, .saldo-badge--groen .saldo-badge-label, .saldo-badge--groen .saldo-badge-waarde { color: var(--groen-dark); }
+  .saldo-badge--terracotta { background: var(--terracotta-tint); border-left-color: var(--terracotta); }
+  .saldo-badge--terracotta .saldo-badge-icoon, .saldo-badge--terracotta .saldo-badge-label, .saldo-badge--terracotta .saldo-badge-waarde { color: var(--terracotta-dark); }
+  .saldo-badge--grijs { background: var(--grijs-tint); border-left-color: var(--grijs-accent); }
+  .saldo-badge--grijs .saldo-badge-icoon, .saldo-badge--grijs .saldo-badge-label, .saldo-badge--grijs .saldo-badge-waarde { color: var(--grijs-accent); }
+
+  /* --- Callout-blokken, volle breedte (component 5, variant 1) --- */
+  .callout { border-radius: 8px; border-left: 4px solid; padding: 14px 18px; margin: 0 0 14px; }
+  .callout-label { font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; }
+  .callout-tekst { font-size: 13.5px; line-height: 1.65; color: var(--ink); }
+  .callout-tekst em { font-style: italic; }
+  .callout--teal { background: var(--teal-tint); border-left-color: var(--teal); }
+  .callout--teal .callout-label { color: var(--teal-dark); }
+  .callout--groen { background: var(--groen-tint); border-left-color: var(--groen); }
+  .callout--groen .callout-label { color: var(--groen-dark); }
+  .callout--terracotta { background: var(--terracotta-tint); border-left-color: var(--terracotta); }
+  .callout--terracotta .callout-label { color: var(--terracotta-dark); }
+
+  /* --- Witte kaartjes, 1 kolom (component 5, variant 2 - sectie 04) --- */
+  .kaart { background: var(--white); border: 1px solid var(--line); border-left: 4px solid; border-radius: 8px; padding: 14px 18px; margin: 0 0 14px; }
+  .kaart-label { font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; }
+  .kaart-tekst { font-size: 13.5px; line-height: 1.6; color: var(--ink); }
+  .kaart--teal { border-left-color: var(--teal); }
+  .kaart--teal .kaart-label { color: var(--teal-dark); }
+  .kaart--groen { border-left-color: var(--groen); }
+  .kaart--groen .kaart-label { color: var(--groen-dark); }
+  .kaart--terracotta { border-left-color: var(--terracotta); }
+  .kaart--terracotta .kaart-label { color: var(--terracotta-dark); }
+
+  /* --- Twee-koloms getinte panelen (component 6) --- */
+  .paneel-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin: 0 0 14px; }
+  .paneel { border-radius: 8px; border-left: 4px solid; padding: 14px 18px; }
+  .paneel-kop { font-size: 15px; font-weight: 800; margin-bottom: 8px; line-height: 1.25; }
+  .paneel-tekst { font-size: 13px; line-height: 1.6; color: var(--ink); }
+  .paneel--groen { background: var(--groen-tint); border-left-color: var(--groen); }
+  .paneel-kop--groen { color: var(--groen-dark); }
+  .paneel--terracotta { background: var(--terracotta-tint); border-left-color: var(--terracotta); }
+  .paneel-kop--terracotta { color: var(--terracotta-dark); }
+  .paneel--teal { background: var(--teal-tint); border-left-color: var(--teal); }
+  .paneel-kop--teal { color: var(--teal-dark); }
+
+  /* --- Energie-meter balkjes (component 7) --- */
+  .meter { display: inline-flex; gap: 3px; align-items: center; }
+  .meter-blok { width: 13px; height: 13px; border-radius: 2px; background: #e4e2da; display: inline-block; }
+  .meter-blok--terracotta { background: var(--terracotta); }
+  .meter-blok--groen { background: var(--teal-dark); }
+  .meter-blok--grijs { background: #e4e2da; }
+  .meter-kop { font-size: 14px; font-weight: 700; color: var(--ink); margin: 18px 0 8px; }
+  .meter-los { margin-bottom: 18px; }
+  .meter-waarde-los { display: block; margin-top: 6px; font-size: 13px; font-weight: 700; }
+  .waarde--teal { color: var(--teal-dark); }
+  .waarde--groen { color: var(--groen-dark); }
+  .waarde--terracotta { color: var(--terracotta-dark); }
+
+  /* --- Tabellen algemeen (component 8) --- */
+  table { width: 100%; border-collapse: collapse; margin: 4px 0 18px; font-size: 12.5px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
+  thead tr { background: var(--teal-dark); }
+  th { color: rgba(255,255,255,0.95); font-weight: 700; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; padding: 11px 14px; text-align: left; }
+  td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tbody tr:nth-child(even) td { background: #f9f8f4; }
+  tbody tr:last-child td { border-bottom: none; }
+  .cel-bold { font-weight: 700; }
+  .data-tabel .badge { margin: 0; }
+
+  /* --- Driver-tabel (component 9) --- */
+  .driver-tabel td { vertical-align: middle; }
+  .cel-naam { font-weight: 600; white-space: nowrap; }
+  .rij-icoon { display: inline-flex; margin-right: 8px; color: var(--muted); vertical-align: middle; }
+  .cel-net { font-weight: 700; }
+  .cel-energie { min-width: 150px; }
+  .energie-waarde { display: block; margin-top: 5px; font-size: 11.5px; font-weight: 700; }
+  .cel-lezing { color: var(--ink); }
+  .driver-tabel--compact .cel-naam { white-space: normal; }
+
+  /* --- Status-badge (pill) --- */
+  .badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; color: var(--white); white-space: nowrap; }
+  .badge--terracotta { background: var(--terracotta); }
+  .badge--groen { background: var(--groen-dark); }
+  .badge--grijs { background: #6b7280; }
+  .badge--eh { min-width: 34px; text-align: center; }
+  .badge--eh-goud { background: var(--goud); }
+  .badge--eh-groen { background: var(--groen-dark); }
+  .badge--eh-teal { background: var(--teal-dark); }
+
+  /* --- Bronstellingen (component 10) --- */
+  .bronkaarten { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin: 10px 0 20px; }
+  .bronkaart { background: var(--white); border: 1px solid var(--line); border-top: 3px solid; border-radius: 8px; padding: 18px 20px; }
+  .bronkaart--meest { border-top-color: var(--groen); }
+  .bronkaart--minst { border-top-color: var(--terracotta); }
+  .bronkaart-kop { font-size: 11px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink); margin-bottom: 14px; line-height: 1.4; }
+  .quote-lijst { list-style: none; margin: 0; padding: 0; }
+  .quote-item { font-style: italic; font-size: 13px; line-height: 1.55; color: var(--ink); padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .quote-item:last-child { border-bottom: none; }
+  .quote-glyph { color: var(--goud); font-weight: 800; font-style: normal; font-size: 17px; margin-right: 6px; font-family: Georgia, serif; }
+  .bronkaart-uitleg { font-style: italic; color: var(--muted); font-size: 13px; line-height: 1.6; margin: 0; }
+
+  /* --- Mantra + dankwoord (component 11) --- */
+  .mantra { font-style: italic; font-size: 19px; font-weight: 600; line-height: 1.5; color: var(--ink); border-left: 4px solid var(--goud); padding: 6px 0 6px 20px; margin: 6px 0 20px; }
+
+  /* --- Bronnen (sectie 23) --- */
   .bronnen { list-style: none; padding: 0; margin: 12px 0; }
-  .bronnen li { padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; font-weight: 600; }
+  .bronnen li { padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13px; font-weight: 600; }
   .bronnen a { color: var(--teal); font-weight: 400; font-size: 12px; word-break: break-all; }
-  .disclaimer { margin-top: 32px; padding: 14px 16px; background: #f1f5f9; border-left: 3px solid var(--teal); border-radius: 0 8px 8px 0; font-size: 12px; color: var(--muted); line-height: 1.6; }
-  .doc-footer { padding: 16px 44px; background: var(--surface); border-top: 1px solid var(--line); display: flex; justify-content: space-between; font-size: 11px; color: var(--muted-light); }
-  .doc-footer-brand { font-weight: 600; color: var(--teal); letter-spacing: 0.04em; }
+
+  .disclaimer { margin-top: 32px; padding: 16px 18px; background: var(--grijs-tint); border-left: 3px solid var(--teal); border-radius: 0 8px 8px 0; font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .doc-footer { padding: 16px 48px; background: var(--surface); border-top: 1px solid var(--line); display: flex; justify-content: space-between; font-size: 11px; color: var(--muted-light); }
+  .doc-footer-brand { font-weight: 700; color: var(--teal-dark); letter-spacing: 0.04em; }
   section { page-break-inside: avoid; }
 </style>
 </head>
@@ -1077,6 +1687,8 @@ export function renderT4pBusinessProfielHtml(inhoud: T4pRapportInhoud): string {
       <div class="vertrouwelijk">Vertrouwelijk profielrapport</div>
     </div>
     <div class="doc-body">
+      <div class="toc-titel">Inhoud</div>
+      <div class="toc-lijn"></div>
       <ol class="toc">${tocHtml}</ol>
       ${sectiesHtml}
       <div class="disclaimer">${esc(inhoud.disclaimer)}</div>
