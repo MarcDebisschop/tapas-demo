@@ -4,8 +4,7 @@
 // Geen logica gewijzigd — pure organisatorische opsplitsing.
 // =============================================================================
 import type { Express } from "express";
-import { join } from "node:path";
-import { spawn } from "node:child_process";
+import { genereerSpraak } from "./tts-node";
 import { storage } from "./storage";
 import { ttsSidecarLive, TTS_SERVICE_URL } from "./sidecar-manager";
 import { bouwDashboardData } from "./dashboard";
@@ -708,31 +707,20 @@ export function registerDeelnemerRoutes(app: Express): void {
       }
     }
 
-    // Fallback: spawn tts.py (CLI-script in dist/)
-    const ttsScript = join(process.cwd(), "dist", "tts.py");
-    const py = spawn("python3", [ttsScript, volledigeTekst]);
-    const chunks: Buffer[] = [];
-
-    py.stdout.on("data", (chunk: Buffer) => chunks.push(chunk));
-    py.stderr.on("data", (d: Buffer) => console.error("[tts]", d.toString()));
-
-    // Vang een spawn-fout (bv. python3 ontbreekt) netjes op i.p.v. hangen.
-    py.on("error", (err) => {
-      console.error("[tts] spawn-fout:", err);
-      if (!res.headersSent) res.status(500).json({ error: "TTS mislukt (spawn)" });
-    });
-
-    py.on("close", (code) => {
-      if (code !== 0 || chunks.length === 0) {
-        if (!res.headersSent) res.status(500).json({ error: "TTS mislukt" });
-        return;
-      }
-      const audio = Buffer.concat(chunks);
-      res.setHeader("Content-Type", "audio/mpeg");
+    // R42 - Native Node-pad: Gemini REST -> PCM -> WAV, geen python3/ffmpeg.
+    // Reden: op de Render Node-runtime is python3 niet betrouwbaar aanwezig,
+    // waardoor de oude spawn("python3", dist/tts.py) instant faalde (HTTP 500
+    // zonder [tts]-log). genereerSpraak() draait volledig in-process.
+    try {
+      const audio = await genereerSpraak(volledigeTekst);
+      res.setHeader("Content-Type", "audio/wav");
       res.setHeader("Content-Length", audio.length);
       res.setHeader("Cache-Control", "no-store");
-      res.end(audio);
-    });
+      return res.end(audio);
+    } catch (err: any) {
+      console.error("[tts] generatie mislukt:", err?.message ?? err);
+      if (!res.headersSent) return res.status(500).json({ error: "TTS mislukt" });
+    }
   });
 
   // =========================================================================
