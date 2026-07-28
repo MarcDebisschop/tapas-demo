@@ -7,8 +7,10 @@
 //   browserstem. Telkens door één van dezelfde twee oorzaken:
 //     (1) De Web Speech API-terugval (speechSynthesis) sloop terug in de client
 //         → browsers hebben geen nl-BE-stem, dus je hoort nl-NL (Hollands).
-//     (2) De /api/tts-route brak (bv. ontbrekende import → "spawn is not defined")
-//         → HTTP 500 → frontend toont "niet beschikbaar".
+//     (2) De /api/tts-route brak (bv. python3 ontbreekt op de Render Node-runtime,
+//         waardoor de oude spawn(python3) instant faalde) → HTTP 500 → frontend
+//         toont "niet beschikbaar". Sinds R42 draait de generatie native in Node
+//         (server/tts-node.ts), zonder python3/ffmpeg.
 //
 //   Dit script faalt LUID (exit 1) zodra één van de garanties breekt. Zo kan
 //   een toekomstige wijziging de stem niet stilletjes terugdraaien.
@@ -64,10 +66,11 @@ check(
 );
 
 // -- Garantie 2: de stem staat hard op Sulafat ------------------------------
-const tts = lees("server/tts.py") ?? "";
-check('tts.py: TTS_VOICE = "Sulafat"', /TTS_VOICE\s*=\s*"Sulafat"/.test(tts));
-check('tts.py: prebuiltVoiceConfig gebruikt Sulafat', /voiceName["']?\s*:\s*TTS_VOICE/.test(tts));
-check('tts.py: pplx-fallback ook voice="sulafat"', /voice\s*=\s*"sulafat"/.test(tts));
+// R42: de productie-generatie draait nu in server/tts-node.ts (native Node).
+const ttsNode = lees("server/tts-node.ts") ?? "";
+check('tts-node.ts: TTS_VOICE = "Sulafat"', /TTS_VOICE\s*=\s*"Sulafat"/.test(ttsNode));
+check('tts-node.ts: prebuiltVoiceConfig gebruikt Sulafat (voiceName: TTS_VOICE)', /voiceName\s*:\s*TTS_VOICE/.test(ttsNode));
+check('tts-node.ts: geen python3-spawn meer (geen child_process-import)', !/from\s+["']node:child_process["']|require\(["']child_process["']\)/.test(ttsNode));
 
 // -- Garantie 3: de Vlaamse prompt wordt altijd meegestuurd -----------------
 const uitleg = lees("server/uitleg.ts") ?? "";
@@ -77,12 +80,16 @@ check("uitleg.ts: prompt beschrijft Vlaamse tongval", /Vlaamse tongval/.test(uit
 // -- Garantie 4: /api/tts-route is correct bedraad --------------------------
 const route = lees("server/routes-deelnemer.ts") ?? "";
 check(
-  'routes-deelnemer.ts importeert spawn (voorkomt "spawn is not defined")',
-  /import\s*\{\s*spawn\s*\}\s*from\s*"node:child_process"/.test(route),
+  "routes-deelnemer.ts importeert genereerSpraak uit tts-node (native Node-pad)",
+  /import\s*\{\s*genereerSpraak\s*\}\s*from\s*["']\.\/tts-node["']/.test(route),
+);
+check(
+  'routes-deelnemer.ts: GEEN child_process-import meer (voorkomt "python3 ontbreekt"-500)',
+  !/from\s+["']node:child_process["']|require\(["']child_process["']\)/.test(route),
 );
 check("routes-deelnemer.ts: /api/tts-route bestaat", /app\.post\(["']\/api\/tts["']/.test(route));
 check("routes-deelnemer.ts: prompt wordt vóór de tekst geplakt", /VLAAMSE_STEM_PROMPT\s*\+/.test(route));
-check("routes-deelnemer.ts: spawn-error wordt afgevangen", /py\.on\(["']error["']/.test(route));
+check("routes-deelnemer.ts: generatiefout wordt afgevangen (try/catch)", /\[tts\] generatie mislukt/.test(route));
 
 // -- Optioneel: live audio-rooktest -----------------------------------------
 const liveIdx = process.argv.indexOf("--live");
@@ -98,11 +105,11 @@ if (liveIdx !== -1 && process.argv[liveIdx + 1]) {
     const type = resp.headers.get("content-type") ?? "";
     const buf = Buffer.from(await resp.arrayBuffer());
     check(`live /api/tts geeft HTTP 200 (kreeg ${resp.status})`, resp.status === 200);
-    check(`live /api/tts geeft audio/mpeg (kreeg "${type}")`, type.includes("audio/mpeg"));
+    check(`live /api/tts geeft audio/wav (kreeg "${type}")`, type.includes("audio/wav"));
     check(`live /api/tts levert audio-bytes (kreeg ${buf.length})`, buf.length > 1000);
-    // MP3/ID3-magic controle
-    const isMp3 = buf.slice(0, 3).toString("ascii") === "ID3" || (buf[0] === 0xff && (buf[1] & 0xe0) === 0xe0);
-    check("live audio is een geldig MP3-bestand", isMp3);
+    // WAV/RIFF-magic controle
+    const isWav = buf.slice(0, 4).toString("ascii") === "RIFF" && buf.slice(8, 12).toString("ascii") === "WAVE";
+    check("live audio is een geldig WAV-bestand", isWav);
   } catch (e) {
     check("live /api/tts bereikbaar", false, String(e));
   }
