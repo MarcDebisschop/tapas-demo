@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: tapas-platform-demo
+    name: tapas-demo
     runtime: node
     region: frankfurt
     # LET OP: 'disk' vereist een BETAALD plan. Zet dit op 'starter' (of hoger)
