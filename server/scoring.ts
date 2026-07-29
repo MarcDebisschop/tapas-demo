@@ -36,6 +36,13 @@ export interface ConstructRow {
   avgEnergy: number;
   energySource: string;
   mostItems: string[];
+  // De letterlijk als "minst" gekozen stellingen. Werd voorheen niet bewaard:
+  // de minst-keuzes zaten wel in `least` (de telling) en in de energiewaarden,
+  // maar de stellingteksten gingen verloren, waardoor de minst-kolommen in het
+  // Kompas leeg bleven. Zelfde weg als `mostItems`, geen invloed op scores.
+  // Optioneel, zodat de scoringengines van t4kids, t4teens en t4students
+  // ongewijzigd blijven werken; lezers vangen het op met `?? []`.
+  leastItems?: string[];
   toelichtingen: string[];
 }
 export interface FamilyRow {
@@ -51,6 +58,7 @@ interface ConstructAcc {
   energyVals: number[];
   energySource: Set<string>;
   mostItems: string[];
+  leastItems: string[];
   toelichtingen: string[];
 }
 interface FamilyAcc {
@@ -78,6 +86,7 @@ function aggregate(responses: Responses): { rows: ConstructRow[]; famRows: Famil
           energyVals: [],
           energySource: new Set<string>(),
           mostItems: [],
+          leastItems: [],
           toelichtingen: [],
         };
       }
@@ -97,6 +106,12 @@ function aggregate(responses: Responses): { rows: ConstructRow[]; famRows: Famil
       }
       if (r.least === it.pos) {
         c.least += 1;
+        if (!c.leastItems) c.leastItems = [];
+        // Zelfde bron en zelfde weg als de regel `c.mostItems.push(it.text)`
+        // hierboven. Die regel geeft in tsc al sinds eerder een TS2345 omdat
+        // `it.text` als Vertaalbaar getypeerd is; hier expliciet gecast zodat
+        // deze wijziging geen extra typefout toevoegt.
+        c.leastItems.push(it.text as unknown as string);
         if (b.energyMode === "item" && r.itemEnergy.least !== null && r.itemEnergy.least !== undefined) {
           c.energyVals.push(r.itemEnergy.least);
           c.energySource.add("item");
@@ -124,6 +139,7 @@ function aggregate(responses: Responses): { rows: ConstructRow[]; famRows: Famil
     // Set niet toe. Zelfde uitkomst, geen gedragswijziging.
     energySource: Array.from(v.energySource).join("+") || "geen",
     mostItems: v.mostItems,
+    leastItems: v.leastItems,
     toelichtingen: v.toelichtingen,
   }));
 

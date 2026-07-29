@@ -16,6 +16,7 @@
 import { bouwRapportInhoud, renderRapportHtml } from "./rapportgenerator";
 import { bouwT4StudentsRapport, renderT4StudentsHtml } from "./t4students/rapport";
 import { bouwT4pBusinessProfiel, renderT4pBusinessProfielHtml } from "./t4p/rapport";
+import { bouwT4pBusinessKompas, renderT4pBusinessKompasHtml } from "./t4p/kompas";
 import { bouwT4TeensRapport, renderT4TeensHtml } from "./t4teens/rapport";
 import { renderRapportPdf } from "./rapport-pdf";
 
@@ -32,9 +33,13 @@ export const RAPPORT_GENERATORS: Record<string, GeneratorEntry> = {
     bouw: (contract) => bouwT4StudentsRapport(contract),
     render: (inhoud) => renderT4StudentsHtml(inhoud),
   },
+  // T4P Business Kompas: de gemeten A4-printlayout (24 hoofdstukken, eigen
+  // @page-formaat, ingebedde fonts en iconen). De oude webweergave blijft
+  // beschikbaar als bouwT4pBusinessProfiel/renderT4pBusinessProfielHtml in
+  // server/t4p/rapport.ts, maar wordt niet meer voor het rapport gebruikt.
   "t4p-business-kompas": {
-    bouw: (contract) => bouwT4pBusinessProfiel(contract),
-    render: (inhoud) => renderT4pBusinessProfielHtml(inhoud),
+    bouw: (contract, variant) => bouwT4pBusinessKompas(contract, variant),
+    render: (inhoud) => renderT4pBusinessKompasHtml(inhoud),
   },
   t4teens: {
     bouw: (contract) => bouwT4TeensRapport(contract),

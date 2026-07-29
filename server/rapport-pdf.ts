@@ -34,6 +34,19 @@ export interface RenderPdfOpts {
   titel?: string;
   // A4-marges (CSS-eenheden). Bewust ruim genoeg voor de bestaande layouts.
   marge?: { top?: string; right?: string; bottom?: string; left?: string };
+  // Documenten met een eigen @page-formaat (het T4P Business Kompas) mogen
+  // GEEN format:"A4" en geen Playwright-marges krijgen; dan telt uitsluitend
+  // de CSS. Wordt ook automatisch gedetecteerd, zie heeftEigenPaginaformaat().
+  eigenPaginaformaat?: boolean;
+}
+
+// Documenten die hun eigen @page-regels meebrengen, dragen deze merkstring in
+// hun stijlblok (zie server/t4p/kompas-layout.ts). Detecteren is veiliger dan
+// elke aanroeper laten onthouden dat hij een vlag moet meegeven.
+const EIGEN_PAGINAFORMAAT_MERK = "/* kompas-eigen-paginaformaat */";
+
+function heeftEigenPaginaformaat(html: string, opts: RenderPdfOpts): boolean {
+  return opts.eigenPaginaformaat === true || html.includes(EIGEN_PAGINAFORMAAT_MERK);
 }
 
 // Render zet standaard RENDER=true; NODE_ENV=production dekt andere productie-
@@ -124,16 +137,25 @@ async function rendermetBrowser(
   const page = await browser.newPage();
   try {
     await page.setContent(document, { waitUntil: "networkidle" });
-    const pdf = await page.pdf({
-      format: "A4",
-      printBackground: true,
-      margin: {
-        top: opts.marge?.top ?? "12mm",
-        right: opts.marge?.right ?? "0mm",
-        bottom: opts.marge?.bottom ?? "12mm",
-        left: opts.marge?.left ?? "0mm",
-      },
-    });
+    const eigenFormaat = heeftEigenPaginaformaat(document, opts);
+    const pdf = eigenFormaat
+      ? await page.pdf({
+          // Uitsluitend de CSS bepaalt formaat en marges. Gemeten tegen de
+          // 33-pagina-referentie van het T4P Business Kompas.
+          preferCSSPageSize: true,
+          printBackground: true,
+          margin: { top: "0", right: "0", bottom: "0", left: "0" },
+        })
+      : await page.pdf({
+          format: "A4",
+          printBackground: true,
+          margin: {
+            top: opts.marge?.top ?? "12mm",
+            right: opts.marge?.right ?? "0mm",
+            bottom: opts.marge?.bottom ?? "12mm",
+            left: opts.marge?.left ?? "0mm",
+          },
+        });
     return Buffer.from(pdf);
   } finally {
     await page.close().catch(() => {});
