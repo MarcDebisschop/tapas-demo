@@ -336,8 +336,24 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
   const tapasBeeld = alleFoci.find((r) => isTapasBeeld(r.construct));
   const versnellers = alle.filter((r) => r.family === "Talent-versnellers").sort(rangorde);
 
+  // Familiegemiddelde = het gemiddelde van de constructgemiddelden binnen de
+  // familie, dus elk construct weegt even zwaar. `familyRows` uit de
+  // scoringengine weegt per item en trekt daardoor naar nul: constructen met
+  // meer getoonde items domineren. Voor het Kompas is de eerste lezing juist,
+  // omdat de lezer het cijfer moet kunnen natrekken in de constructtabellen
+  // die eerder in het rapport staan. TaPas-Beeld telt mee in Talent-foci, zoals
+  // in de referentie van 5 juni. Is er voor een familie geen enkele
+  // constructrij, dan valt de waarde terug op familyRows.
   const familieRijen: { family: string; avgEnergy: number }[] = (hoofd.familyRows ?? []).map(
-    (f: any) => ({ family: String(f.family ?? ""), avgEnergy: num(f.avgEnergy) })
+    (f: any) => {
+      const familie = String(f.family ?? "");
+      const eigen = alle.filter((r) => r.family === familie);
+      const gemiddelde =
+        eigen.length > 0
+          ? eigen.reduce((s, r) => s + r.avgEnergy, 0) / eigen.length
+          : num(f.avgEnergy);
+      return { family: familie, avgEnergy: gemiddelde };
+    }
   );
 
   const antwoorden = contract?.sections?.connection?.answers ?? {};
@@ -1839,9 +1855,9 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
                   kostDrivers[0].net > 0
                     ? ` ${kostDrivers[0].construct} is een sterk herkende route en kost tóch energie;`
                     : ""
-                } de overige lijnen zijn geen voorkeursroutes en trekken energie weg zodra de context ze afdwingt. Dat verklaart mee waarom de gemeten energie (${getal(
+                } de overige lijnen zijn geen voorkeursroutes en trekken energie weg zodra de context ze afdwingt. Dat verklaart mee waarom de beleefde werkenergie (${beleefd} / 10) en het gemeten potentieel (${getal(
                   gemeten,
-                )}) onder de beleefde startenergie (${getal(beleefd)}) ligt.`
+                )}) vandaag uiteenlopen.`
               : `Geen enkele driver kost bij ${voornaam} vandaag per saldo energie; de aandacht in dit hoofdstuk gaat volledig naar talentlijnen die er wél zijn maar niet vanzelf starten.`,
           },
         ],
@@ -2424,7 +2440,11 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
         : "Dominante lijnen dragen netto energie aan.";
     }
     if (familie === "Talent-foci") {
-      return statusVanEnergie(gem) === "geeft"
+      // Eigen drempel, niet die van statusVanEnergie (0,25): de referentie van
+      // 5 juni noemt een familiegemiddelde van +0,30 nog "licht positief". Een
+      // familiegemiddelde is een gemiddelde van gemiddelden en ligt dus
+      // structureel dichter bij nul dan een constructwaarde; vandaar 0,50.
+      return gem >= 0.5
         ? "Positief, met onderbenuttingssignaal."
         : "Licht positief, met onderbenuttingssignaal.";
     }

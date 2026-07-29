@@ -646,6 +646,14 @@ function render_onderdelen(onderdelen: any[]): string {
  *    (gemeten op hoofdstuk 17, pagina 22). `break-after:avoid` laat de kop
  *    meeschuiven met zijn tabel. Gemeten: verweesde koppen 1 -> 0, 33
  *    pagina's blijven 33, alle 24 hoofdstukstarts ongewijzigd.
+ * 3. Verweesd blokLABEL. De referentie laat een laagblok, pistekaart en
+ *    reflectiebalk wél over een paginagrens lopen (daarom staat er
+ *    `break-inside:auto` op .laag, .piste en .reflectie). Dat is bewust en
+ *    blijft zo. Maar breken vlak ná het label geeft een lege gekleurde balk
+ *    onderaan de pagina, met de tekst pas op de volgende. Dat komt niet voor in
+ *    de referentie, maar wel bij andere profielen (gemeten op een tweede
+ *    profiel, pagina 30). `break-after:avoid` op de labels houdt het label bij
+ *    zijn eerste tekstregel; het blok mag daarna nog altijd breken.
  *
  * Deze stijl komt ná KOMPAS_CSS en uitsluitend in de Chromium-uitvoer; de
  * WeasyPrint-uitvoer blijft er onaangeroerd door, zodat beide motoren dezelfde
@@ -654,6 +662,7 @@ export function kompasChromiumCss(runhead = ""): string {
   const tekst = cssTekenreeks(runhead);
   return "/* kompas-eigen-paginaformaat */\n" +
     ".subkop{ break-after:avoid; }\n" +
+    ".laag .l-lbl, .reflectie .r-lbl, .piste .p-kop{ break-after:avoid; }\n" +
     (runhead
       ? ".runhead{ display:none; }\n" +
         ".sheet:has(.runhead){ page:kop; }\n" +
