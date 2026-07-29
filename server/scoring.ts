@@ -36,6 +36,11 @@ export interface ConstructRow {
   avgEnergy: number;
   energySource: string;
   mostItems: string[];
+  // De letterlijk als "minst" gekozen stellingen. Werd voorheen niet bewaard:
+  // de minst-keuzes zaten wel in `least` (de telling) en in de energiewaarden,
+  // maar de stellingteksten gingen verloren, waardoor de minst-kolommen in het
+  // Kompas leeg bleven. Zelfde weg als `mostItems`, geen invloed op scores.
+  leastItems: string[];
   toelichtingen: string[];
 }
 export interface FamilyRow {
@@ -51,6 +56,7 @@ interface ConstructAcc {
   energyVals: number[];
   energySource: Set<string>;
   mostItems: string[];
+  leastItems: string[];
   toelichtingen: string[];
 }
 interface FamilyAcc {
@@ -78,6 +84,7 @@ function aggregate(responses: Responses): { rows: ConstructRow[]; famRows: Famil
           energyVals: [],
           energySource: new Set<string>(),
           mostItems: [],
+          leastItems: [],
           toelichtingen: [],
         };
       }
@@ -97,6 +104,7 @@ function aggregate(responses: Responses): { rows: ConstructRow[]; famRows: Famil
       }
       if (r.least === it.pos) {
         c.least += 1;
+        c.leastItems.push(it.text);
         if (b.energyMode === "item" && r.itemEnergy.least !== null && r.itemEnergy.least !== undefined) {
           c.energyVals.push(r.itemEnergy.least);
           c.energySource.add("item");
@@ -124,6 +132,7 @@ function aggregate(responses: Responses): { rows: ConstructRow[]; famRows: Famil
     // Set niet toe. Zelfde uitkomst, geen gedragswijziging.
     energySource: Array.from(v.energySource).join("+") || "geen",
     mostItems: v.mostItems,
+    leastItems: v.leastItems,
     toelichtingen: v.toelichtingen,
   }));
 
