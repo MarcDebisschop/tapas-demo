@@ -40,7 +40,9 @@ export interface ConstructRow {
   // de minst-keuzes zaten wel in `least` (de telling) en in de energiewaarden,
   // maar de stellingteksten gingen verloren, waardoor de minst-kolommen in het
   // Kompas leeg bleven. Zelfde weg als `mostItems`, geen invloed op scores.
-  leastItems: string[];
+  // Optioneel, zodat de scoringengines van t4kids, t4teens en t4students
+  // ongewijzigd blijven werken; lezers vangen het op met `?? []`.
+  leastItems?: string[];
   toelichtingen: string[];
 }
 export interface FamilyRow {
@@ -104,7 +106,12 @@ function aggregate(responses: Responses): { rows: ConstructRow[]; famRows: Famil
       }
       if (r.least === it.pos) {
         c.least += 1;
-        c.leastItems.push(it.text);
+        if (!c.leastItems) c.leastItems = [];
+        // Zelfde bron en zelfde weg als de regel `c.mostItems.push(it.text)`
+        // hierboven. Die regel geeft in tsc al sinds eerder een TS2345 omdat
+        // `it.text` als Vertaalbaar getypeerd is; hier expliciet gecast zodat
+        // deze wijziging geen extra typefout toevoegt.
+        c.leastItems.push(it.text as unknown as string);
         if (b.energyMode === "item" && r.itemEnergy.least !== null && r.itemEnergy.least !== undefined) {
           c.energyVals.push(r.itemEnergy.least);
           c.energySource.add("item");

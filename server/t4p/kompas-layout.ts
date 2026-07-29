@@ -35,8 +35,11 @@ function splitWs(s: string): string[] {
   return t ? t.split(RE_SPLIT_WS) : [];
 }
 
-const RE_DIGIT = /[\p{Nd}²³¹⁰-⁹₀-₉]/u;
-const RE_ALNUM = /[\p{L}\p{N}]/u;
+// Via new RegExp opgebouwd: het tsconfig van het platform zet geen "target",
+// waardoor tsc de u-vlag in een regex-literal afkeurt (TS1501). Node 20 draait
+// de expressie identiek; geen gedragswijziging.
+const RE_DIGIT = new RegExp("[\\p{Nd}²³¹⁰-⁹₀-₉]", "u");
+const RE_ALNUM = new RegExp("[\\p{L}\\p{N}]", "u");
 
 /** Python dict.get(k, d): een aanwezige sleutel met waarde null geeft null. */
 function pyGet(o: any, k: string, d: any): any {
