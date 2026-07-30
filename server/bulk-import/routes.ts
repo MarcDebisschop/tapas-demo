@@ -343,11 +343,11 @@ export function registerBulkImportRoutes(app: Express): void {
   });
 
   // --- Download .xlsx-template voor één instrument (admin, niet publiek) ---
-  app.get("/api/admin/bulk-import/template/:instrumentId", (req, res) => {
+  app.get("/api/admin/bulk-import/template/:instrumentId", async (req, res) => {
     if (!requireAdmin(req, res)) return;
     const tpl = getTemplate(req.params.instrumentId);
     if (!tpl) return res.status(404).json({ error: "Onbekend instrument." });
-    const buffer = templateAlsBuffer(tpl);
+    const buffer = await templateAlsBuffer(tpl);
     const bestandsnaam = `bulk-import_${tpl.instrumentId}.xlsx`;
     res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     res.setHeader("Content-Disposition", `attachment; filename="${bestandsnaam}"`);
@@ -355,7 +355,7 @@ export function registerBulkImportRoutes(app: Express): void {
   });
 
   // --- Preview: parse + valideer, maak NIETS aan ---
-  app.post("/api/admin/bulk-import/preview", (req, res) => {
+  app.post("/api/admin/bulk-import/preview", async (req, res) => {
     if (!requireAdmin(req, res)) return;
     const instrumentId = String(req.body?.instrumentId ?? "");
     const tpl = getTemplate(instrumentId);
@@ -364,7 +364,7 @@ export function registerBulkImportRoutes(app: Express): void {
     const bestand = leesBestand(req);
     if (!bestand) return res.status(400).json({ error: "Geen bestand ontvangen (bestandBase64 ontbreekt)." });
 
-    const { rijen, fouten } = parseUpload(bestand, tpl);
+    const { rijen, fouten } = await parseUpload(bestand, tpl);
     const kopFout = fouten.find((f) => f.rij === 0);
     if (kopFout) {
       return res.status(422).json({
@@ -431,7 +431,7 @@ export function registerBulkImportRoutes(app: Express): void {
     const bestand = leesBestand(req);
     if (!bestand) return res.status(400).json({ error: "Geen bestand ontvangen (bestandBase64 ontbreekt)." });
 
-    const { rijen, fouten } = parseUpload(bestand, tpl);
+    const { rijen, fouten } = await parseUpload(bestand, tpl);
     const kopFout = fouten.find((f) => f.rij === 0);
     if (kopFout) {
       return res.status(422).json({ error: "Kolomkoppen komen niet overeen met de template.", fouten });

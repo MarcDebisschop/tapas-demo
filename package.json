@@ -82,6 +82,7 @@
     "react-hook-form": "^7.55.0",
     "react-icons": "^5.4.0",
     "react-resizable-panels": "^2.1.7",
+    "read-excel-file": "^9.3.5",
     "recharts": "^2.15.2",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
@@ -91,8 +92,8 @@
     "vaul": "^1.1.2",
     "vite": "^7.3.0",
     "wouter": "^3.3.5",
+    "write-excel-file": "^4.1.1",
     "ws": "^8.18.0",
-    "xlsx": "^0.18.5",
     "zod": "^3.24.2",
     "zod-validation-error": "^3.4.0"
   },

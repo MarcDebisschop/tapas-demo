@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { bewaarBewijs } from "@/lib/afname-bewijs";
 import type { Afname, OrganisatieMetSaldo } from "@/lib/types";
 import { ShieldCheck, Languages } from "lucide-react";
 import {
@@ -84,6 +85,9 @@ export default function Start() {
         taal: uiTaal,
       });
       const afname: Afname = await res.json();
+      // K-1 (audit): bewaar meteen het bezitsbewijs van deze afname, zodat elke
+      // vervolgstap kan aantonen dat ze bij deze deelnemer hoort.
+      bewaarBewijs(afname.id, afname.bezitsToken ?? afname.inviteToken);
       navigate(`/afname/${afname.id}/deel1`);
     } catch (e: any) {
       const msg = e?.message ? String(e.message) : String(e);

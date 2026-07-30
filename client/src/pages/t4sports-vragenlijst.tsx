@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { bewaarBewijs } from "@/lib/afname-bewijs";
 import type { ClientBlock, BlockAnswer, EnergyOption } from "@/lib/types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -692,22 +693,28 @@ function VerbindingScherm({
 // Scherm 5: Voltooiing — bevestiging + e-mailbrug + dashboardlink (Optie A)
 // ============================================================
 // De exclusieve dashboardlink voor T4Sports is de absolute URL naar de eigen
-// atletenpagina /#/t4sports/dashboard/{respondentCode}. Voor T4Sports is de
-// dashboardtoken bewust de respondentCode zelf (niet deelnemer.dashboardToken),
-// dus we bouwen de link daaruit i.p.v. het generieke koppel-dashboard-token.
-function t4sportsDashboardUrl(respondentCode: string): string {
+// atletenpagina /#/t4sports/dashboard/{token}.
+//
+// Auditbevinding K-1 (kritiek): dat token was tot nu de respondentCode. Die is
+// leesbaar opgebouwd (initialen-jaar-volgnummer) en dus te raden, waardoor een
+// buitenstaander het profiel van een atleet kon opvragen. Sinds deze ronde is het
+// token het willekeurig getrokken bezitsToken van de afname. De respondentCode
+// blijft zichtbaar als referentienummer, maar geeft geen toegang meer.
+function t4sportsDashboardUrl(token: string): string {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
-  return `${origin}/#/t4sports/dashboard/${respondentCode}`;
+  return `${origin}/#/t4sports/dashboard/${token}`;
 }
 
 function VoltooiingScherm({
   naam,
   respondentCode,
+  bezitsToken,
   completedAt,
   onNaarDashboard,
 }: {
   naam: string;
   respondentCode: string;
+  bezitsToken: string;
   completedAt: string | null;
   onNaarDashboard: () => void;
 }) {
@@ -716,7 +723,7 @@ function VoltooiingScherm({
   const [verzonden, setVerzonden] = useState(false);
 
   const voornaam = naam.split(" ")[0] || "atleet";
-  const link = t4sportsDashboardUrl(respondentCode);
+  const link = t4sportsDashboardUrl(bezitsToken);
   const emailGeldig = /.+@.+\..+/.test(email.trim());
   const datumTekst = completedAt
     ? new Date(completedAt).toLocaleString("nl-BE", { dateStyle: "long", timeStyle: "short" })
@@ -726,7 +733,7 @@ function VoltooiingScherm({
     e.preventDefault();
     if (!emailGeldig) return;
     // T4Sports registreert geen aparte deelnemer-koppeling: de persoonlijke
-    // toegang IS de respondentCode-link. Deze stap bevestigt en onthult de link.
+    // toegang IS de link met het bezitsToken. Deze stap onthult die link.
     setVerzonden(true);
   }
 
@@ -873,7 +880,11 @@ export default function T4SportsVragenlijst() {
   const [stap, setStap] = useState<Stap>("welkom");
   const [afnameId, setAfnameId] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [voltooidInfo, setVoltooidInfo] = useState<{ respondentCode: string; completedAt: string | null } | null>(null);
+  const [voltooidInfo, setVoltooidInfo] = useState<{
+    respondentCode: string;
+    bezitsToken: string;
+    completedAt: string | null;
+  } | null>(null);
 
   // Instrument ophalen — retry: 2 voor cold-start sandbox; staleTime laag voor verse data
   const { data: inst, isLoading: instLoading, isError: instError } = useQuery<T4SportsInstrument>({
@@ -906,6 +917,8 @@ export default function T4SportsVragenlijst() {
         taal: "nl",
       });
       const data: any = await res.json();
+      // K-1 (audit): bewaar meteen het onraadbare bezitsbewijs van deze afname.
+      bewaarBewijs(data.id, data.bezitsToken);
       setAfnameId(data.id);
       setStap("baseline");
     } catch {
@@ -937,6 +950,8 @@ export default function T4SportsVragenlijst() {
         // geen geforceerde auto-redirect meer.
         setVoltooidInfo({
           respondentCode: data.afname?.respondentCode ?? "",
+          // K-1: de toegang loopt via het onraadbare bezitsToken.
+          bezitsToken: data.afname?.bezitsToken ?? "",
           completedAt: data.afname?.completedAt ?? new Date().toISOString(),
         });
         setStap("voltooid");
@@ -1040,10 +1055,11 @@ export default function T4SportsVragenlijst() {
     <VoltooiingScherm
       naam={naam}
       respondentCode={voltooidInfo?.respondentCode ?? ""}
+      bezitsToken={voltooidInfo?.bezitsToken ?? ""}
       completedAt={voltooidInfo?.completedAt ?? null}
       onNaarDashboard={() => {
-        const code = voltooidInfo?.respondentCode;
-        if (code) navigate(`/t4sports/dashboard/${code}`);
+        const token = voltooidInfo?.bezitsToken;
+        if (token) navigate(`/t4sports/dashboard/${token}`);
       }}
     />
   );

@@ -67,6 +67,12 @@ export const afnames = sqliteTable("afnames", {
   // Onraadbaar toegangstoken voor de deelnemerslink (i.p.v. het volgnummer-id
   // bloot te stellen). Wordt gebruikt in de URL /deelnemer/:token.
   inviteToken: text("invite_token").unique(),
+  // Auditbevinding K-1 (kritiek), derde ronde: het bezitsbewijs van een afname.
+  // De respondentCode is bewust leesbaar (initialen-jaar-nummer) en dus raadbaar;
+  // die mag daarom nooit als bewijs dienen. Dit token wordt bij het aanmaken van
+  // de afname willekeurig getrokken (24 bytes) en is de enige waarde waarmee een
+  // deelnemer aantoont dat deze afname de zijne is.
+  bezitsToken: text("bezits_token"),
   // Tijdstip waarop de uitnodiging (link) werd aangemaakt en eventueel herinnerd.
   uitgenodigdAt: text("uitgenodigd_at"),
   herinnerdAt: text("herinnerd_at"),

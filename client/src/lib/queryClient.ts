@@ -1,4 +1,8 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+// K-1 (audit): de invul- en koppelroutes van een afname vragen een bezitsbewijs.
+// De kop wordt hier centraal toegevoegd, zodat elke pagina hem automatisch
+// meestuurt zonder eigen code.
+import { bewijsKop } from "./afname-bewijs";
 
 // Runtime hostname check (identiek aan ZIP-8 bronbundel):
 // Op pplx.app sandbox loopt het verkeer via /port/5000 proxy.
@@ -23,7 +27,10 @@ export async function apiRequest(
 ): Promise<Response> {
   const res = await fetch(`${API_BASE}${url}`, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers: {
+      ...(data ? { "Content-Type": "application/json" } : {}),
+      ...bewijsKop(url),
+    },
     body: data ? JSON.stringify(data) : undefined,
     // KRITIEK: credentials: "include" vereist voor cross-origin cookie-uitwisseling
     // op pplx.app (S3-frontend → /port/5000 sandbox-backend).

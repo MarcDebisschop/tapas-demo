@@ -70,21 +70,31 @@ check(
 
 // -- Garantie 3: het AI-duidingpad valt terug op de statische generieke inhoud --
 // De rapportkeuze loopt sinds de registry via server/rapport-registry.ts. De
-// generieke fallback dáár gebruikt bouwRapportInhoud; de live paden (storage.ts
-// en repositories/rapporten.ts) bouwen eerst de statische inhoud via de registry
-// en verrijken pas daarna, met behoud van de statische inhoud als fallback.
+// generieke fallback dáár gebruikt bouwRapportInhoud; het live pad (storage.ts)
+// bouwt eerst de statische inhoud via de registry en verrijkt pas daarna, met
+// behoud van de statische inhoud als fallback.
 const registry = lees("server/rapport-registry.ts");
 check("rapport-registry.ts bestaat", registry !== null);
 check(
   "rapport-registry.ts: generieke fallback gebruikt bouwRapportInhoud",
   !!registry && /bouwRapportInhoud/.test(registry),
 );
-const repo = lees("server/repositories/rapporten.ts");
-check("rapporten.ts kiest de generator via de gedeelde registry", !!repo && /kiesGenerator/.test(repo));
-check("rapporten.ts roept genereerAiDuiding aan (additief AI-pad)", !!repo && /genereerAiDuiding/.test(repo));
+// Auditronde 3 verwijderde server/repositories/rapporten.ts: die kopie werd door
+// niemand aangeroepen en kon uiteenlopen met het echte pad. Deze garantie test dus
+// het ENIGE live rapportpad, in server/storage.ts. (Voorheen wees ze naar het
+// verwijderde bestand, waardoor de bouw altijd faalde.)
+const rapportPad = lees("server/storage.ts");
 check(
-  "rapporten.ts: AI-pad heeft een fallback naar de statische inhoud",
-  !!repo && /fallback naar de generieke generator/.test(repo),
+  "het live rapportpad kiest de generator via de gedeelde registry",
+  !!rapportPad && /kiesGenerator\(contract\?\.instrumentId\)/.test(rapportPad),
+);
+check(
+  "het live rapportpad roept genereerAiDuiding aan (additief AI-pad)",
+  !!rapportPad && /genereerAiDuiding\(inhoud, contract\)/.test(rapportPad),
+);
+check(
+  "het live rapportpad valt bij een AI-fout terug op de statische inhoud",
+  !!rapportPad && /fallback naar bouwRapportInhoud/.test(rapportPad),
   "de statische inhoud/html moet behouden blijven als de AI faalt",
 );
 const stor = lees("server/storage.ts");

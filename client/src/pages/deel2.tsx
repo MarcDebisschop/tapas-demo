@@ -45,12 +45,12 @@ export default function Deel2() {
         answers: { q1: vals.q1, q2: vals.q2, q3: vals.q3, q4: vals.q4 },
       });
       // K-1 (audit): het eindscherm koppelt enkel met een bezitsbewijs. De
-      // respondentCode komt hier mee in het afrondantwoord; we bewaren ze in de
+      // Het bezitsToken komt hier mee in het afrondantwoord; we bewaren het in de
       // tabbladopslag zodat het eindscherm ze kan meesturen zonder dat de
       // publieke afnameroute ze aan iedereen hoeft prijs te geven.
       try {
         const uitkomst = await res.json();
-        const code = uitkomst?.afname?.respondentCode;
+        const code = uitkomst?.afname?.bezitsToken;
         if (typeof code === "string" && code) {
           window.sessionStorage.setItem(bewijsSleutel(id), code);
         }

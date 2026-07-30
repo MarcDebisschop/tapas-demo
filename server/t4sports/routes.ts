@@ -412,9 +412,11 @@ export function registerT4SportsRoutes(app: Express): void {
   // =========================================================================
   app.get("/api/t4sports/dashboard/:token", async (req, res) => {
     const token = req.params.token;
-    // Token = respondentCode of inviteToken
+    // Auditbevinding K-1: het token is het invite-token of het onraadbare
+    // bezitsToken van de afname. De leesbare respondentCode
+    // (initialen-jaar-volgnummer) gaf hier vroeger toegang en was raadbaar.
     let afname = await storage.getAfnameByToken(token);
-    if (!afname) afname = await storage.getAfnameByCode(token);
+    if (!afname) afname = await storage.getAfnameByBezitsToken(token);
     if (!afname) return res.status(404).json({ error: "Profiel niet gevonden" });
     if (afname.status !== "voltooid" || !afname.generatorContract) {
       return res.status(400).json({ error: "Profiel nog niet voltooid" });
@@ -451,7 +453,7 @@ export function registerT4SportsRoutes(app: Express): void {
   app.get("/api/t4sports/dashboard/:token/bibliotheek", async (req, res) => {
     const token = req.params.token;
     let afname = await storage.getAfnameByToken(token);
-    if (!afname) afname = await storage.getAfnameByCode(token);
+    if (!afname) afname = await storage.getAfnameByBezitsToken(token);
     if (!afname) return res.status(404).json({ error: "Profiel niet gevonden" });
 
     let contract: any = null;
@@ -468,7 +470,7 @@ export function registerT4SportsRoutes(app: Express): void {
   app.get("/api/t4sports/dashboard/:token/podcasts", async (req, res) => {
     const token = req.params.token;
     let afname = await storage.getAfnameByToken(token);
-    if (!afname) afname = await storage.getAfnameByCode(token);
+    if (!afname) afname = await storage.getAfnameByBezitsToken(token);
     if (!afname) return res.status(404).json({ error: "Profiel niet gevonden" });
 
     let contract: any = null;
@@ -485,7 +487,7 @@ export function registerT4SportsRoutes(app: Express): void {
   app.get("/api/t4sports/dashboard/:token/uitleg", async (req, res) => {
     const token = req.params.token;
     let afname = await storage.getAfnameByToken(token);
-    if (!afname) afname = await storage.getAfnameByCode(token);
+    if (!afname) afname = await storage.getAfnameByBezitsToken(token);
     if (!afname) return res.status(404).json({ error: "Profiel niet gevonden" });
     if (!afname.generatorContract) return res.status(400).json({ error: "Profiel nog niet voltooid" });
 
@@ -506,7 +508,7 @@ export function registerT4SportsRoutes(app: Express): void {
     // Registreer dat de atleet de uitleg beluisterd heeft (log-only voor nu)
     const token = req.params.token;
     let afname = await storage.getAfnameByToken(token);
-    if (!afname) afname = await storage.getAfnameByCode(token);
+    if (!afname) afname = await storage.getAfnameByBezitsToken(token);
     if (!afname) return res.status(404).json({ error: "Profiel niet gevonden" });
     res.json({ ok: true, message: "Uitleg-sessie geregistreerd" });
   });
@@ -517,7 +519,7 @@ export function registerT4SportsRoutes(app: Express): void {
   app.post("/api/t4sports/dashboard/:token/chat", async (req, res) => {
     const token = req.params.token;
     let afname = await storage.getAfnameByToken(token);
-    if (!afname) afname = await storage.getAfnameByCode(token);
+    if (!afname) afname = await storage.getAfnameByBezitsToken(token);
     if (!afname) return res.status(404).json({ error: "Profiel niet gevonden" });
     if (!afname.generatorContract) return res.status(400).json({ error: "Profiel nog niet voltooid" });
 

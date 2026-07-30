@@ -11,9 +11,15 @@
  * Express getest kunnen worden:
  *
  *   1. bewijsGeldig()      - de oproeper moet bewijzen dat hij deze afname zelf
- *                            heeft afgelegd, door de respondentCode of het
- *                            invite-token mee te sturen. Beide zijn onraadbaar;
- *                            het id is dat niet.
+ *                            heeft afgelegd, door het bezitsToken of het
+ *                            invite-token mee te sturen. Beide zijn willekeurig
+ *                            getrokken; het id is dat niet.
+ *
+ *                            LET OP (derde ronde): de respondentCode geldt NIET
+ *                            meer als bewijs. Die is bewust leesbaar opgebouwd
+ *                            (initialen-jaar-volgnummer, bv. "PB-2026-089") en dus
+ *                            raadbaar voor wie de naam en het id kent. Elke afname
+ *                            heeft daarom sinds deze ronde een apart bezitsToken.
  *   2. koppelBeslissing()  - een afname die al aan een e-mailadres hangt wordt
  *                            nooit overschreven. Hetzelfde adres blijft
  *                            idempotent doorlopen (het eindscherm mag opnieuw
@@ -26,7 +32,11 @@ import { timingSafeEqual } from "node:crypto";
 
 /** Alleen de velden die de poortwachters nodig hebben. */
 export interface KoppelAfname {
-  respondentCode?: string | null;
+  /**
+   * Het onraadbare bezitsbewijs van deze afname (24 willekeurige bytes, hex).
+   * Sinds K-1 derde ronde is dit de enige code die als bewijs geldt.
+   */
+  bezitsToken?: string | null;
   inviteToken?: string | null;
   deelnemerEmail?: string | null;
 }
@@ -45,23 +55,27 @@ function gelijkTijdconstant(a: string, b: string): boolean {
 }
 
 /**
- * Haalt het bewijs uit de body. Het eindscherm stuurt `respondentCode`; de
- * uitnodigingsflow mag ook `token` (het invite-token) gebruiken.
+ * Haalt het bewijs uit de body. Het eindscherm stuurt `bezitsToken`; oudere
+ * velden (`respondentCode`, `token`, `bewijs`) blijven aanvaard als drager van de
+ * waarde, maar de waarde zelf moet altijd het bezitsToken of het invite-token
+ * zijn.
  */
 export function bewijsUitBody(body: unknown): string {
   const b = (body ?? {}) as Record<string, unknown>;
-  const ruw = b.respondentCode ?? b.token ?? b.bewijs;
+  const ruw = b.bezitsToken ?? b.respondentCode ?? b.token ?? b.bewijs;
   return typeof ruw === "string" ? ruw.trim() : "";
 }
 
 /**
- * True zodra het meegestuurde bewijs overeenkomt met de respondentCode of het
- * invite-token van deze afname. Een leeg bewijs is altijd ongeldig.
+ * True zodra het meegestuurde bewijs overeenkomt met het bezitsToken of het
+ * invite-token van deze afname. Een leeg bewijs is altijd ongeldig; een afname
+ * zonder bezitsToken en zonder invite-token is nooit te bewijzen (en dus nooit te
+ * koppelen) in plaats van open te staan.
  */
 export function bewijsGeldig(afname: KoppelAfname, bewijs: string): boolean {
   const kandidaat = (bewijs ?? "").trim();
   if (!kandidaat) return false;
-  const geldigeWaarden = [afname.respondentCode, afname.inviteToken]
+  const geldigeWaarden = [afname.bezitsToken, afname.inviteToken]
     .filter((w): w is string => typeof w === "string" && w.length > 0);
   return geldigeWaarden.some((w) => gelijkTijdconstant(w, kandidaat));
 }

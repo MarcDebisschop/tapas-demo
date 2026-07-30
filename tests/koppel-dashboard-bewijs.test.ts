@@ -24,15 +24,22 @@ import {
 } from "../server/koppel-bewijs";
 
 const AFNAME = {
-  respondentCode: "R-7f3a91c2e5",
+  // De respondentCode is leesbaar opgebouwd en dus raadbaar; sinds K-1 derde ronde
+  // is enkel het willekeurig getrokken bezitsToken (of het invite-token) een bewijs.
+  respondentCode: "R-2026-089",
+  bezitsToken: "7f3a91c2e5b40a18d6c2f95e",
   inviteToken: "inv-8b21d4a09c6e",
   deelnemerEmail: null as string | null,
 };
 
 describe("K-1: bezitsbewijs bij het koppelen van een dashboard", () => {
-  it("aanvaardt de respondentCode van deze afname", () => {
-    expect(bewijsGeldig(AFNAME, AFNAME.respondentCode)).toBe(true);
-    expect(bewijsGeldig(AFNAME, ` ${AFNAME.respondentCode} `)).toBe(true);
+  it("aanvaardt het bezitsToken van deze afname", () => {
+    expect(bewijsGeldig(AFNAME, AFNAME.bezitsToken)).toBe(true);
+    expect(bewijsGeldig(AFNAME, ` ${AFNAME.bezitsToken} `)).toBe(true);
+  });
+
+  it("weigert de leesbare respondentCode als bewijs", () => {
+    expect(bewijsGeldig(AFNAME, AFNAME.respondentCode)).toBe(false);
   });
 
   it("aanvaardt het invite-token van deze afname", () => {
@@ -132,7 +139,7 @@ describe("K-1: de route past de poortwachters ook echt toe", () => {
     expect(gebruik![0]).toContain('"/api/afnames/:id/koppel-dashboard"');
   });
 
-  it("laat het eindscherm de respondentCode meesturen", () => {
-    expect(klaar).toMatch(/koppel-dashboard[\s\S]{0,200}respondentCode/);
+  it("laat het eindscherm het bezitsToken meesturen", () => {
+    expect(klaar).toMatch(/koppel-dashboard[\s\S]{0,200}bezitsToken/);
   });
 });

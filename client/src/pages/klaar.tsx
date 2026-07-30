@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { haalBewijs } from "@/lib/afname-bewijs";
 import { Link, useParams } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { AppHeader } from "@/components/Brand";
@@ -17,21 +18,18 @@ interface KoppelResultaat {
   voornaam: string | null;
 }
 
-// K-1 (audit): het koppelpad eist een bezitsbewijs. Een beheerder krijgt de
-// respondentCode uit de afnamegegevens; een deelnemer krijgt ze bij het afronden
-// van deel 2 en bewaart ze in de tabbladopslag onder deze sleutel. Zo hoeft de
-// publieke afnameroute de code niet prijs te geven (dataminimalisatie).
-export function bewijsSleutel(afnameId: number): string {
-  return `tapas-afnamebewijs-${afnameId}`;
-}
+// K-1 (audit): het koppelpad eist een bezitsbewijs. Dat bewijs is sinds de derde
+// ronde het bezitsToken van de afname - een willekeurig getrokken waarde, niet de
+// leesbare en dus raadbare respondentCode. Een beheerder krijgt het token uit de
+// afnamegegevens; een deelnemer krijgt het bij het afronden van deel 2 en bewaart
+// het in de tabbladopslag. Zo hoeft de publieke afnameroute niets prijs te geven
+// (dataminimalisatie).
+// De sleutel en de opslag staan sinds K-1 (derde ronde) in één gedeelde module,
+// zodat het eindscherm en de invulroutes exact hetzelfde bewijs gebruiken.
+export { bewijsSleutel } from "@/lib/afname-bewijs";
 
 function bewijsUitOpslag(afnameId: number): string | null {
-  if (typeof window === "undefined") return null;
-  try {
-    return window.sessionStorage.getItem(bewijsSleutel(afnameId));
-  } catch {
-    return null;
-  }
+  return haalBewijs(afnameId);
 }
 
 // Absolute, deelbare link naar het persoonlijk dashboard (hash-routing).
@@ -63,14 +61,14 @@ export default function Klaar() {
   const [resultaat, setResultaat] = useState<KoppelResultaat | null>(null);
 
   // K-1 (audit): het koppelpad vraagt naast het id een bezitsbewijs. We sturen
-  // de respondentCode van deze afname mee; zonder die code weigert de server.
-  const bewijs = data?.respondentCode ?? bewijsUitOpslag(id);
+  // het bezitsToken van deze afname mee; zonder dat token weigert de server.
+  const bewijs = bewijsUitOpslag(id) ?? (data as { bezitsToken?: string | null })?.bezitsToken ?? null;
 
   const koppel = useMutation({
     mutationFn: async (adres: string) => {
       const res = await apiRequest("POST", `/api/afnames/${id}/koppel-dashboard`, {
         email: adres,
-        respondentCode: bewijs,
+        bezitsToken: bewijs,
       });
       return (await res.json()) as KoppelResultaat;
     },

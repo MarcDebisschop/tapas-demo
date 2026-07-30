@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { bewaarBewijs } from "@/lib/afname-bewijs";
 import type { Afname } from "@/lib/types";
 import { Compass, Sparkles } from "lucide-react";
 import { Leeftijdspoort, LEEG_POORT_STAAT, type LeeftijdspoortStaat } from "@/components/Leeftijdspoort";
@@ -67,6 +68,9 @@ export default function ReisT4KidsStart() {
         ouderEmail: poort.ouderEmail.trim() || undefined,
       });
       const afname: Afname = await res.json();
+      // K-1 (audit): bewaar meteen het bezitsbewijs van deze afname, zodat elke
+      // vervolgstap kan aantonen dat ze bij deze deelnemer hoort.
+      bewaarBewijs(afname.id, afname.bezitsToken ?? afname.inviteToken);
       navigate(`/reis/${afname.id}`);
     } catch (e: any) {
       const msg = e?.message ? String(e.message) : String(e);

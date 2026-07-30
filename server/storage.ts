@@ -474,6 +474,26 @@ try {
   // betrouwbaar te reconstrueren en raden zou het spoor vervalsen.
   if (!heeft("aangemaakt_door_beheerder_id")) add(`ALTER TABLE afnames ADD COLUMN aangemaakt_door_beheerder_id INTEGER;`);
   if (!heeft("aangemaakt_door_organisatie_id")) add(`ALTER TABLE afnames ADD COLUMN aangemaakt_door_organisatie_id INTEGER;`);
+  // Auditbevinding K-1 (kritiek), derde ronde: bezitsbewijs per afname. De
+  // respondentCode is leesbaar en dus raadbaar; dit token is dat niet. Bestaande
+  // rijen krijgen meteen een token, zodat de oude, raadbare code nergens meer als
+  // bewijs kan dienen.
+  if (!heeft("bezits_token")) {
+    add(`ALTER TABLE afnames ADD COLUMN bezits_token TEXT;`);
+  }
+  try {
+    const zonder = sqlite
+      .prepare(`SELECT id FROM afnames WHERE bezits_token IS NULL OR bezits_token = ''`)
+      .all() as Array<{ id: number }>;
+    if (zonder.length > 0) {
+      const zet = sqlite.prepare(`UPDATE afnames SET bezits_token = ? WHERE id = ?`);
+      for (const rij of zonder) zet.run(randomBytes(24).toString("hex"), rij.id);
+      console.log(`[tapas] Bezitsbewijs aangevuld voor ${zonder.length} bestaande afname(s).`);
+    }
+  } catch {
+    // Een oudere databank zonder de kolom valt hier stil terug; de kolom komt
+    // hierboven al aan de beurt bij de volgende start.
+  }
 } catch {
   // negeerbaar in nieuwe databases
 }
@@ -1669,6 +1689,8 @@ export interface IStorage {
   createAfname(data: NewAfname): Promise<Afname>;
   getAfname(id: number): Promise<Afname | undefined>;
   getAfnameByCode(code: string): Promise<Afname | undefined>;
+  /** K-1: opzoeken op het onraadbare bezitsbewijs (nooit op de leesbare code). */
+  getAfnameByBezitsToken(token: string): Promise<Afname | undefined>;
   // Scope is VERPLICHT: zonder scope geen afnames. Zie server/scope.ts.
   listAfnames(scope: Scope): Promise<Afname[]>;
   updateAfname(id: number, patch: Partial<Afname>): Promise<Afname | undefined>;
@@ -1888,6 +1910,9 @@ export class DatabaseStorage implements IStorage {
       .values({
         organisatieId: data.organisatieId ?? null,
         respondentCode: data.respondentCode,
+        // K-1: elke afname krijgt hier haar onraadbare bezitsbewijs. Dit gebeurt
+        // op één plaats, zodat geen enkel startpad het kan vergeten.
+        bezitsToken: randomBytes(24).toString("hex"),
         name: data.name,
         company: data.company ?? null,
         role: data.role ?? null,
@@ -1927,6 +1952,17 @@ export class DatabaseStorage implements IStorage {
 
   async getAfnameByCode(code: string): Promise<Afname | undefined> {
     return db.select().from(afnames).where(eq(afnames.respondentCode, code)).get();
+  }
+
+  /**
+   * Auditbevinding K-1: opzoeken op het bezitsToken. Anders dan de leesbare
+   * respondentCode is dit een willekeurig getrokken waarde, dus niet te raden.
+   */
+  async getAfnameByBezitsToken(token: string): Promise<Afname | undefined> {
+    const t = (token ?? "").trim();
+    if (!t) return undefined;
+    const rijen = await db.select().from(afnames).where(eq(afnames.bezitsToken, t)).limit(1);
+    return rijen[0];
   }
 
   async listAfnames(scope: Scope): Promise<Afname[]> {
@@ -2508,7 +2544,7 @@ export class DatabaseStorage implements IStorage {
     //     Elk instrument met een eigen generator (t4students, t4p-business-kompas, ...)
     //     krijgt zijn volledige rapport; al de rest valt terug op de generieke
     //     bouwRapportInhoud. Eén bron van waarheid, gedeeld met
-    //     repositories/rapporten.ts en script/regen_reports.ts. ---
+    //     script/regen_reports.ts. ---
     const generator = kiesGenerator(contract?.instrumentId);
     inhoud = generator.bouw(contract, variant);
     html = generator.render(inhoud);
@@ -2518,8 +2554,7 @@ export class DatabaseStorage implements IStorage {
     //     Enkel wanneer live-duiding AAN staat en het instrument T4P is, proberen we
     //     de prozateksten te verrijken. Faalt de AI (traag/geen key/fout/guardrail),
     //     dan behouden we de statische bouwRapportInhoud-tekst — een afname blokkeert
-    //     nooit. De cijfers/tabellen (uit scoring.ts) blijven altijd ongemoeid.
-    //     Spiegelt server/repositories/rapporten.ts:44-60. ---
+    //     nooit. De cijfers/tabellen (uit scoring.ts) blijven altijd ongemoeid. ---
     try {
       // AI-duiding verrijkt enkel de generieke RapportInhoud-structuur; ze mag
       // NIET draaien op een instrument met een eigen generator (bv. T4P), omdat

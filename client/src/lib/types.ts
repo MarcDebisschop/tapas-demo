@@ -48,6 +48,8 @@ export type AnswerState = Record<string, BlockAnswer>;
 export interface Afname {
   id: number;
   respondentCode: string;
+  /** K-1: het onraadbare bezitsbewijs; komt enkel mee bij het starten en afronden. */
+  bezitsToken?: string | null;
   name: string;
   company: string | null;
   role: string | null;

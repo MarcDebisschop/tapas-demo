@@ -34,6 +34,7 @@ import {
 } from "@shared/schema";
 import { valideerLeeftijdspoort } from "@shared/leeftijd";
 import { bewijsGeldig, bewijsUitBody, koppelBeslissing } from "../koppel-bewijs";
+import { vereisAfnameBewijs } from "../afname-bewijs";
 import { vereisAdmin, adminIdVanSessie } from "../admin-guard";
 import {
   vereisScope,
@@ -368,7 +369,7 @@ export function registerAfnameRoutes(app: Express): void {
   });
 
   // --- Tussentijds bewaren van deel 1 (concept) ---
-  app.post("/api/afnames/:id/concept", async (req, res) => {
+  app.post("/api/afnames/:id/concept", vereisAfnameBewijs, async (req, res) => {
     const id = Number(req.params.id);
     const a = await storage.getAfname(id);
     if (!a) return res.status(404).json({ error: "Afname niet gevonden" });
@@ -386,7 +387,7 @@ export function registerAfnameRoutes(app: Express): void {
   });
 
   // --- Deel 1 (hoofdvragenlijst) inleveren ---
-  app.post("/api/afnames/:id/main", async (req, res) => {
+  app.post("/api/afnames/:id/main", vereisAfnameBewijs, async (req, res) => {
     const id = Number(req.params.id);
     const a = await storage.getAfname(id);
     if (!a) return res.status(404).json({ error: "Afname niet gevonden" });
@@ -405,7 +406,7 @@ export function registerAfnameRoutes(app: Express): void {
   });
 
   // --- Deel 2 (verbondenheid) inleveren + profiel genereren ---
-  app.post("/api/afnames/:id/connection", async (req, res) => {
+  app.post("/api/afnames/:id/connection", vereisAfnameBewijs, async (req, res) => {
     const id = Number(req.params.id);
     const a = await storage.getAfname(id);
     if (!a) return res.status(404).json({ error: "Afname niet gevonden" });

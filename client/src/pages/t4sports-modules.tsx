@@ -243,20 +243,22 @@ export default function T4SportsModules() {
   const [allAntwoorden, setAllAntwoorden] = useState<Record<string, Record<string, number>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [rapportCompleetUrl, setRapportCompleetUrl] = useState<string | null>(null);
-  const [respondentCode, setRespondentCode] = useState<string | null>(null);
+  // K-1 (audit): terugnavigatie loopt via het onraadbare bezitsToken, niet via de
+  // leesbare respondentCode.
+  const [bezitsToken, setBezitsToken] = useState<string | null>(null);
 
   const moduleKleuren: Record<string, string> = { M1: GOUD, M2: "#4FC3F7", M3: "#81C784" };
 
-  // Ophalen basisinfo (respondentCode voor terug-navigatie)
+  // Ophalen basisinfo (bezitsToken voor terug-navigatie)
   useEffect(() => {
     if (!afnameId) return;
     apiRequest("GET", `/api/t4sports/afnames/${afnameId}/info`)
-      .then((info: any) => setRespondentCode(info.respondentCode ?? null))
+      .then((info: any) => setBezitsToken(info.bezitsToken ?? null))
       .catch(() => {/* negeerbaar */});
   }, [afnameId]);
 
   // Helper: navigeer terug naar dashboard met juiste token
-  const naarDashboard = () => navigate(`/t4sports/dashboard/${respondentCode ?? afnameId}`);
+  const naarDashboard = () => navigate(`/t4sports/dashboard/${bezitsToken ?? afnameId}`);
 
   // Ophalen module-definities (overzicht)
   const { data: modulesData, isLoading: isLoadingModules } = useQuery({

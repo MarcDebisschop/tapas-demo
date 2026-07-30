@@ -51,12 +51,17 @@ describe("K-1: het bewijs bereikt de deelnemer via het afronden", () => {
   it("deel2 bewaart de code onder de sleutel van klaar.tsx", () => {
     expect(deel2).toMatch(/import \{ bewijsSleutel \} from "@\/pages\/klaar"/);
     expect(deel2).toMatch(/sessionStorage\.setItem\(bewijsSleutel\(id\), code\)/);
-    expect(deel2).toMatch(/uitkomst\?\.afname\?\.respondentCode/);
+    // Derde ronde: het bewaarde bewijs is het bezitsToken, niet de leesbare code.
+    expect(deel2).toMatch(/uitkomst\?\.afname\?\.bezitsToken/);
   });
 
   it("de sleutel is per afname en op een plaats gedefinieerd", () => {
-    expect(klaar).toMatch(/export function bewijsSleutel\(afnameId: number\)/);
-    expect(klaar).toMatch(/`tapas-afnamebewijs-\$\{afnameId\}`/);
+    // Sinds K-1 (derde ronde) staat de sleutel in de gedeelde module
+    // client/src/lib/afname-bewijs.ts; klaar.tsx exporteert hem enkel door.
+    const lib = readFileSync(resolve(__dirname, "..", "client/src/lib/afname-bewijs.ts"), "utf8");
+    expect(lib).toMatch(/export function bewijsSleutel\(afnameId: number\)/);
+    expect(lib).toMatch(/`tapas-afnamebewijs-\$\{afnameId\}`/);
+    expect(klaar).toMatch(/export \{ bewijsSleutel \} from "@\/lib\/afname-bewijs"/);
     // Geen tweede, eigen sleutelvorm elders in de client.
     expect(deel2).not.toContain("tapas-afnamebewijs-");
   });
@@ -64,8 +69,8 @@ describe("K-1: het bewijs bereikt de deelnemer via het afronden", () => {
 
 describe("K-1: het eindscherm stuurt het bewijs mee of verstuurt niet", () => {
   it("valt terug op de opgeslagen code", () => {
-    expect(klaar).toMatch(/const bewijs = data\?\.respondentCode \?\? bewijsUitOpslag\(id\)/);
-    expect(klaar).toMatch(/respondentCode: bewijs,/);
+    expect(klaar).toMatch(/const bewijs = bewijsUitOpslag\(id\) \?\?/);
+    expect(klaar).toMatch(/bezitsToken: bewijs,/);
   });
 
   it("blokkeert het versturen zonder bewijs", () => {

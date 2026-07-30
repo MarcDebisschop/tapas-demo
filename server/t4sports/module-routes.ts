@@ -18,6 +18,7 @@ import { z } from "zod";
 import Database from "better-sqlite3";
 import { resolve } from "path";
 import { storage } from "../storage";
+import { vereisAfnameBewijs } from "../afname-bewijs";
 import { verrijkT4SportsRapport } from "../duiding-manager";
 import { scoreModule, getModuleDefinitie, getAlleModuleIds } from "./module-scoring";
 import type { ModuleAntwoord, ModuleResultaat } from "./module-scoring";
@@ -98,17 +99,25 @@ const moduleAntwoordenBatchSchema = z.object({
 export function registerT4SportsModuleRoutes(app: Express): void {
 
   // ───────────────────────────────────────────────────────────────────────────
-  // GET /api/t4sports/afnames/:id/info — basisinfo voor navigatie
-  // Geeft respondentCode terug zodat client kan navigeren naar dashboard/:token
+  // GET /api/t4sports/afnames/:id/info - basisinfo voor navigatie
+  //
+  // Auditbevinding K-1 (kritiek). Deze route stond open op het oplopende id en gaf
+  // de naam van de atleet plus de respondentCode terug. Wie de id's aftelde, kon zo
+  // namen oogsten en met die code het volledige dashboard openen. Sinds deze ronde
+  // vraagt de route hetzelfde bezitsbewijs als de andere afnameroutes en geeft ze
+  // het onraadbare bezitsToken terug, waarmee de client naar het dashboard navigeert.
   // ───────────────────────────────────────────────────────────────────────────
-  app.get("/api/t4sports/afnames/:id/info", async (req, res) => {
-    const id = parseInt(req.params.id, 10);
+  app.get("/api/t4sports/afnames/:id/info", vereisAfnameBewijs, async (req, res) => {
+    // String(...) omdat Express bij een router met poortwachter een breder
+    // params-type aflevert; het gedrag blijft identiek.
+    const id = parseInt(String(req.params.id), 10);
     if (isNaN(id)) return res.status(400).json({ error: "Ongeldig afname-id" });
     const afname = await storage.getAfname(id);
     if (!afname) return res.status(404).json({ error: "Afname niet gevonden" });
     res.json({
       id: afname.id,
       respondentCode: afname.respondentCode,
+      bezitsToken: afname.bezitsToken,
       naam: afname.name,
       status: afname.status,
     });
