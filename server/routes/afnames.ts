@@ -412,6 +412,17 @@ export function registerAfnameRoutes(app: Express): void {
     if (!a.mainResponses) {
       return res.status(400).json({ error: "Deel 1 is nog niet ingeleverd" });
     }
+
+    // Auditbevinding K-1, tweede ronde: HERHAALD AFRONDEN GESLOTEN.
+    // Zonder deze controle kon iedereen met een gok op het oplopende id een al
+    // voltooide afname opnieuw afronden. Dat overschreef het gegenereerde
+    // contract met eigen antwoorden en gaf in het antwoord de volledige
+    // afnamerij terug, inclusief de onraadbare respondentCode die net het
+    // bezitsbewijs van het koppelpad vormt. Een voltooide afname wordt daarom
+    // nooit een tweede keer afgerond.
+    if (a.status === "voltooid") {
+      return res.status(409).json({ error: "Deze afname is al afgerond." });
+    }
     const parsed = submitConnectionSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: "Ongeldige antwoorden voor deel 2" });
@@ -498,9 +509,22 @@ export function registerAfnameRoutes(app: Express): void {
     // TaPas Persoonlijk — Fase 1: als de deelnemer (optioneel) een e-mailadres
     // opgaf bij het afronden, koppelen we deze afname meteen aan een
     // deelnemer-account zodat ze later via hun persoonlijk dashboard inloggen.
+    //
+    // Auditbevinding K-1, tweede ronde: ook hier geldt het bezitsbewijs. Deze
+    // afrondroute kende dat bewijs niet, waardoor het koppelen van een
+    // e-mailadres langs de gedichte koppelroute heen kon. Zonder geldig bewijs
+    // wordt het meegestuurde adres genegeerd; het afronden zelf blijft slagen,
+    // want koppelen mag de profielgeneratie nooit blokkeren. De eigen webclient
+    // stuurt hier geen e-mailadres mee: die koppelt via
+    // /api/afnames/:id/koppel-dashboard, mét bewijs.
     const emailRaw = (req.body && typeof req.body.email === "string") ? req.body.email.trim() : "";
+    const bewijsOk = bewijsGeldig(a, bewijsUitBody(req.body));
     let dashboardToken: string | null = null;
-    if (emailRaw && /.+@.+\..+/.test(emailRaw)) {
+    if (emailRaw && !bewijsOk) {
+      // Geen persoonsgegevens in het logboek (auditbevinding S-1): enkel het id.
+      console.warn(`[koppel] e-mailkoppeling bij afronden geweigerd zonder bezitsbewijs (afname ${id})`);
+    }
+    if (emailRaw && bewijsOk && /.+@.+\..+/.test(emailRaw)) {
       try {
         updated = await storage.koppelAfnameAanDeelnemer(id, emailRaw) ?? updated;
         const deelnemer = await storage.vindOfMaakDeelnemer(emailRaw, a.taal);

@@ -123,10 +123,13 @@ describe("K-1: de route past de poortwachters ook echt toe", () => {
     expect(blok).toMatch(/if\s*\(\s*!beslissing\.reeds\s*\)\s*\{[\s\S]{0,120}koppelAfnameAanDeelnemer/);
   });
 
-  it("staat onder de snelheidsbegrenzing van de authLimiter", () => {
+  // Tweede auditronde: dit pad staat niet langer onder de ruime authLimiter maar
+  // onder de eigen, strengere koppelLimiter (zie tests/afronden-en-gezondheid.test.ts).
+  it("staat onder de strengere snelheidsbegrenzing van de koppelLimiter", () => {
     expect(index).toContain('"/api/afnames/:id/koppel-dashboard"');
-    const lijstEinde = index.indexOf("authLimiter,\n);");
-    expect(index.indexOf('"/api/afnames/:id/koppel-dashboard"')).toBeLessThan(lijstEinde);
+    const gebruik = index.match(/app\.use\(\[[^\]]*\],\s*koppelLimiter\);/);
+    expect(gebruik, "koppelLimiter wordt niet toegepast").not.toBeNull();
+    expect(gebruik![0]).toContain('"/api/afnames/:id/koppel-dashboard"');
   });
 
   it("laat het eindscherm de respondentCode meesturen", () => {

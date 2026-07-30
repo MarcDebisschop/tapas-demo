@@ -1,0 +1,55 @@
+# ---------------------------------------------------------------------------
+# Bouwpijplijn (CI)
+#
+# Auditbevinding O-1/O-2: de operationele laag ontbrak vrijwel volledig. Er was
+# geen enkele geautomatiseerde controle: tests, typecontrole en bouw liepen
+# alleen lokaal, met de hand. Deze werkstroom draait bij elke push en elke
+# pull request op de hoofdtak:
+#
+#   1. npm ci            -- exacte, herhaalbare installatie uit package-lock.json
+#   2. vitest run        -- de volledige testsuite (privacylaag + rapportmotor)
+#   3. typecontrole      -- tsc met een BASISLIJN: de bekende typefouten mogen
+#                           blijven, maar er mag er geen enkele bijkomen
+#   4. npm run build     -- de productiebouw moet slagen
+#
+# De typecontrole loopt tegen een basislijn omdat het bestaande project een
+# gemeten, bekend aantal typefouten heeft. Een harde `tsc`-poort zou de pijplijn
+# vanaf dag één rood zetten en dan wordt ze genegeerd. De basislijn maakt het
+# tegenovergestelde waar: het aantal kan alleen nog dalen.
+# ---------------------------------------------------------------------------
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: [main]
+
+jobs:
+  controle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node opzetten
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Afhankelijkheden installeren
+        run: npm ci
+
+      - name: Testsuite
+        run: npx vitest run
+
+      - name: Typecontrole tegen de basislijn
+        run: node script/tsc-basislijn.mjs
+
+      - name: Productiebouw
+        run: npm run build
+
+      - name: Kwetsbaarheden rapporteren (niet blokkerend)
+        run: npm audit --omit=dev || true

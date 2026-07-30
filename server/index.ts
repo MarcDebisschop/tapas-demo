@@ -78,13 +78,24 @@ app.use(
     "/api/deelnemers/token-login",
     "/api/deelnemers/magic",
     "/api/organisatie/login",
-    // K-1: het koppelpad van het eindscherm vraagt een onraadbaar bewijs
-    // (respondentCode of invite-token). De begrenzing maakt het aftasten van
-    // codes bovenop dat bewijs onhaalbaar.
-    "/api/afnames/:id/koppel-dashboard",
   ],
   authLimiter,
 );
+
+// K-1 (audit, tweede ronde) — Het koppelpad van het eindscherm en het afrond-
+// pad van deel 2 zijn de twee routes waar een onraadbaar bezitsbewijs of een
+// oplopend afname-id de toegang bepaalt. Voor die twee is de ruime auth-limiet
+// (50 per 15 min) te los: ze zou een aanvaller 50 gokpogingen per kwartier per
+// IP geven. Daarom een eigen, strengere begrenzer. Een echte deelnemer raakt
+// deze paden hoogstens enkele keren aan, dus 10 per kwartier hindert niemand.
+const koppelLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { message: "Te veel pogingen. Probeer het over enkele minuten opnieuw." },
+});
+app.use(["/api/afnames/:id/koppel-dashboard", "/api/afnames/:id/connection"], koppelLimiter);
 
 // Sessie-middleware (voor admin login)
 // A2 — SQLite-backed session store i.p.v. MemoryStore, op dezelfde better-sqlite3
@@ -215,6 +226,29 @@ app.use((req, res, next) => {
   });
 
   next();
+});
+
+// Auditbevinding O-1/O-2 (operationele laag): er was geen enkel endpoint waarmee
+// een uptime- of platformmonitor kon vaststellen of het platform leeft en of de
+// databank bereikbaar is. Dit endpoint doet exact dat en niets meer: het geeft
+// geen persoonsgegevens, geen configuratie en geen padinformatie prijs. Bij een
+// onbereikbare databank antwoordt het met 503, zodat een monitor de storing ziet
+// in plaats van een schijnbaar gezonde webserver.
+const opgestartOp = Date.now();
+app.get("/api/gezondheid", (_req, res) => {
+  const antwoord = {
+    status: "ok" as "ok" | "degraded",
+    versie: process.env.npm_package_version ?? null,
+    uptimeSeconden: Math.round((Date.now() - opgestartOp) / 1000),
+    databank: "ok" as "ok" | "onbereikbaar",
+  };
+  try {
+    sqlite.prepare("select 1").get();
+  } catch {
+    antwoord.status = "degraded";
+    antwoord.databank = "onbereikbaar";
+  }
+  res.status(antwoord.status === "ok" ? 200 : 503).json(antwoord);
 });
 
 (async () => {
