@@ -23,6 +23,7 @@ import type { Express, Request, Response } from "express";
 import { stmSessieOpslagen, type StmSessieRecord } from "./stm-storage";
 import { kwaliteitOpslag, seedDemoKwaliteit } from "./kwaliteit-storage";
 import { verifieerWachtwoord } from "./auth/wachtwoord";
+import { zetSessieIdentiteit, wisSessieIdentiteit } from "./sessie-identiteit";
 
 // Demo-modus: identiek criterium als in server/routes/admin.ts.
 const DEMO_MODE = process.env.TAPAS_DEMO === "1";
@@ -541,11 +542,14 @@ export function registerStmRoutes(app: Express, storage: any): void {
         return res.status(401).json({ error: "E-mailadres of wachtwoord onjuist." });
       }
     }
-    (req.session as any).coachId = beheerder.id;
-    req.session.save((err: unknown) => {
-      if (err) return res.status(500).json({ error: "Sessie kon niet opgeslagen worden." });
-      res.json({ ok: true, naam: beheerder.naam, email: beheerder.email, isPrior: beheerder.isPrior });
-    });
+    // H-1 (audit): sessie-id vernieuwen vóór het zetten van de identiteit
+    // (bescherming tegen session fixation).
+    try {
+      await zetSessieIdentiteit(req, { coachId: beheerder.id });
+    } catch {
+      return res.status(500).json({ error: "Sessie kon niet opgeslagen worden." });
+    }
+    res.json({ ok: true, naam: beheerder.naam, email: beheerder.email, isPrior: beheerder.isPrior });
   });
 
   app.get("/api/coach/me", async (req, res) => {
@@ -556,9 +560,14 @@ export function registerStmRoutes(app: Express, storage: any): void {
     res.json({ ok: true, naam: beheerder.naam, email: beheerder.email, isPrior: beheerder.isPrior });
   });
 
-  app.post("/api/coach/logout", (req, res) => {
-    (req.session as any).coachId = undefined;
-    req.session.save(() => res.json({ ok: true }));
+  app.post("/api/coach/logout", async (req, res) => {
+    // H-1 (audit): identiteit wissen én het sessie-id vervangen.
+    try {
+      await wisSessieIdentiteit(req, ["coachId"]);
+    } catch {
+      // Uitloggen mag nooit falen voor de gebruiker.
+    }
+    res.json({ ok: true });
   });
 
   // ── STM: start sessie ───────────────────────────────────────────────────

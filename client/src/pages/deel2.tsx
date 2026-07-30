@@ -11,6 +11,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { ClientInstrument, Afname } from "@/lib/types";
 import { CheckCircle2 } from "lucide-react";
 import { maakVertaler, normaliseerTaal, STANDAARD_TAAL } from "@shared/i18n";
+import { bewijsSleutel } from "@/pages/klaar";
 
 export default function Deel2() {
   const params = useParams();
@@ -40,10 +41,24 @@ export default function Deel2() {
   async function finish() {
     setSubmitting(true);
     try {
-      await apiRequest("POST", `/api/afnames/${id}/connection`, {
+      const res = await apiRequest("POST", `/api/afnames/${id}/connection`, {
         answers: { q1: vals.q1, q2: vals.q2, q3: vals.q3, q4: vals.q4 },
       });
+      // K-1 (audit): het eindscherm koppelt enkel met een bezitsbewijs. De
+      // respondentCode komt hier mee in het afrondantwoord; we bewaren ze in de
+      // tabbladopslag zodat het eindscherm ze kan meesturen zonder dat de
+      // publieke afnameroute ze aan iedereen hoeft prijs te geven.
+      try {
+        const uitkomst = await res.json();
+        const code = uitkomst?.afname?.respondentCode;
+        if (typeof code === "string" && code) {
+          window.sessionStorage.setItem(bewijsSleutel(id), code);
+        }
+      } catch {
+        // Mislukt bewaren mag het afronden nooit blokkeren.
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/admin/afnames"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/afnames", id] });
       navigate(`/afname/${id}/klaar`);
     } catch (e: any) {
       toast({ title: t("fout_afronden_titel"), description: String(e.message ?? e), variant: "destructive" });

@@ -4,7 +4,7 @@ import type { Request } from 'express';
 import session from "express-session";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
-import betterSqlite3SessionStore from "better-sqlite3-session-store";
+import { SessieOpslag } from "./sessie-opslag";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { sqlite } from "./storage";
@@ -78,6 +78,10 @@ app.use(
     "/api/deelnemers/token-login",
     "/api/deelnemers/magic",
     "/api/organisatie/login",
+    // K-1: het koppelpad van het eindscherm vraagt een onraadbaar bewijs
+    // (respondentCode of invite-token). De begrenzing maakt het aftasten van
+    // codes bovenop dat bewijs onhaalbaar.
+    "/api/afnames/:id/koppel-dashboard",
   ],
   authLimiter,
 );
@@ -86,7 +90,9 @@ app.use(
 // A2 — SQLite-backed session store i.p.v. MemoryStore, op dezelfde better-sqlite3
 // DB als de app (via de gedeelde `sqlite`-instantie uit storage.ts). Zo blijven
 // sessies bewaard over herstarts heen. De cookie-config blijft ONGEWIJZIGD.
-const SqliteStore = betterSqlite3SessionStore(session);
+// L-1 (audit): de opslag is eigen code (server/sessie-opslag.ts) i.p.v. het
+// GPL-3.0-pakket better-sqlite3-session-store. Zelfde tabel `sessions`, dus
+// bestaande sessies lopen ongewijzigd door.
 // Op pplx.app loopt het verkeer via een HTTPS-proxy (X-Forwarded-Proto: https).
 // trust proxy = 1 zodat req.secure correct werkt achter de proxy.
 // KRITIEK: pplx.app proxy strip cookies zonder __Host- prefix.
@@ -104,7 +110,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   name: "__Host-tapas-sid",
-  store: new SqliteStore({ client: sqlite, expired: { clear: true, intervalMs: 24 * 60 * 60 * 1000 } }),
+  store: new SessieOpslag({ client: sqlite, ruimVerlopenOp: true, opruimIntervalMs: 24 * 60 * 60 * 1000 }),
   cookie: {
     maxAge: 24 * 60 * 60 * 1000,
     httpOnly: true,
@@ -193,26 +199,18 @@ export function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
+// Verzoeklogger. S-1 (audit, AVG-dataminimalisatie): de volledige antwoordinhoud
+// werd meegeschreven naar het logboek, inclusief namen, e-mailadressen en
+// volledige profielinhoud. Het logboek bevat vanaf nu enkel metadata over het
+// verzoek: methode, pad, statuscode en duur. Antwoordinhoud wordt NOOIT gelogd.
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
-
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
 
   res.on("finish", () => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      log(logLine);
+      log(`${req.method} ${path} ${res.statusCode} in ${duration}ms`);
     }
   });
 

@@ -176,7 +176,17 @@ describe("organisatie-login", () => {
     const a = express();
     a.use(express.json());
     a.use((req, _res, next) => {
-      const sessie: any = { save: (cb: (e?: unknown) => void) => cb() };
+      // De nabootsing kent ook `regenerate`: sinds auditbevinding H-1 vernieuwt
+      // de organisatie-login het sessie-id voordat ze de identiteit zet.
+      const sessie: any = {
+        save: (cb: (e?: unknown) => void) => cb(),
+        regenerate: (cb: (e?: unknown) => void) => {
+          for (const k of Object.keys(sessie)) {
+            if (!["save", "regenerate", "__zichtbaar"].includes(k)) delete sessie[k];
+          }
+          cb();
+        },
+      };
       if (req.query.org) sessie.organisatieId = Number(req.query.org);
       (req as any).session = sessie;
       // Leg de sessie bloot zodat de test kan nakijken wat de route erin zette.

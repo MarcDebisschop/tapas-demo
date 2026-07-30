@@ -19,6 +19,7 @@ import type { Express } from "express";
 import { storage, db } from "../storage";
 import { verifieerWachtwoord } from "../auth/wachtwoord";
 import { vereisAdmin, adminIdVanSessie } from "../admin-guard";
+import { zetSessieIdentiteit, wisSessieIdentiteit } from "../sessie-identiteit";
 import { vereisScope, scopeVanVerzoek, bepaalScope } from "../scope-guard";
 import { schrijfAuditLog } from "../audit-log";
 import { alleInstrumenten } from "../registry";
@@ -61,15 +62,18 @@ export function registerAdminRoutes(app: Express): void {
         return res.status(401).json({ message: "E-mailadres of wachtwoord onjuist." });
       }
     }
-    (req.session as any).adminId = beheerder.id;
-    req.session.save((err) => {
-      if (err) return res.status(500).json({ message: "Sessie opslaan mislukt." });
-      res.json({
-        ok: true,
-        naam: beheerder.naam,
-        email: beheerder.email,
-        isPrior: beheerder.isPrior,
-      });
+    // H-1 (audit): sessie-id vernieuwen vóór het zetten van de identiteit
+    // (bescherming tegen session fixation).
+    try {
+      await zetSessieIdentiteit(req, { adminId: beheerder.id });
+    } catch {
+      return res.status(500).json({ message: "Sessie opslaan mislukt." });
+    }
+    res.json({
+      ok: true,
+      naam: beheerder.naam,
+      email: beheerder.email,
+      isPrior: beheerder.isPrior,
     });
   });
 
@@ -106,8 +110,14 @@ export function registerAdminRoutes(app: Express): void {
     }
   });
 
-  app.post("/api/admin/logout", (req, res) => {
-    req.session.destroy(() => {});
+  app.post("/api/admin/logout", async (req, res) => {
+    // H-1 (audit): identiteit wissen én het sessie-id vervangen, zodat een
+    // eerder buitgemaakte cookie na uitloggen niets meer oplevert.
+    try {
+      await wisSessieIdentiteit(req, ["adminId"]);
+    } catch {
+      // Uitloggen mag nooit falen voor de gebruiker; de identiteit is al weg.
+    }
     res.json({ ok: true });
   });
 

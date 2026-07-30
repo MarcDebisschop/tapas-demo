@@ -33,6 +33,7 @@ import {
   bewaartermijnSchema,
 } from "@shared/schema";
 import { valideerLeeftijdspoort } from "@shared/leeftijd";
+import { bewijsGeldig, bewijsUitBody, koppelBeslissing } from "../koppel-bewijs";
 import { vereisAdmin, adminIdVanSessie } from "../admin-guard";
 import {
   vereisScope,
@@ -527,18 +528,45 @@ export function registerAfnameRoutes(app: Express): void {
   // blijft). Bestaande deelnemer -> zelfde dashboardToken; nieuwe deelnemer ->
   // aangemaakt. De afname wordt gekoppeld en we geven token + afgeleide
   // 4-cijfercode + voornaam terug voor de rechtstreekse dashboardlink.
+  //
+  // Auditbevinding K-1 (kritiek), hier gedicht:
+  //   * BEZITSBEWIJS: naast het oplopende id moet de oproeper de onraadbare
+  //     respondentCode (of het invite-token) van deze afname meesturen. Zonder
+  //     geldig bewijs: 404, net als bij de scope-routes, zodat het antwoord niet
+  //     verklapt of de afname bestaat.
+  //   * GEEN OVERSCHRIJVING: een afname die al aan een e-mailadres hangt wordt
+  //     nooit naar een ander adres omgezet (409). Hetzelfde adres blijft
+  //     idempotent doorlopen.
+  //   * SNELHEIDSBEGRENZING: dit pad staat in server/index.ts onder de
+  //     authLimiter.
   app.post("/api/afnames/:id/koppel-dashboard", async (req, res) => {
     const id = Number(req.params.id);
     const a = await storage.getAfname(id);
     if (!a) return res.status(404).json({ error: "Afname niet gevonden" });
+
+    // Bezitsbewijs vóór alle andere verwerking.
+    if (!bewijsGeldig(a, bewijsUitBody(req.body))) {
+      return res.status(404).json({ error: "Afname niet gevonden" });
+    }
 
     const emailRaw = (req.body && typeof req.body.email === "string") ? req.body.email.trim() : "";
     if (!emailRaw || !/.+@.+\..+/.test(emailRaw)) {
       return res.status(400).json({ error: "Geef een geldig e-mailadres op." });
     }
 
+    const beslissing = koppelBeslissing(a, emailRaw);
+    if (!beslissing.toegestaan) {
+      return res.status(409).json({
+        error:
+          "Deze afname is al aan een ander e-mailadres gekoppeld. Neem contact op met je begeleider.",
+      });
+    }
+
     try {
-      await storage.koppelAfnameAanDeelnemer(id, emailRaw);
+      // Bij een reeds bestaande koppeling met hetzelfde adres niets herschrijven.
+      if (!beslissing.reeds) {
+        await storage.koppelAfnameAanDeelnemer(id, emailRaw);
+      }
       const deelnemer = await storage.vindOfMaakDeelnemer(emailRaw, a.taal);
       return res.json({
         dashboardToken: deelnemer.dashboardToken,

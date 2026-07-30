@@ -17,6 +17,23 @@ interface KoppelResultaat {
   voornaam: string | null;
 }
 
+// K-1 (audit): het koppelpad eist een bezitsbewijs. Een beheerder krijgt de
+// respondentCode uit de afnamegegevens; een deelnemer krijgt ze bij het afronden
+// van deel 2 en bewaart ze in de tabbladopslag onder deze sleutel. Zo hoeft de
+// publieke afnameroute de code niet prijs te geven (dataminimalisatie).
+export function bewijsSleutel(afnameId: number): string {
+  return `tapas-afnamebewijs-${afnameId}`;
+}
+
+function bewijsUitOpslag(afnameId: number): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.sessionStorage.getItem(bewijsSleutel(afnameId));
+  } catch {
+    return null;
+  }
+}
+
 // Absolute, deelbare link naar het persoonlijk dashboard (hash-routing).
 function dashboardUrl(token: string): string {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -30,8 +47,10 @@ export default function Klaar() {
   // Het profiel wordt door de connection-POST al aangemaakt (status "voltooid")
   // vóór navigatie hierheen. We pollen zacht tot dat bevestigd is, zodat de
   // "Naar mijn dashboard"-knop pas verschijnt als het profiel echt klaar is.
+  // De publieke afnameroute: een beheerder krijgt daar de volledige rij, een
+  // deelnemer enkel status en taal. Zo werkt deze pagina voor beiden.
   const { data, isLoading } = useQuery<AdminAfnameDetail>({
-    queryKey: ["/api/admin/afnames", id],
+    queryKey: ["/api/afnames", id],
     refetchInterval: (q) =>
       (q.state.data as AdminAfnameDetail | undefined)?.status === "voltooid" ? false : 2000,
   });
@@ -43,9 +62,16 @@ export default function Klaar() {
   const [email, setEmail] = useState("");
   const [resultaat, setResultaat] = useState<KoppelResultaat | null>(null);
 
+  // K-1 (audit): het koppelpad vraagt naast het id een bezitsbewijs. We sturen
+  // de respondentCode van deze afname mee; zonder die code weigert de server.
+  const bewijs = data?.respondentCode ?? bewijsUitOpslag(id);
+
   const koppel = useMutation({
     mutationFn: async (adres: string) => {
-      const res = await apiRequest("POST", `/api/afnames/${id}/koppel-dashboard`, { email: adres });
+      const res = await apiRequest("POST", `/api/afnames/${id}/koppel-dashboard`, {
+        email: adres,
+        respondentCode: bewijs,
+      });
       return (await res.json()) as KoppelResultaat;
     },
     onSuccess: (r) => setResultaat(r),
@@ -55,7 +81,7 @@ export default function Klaar() {
 
   function verstuur(e: React.FormEvent) {
     e.preventDefault();
-    if (!emailGeldig) return;
+    if (!emailGeldig || !bewijs) return;
     koppel.mutate(email.trim());
   }
 
@@ -81,7 +107,7 @@ export default function Klaar() {
               <dl className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <dt className="text-muted-foreground">{t("klaar_respondentcode")}</dt>
-                  <dd className="font-medium text-foreground" data-testid="text-code">{data.respondentCode}</dd>
+                  <dd className="font-medium text-foreground" data-testid="text-code">{bewijs ?? "-"}</dd>
                 </div>
                 <div>
                   <dt className="text-muted-foreground">{t("klaar_voltooid_op")}</dt>

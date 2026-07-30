@@ -33,9 +33,20 @@ async function metServer(app: express.Express, fn: (basis: string) => Promise<vo
 
 // Simuleer express-session: ?admin=1 zet een adminId. Zo blijft de test los van
 // de sessie-store, net zoals in tests/gdpr-toegangscontrole.test.ts.
+// De nabootsing kent ook `regenerate`, omdat de inlogpaden sinds auditbevinding
+// H-1 het sessie-id vernieuwen voordat ze de identiteit zetten. Net als de echte
+// express-session levert regenerate een lege sessie op.
 function metSessie(app: express.Express) {
   app.use((req, _res, next) => {
-    const sessie: any = { save: (cb: (e?: unknown) => void) => cb() };
+    const sessie: any = {
+      save: (cb: (e?: unknown) => void) => cb(),
+      regenerate: (cb: (e?: unknown) => void) => {
+        for (const k of Object.keys(sessie)) {
+          if (!["save", "regenerate"].includes(k)) delete sessie[k];
+        }
+        cb();
+      },
+    };
     if (req.query.admin === "1") sessie.adminId = 7;
     (req as any).session = sessie;
     next();

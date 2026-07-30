@@ -25,6 +25,7 @@ import type { Express, Request } from "express";
 import { sqlite } from "../storage";
 import { verifieerWachtwoord } from "../auth/wachtwoord";
 import { vereisScope, scopeVanVerzoek } from "../scope-guard";
+import { zetSessieIdentiteit, wisSessieIdentiteit } from "../sessie-identiteit";
 import { schoonBranding, type Branding } from "@shared/branding";
 
 // Demo-modus: identiek criterium als in server/routes/admin.ts. In demo blijft
@@ -106,16 +107,24 @@ export function registerOrganisatieAuthRoutes(app: Express): void {
       }
     }
 
-    (req.session as any).organisatieId = org.id;
-    req.session.save((err: unknown) => {
-      if (err) return res.status(500).json({ error: "Sessie opslaan mislukt." });
-      res.json({ ok: true, organisatieId: org.id, naam: org.naam });
-    });
+    // H-1 (audit): sessie-id vernieuwen vóór het zetten van de identiteit
+    // (bescherming tegen session fixation).
+    try {
+      await zetSessieIdentiteit(req, { organisatieId: org.id });
+    } catch {
+      return res.status(500).json({ error: "Sessie opslaan mislukt." });
+    }
+    res.json({ ok: true, organisatieId: org.id, naam: org.naam });
   });
 
-  app.post("/api/organisatie/logout", (req, res) => {
-    (req.session as any).organisatieId = undefined;
-    req.session.save(() => res.json({ ok: true }));
+  app.post("/api/organisatie/logout", async (req, res) => {
+    // H-1 (audit): identiteit wissen én het sessie-id vervangen.
+    try {
+      await wisSessieIdentiteit(req, ["organisatieId"]);
+    } catch {
+      // Uitloggen mag nooit falen voor de gebruiker.
+    }
+    res.json({ ok: true });
   });
 
   app.get("/api/organisatie/me", (req, res) => {
