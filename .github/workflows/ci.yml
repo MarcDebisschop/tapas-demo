@@ -48,8 +48,16 @@ jobs:
       - name: Typecontrole tegen de basislijn
         run: node script/tsc-basislijn.mjs
 
+      - name: Licentiecontrole (geen sterk copyleft in de keten)
+        run: node script/licentiecontrole.mjs
+
       - name: Productiebouw
         run: npm run build
+
+      - name: Back-upscript werkt (proefkopie van een verse databank)
+        run: |
+          node -e "const D=require('better-sqlite3');const d=new D('proef.db');d.exec('create table t(x)');d.close()"
+          node script/backup.mjs --bron proef.db --map /tmp/ci-backup --bewaar 2
 
       - name: Kwetsbaarheden rapporteren (niet blokkerend)
         run: npm audit --omit=dev || true

@@ -55,15 +55,16 @@ describe("anonimisering", () => {
   });
 
   it("is idempotent: een reeds geanonimiseerde afname wordt niet opnieuw gewist", () => {
-    // Beide implementaties bewaken dit met dezelfde vroege terugkeer.
-    for (const pad of ["server/repositories/afnames.ts", "server/storage.ts"]) {
+    // Auditbevinding A-2: de ongebruikte kopie server/repositories/afnames.ts is
+    // verwijderd, dus er is nog één implementatie om te bewaken.
+    for (const pad of ["server/storage.ts"]) {
       const bron = readFileSync(pad, "utf8");
       expect(bron, `${pad} mist de idempotentiecheck`).toContain("if (a.geanonimiseerdAt) return a;");
     }
   });
 
-  it("gebruikt in beide implementaties dezelfde gedeelde patch", () => {
-    for (const pad of ["server/repositories/afnames.ts", "server/storage.ts"]) {
+  it("gebruikt de gedeelde patch", () => {
+    for (const pad of ["server/storage.ts"]) {
       const bron = readFileSync(pad, "utf8");
       expect(bron, `${pad} gebruikt geen anonimiseringsPatch`).toContain("anonimiseringsPatch(");
     }

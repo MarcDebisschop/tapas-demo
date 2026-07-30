@@ -6,6 +6,7 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { SessieOpslag } from "./sessie-opslag";
 import { registerRoutes } from "./routes";
+import { csrfBescherming } from "./csrf-bescherming";
 import { serveStatic } from "./static";
 import { sqlite } from "./storage";
 import { logEncryptieStatus } from "./db-encryptie";
@@ -96,6 +97,13 @@ const koppelLimiter = rateLimit({
   message: { message: "Te veel pogingen. Probeer het over enkele minuten opnieuw." },
 });
 app.use(["/api/afnames/:id/koppel-dashboard", "/api/afnames/:id/connection"], koppelLimiter);
+
+// H-2 (audit) — Bescherming tegen cross-site request forgery via
+// oorsprongverificatie op statuswijzigende verzoeken. Staat bewust VOOR de
+// sessiemiddleware: een geweigerd verzoek raakt de sessieopslag niet. Zie
+// server/csrf-bescherming.ts voor de volledige verantwoording en de
+// omgevingsvariabelen TAPAS_TOEGESTANE_ORIGINS en TAPAS_CSRF_STRIKT.
+app.use(csrfBescherming);
 
 // Sessie-middleware (voor admin login)
 // A2 — SQLite-backed session store i.p.v. MemoryStore, op dezelfde better-sqlite3

@@ -68,6 +68,7 @@ import { type Scope, organisatieFilterVanScope } from "./scope";
 // De kringverwijzing (deze module -> repository -> deze module) is opzettelijk en
 // veilig: de repositories lezen `db` en `sqlite` pas BINNEN hun functies, dus na
 // de initialisatie hieronder.
+import { borgDatabankIntegriteit } from "./db-integriteit";
 import * as billersRepo from "./repositories/billers";
 import * as organisatiesRepo from "./repositories/organisaties";
 
@@ -1573,6 +1574,14 @@ seedLana();
     console.warn("[tapas] Demo-data seed overgeslagen:", (e as Error)?.message);
   }
 })();
+
+// ---------------------------------------------------------------------------
+// Auditbevinding A-1 (hoog): kernindexen, afdwinging van verwijzingen en een
+// integriteitscontrole. Staat hier, ná het aanmaken van alle tabellen en de
+// demodata, zodat de indexen op een volledig schema landen. Zie
+// server/db-integriteit.ts voor de verantwoording per index en per relatie.
+// ---------------------------------------------------------------------------
+borgDatabankIntegriteit(sqlite);
 
 // ---------------------------------------------------------------------------
 // Creditpakketten als config (geen aparte tabel nodig in C1). De prijzen zijn

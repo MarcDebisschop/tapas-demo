@@ -162,13 +162,12 @@ describe("listAfnames dwingt een scope af", () => {
     expect(storageBron).not.toContain("async listAfnames(): ");
   });
 
+  // Auditbevinding A-2: de ongebruikte kopie server/repositories/afnames.ts is
+  // verwijderd. De bewaking staat nu op de enige levende implementatie.
   it("filtert in de SQL en niet met een filter achteraf", () => {
-    const repoBron = readFileSync(
-      new URL("../server/repositories/afnames.ts", import.meta.url),
-      "utf8",
-    );
-    expect(repoBron).toContain("organisatieFilterVanScope(scope, \"listAfnames\")");
-    expect(repoBron).toContain("eq(afnames.organisatieId, orgFilter)");
+    const bron = readFileSync(new URL("../server/storage.ts", import.meta.url), "utf8");
+    expect(bron).toContain("organisatieFilterVanScope(scope, \"listAfnames\")");
+    expect(bron).toContain("eq(afnames.organisatieId, orgFilter)");
   });
 
   it("heeft geen enkele oproep van listAfnames() zonder scope meer", () => {
