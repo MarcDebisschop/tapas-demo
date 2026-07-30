@@ -210,7 +210,7 @@ const CONCEPT_ANKERS: Record<string, Record<Taal, string>> = {
     ru: "Назовите влияние и заметность; свяжите с убеждённостью и присутствием.",
   },
   "Resultaatgericht": {
-    nl: "Waardeer de focus op de uitkomst; benoem het als drijfveer voor afronding.",
+    nl: "Waardeer de focus op de uitkomst; benoem het als driver voor afronding.",
     fr: "Valorise le focus sur le résultat ; nomme-le comme moteur d'achèvement.",
     en: "Appreciate the focus on the outcome; name it as a driver of completion.",
     es: "Valora el enfoque en el resultado; nómbralo como impulsor de la finalización.",

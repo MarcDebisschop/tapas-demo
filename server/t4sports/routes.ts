@@ -18,6 +18,7 @@ import { bouwT4SportsUitlegScript } from "./uitleg";
 import { bouwT4SportsChatProfiel } from "./chat";
 import { getAthleteBibliotheek, getAthletePodcasts } from "./bibliotheek";
 import type { Toon } from "./uitleg";
+import { isDemoModus } from "../demomodus";
 
 // Dashboard-rapport = de VOLLEDIGE generator (nooit meer de magere versie).
 // Modules worden automatisch meegenomen als ze bestaan (= Deel 2-diepte);
@@ -33,7 +34,9 @@ function genereerDashboardRapport(contract: unknown, afnameId: number, taal: str
 export const T4SPORTS_INSTRUMENT_ID = "t4sports";
 
 // Demo modus: geen echte LLM chat
-const DEMO_MODE = process.env.TAPAS_DEMO === "1";
+// S-4 (audit): de demomodus komt uit één bron (server/demomodus.ts) en is in
+// productie altijd uit, ook wanneer TAPAS_DEMO=1 gezet zou zijn.
+const DEMO_MODE = isDemoModus();
 const CHAT_SIDECAR_URL = process.env.TAPAS_CHAT_SIDECAR ?? "http://127.0.0.1:8000";
 
 function makeRespondentCode(name: string, id: number): string {

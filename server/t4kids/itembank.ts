@@ -9,7 +9,7 @@
 // Hybride meetmodel — 3 modules ("eilanden"):
 //   Module 1  Ontdekkingsreis   → beeld-forced-choice interesseparen (6 talent-foci)
 //   Module 2  Archetypen-galerij → 28 gecureerde archetypen (gebalanceerd over 6 foci)
-//   Module 3  Zo-ben-ik-nu       → 4-punts woordschaal (sterktes + drijfveren)
+//   Module 3  Zo-ben-ik-nu       → 4-punts woordschaal (sterktes + drivers)
 //
 // De interne mapping (focus / versneller / driver) is METADATA voor de scoring
 // en wordt NOOIT aan het kind getoond. Dit bestand bevat geen I/O en geen
@@ -132,15 +132,15 @@ export const T4KIDS_WOORDSCHAAL: { waarde: number; label: string }[] = [
   { waarde: 3, label: "bijna altijd" },
 ];
 
-export type StellingSoort = "Sterkte" | "Drijfveer";
+export type StellingSoort = "Sterkte" | "Driver";
 
 export interface Stelling {
   id: string; // T4K-Z-NN
   tekst: string; // "ik"-vorm, kindtaal
   soort: StellingSoort;
-  // interne mapping: versneller (bij Sterkte) of driver (bij Drijfveer)
+  // interne mapping: versneller (bij Sterkte) of driver (bij Driver)
   mapping: string;
-  // autonomie-as (enkel zinvol bij Drijfveer): intrinsiek vs extrinsiek gemotiveerd
+  // autonomie-as (enkel zinvol bij Driver): intrinsiek vs extrinsiek gemotiveerd
   autonomie?: "intrinsiek" | "extrinsiek";
 }
 
@@ -154,19 +154,19 @@ export const T4KIDS_STELLINGEN: Stelling[] = [
   { id: "T4K-Z-06", tekst: "Ik merk snel wanneer iemand zich niet goed voelt", soort: "Sterkte", mapping: "Individu-ondersteunend" },
   { id: "T4K-Z-07", tekst: "Ik doe graag dingen die ik zelf belangrijk vind", soort: "Sterkte", mapping: "Kernenergie" },
   { id: "T4K-Z-08", tekst: "Ik werk graag stap voor stap naar een mooi eindresultaat toe", soort: "Sterkte", mapping: "Resultaatgericht" },
-  // Drijfveren / autonomie (TA-drivers, verzacht) — 5
-  { id: "T4K-Z-09", tekst: "Ik wil dat mijn werk helemaal juist en netjes is", soort: "Drijfveer", mapping: "Be Perfect", autonomie: "intrinsiek" },
-  { id: "T4K-Z-10", tekst: "Ik doe graag dingen zodat anderen blij zijn", soort: "Drijfveer", mapping: "Please Others", autonomie: "extrinsiek" },
-  { id: "T4K-Z-11", tekst: "Ik doe het liefst veel dingen tegelijk, en het mag snel gaan", soort: "Drijfveer", mapping: "Hurry Up", autonomie: "intrinsiek" },
-  { id: "T4K-Z-12", tekst: "Ik doe extra mijn best als iemand in mij gelooft", soort: "Drijfveer", mapping: "Try Hard", autonomie: "extrinsiek" },
-  { id: "T4K-Z-13", tekst: "Ook als iets moeilijk is, blijf ik rustig en pak ik het zelf aan", soort: "Drijfveer", mapping: "Be Strong", autonomie: "intrinsiek" },
+  // Drivers / autonomie (TA-drivers, verzacht) — 5
+  { id: "T4K-Z-09", tekst: "Ik wil dat mijn werk helemaal juist en netjes is", soort: "Driver", mapping: "Be Perfect", autonomie: "intrinsiek" },
+  { id: "T4K-Z-10", tekst: "Ik doe graag dingen zodat anderen blij zijn", soort: "Driver", mapping: "Please Others", autonomie: "extrinsiek" },
+  { id: "T4K-Z-11", tekst: "Ik doe het liefst veel dingen tegelijk, en het mag snel gaan", soort: "Driver", mapping: "Hurry Up", autonomie: "intrinsiek" },
+  { id: "T4K-Z-12", tekst: "Ik doe extra mijn best als iemand in mij gelooft", soort: "Driver", mapping: "Try Hard", autonomie: "extrinsiek" },
+  { id: "T4K-Z-13", tekst: "Ook als iets moeilijk is, blijf ik rustig en pak ik het zelf aan", soort: "Driver", mapping: "Be Strong", autonomie: "intrinsiek" },
 ];
 
 // ─── Afgeleide, platte itemlijst (voor question-manager / laadInstrumentItems) ─
 // family = het domein (module), construct = de interne mapping-sleutel.
 export interface T4KidsFlatItem {
   id: string;
-  domein: "Interesse" | "Archetype" | "Sterkte" | "Drijfveer";
+  domein: "Interesse" | "Archetype" | "Sterkte" | "Driver";
   cluster: string;
   tekst: string;
 }

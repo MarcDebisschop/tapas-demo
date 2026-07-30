@@ -19,6 +19,7 @@ import { z } from "zod";
 // debug-modus (die een testbestand zoekt) van de index te vermijden.
 import pdfParse from "pdf-parse/lib/pdf-parse.js";
 import { storage as platformStorage, CreditError } from "../storage";
+import { isDemoModus } from "../demomodus";
 
 /**
  * T4Recruitment — ingeplugde routes.
@@ -45,7 +46,9 @@ import { storage as platformStorage, CreditError } from "../storage";
 // (gesimuleerde) betaling.
 const T4R_CHAT_CONFIG = { gratisLimiet: 10, pakketGrootte: 25 };
 const CHAT_SIDECAR_URL = process.env.TAPAS_CHAT_SIDECAR ?? "http://127.0.0.1:8000";
-const DEMO_MODE = process.env.TAPAS_DEMO === "1";
+// S-4 (audit): de demomodus komt uit één bron (server/demomodus.ts) en is in
+// productie altijd uit, ook wanneer TAPAS_DEMO=1 gezet zou zijn.
+const DEMO_MODE = isDemoModus();
 function demoRecruiterReply(taal: string): string {
   const t = (taal || "nl").toLowerCase();
   if (t.startsWith("fr"))

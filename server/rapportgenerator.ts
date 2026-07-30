@@ -225,7 +225,7 @@ const T = {
     "El riesgo de los drivers se estima como {label} (energía media de los drivers principales: {avg}). Un nivel de energía más bajo en drivers dominantes puede indicar áreas que requieren más atención o recuperación.",
     "Риск по drivers оценивается как {label} (средняя энергия ведущих drivers: {avg}). Более низкий уровень энергии у доминирующих drivers может указывать на области, требующие большего внимания или восстановления."
   ),
-  col_drijfveer: m("Driver", "Driver", "Driver", "Driver", "Driver"),
+  col_driver: m("Driver", "Driver", "Driver", "Driver", "Driver"),
   // Sectie 4 — verbondenheid
   kop_verbondenheid: m(
     "Verbondenheid met de organisatie",
@@ -413,7 +413,7 @@ export function bouwRapportInhoud(
     ],
     tabel: topDrivers.length
       ? {
-          kolommen: [k(T.col_drijfveer, taal), k(T.col_netto, taal), k(T.col_energie, taal)],
+          kolommen: [k(T.col_driver, taal), k(T.col_netto, taal), k(T.col_energie, taal)],
           rijen: topDrivers.map((r) => [r.construct, num(r.net), num(r.avgEnergy)]),
         }
       : undefined,

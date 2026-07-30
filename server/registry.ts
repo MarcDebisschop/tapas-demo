@@ -104,6 +104,11 @@ export interface InstrumentDescriptor {
   profileElicitation?: ProfileElicitationCapability;
   // Enkel voor flowType "journey": de gefaseerde orkestratie (HDD).
   journey?: JourneyCapability;
+  // C-1 (audit): staat dit instrument in de publieke catalogus? Voorheen werd
+  // dat geregeld met een filter op naam in het catalogusendpoint, waardoor het
+  // aanbod niet uit één bron af te leiden was. Nu is het een expliciete vlag op
+  // de descriptor. Ontbreekt de vlag, dan geldt zichtbaar (true).
+  publiekZichtbaar?: boolean;
 }
 
 // Probeert het standaard individuele instrument.json te vinden (zelfde
@@ -396,10 +401,54 @@ function bouwRegistry(): Map<string, InstrumentDescriptor> {
     version: "1.0.0",
     description:
       "Speelse talent-ontdekkingsreis voor kinderen (10-13 jaar): ontdek je " +
-      "interesses, sterktes en drijfveren in drie korte modules — als " +
+      "interesses, sterktes en drivers in drie korte modules — als " +
       "voorbereiding op de studiekeuze naar het secundair onderwijs.",
     isDefault: false,
     creditCost: 1,
+  });
+
+  // ---------------------------------------------------------------------------
+  // C-1 (audit) — Deze drie instrumenten bestonden wel, maar stonden niet in de
+  // registry. 2MinScan en de Self-Training Module werden handmatig aan het
+  // catalogusendpoint toegevoegd; de Driver-scan werd daar op naam uitgefilterd.
+  // Daardoor was het volledige aanbod nergens in één bestand te lezen en sloegen
+  // tarifering, creditkosten en beschikbaarheidscontrole deze instrumenten over.
+  // Ze staan nu gewoon in de registry, met een expliciete zichtbaarheidsvlag.
+  // ---------------------------------------------------------------------------
+  map.set("twominscan", {
+    instrumentId: "twominscan",
+    flowType: "individual",
+    name: "2MinScan",
+    version: "1.0.0",
+    description:
+      "Energetisch gedragsprofiel in professionele context - 15-paginarapport, 5 talen.",
+    isDefault: false,
+    creditCost: 0,
+    publiekZichtbaar: true,
+  });
+
+  map.set("stm", {
+    instrumentId: "stm",
+    flowType: "individual",
+    name: "Self-Training Module",
+    version: "1.0.0",
+    description: "Zelfstudieplatform voor coaches in accreditatietraject.",
+    isDefault: false,
+    creditCost: 0,
+    publiekZichtbaar: true,
+  });
+
+  map.set("driverscan", {
+    instrumentId: "driverscan",
+    flowType: "individual",
+    name: "Driver-scan",
+    version: "1.0.0",
+    description:
+      "Korte scan van de vijf drivers. Volledig gebouwd, maar bewust niet in het " +
+      "publieke aanbod: de scan wordt enkel binnen begeleidingstrajecten gebruikt.",
+    isDefault: false,
+    creditCost: 0,
+    publiekZichtbaar: false,
   });
 
   return map;
@@ -442,6 +491,14 @@ export function clientInstrumentVoor(
     return null;
   }
   return clientInstrumentVan(desc.instrument, taal);
+}
+
+/**
+ * C-1 (audit): de publieke catalogus is vanaf nu een AFGELEIDE van de registry.
+ * Wie het aanbod wil kennen, leest server/registry.ts - er is geen tweede lijst.
+ */
+export function publiekeInstrumenten(): InstrumentDescriptor[] {
+  return alleInstrumenten().filter((d) => d.publiekZichtbaar !== false);
 }
 
 // Lichte samenvatting voor een instrumentkeuze-/overzichtsendpoint.

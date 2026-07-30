@@ -21,6 +21,7 @@ import {
 } from "./bibliotheek-deelnemer";
 import { normaliseerTaal } from "@shared/i18n";
 import { dashboardCodeVanToken, voornaamVanNaam } from "./dashboard-code";
+import { isDemoModus } from "./demomodus";
 import {
   deelnemerLoginSchema,
   magicLinkAanvraagSchema,
@@ -28,7 +29,9 @@ import {
   chatVraagSchema,
 } from "@shared/schema";
 
-const DEMO_MODE = process.env.TAPAS_DEMO === "1";
+// S-4 (audit): de demomodus komt uit één bron (server/demomodus.ts) en is in
+// productie altijd uit, ook wanneer TAPAS_DEMO=1 gezet zou zijn.
+const DEMO_MODE = isDemoModus();
 const CHAT_SIDECAR_URL = process.env.TAPAS_CHAT_SIDECAR ?? "http://127.0.0.1:8000";
 
 /**

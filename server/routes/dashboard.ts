@@ -34,10 +34,13 @@ import { bepaalRegio, kiesCoach, COACH_ROL, type RegioSleutel } from "../coach-r
 import { bouwGalerij, galerijLabels } from "../galerij";
 import { bouwModule, MODULE_IDS } from "../modules";
 import { bouwUitlegScript, VLAAMSE_STEM_PROMPT, type Toon } from "../uitleg";
+import { isDemoModus } from "../demomodus";
 
 // De Python-LLM-sidecar draait op poort 8000 binnen de sandbox.
 const CHAT_SIDECAR_URL = process.env.TAPAS_CHAT_SIDECAR ?? "http://127.0.0.1:8000";
-const DEMO_MODE = process.env.TAPAS_DEMO === "1";
+// S-4 (audit): de demomodus komt uit één bron (server/demomodus.ts) en is in
+// productie altijd uit, ook wanneer TAPAS_DEMO=1 gezet zou zijn.
+const DEMO_MODE = isDemoModus();
 
 // -------------------------------------------------------------------------
 // Interne helpers

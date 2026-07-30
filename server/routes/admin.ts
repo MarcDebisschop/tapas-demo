@@ -23,6 +23,7 @@ import { zetSessieIdentiteit, wisSessieIdentiteit } from "../sessie-identiteit";
 import { vereisScope, scopeVanVerzoek, bepaalScope } from "../scope-guard";
 import { schrijfAuditLog } from "../audit-log";
 import { alleInstrumenten } from "../registry";
+import { isDemoModus } from "../demomodus";
 import {
   parseOrganisatieId,
   filterAfnames,
@@ -33,7 +34,9 @@ import {
 // In demo blijft de login e-mail-only (wachtwoord wordt genegeerd), zodat de
 // publieke demo alles automatisch invult. In de definitieve modus (geen
 // demo-vlag) is een correct wachtwoord verplicht.
-const DEMO_MODE = process.env.TAPAS_DEMO === "1";
+// S-4 (audit): de demomodus komt uit één bron (server/demomodus.ts) en is in
+// productie altijd uit, ook wanneer TAPAS_DEMO=1 gezet zou zijn.
+const DEMO_MODE = isDemoModus();
 
 export function registerAdminRoutes(app: Express): void {
   // --- Admin: login ---
@@ -200,6 +203,20 @@ export function registerAdminRoutes(app: Express): void {
       mainResponses: a.mainResponses ? JSON.parse(a.mainResponses) : null,
       connectionAnswers: a.connectionAnswers ? JSON.parse(a.connectionAnswers) : null,
       generatorContract: a.generatorContract ? JSON.parse(a.generatorContract) : null,
+    });
+  });
+
+  // --- Admin: het volledige doorgifteregister (AVG art. 30) ---------------
+  // P-2 (audit): het register bevatte enkel de taalmodelkoppeling. De
+  // mailkoppeling - het tweede kanaal waarlangs persoonsgegevens het platform
+  // verlaten - stond er niet in. Dit endpoint geeft beide kanalen in één lijst,
+  // afgeleid uit de feitelijke configuratie, zodat het register controleerbaar is.
+  app.get("/api/admin/doorgifteregister", vereisAdmin, async (_req, res) => {
+    const { duidingDoorgifteRegister } = await import("../duiding-manager");
+    const { volledigDoorgifteRegister } = await import("../doorgifteregister");
+    res.json({
+      opgevraagdOp: new Date().toISOString(),
+      kanalen: volledigDoorgifteRegister(duidingDoorgifteRegister()),
     });
   });
 
