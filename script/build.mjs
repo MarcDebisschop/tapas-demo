@@ -44,6 +44,38 @@ const allowlist = [
 ];
 
 async function buildAll() {
+  const pkg = JSON.parse(await readFile(path.join(root, "package.json"), "utf-8"));
+  // 0a. VERSIE INBAKKEN (auditbevinding O-3). Het statusadres las het nummer uit
+  //     process.env.npm_package_version, en die variabele bestaat niet wanneer
+  //     Render met `node dist/index.cjs` start. De drie waarden hieronder worden
+  //     daarom als vaste tekst in de bundel gezet, zodat de draaiende toepassing
+  //     niet afhangt van de manier van starten.
+  const versie = pkg.version;
+  let commit = process.env.RENDER_GIT_COMMIT?.slice(0, 7) ?? "onbekend";
+  try {
+    commit = execSync("git rev-parse --short HEAD", { cwd: root }).toString().trim();
+  } catch {
+    // Geen git beschikbaar (bijvoorbeeld in een uitgepakt broncodepakket): dan
+    // blijft de waarde uit de omgeving of "onbekend" staan.
+  }
+  const bouwdatum = new Date().toISOString();
+
+  // 0b. EEN BRON VAN WAARHEID. Het nummer staat uitsluitend in package.json.
+  //     Loopt de bovenste kop van VERSION.md daarop achter, dan is de
+  //     release-documentatie niet bijgewerkt en stopt de bouw hier. Zo kunnen
+  //     code en documentatie niet stil uiteenlopen.
+  const versieDoc = await readFile(path.join(root, "VERSION.md"), "utf-8");
+  const gedocumenteerd = versieDoc.match(/^## Huidige versie: v(\d+\.\d+\.\d+)/m)?.[1];
+  if (gedocumenteerd !== versie) {
+    console.error(
+      `FOUT: package.json staat op ${versie}, maar VERSION.md documenteert ` +
+        `${gedocumenteerd ?? "geen versie"}. Werk de bovenste kop van VERSION.md bij ` +
+        `("## Huidige versie: v${versie} - ...") voordat je uitbrengt.`,
+    );
+    process.exit(1);
+  }
+  console.log(`versie ingebakken: v${versie} (commit ${commit}, gebouwd ${bouwdatum})`);
+
   // 1. Wis dist/ volledig
   await rm(path.join(root, "dist"), { recursive: true, force: true });
   await mkdir(path.join(root, "dist", "public"), { recursive: true });
@@ -85,7 +117,7 @@ async function buildAll() {
 
   // 4. Bouw de Express server
   console.log("building server...");
-  const pkg = JSON.parse(await readFile(path.join(root, "package.json"), "utf-8"));
+
   const allDeps = [
     ...Object.keys(pkg.dependencies || {}),
     ...Object.keys(pkg.devDependencies || {}),
@@ -98,7 +130,12 @@ async function buildAll() {
     bundle: true,
     format: "cjs",
     outfile: path.join(root, "dist/index.cjs"),
-    define: { "process.env.NODE_ENV": '"production"' },
+    define: {
+      "process.env.NODE_ENV": '"production"',
+      "process.env.TAPAS_VERSIE": JSON.stringify(versie),
+      "process.env.TAPAS_COMMIT": JSON.stringify(commit),
+      "process.env.TAPAS_BOUWDATUM": JSON.stringify(bouwdatum),
+    },
     minify: true,
     external: externals,
     logLevel: "info",

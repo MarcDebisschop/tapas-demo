@@ -11,6 +11,7 @@ import { serveStatic } from "./static";
 import { sqlite } from "./storage";
 import { logEncryptieStatus } from "./db-encryptie";
 import { meldDemoModusBijOpstart } from "./demomodus";
+import { VERSIE, COMMIT, BOUWDATUM } from "./versie";
 import { createServer } from "node:http";
 
 const app = express();
@@ -328,7 +329,9 @@ const opgestartOp = Date.now();
 app.get("/api/gezondheid", (_req, res) => {
   const antwoord = {
     status: "ok" as "ok" | "degraded",
-    versie: process.env.npm_package_version ?? null,
+    versie: VERSIE,
+    commit: COMMIT,
+    bouwdatum: BOUWDATUM,
     uptimeSeconden: Math.round((Date.now() - opgestartOp) / 1000),
     databank: "ok" as "ok" | "onbereikbaar",
   };
