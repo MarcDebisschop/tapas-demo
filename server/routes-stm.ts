@@ -24,9 +24,12 @@ import { stmSessieOpslagen, type StmSessieRecord } from "./stm-storage";
 import { kwaliteitOpslag, seedDemoKwaliteit } from "./kwaliteit-storage";
 import { verifieerWachtwoord } from "./auth/wachtwoord";
 import { zetSessieIdentiteit, wisSessieIdentiteit } from "./sessie-identiteit";
+import { isDemoModus } from "./demomodus";
 
 // Demo-modus: identiek criterium als in server/routes/admin.ts.
-const DEMO_MODE = process.env.TAPAS_DEMO === "1";
+// S-4 (audit): de demomodus komt uit één bron (server/demomodus.ts) en is in
+// productie altijd uit, ook wanneer TAPAS_DEMO=1 gezet zou zijn.
+const DEMO_MODE = isDemoModus();
 
 // ---------------------------------------------------------------------------
 // Type-definities

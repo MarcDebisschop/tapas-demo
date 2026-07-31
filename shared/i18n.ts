@@ -1205,7 +1205,7 @@ export const STRINGS = {
   t4r_comp_verif_ander_bestand: { nl: "Ander bestand", fr: "Autre fichier", en: "Other file", es: "Otro archivo", ru: "Другой файл" },
   t4r_comp_verif_bevestig: { nl: "Bevestig en bereken studie", fr: "Confirmer et calculer l'étude", en: "Confirm and compute study", es: "Confirmar y calcular estudio", ru: "Подтвердить и рассчитать исследование" },
   t4r_comp_verif_berekenen: { nl: "Berekenen…", fr: "Calcul en cours…", en: "Computing…", es: "Calculando…", ru: "Вычисление…" },
-  t4r_comp_verif_werkstijlen: { nl: "Werkstijlen en drijfveren", fr: "Styles de travail et motivations", en: "Work styles and drives", es: "Estilos de trabajo y motivaciones", ru: "Стили работы и побуждения" },
+  t4r_comp_verif_werkstijlen: { nl: "Werkstijlen en drivers", fr: "Styles de travail et motivations", en: "Work styles and drives", es: "Estilos de trabajo y motivaciones", ru: "Стили работы и побуждения" },
   t4r_comp_verif_werkgedrag: { nl: "Werkgedrag", fr: "Comportement au travail", en: "Work behavior", es: "Comportamiento laboral", ru: "Рабочее поведение" },
   t4r_comp_verif_versterkend: { nl: "Versterkend gedrag", fr: "Comportement renforçant", en: "Reinforcing behavior", es: "Comportamiento reforzador", ru: "Усиливающее поведение" },
   t4r_comp_verif_zelfbeeld: { nl: "Zelfbeeld", fr: "Image de soi", en: "Self-image", es: "Autoimagen", ru: "Самообраз" },

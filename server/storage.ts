@@ -71,6 +71,8 @@ import { type Scope, organisatieFilterVanScope } from "./scope";
 import { borgDatabankIntegriteit } from "./db-integriteit";
 import * as billersRepo from "./repositories/billers";
 import * as organisatiesRepo from "./repositories/organisaties";
+import { isDemoModus } from "./demomodus";
+import { neemFactuurnummer } from "./factuurnummer";
 
 // -----------------------------------------------------------------------------
 // Database-pad: ROBUUST oplossen.
@@ -2298,20 +2300,9 @@ export class DatabaseStorage implements IStorage {
       .get();
   }
 
-  // Volgend factuurnummer voor de actieve biller: PREFIX-JAAR-NNNN.
-  private volgendFactuurnummer(prefix: string): string {
-    const jaar = new Date().getFullYear();
-    const zoek = `${prefix}-${jaar}-`;
-    const bestaande = db.select().from(facturen).all();
-    let max = 0;
-    for (const f of bestaande) {
-      if (f.factuurnummer.startsWith(zoek)) {
-        const n = parseInt(f.factuurnummer.slice(zoek.length), 10);
-        if (!isNaN(n) && n > max) max = n;
-      }
-    }
-    return `${zoek}${String(max + 1).padStart(4, "0")}`;
-  }
+  // F-1 (audit): de nummerlogica stond hier en in prive-aankoop/routes.ts, in
+  // beide gevallen zonder slot tussen het lezen en het toekennen. Ze is vervangen
+  // door één ondeelbare bron: server/factuurnummer.ts.
 
   // Bevestig een geslaagde betaling (de webhook-equivalent). Atomair:
   //   1) credits opladen (aankooptransactie),
@@ -2341,7 +2332,7 @@ export class DatabaseStorage implements IStorage {
 
     const now = new Date().toISOString();
     const kanaal = org.peppolBereikbaar ? "peppol" : "pdf";
-    const factuurnummer = this.volgendFactuurnummer(biller.factuurPrefix);
+    const factuurnummer = neemFactuurnummer(biller.factuurPrefix);
 
     // Provider-neutraal UBL-achtig document (zodat latere PSP/Peppol-wissel kan).
     const peppolDocument = {
@@ -3629,7 +3620,9 @@ export const storage = new DatabaseStorage();
 // werken. Idempotent: accounts die al een hash hebben worden niet aangeraakt.
 // De hash-berekening is async (scrypt); we voeren ze na de start uit.
 // ---------------------------------------------------------------------------
-if (process.env.TAPAS_DEMO !== "1") {
+// S-4 (audit): de demovraag komt uit server/demomodus.ts, zodat de schakelaar
+// niet langer op elke plaats apart uit de omgeving gelezen wordt.
+if (!isDemoModus()) {
   (async function seedPriorWachtwoorden() {
     try {
       const { hashWachtwoord } = await import("./auth/wachtwoord");
@@ -3639,7 +3632,20 @@ if (process.env.TAPAS_DEMO !== "1") {
         )
         .all() as Array<{ id: number }>;
       if (rijen.length === 0) return;
-      const hash = await hashWachtwoord("Tintinenco01");
+      // Auditronde 5: het startwachtwoord stond hardgecodeerd in de broncode en
+      // was voor alle prior beheerders hetzelfde. Dat blijft de terugvalwaarde
+      // zodat bestaande accounts niet buitengesloten raken, maar een omgeving kan
+      // nu een eigen startwachtwoord meegeven. In productie zonder eigen waarde
+      // waarschuwen we luid: een gedeeld startwachtwoord uit een openbare
+      // broncode hoort daar niet thuis.
+      const eigenStart = (process.env.TAPAS_START_WACHTWOORD ?? "").trim();
+      if (!eigenStart && process.env.NODE_ENV === "production") {
+        console.warn(
+          "[tapas] LET OP: prior beheerders krijgen het startwachtwoord uit de broncode. " +
+            "Zet TAPAS_START_WACHTWOORD en laat elke beheerder zijn wachtwoord wijzigen.",
+        );
+      }
+      const hash = await hashWachtwoord(eigenStart || "Tintinenco01");
       const upd = sqlite.prepare(`UPDATE beheerders SET wachtwoord_hash = ? WHERE id = ?`);
       for (const r of rijen) upd.run(hash, r.id);
       console.log(`[tapas] Starthash gezet voor ${rijen.length} prior beheerder(s).`);

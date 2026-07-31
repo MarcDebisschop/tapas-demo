@@ -27,11 +27,14 @@ import { verifieerWachtwoord } from "../auth/wachtwoord";
 import { vereisScope, scopeVanVerzoek } from "../scope-guard";
 import { zetSessieIdentiteit, wisSessieIdentiteit } from "../sessie-identiteit";
 import { schoonBranding, type Branding } from "@shared/branding";
+import { isDemoModus } from "../demomodus";
 
 // Demo-modus: identiek criterium als in server/routes/admin.ts. In demo blijft
 // de login e-mail-only zodat de publieke demo blijft werken; daarbuiten is een
 // geldig wachtwoord verplicht.
-const DEMO_MODE = process.env.TAPAS_DEMO === "1";
+// S-4 (audit): de demomodus komt uit één bron (server/demomodus.ts) en is in
+// productie altijd uit, ook wanneer TAPAS_DEMO=1 gezet zou zijn.
+const DEMO_MODE = isDemoModus();
 
 interface OrganisatieLoginRij {
   id: number;

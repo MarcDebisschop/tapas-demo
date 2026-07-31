@@ -79,7 +79,7 @@ export const INSTRUMENTENGIDS: GidsInstrument[] = [
     omschrijving:
       "Het volledige TaPas Kompas: een diepgaand talentprofiel dat talent-foci, talent-versnellers, drivers en energieprofiel in kaart brengt voor één persoon.",
     beantwoordt:
-      "Waar liggen mijn natuurlijke talenten? Welke drijfveren geven mij energie, en welke vreten energie? Hoe zet ik mijn talent het snelst om in resultaat?",
+      "Waar liggen mijn natuurlijke talenten? Welke drivers geven mij energie, en welke vreten energie? Hoe zet ik mijn talent het snelst om in resultaat?",
     gebruik:
       "Als anker voor loopbaancoaching, leiderschapsontwikkeling, onboarding of teamsamenstelling. Het profiel voedt gesprekken, ontwikkelplannen en de optionele Coachatlas.",
     doelgroep: "Professionals, leidinggevenden, coaches — ook studenten en leerlingen bij loopbaanoriëntatie.",
@@ -216,7 +216,7 @@ export const INSTRUMENTENGIDS: GidsInstrument[] = [
     orientatie: "education",
     eyebrow: "Kinderen · talentontdekking",
     omschrijving:
-      "Een speelse talent-ontdekkingsreis voor kinderen (10–13 jaar): in drie korte modules ontdekken ze hun interesses, sterktes en drijfveren — als voorbereiding op de studiekeuze naar het secundair onderwijs.",
+      "Een speelse talent-ontdekkingsreis voor kinderen (10–13 jaar): in drie korte modules ontdekken ze hun interesses, sterktes en drivers — als voorbereiding op de studiekeuze naar het secundair onderwijs.",
     beantwoordt:
       "Waar krijg ik nu energie van? Welke dingen doe ik graag en gaan me vlot af? Wat vertelt dat over de richting die bij mij past?",
     gebruik:

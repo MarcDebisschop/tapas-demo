@@ -322,7 +322,10 @@ describe("POST /api/coach/login buiten demo-modus", () => {
     // In demo vult de publieke demo alles automatisch in; het wachtwoordblok
     // staat daarom expliciet achter `if (!DEMO_MODE)`.
     const bron = readFileSync("server/routes-stm.ts", "utf8");
-    expect(bron).toContain('const DEMO_MODE = process.env.TAPAS_DEMO === "1"');
+    // S-4 (auditronde 5): de schakelaar wordt niet meer per bestand uit de
+    // omgeving gelezen, maar opgevraagd bij de enige bron, server/demomodus.ts.
+    expect(bron).toContain('const DEMO_MODE = isDemoModus()');
+    expect(bron).toContain('from "./demomodus"');
     expect(bron).toMatch(/if \(!DEMO_MODE\) \{[\s\S]*?verifieerWachtwoord/);
   });
 });

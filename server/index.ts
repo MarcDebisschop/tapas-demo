@@ -10,6 +10,7 @@ import { csrfBescherming } from "./csrf-bescherming";
 import { serveStatic } from "./static";
 import { sqlite } from "./storage";
 import { logEncryptieStatus } from "./db-encryptie";
+import { meldDemoModusBijOpstart } from "./demomodus";
 import { createServer } from "node:http";
 
 const app = express();
@@ -44,19 +45,74 @@ app.use(
 
 app.use(express.urlencoded({ extended: false }));
 
-// A4 — Security-hardening via helmet. CSP is BEWUST uitgeschakeld: de bestaande
-// Vite/React-frontend en assets (incl. inline styles/scripts en cross-origin
-// laden via de pplx.app-proxy) draaien zonder CSP. Een te strikte CSP zou de
-// frontend breken; liever geen CSP dan een brekende CSP. Cross-origin
-// resource/embedder policies staan ruim zodat de cross-origin cookie-/asset-
-// flow via de proxy blijft werken.
+// A4 / S-2 (audit) — Security-hardening via helmet.
+//
+// Tot ronde 4 stond het inhoudsbeleid voor de browser (Content Security Policy)
+// volledig uit, met als reden dat een te strikt beleid de bestaande
+// Vite/React-frontend zou breken. Die vrees is terecht, maar "helemaal uit" laat
+// ook geen enkel spoor na. Daarom staat het beleid nu in MELDMODUS
+// (report-only): de browser handhaaft niets en breekt dus niets, maar meldt elke
+// overtreding aan /api/csp-melding. Zo wordt in de praktijk meetbaar wat een
+// handhavend beleid zou blokkeren, en is de stap naar handhaving een beslissing
+// op cijfers in plaats van op vermoedens.
+//
+// Zet TAPAS_CSP=handhaven om het beleid wél te laten handhaven (aanbevolen zodra
+// het meldlogboek een tijd stil blijft). Zet TAPAS_CSP=uit om het volledig uit te
+// schakelen, bijvoorbeeld om een probleem uit te sluiten.
+//
+// Cross-origin resource/embedder policies staan ruim zodat de cross-origin
+// cookie-/asset-flow via de proxy blijft werken.
+const cspStand = (process.env.TAPAS_CSP ?? "melden").trim().toLowerCase();
+const cspRichtlijnen = {
+  defaultSrc: ["'self'"],
+  // De frontend is een Vite/React-bundel met inline stijlen; die moeten toegelaten
+  // blijven, anders is het beleid meteen onbruikbaar.
+  scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+  styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+  fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
+  imgSrc: ["'self'", "data:", "blob:", "https:"],
+  mediaSrc: ["'self'", "data:", "blob:"],
+  connectSrc: ["'self'", "https:", "wss:"],
+  frameAncestors: ["'self'"],
+  objectSrc: ["'none'"],
+  baseUri: ["'self'"],
+  formAction: ["'self'"],
+  reportUri: ["/api/csp-melding"],
+} as const;
 app.use(
   helmet({
-    contentSecurityPolicy: false,
+    contentSecurityPolicy:
+      cspStand === "uit"
+        ? false
+        : {
+            useDefaults: false,
+            directives: cspRichtlijnen as unknown as Record<string, string[]>,
+            reportOnly: cspStand !== "handhaven",
+          },
     crossOriginResourcePolicy: { policy: "cross-origin" },
     crossOriginEmbedderPolicy: false,
     crossOriginOpenerPolicy: false,
   }),
+);
+
+// S-2 — Ontvangstpunt voor de meldingen van de browser. Bewust klein gehouden:
+// het logt beknopt welke richtlijn overtreden werd en op welke pagina, en nooit
+// de inhoud van de pagina zelf. Antwoord is altijd 204, zodat de browser niets
+// hoeft te verwerken.
+app.post(
+  "/api/csp-melding",
+  express.json({ type: ["application/csp-report", "application/json"], limit: "16kb" }),
+  (req: Request, res: Response) => {
+    const m = (req.body ?? {}) as Record<string, any>;
+    const r = m["csp-report"] ?? m;
+    console.warn(
+      "[csp-melding] richtlijn=%s geblokkeerd=%s pagina=%s",
+      r?.["violated-directive"] ?? r?.effectiveDirective ?? "onbekend",
+      r?.["blocked-uri"] ?? r?.blockedURL ?? "onbekend",
+      r?.["document-uri"] ?? r?.documentURL ?? "onbekend",
+    );
+    res.status(204).end();
+  },
 );
 
 // A4 — Ruime rate-limiting op auth-/token-endpoints (login, wachtwoord-,
@@ -97,6 +153,32 @@ const koppelLimiter = rateLimit({
   message: { message: "Te veel pogingen. Probeer het over enkele minuten opnieuw." },
 });
 app.use(["/api/afnames/:id/koppel-dashboard", "/api/afnames/:id/connection"], koppelLimiter);
+
+// S-5 (audit) — De dashboards van deelnemers, atleten en respondenten zijn enkel
+// beschermd door een token in de URL. Dat is een aanvaardbaar ontwerp voor een
+// persoonlijke link, maar zonder begrenzing kan iemand ongelimiteerd tokens
+// uitproberen. Deze begrenzer is ruim genoeg voor echt gebruik - een deelnemer
+// klikt binnen een kwartier makkelijk enkele tientallen keren in zijn dashboard -
+// en smoort systematisch proberen wel af.
+const tokenLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 120,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  message: { message: "Te veel verzoeken. Probeer het over enkele minuten opnieuw." },
+});
+app.use(
+  [
+    "/api/dashboard/:token",
+    "/api/t4sports/dashboard/:token",
+    "/api/teamscan/deelnemer/:token",
+    "/api/t4o/respondent/:token",
+    "/api/uitnodigingen/:token",
+    "/api/r/:token",
+    "/api/skin/:token",
+  ],
+  tokenLimiter,
+);
 
 // H-2 (audit) — Bescherming tegen cross-site request forgery via
 // oorsprongverificatie op statuswijzigende verzoeken. Staat bewust VOOR de
@@ -311,6 +393,10 @@ app.get("/api/gezondheid", (_req, res) => {
       // Bewust luidruchtig: draait de hook als no-op, dan hoort dat in het log te
       // staan in plaats van stil aangenomen te worden.
       logEncryptieStatus();
+      // S-4 (audit): maak in hetzelfde opstartlogboek zichtbaar of de demomodus
+      // geldt en dus of wachtwoorden afgedwongen worden. In productie is de
+      // demomodus onmogelijk; staat de schakelaar er toch, dan zegt de melding dat.
+      meldDemoModusBijOpstart();
     },
   );
 })();

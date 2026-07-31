@@ -642,7 +642,7 @@ export function genereerT4SportsRapportCompleet(
       <div class="section-number">1</div>
       <div>
         <div class="section-title">Je Talentprofiel — De Motor</div>
-        <div class="section-subtitle">Jouw top-3 talent-foci: hier zit jouw echte drijfveer als atleet</div>
+        <div class="section-subtitle">Jouw top-3 talent-foci: hier zit jouw echte driver als atleet</div>
       </div>
     </div>
     ${topFoci.map((row) => {

@@ -10,7 +10,7 @@
 //   • Deel 1 — talenten & interesses (reiskaart + exacte keuzes + staafgrafiek +
 //     gekozen archetypen als aardappelbeeldkaarten met "waarom")
 //   • Deel 2 — talentversnellers (+ staafgrafiek)
-//   • Deel 3 — drijfveren (+ staafgrafiek)
+//   • Deel 3 — drivers (+ staafgrafiek)
 //   • Deel 4 — paden om te verkennen
 //   • voor de ouder — een warme uitnodiging
 //   • wetenschappelijke onderbouwing met genummerde, klikbare bronnenlijst
@@ -78,7 +78,7 @@ interface ExacteArchetype {
 interface ExacteStelling {
   id: string;
   tekst: string;
-  soort: "Sterkte" | "Drijfveer";
+  soort: "Sterkte" | "Driver";
   gekozenWaarde: number;
   gekozenWoord: string;
 }
@@ -121,7 +121,7 @@ interface Manifest { archetypen: Record<string, ManifestEntry> }
 
 // ── Kleuren per focus komen uit het gedeelde tiener-palet ─────────────────────
 const TEAL = DEEP_TEAL; // hoofd-accent voor sterktes/tegels
-const AMBER = ORANGE; // energie-accent voor drijfveren
+const AMBER = ORANGE; // energie-accent voor drivers
 
 const voornaam = (n: string) => (n || "").trim().split(/\s+/)[0] || "ontdekker";
 
@@ -260,7 +260,7 @@ export default function T4KidsRapport() {
   const driverData = useMemo(
     () =>
       rows
-        .filter((r) => r.family === "Drijfveer")
+        .filter((r) => r.family === "Driver")
         .map((r) => ({ label: r.construct, waarde: Number(r.avgEnergy.toFixed(2)) }))
         .sort((a, b) => b.waarde - a.waarde),
     [rows],
@@ -328,7 +328,7 @@ export default function T4KidsRapport() {
         );
       }
     }
-    const sterkeDrijf = stellingen.filter((s) => s.soort === "Drijfveer" && s.gekozenWaarde >= 2);
+    const sterkeDrijf = stellingen.filter((s) => s.soort === "Driver" && s.gekozenWaarde >= 2);
     if (sterkeDrijf.length > 0) {
       res.verwonderlijk.push(
         `Je liet zien dat je dingen graag héél goed wil doen. Dat is een mooie kracht — én soms best spannend. Wat helpt jou als iets even niet lukt?`,
@@ -356,7 +356,7 @@ export default function T4KidsRapport() {
     }
     if (sterkeDrijf.length > 0) {
       ouderStukken.push(
-        `De antwoorden op Eiland 3 tonen een merkbare drijfveer (bijvoorbeeld iets heel goed willen doen of anderen willen plezieren). Zulke drijfveren zijn krachtig én kunnen extrinsieke druk meebrengen — de moeite waard om er zonder oordeel over door te vragen.`,
+        `De antwoorden op Eiland 3 tonen een merkbare driver (bijvoorbeeld iets heel goed willen doen of anderen willen plezieren). Zulke drivers zijn krachtig én kunnen extrinsieke druk meebrengen — de moeite waard om er zonder oordeel over door te vragen.`,
       );
     }
     if (ouderStukken.length === 0) {
@@ -485,7 +485,7 @@ export default function T4KidsRapport() {
               <ul className="mt-2 list-disc space-y-1 pl-5">
                 <li>Deel 1 gaat over <strong>wat je leuk vindt</strong> (je interesses).</li>
                 <li>Deel 2 gaat over <strong>hoe je dingen aanpakt</strong> (je talentversnellers).</li>
-                <li>Deel 3 gaat over <strong>wat jou op gang brengt</strong> (je drijfveren).</li>
+                <li>Deel 3 gaat over <strong>wat jou op gang brengt</strong> (je drivers).</li>
                 <li>Deel 4 geeft <strong>ideeën om te verkennen</strong>. Achteraan is er een stukje voor je papa, mama of juf/meester.</li>
               </ul>
             </div>
@@ -643,17 +643,17 @@ export default function T4KidsRapport() {
           )}
         </Pagina>
 
-        {/* ── DEEL 3 — DRIJFVEREN ───────────────────────────────────────── */}
+        {/* ── DEEL 3 — DRIVERS ───────────────────────────────────────── */}
         <Pagina>
-          <SectieTitel nr="3">Wat mij drijft — mijn drijfveren</SectieTitel>
+          <SectieTitel nr="3">Wat mij drijft — mijn drivers</SectieTitel>
           <p className="mt-4 text-[17px] leading-relaxed text-slate-700">
-            Je <strong>drijfveren</strong> zijn wat jou op gang brengt. Iedereen heeft een eigen mix — er is
+            Je <strong>drivers</strong> zijn wat jou op gang brengt. Iedereen heeft een eigen mix — er is
             geen betere of slechtere.
           </p>
 
           {driverData.length > 0 && (
             <div className="mt-6">
-              <h3 className="text-lg font-bold text-slate-800">Jouw drijfveren in beeld</h3>
+              <h3 className="text-lg font-bold text-slate-800">Jouw drivers in beeld</h3>
               <Staafgrafiek data={driverData} kleurVoor={() => AMBER} domeinMax={3} />
             </div>
           )}
@@ -931,7 +931,7 @@ export default function T4KidsRapport() {
               en de talent-/karaktersterktebenadering (VIA).
             </p>
             <p>
-              <strong>Drijfveren.</strong> De vijf drijfveren zijn een verzachte, kindvriendelijke variant van
+              <strong>Drivers.</strong> De vijf drivers zijn een verzachte, kindvriendelijke variant van
               de <em>working-style drivers</em> uit de transactionele analyse (Kahler): Be&nbsp;Perfect,
               Please&nbsp;Others, Hurry&nbsp;Up, Try&nbsp;Hard, Be&nbsp;Strong.
             </p>

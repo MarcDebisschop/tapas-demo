@@ -11,7 +11,7 @@
  */
 
 import type { Express } from "express";
-import { instrumentSamenvattingen } from "../registry";
+import { instrumentSamenvattingen, publiekeInstrumenten } from "../registry";
 
 // Statische verrijking: beschrijving, doelgroep, use case en outcome per instrument.
 // Keys = instrumentId uit de registry.
@@ -201,10 +201,13 @@ function vindVerrijking(id: string) {
 }
 
 export function registerInstrumentenCatalogusRoutes(app: Express): void {
+  // C-1 (audit) — De catalogus is nu volledig een afgeleide van de registry.
+  // Vroeger stond hier een handmatige extra-lijst (2MinScan en de Self-Training
+  // Module) en een filter op de naam "driverscan". Beide zijn weg: de registry
+  // bepaalt met de vlag `publiekZichtbaar` wat in het aanbod hoort. Eén nieuw
+  // instrument inschrijven in de registry volstaat vanaf nu.
   app.get("/api/instrumenten/catalogus", (_req, res) => {
-    const basis = instrumentSamenvattingen()
-      .filter((c) => c.instrumentId !== "driverscan" && c.instrumentId !== "tapas-driverscan");
-    const catalogus = basis.map((inst) => {
+    const catalogus = publiekeInstrumenten().map((inst) => {
       const verr = vindVerrijking(inst.instrumentId);
       return {
         id: inst.instrumentId,
@@ -216,33 +219,10 @@ export function registerInstrumentenCatalogusRoutes(app: Express): void {
         useCases: verr?.useCases ?? [],
         outcome: verr?.outcome ?? null,
         rapport: verr?.rapport ?? null,
-        emoji: verr?.emoji ?? "🔷",
+        emoji: verr?.emoji ?? "\u{1F537}",
       };
     });
-
-    // Voeg instrumenten toe die niet in de registry zitten maar wel bestaan
-    // (STM en 2MinScan zijn soms collaborative/journey en verschijnen niet altijd).
-    const ids = catalogus.map((c) => c.id);
-    const extra = [
-      {
-        id: "twominscan",
-        naam: "2MinScan",
-        flowType: "individual" as const,
-        beschrijving: "Energetisch gedragsprofiel in professionele context — 15-pagina PDF, 5 talen.",
-        creditCost: 0,
-        ...VERRIJKING["twominscan"],
-      },
-      {
-        id: "stm",
-        naam: "Self-Training Module",
-        flowType: "individual" as const,
-        beschrijving: "Zelfstudie-platform voor coaches in accreditatietraject.",
-        creditCost: 0,
-        ...VERRIJKING["stm"],
-      },
-    ].filter((e) => !ids.includes(e.id));
-
-    res.json([...catalogus, ...extra]);
+    res.json(catalogus);
   });
 
   app.get("/api/instrumenten/catalogus/:id", (req, res) => {

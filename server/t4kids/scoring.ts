@@ -14,7 +14,7 @@
 //  • Module 2 — Archetypen: gekozen figuren voegen hun focus toe (secundair
 //    interessesignaal) en de "waarom"-woorden + top-3 komen letterlijk in het
 //    rapport (herkenning, geen interpretatie).
-//  • Module 3 — Woordschaal (0..3): sterktes (versnellers) en drijfveren
+//  • Module 3 — Woordschaal (0..3): sterktes (versnellers) en drivers
 //    (TA-drivers) + autonomie-as (intrinsiek vs extrinsiek gemotiveerd).
 //
 // Rapport = twee gescheiden delen (kinddeel + ouder-/coachdeel), procesgericht,
@@ -233,7 +233,7 @@ export function buildT4KidsContract(opts: BuildT4KidsOpts): T4KidsContract {
     .map((id) => gekozenArchetypen.find((g) => g.id === id) ?? null)
     .filter((x): x is T4KidsArchetypeKeuze => x !== null);
 
-  // ── Module 3 — sterktes + drijfveren + autonomie ────────────────────────
+  // ── Module 3 — sterktes + drivers + autonomie ────────────────────────
   const versnellerScores: Record<string, number[]> = {};
   const driverScores: Record<string, number[]> = {};
   const intrinsiekScores: number[] = [];
@@ -295,7 +295,7 @@ export function buildT4KidsContract(opts: BuildT4KidsOpts): T4KidsContract {
   for (const [driver, scores] of Object.entries(driverScores)) {
     constructRows.push({
       construct: driver,
-      family: "Drijfveer",
+      family: "Driver",
       most: scores.filter((s) => s >= 2).length,
       least: scores.filter((s) => s <= 1).length,
       net: scores.filter((s) => s >= 2).length - scores.filter((s) => s <= 1).length,
@@ -315,7 +315,7 @@ export function buildT4KidsContract(opts: BuildT4KidsOpts): T4KidsContract {
       avgEnergy: gem(Object.values(versnellerScores).flat()),
     },
     {
-      family: "Drijfveer",
+      family: "Driver",
       avgEnergy: gem(Object.values(driverScores).flat()),
     },
   ];

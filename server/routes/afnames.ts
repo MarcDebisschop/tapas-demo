@@ -52,6 +52,7 @@ import { buildT4StudentsContract } from "../t4students/scoring";
 import { buildT4TeensContract } from "../t4teens/scoring";
 import { buildT4KidsContract } from "../t4kids/scoring";
 import { z } from "zod";
+import { isDemoModus } from "../demomodus";
 
 // Het instrument dat geldt wanneer de client er geen meestuurt.
 //
@@ -80,7 +81,9 @@ function makeRespondentCode(name: string, id: number): string {
 
 // In de demo is er geen live LLM. We laten de assistent toch 'leven' met een
 // reflectief, niet-diagnostisch antwoord dat ECHT uit het profiel put.
-const DEMO_MODE = process.env.TAPAS_DEMO === "1";
+// S-4 (audit): de demomodus komt uit één bron (server/demomodus.ts) en is in
+// productie altijd uit, ook wanneer TAPAS_DEMO=1 gezet zou zijn.
+const DEMO_MODE = isDemoModus();
 
 export function registerAfnameRoutes(app: Express): void {
   const startAfnameSchema = insertAfnameSchema.extend({

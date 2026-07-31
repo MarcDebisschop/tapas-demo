@@ -12,7 +12,7 @@
 // renderT4pBusinessProfielHtml(inhoud): string
 //   Zelfstandige, TaPasCity-gebrande HTML voor weergave/PDF-preview.
 //
-// Terminologie: "drivers" (Taibi Kahler) — nooit "drijfveren".
+// Terminologie: "drivers" (Taibi Kahler) — nooit "drivers".
 // ---------------------------------------------------------------------------
 
 import { isTapasBeeld } from "../../shared/talent-constructs";

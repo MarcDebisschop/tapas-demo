@@ -27,6 +27,7 @@ import {
   billerEntiteiten,
 } from "@shared/schema";
 import type { Organisatie } from "@shared/schema";
+import { neemFactuurnummer } from "../factuurnummer";
 import {
   initPriveePrijzen,
   lijstAllePrijzen,
@@ -87,19 +88,8 @@ function actieveBiller() {
     .get();
 }
 
-function volgendFactuurnummer(prefix: string): string {
-  const jaar = new Date().getFullYear();
-  const zoek = `${prefix}-${jaar}-`;
-  const bestaande = db.select().from(facturen).all();
-  let max = 0;
-  for (const f of bestaande) {
-    if (f.factuurnummer.startsWith(zoek)) {
-      const n = parseInt(f.factuurnummer.slice(zoek.length), 10);
-      if (!isNaN(n) && n > max) max = n;
-    }
-  }
-  return `${zoek}${String(max + 1).padStart(4, "0")}`;
-}
+// F-1 (audit): de eigen kopie van de nummerlogica is verwijderd. Er is nu één
+// bron, server/factuurnummer.ts, die het nummer ondeelbaar toekent.
 
 // --- Validatie (strikt: enkel noodzakelijke velden) -----------------------
 
@@ -299,7 +289,7 @@ export function registerPriveAankoopRoutes(app: Express): void {
     const productNaam = prijs?.naam ?? intakeRij.instrument_id;
     const klantNaam = `${intake.voornaam} ${intake.achternaam}`.trim();
     const now = new Date().toISOString();
-    const factuurnummer = volgendFactuurnummer(biller.factuurPrefix);
+    const factuurnummer = neemFactuurnummer(biller.factuurPrefix);
 
     const regels = [
       {
