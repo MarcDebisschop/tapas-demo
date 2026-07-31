@@ -133,7 +133,7 @@ mag na een wijziging niet hoger zijn dan ervoor. Lager mag altijd; de telling
 stond op 77 en vier zijn opgelost.
 
 Waarom niet eerst opruimen: een deel van die 73 zit in code waar geen test op
-staat, en typefouten repareren zonder vangnet is precies het soort ingreep waar
+staat, en zulke meldingen repareren zonder vangnet is precies het soort ingreep waar
 gedrag stilletjes verandert. De resterende fouten en het voorstel per groep
 staan in [TECHNISCHE-SCHULD.md](TECHNISCHE-SCHULD.md).
 

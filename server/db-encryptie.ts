@@ -166,7 +166,7 @@ export interface EncryptieStatus {
 export function encryptieStatus(): EncryptieStatus {
   const sleutelGezet = isEncryptieGeconfigureerd();
   // Array.from en geen spread: het tsconfig-doel laat het uitspreiden van een Set
-  // niet toe en de baseline van 77 typefouten mag niet stijgen.
+  // niet toe en de baseline van 77 meldingen van de typecontrole mag niet stijgen.
   const handles = Array.from(toegepasteHandles).sort();
   if (!sleutelGezet) {
     return {

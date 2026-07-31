@@ -14,7 +14,7 @@ onmiddellijk in deze pull request is opgelost.
 |---|---|---|
 | Magic-link-endpoints roepen niet-bestaande methodes aan | hoog | ja, de aanvraag faalt |
 | Verkeerde veldnamen bij het bepalen van de skin | midden | ja, mogelijk verkeerde huisstijl |
-| 73 typefouten als bekende schuld | midden | nee |
+| 73 meldingen van de typecontrole als bekende schuld | midden | nee |
 | `server/storage.ts` van 3.646 regels | midden | nee |
 | Em-dashes in de vertaaltabel | laag | ja, in de teksten |
 | Een technische fout die als 404 verschijnt | laag | ja, misleidende foutmelding |
@@ -73,7 +73,7 @@ ongeldige datum, de sortering is dus willekeurig, en `instrument` is altijd de
 lege tekenreeks waardoor de skin altijd op de standaardwaarde valt.
 
 Dit faalt stil. Er komt geen foutmelding; de deelnemer krijgt mogelijk de
-verkeerde huisstijl te zien. Dat is precies het soort fout waar een typefout in
+verkeerde huisstijl te zien. Dat is precies het soort fout waar een melding van de typecontrole in
 de baseline een echte bug verbergt.
 
 Voorstel: de veldnamen rechtzetten en een test toevoegen die per instrument de
@@ -81,7 +81,11 @@ verwachte skin controleert. Bewust niet meegenomen in deze pull request: het
 verandert zichtbaar gedrag en hoort dus met een eigen test en eigen
 verantwoording.
 
-## 4. Typefouten: 73 als bekende schuld
+## 4. Meldingen van de typecontrole: 73 als bekende schuld
+
+Het gaat hier niet om taal- of spelfouten, maar om plaatsen waar de code niet
+vooraf garandeert dat een gegeven van de verwachte soort is. De toepassing
+draait en de bouw slaagt; het is een openstaande kwaliteitspost, geen storing.
 
 ```
 npx tsc --noEmit | grep -c "error TS"
@@ -154,7 +158,7 @@ Voorstel per groep:
   aanraken: de cookie-instelling is kritiek voor de sandbox-hosting.
 
 Waarom niet gewoon alles opruimen: een deel van deze bestanden heeft geen enkele
-test. Typefouten repareren zonder vangnet is precies de ingreep waarbij gedrag
+test. Zulke meldingen repareren zonder vangnet is precies de ingreep waarbij gedrag
 stil verandert. De baseline is er om de schuld te begrenzen, niet om ze te
 verbergen.
 
