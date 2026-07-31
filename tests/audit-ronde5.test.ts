@@ -12,6 +12,16 @@
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { readFileSync, existsSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+// Dit bestand maakt echte tellerregels aan voor de factuurnummering. Zou dat in
+// de gedeelde data.db gebeuren, dan schrijven twee testbestanden tegelijk in
+// dezelfde SQLite-databank en kan een andere test sporadisch omvallen. We wijzen
+// de databank daarom naar een eigen tijdelijk bestand, vóór de eerste import van
+// de opslagmodule. Deze regel moet bovenaan blijven staan.
+process.env.TAPAS_DB_PATH =
+  process.env.TAPAS_DB_PATH_TEST_RONDE5 ?? join(tmpdir(), `tapas-audit-ronde5-${process.pid}.db`);
 
 function bron(pad: string): string {
   return readFileSync(pad, "utf8");
