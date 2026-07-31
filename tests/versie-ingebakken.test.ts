@@ -31,12 +31,23 @@ describe("versie ingebakken bij het bouwen", () => {
     expect(mod).toContain("process.env.TAPAS_BOUWDATUM");
   });
 
+  it("de module valt terug op package.json wanneer er niets ingebakken is", async () => {
+    const mod = await import("../server/versie");
+    const pakket = JSON.parse(lees("package.json")) as { version: string };
+    // In de testomgeving is niets ingebakken, dus moet stap 2 het nummer
+    // alsnog uit package.json halen in plaats van "ontwikkelversie" te tonen.
+    expect(mod.VERSIE).toBe(pakket.version);
+    expect(mod.BRON).toBe("afgelezen");
+    expect(mod.versieGegevens()).toMatchObject({ versie: pakket.version });
+  });
+
   it("het statusadres toont de ingebakken waarden en niet de npm-variabele", () => {
     const index = lees("server/index.ts");
     const blok = index.slice(index.indexOf('app.get("/api/gezondheid"'));
     expect(blok).toContain("versie: VERSIE");
     expect(blok).toContain("commit: COMMIT");
     expect(blok).toContain("bouwdatum: BOUWDATUM");
+    expect(blok).toContain("bron: BRON");
     expect(blok).not.toContain("npm_package_version");
   });
 
