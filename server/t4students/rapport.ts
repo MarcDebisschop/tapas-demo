@@ -207,6 +207,17 @@ export function bouwT4StudentsRapport(contract: any): RapportInhoud {
     paragrafen: denkspoor,
   });
 
+  // Kwaliteitsmelding over de afname (tijd per item). Gaat over de manier van
+  // invullen, nooit over de persoon. Afnames zonder tijdgegevens krijgen deze
+  // sectie helemaal niet.
+  const tempoMelding: string | null = meta?.afnamekwaliteit?.melding ?? null;
+  if (tempoMelding) {
+    secties.push({
+      kop: "Over het invullen van deze vragenlijst",
+      paragrafen: [tempoMelding],
+    });
+  }
+
   return {
     variant: "kompas",
     taal: "nl",

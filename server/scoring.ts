@@ -1,5 +1,6 @@
 import { instrument } from "./instrument";
 import type { InstrumentBlock } from "./instrument";
+import { berekenAfnamekwaliteit, type Afnamekwaliteit, type ItemTijden } from "./afnamekwaliteit";
 
 // ---------------------------------------------------------------------------
 // Server-side scoringengine — getrouwe port van de gevalideerde JS-engine
@@ -23,6 +24,9 @@ export interface BlockResponse {
   itemEnergy: { most: number | null; least: number | null };
   blockEnergy: number | null;
   toelichting?: string | null;
+  // Tijdstip waarop dit item werd beantwoord (ISO-tekst). Ontbreekt bij afnames
+  // van voor de invoering van de tijdmeting.
+  beantwoordOp?: string | null;
 }
 export type Responses = Record<string, BlockResponse>;
 
@@ -230,12 +234,19 @@ export interface MainScores {
     energyDiscrepancy: number;
     driverRisk: DriverRisk;
     consistency: Consistency;
+    // Kwaliteitsmelding over de afname op basis van de tijd per item. Null
+    // wanneer er geen tijdgegevens zijn (afnames van voor de invoering).
+    afnamekwaliteit: Afnamekwaliteit | null;
   };
   constructRows: ConstructRow[];
   familyRows: FamilyRow[];
 }
 
-export function buildMainScores(responses: Responses, baseline: number): MainScores {
+export function buildMainScores(
+  responses: Responses,
+  baseline: number,
+  itemTijden?: ItemTijden | null,
+): MainScores {
   const { rows, famRows } = aggregate(responses);
   const completed = Object.keys(responses).length;
   const risk = driverRisk(rows);
@@ -257,6 +268,7 @@ export function buildMainScores(responses: Responses, baseline: number): MainSco
       energyDiscrepancy: discrepancy,
       driverRisk: risk,
       consistency,
+      afnamekwaliteit: berekenAfnamekwaliteit(itemTijden),
     },
     constructRows: rows,
     familyRows: famRows,
@@ -291,8 +303,10 @@ export function buildGeneratorContract(opts: {
   baseline: number;
   connection: ConnectionAnswers;
   taal?: string | null;
+  // Duur per item in milliseconden. Ontbreekt bij afnames zonder tijdmeting.
+  itemTijden?: ItemTijden | null;
 }) {
-  const main = buildMainScores(opts.responses, opts.baseline);
+  const main = buildMainScores(opts.responses, opts.baseline, opts.itemTijden);
   return {
     contractVersion: "1.0.0",
     instrumentId: instrument.instrumentId,

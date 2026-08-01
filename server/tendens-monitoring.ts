@@ -38,7 +38,7 @@ const K_ANONIMITEIT = 5;
 const DREMPEL_FACTORANALYSE = 300;
 
 // ---------------------------------------------------------------------------
-// UA-IJKPUNT — extern gevalideerde structuur-referentie (T4Sports).
+// UA-IJKPUNT, extern gevalideerde structuur-referentie (Tapas4Students).
 //
 // Dit is GEEN live-berekende waarde en mag dat ook niet zijn: het is de
 // gevalideerde uitkomst van de factoranalyse op de UA-export (T4S). Het dient
@@ -52,7 +52,7 @@ const DREMPEL_FACTORANALYSE = 300;
 //                      omdat de ruwe itemmatrix hier niet aanwezig is.
 // ---------------------------------------------------------------------------
 const UA_IJKPUNT = {
-  bron: "UA-factoranalyse T4Sports (extern gevalideerd)",
+  bron: "UA-factoranalyse Tapas4Students (extern gevalideerd)",
   vastgesteldOp: "2026-07",
   waarden: [
     { sleutel: "f1_variantie",      label: "Verklaarde variantie energie-as (Factor 1)", waarde: 0.232, herkomst: "herbevestigd" },
@@ -206,7 +206,7 @@ export function berekenBaseline(sqlite: any): { meetpunten: number; onderdrukt: 
     n: totaal, gemiddelde: null, sd: null, aandeel: totaal > 0 ? voltooid / totaal : null,
   });
 
-  // (d) Structuur-ijkpunt uit de UA-factoranalyse (extern gevalideerd, T4Sports).
+  // (d) Structuur-ijkpunt uit de UA-factoranalyse (extern gevalideerd, Tapas4Students).
   //     Vast referentiepunt voor structuurdrift (fase 2, familie C). Geen live
   //     cijfer: de waarde staat in `gemiddelde`, de metriek in `sleutel`. n=0
   //     want dit is geen steekproeftelling, dus geen k-anonimiteit van toepassing.
@@ -218,7 +218,7 @@ export function berekenBaseline(sqlite: any): { meetpunten: number; onderdrukt: 
 
 // ---------------------------------------------------------------------------
 // Schrijf het UA-structuurijkpunt als baseline-snapshots weg (dimensie
-// "structuur_ua", instrument "t4sports"). Idempotent binnen een baseline-run:
+// "structuur_ua", instrument "t4students"). Idempotent binnen een baseline-run:
 // oude structuur_ua-baselinerijen worden eerst verwijderd.
 // ---------------------------------------------------------------------------
 export function schrijfUaIjkpunt(sqlite: any): number {
@@ -232,7 +232,7 @@ export function schrijfUaIjkpunt(sqlite: any): number {
   const insert = sqlite.prepare(`
     INSERT INTO tendens_snapshot
       (instrument, dimensie, sleutel, periode, n, gemiddelde, sd, aandeel, onderdrukt, is_baseline, berekend_op)
-    VALUES ('t4sports', 'structuur_ua', @sleutel, @periode, 0, @waarde, NULL, NULL, 0, 1, datetime('now'))
+    VALUES ('t4students', 'structuur_ua', @sleutel, @periode, 0, @waarde, NULL, NULL, 0, 1, datetime('now'))
   `);
 
   let geschreven = 0;
@@ -785,7 +785,7 @@ export function registerTendensMonitoringRoutes(app: Express, db: any, storage: 
       bron: UA_IJKPUNT.bron,
       vastgesteldOp: UA_IJKPUNT.vastgesteldOp,
       toelichting:
-        "Extern gevalideerd structuurijkpunt uit de UA-factoranalyse (T4Sports). " +
+        "Extern gevalideerd structuurijkpunt uit de UA-factoranalyse (Tapas4Students). " +
         "Vast referentiepunt voor structuurdrift; geen live-berekend cijfer. " +
         "Herkomst 'herbevestigd' = opnieuw uit de bronscripts gedraaid; " +
         "'gedocumenteerd' = uit de eerdere UA-analyse, ruwe itemmatrix niet live aanwezig.",

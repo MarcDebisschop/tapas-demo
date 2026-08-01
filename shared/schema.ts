@@ -81,6 +81,12 @@ export const afnames = sqliteTable("afnames", {
   mainResponses: text("main_responses"),
   // connectionAnswers: object { q1, q2, q3, q4 }
   connectionAnswers: text("connection_answers"),
+  // --- Tijdmeting per item (normentoetsing C07, C08, C20) ------------------
+  // Duur per item in milliseconden, als JSON-tekst: { "B0": 5210, "B1": 1840 }.
+  // Strikt additief en nullable: afnames van voor de invoering houden NULL en
+  // krijgen daardoor geen kwaliteitsmelding en geen fout.
+  // Zie server/afnamekwaliteit.ts voor de berekening en de drempels.
+  itemTijden: text("item_tijden"),
   // Het server-side gegenereerde A3 generator-contract (JSON-tekst).
   generatorContract: text("generator_contract"),
   // TaPas Persoonlijk Fase 1: koppeling naar de deelnemer (via e-mail) zodat de
@@ -204,10 +210,16 @@ export const blockResponseSchema = z.object({
   }),
   blockEnergy: z.number().nullable(),
   toelichting: z.string().nullable().optional(),
+  // Tijdstip waarop dit item werd beantwoord (ISO-tekst). Optioneel en
+  // nullable: oudere clients sturen dit niet mee en blijven gewoon werken.
+  beantwoordOp: z.string().nullable().optional(),
 });
 
 export const submitMainSchema = z.object({
   responses: z.record(z.string(), blockResponseSchema),
+  // Duur per item in milliseconden. Optioneel: zonder deze gegevens verloopt de
+  // afname ongewijzigd, alleen zonder kwaliteitsmelding over het tempo.
+  tijden: z.record(z.string(), z.number().nonnegative()).optional(),
 });
 export type SubmitMain = z.infer<typeof submitMainSchema>;
 

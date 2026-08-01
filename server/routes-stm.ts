@@ -96,8 +96,8 @@ const VRAAGBANK: StmVraag[] = [
     vraag_tekst: "T4Teens en T4Students zijn identieke instrumenten met dezelfde normgroep.",
     opties: ["Juist", "Fout"],
     correct_antwoord: "Fout",
-    feedback_correct: "Correct. T4Teens richt zich op 13-17 jaar, T4Students op 18-23 jaar — aparte normgroepen.",
-    feedback_fout: "Fout. T4Teens (13-17j) en T4Students (18-23j) hebben aparte normgroepen en een andere aanpak.",
+    feedback_correct: "Correct. T4Teens richt zich op 13-17 jaar, T4Students op 17-23 jaar, aparte normgroepen.",
+    feedback_fout: "Fout. T4Teens (13-17j) en T4Students (17-23j) hebben aparte normgroepen en een andere aanpak.",
   },
   {
     id: 6, laag: 1, thema: "TaPas Jester", vraag_type: "meerkeuze",
@@ -306,8 +306,8 @@ const VRAAGBANK: StmVraag[] = [
       "Bij deelnemers ouder dan 45 jaar",
     ],
     correct_antwoord: "Bij jongeren die nog studeren of in transitie zijn naar de arbeidsmarkt",
-    feedback_correct: "Juist. T4Students is specifiek ontworpen voor de doelgroep 18-23 jaar in studie/transitie.",
-    feedback_fout: "Fout. T4Students is ontworpen voor jongeren (18-23j) in studiecontext of overgang naar de arbeidsmarkt.",
+    feedback_correct: "Juist. T4Students is specifiek ontworpen voor de doelgroep 17-23 jaar in studie/transitie.",
+    feedback_fout: "Fout. T4Students is ontworpen voor jongeren (17-23j) in studiecontext of overgang naar de arbeidsmarkt.",
   },
 
   // Laag 4 — Synthese

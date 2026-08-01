@@ -185,11 +185,11 @@ export const INSTRUMENTENGIDS: GidsInstrument[] = [
       "Bevestigt mijn studiekeuze wie ik ben? Welke jobdomeinen sluiten aan bij mijn talent? Hoe formuleer ik mijn sterktes richting stage en eerste job?",
     gebruik:
       "Voor studierichtingsbevestiging of -bijsturing, voorbereiding op het stagezoekproces, eerste loopbaanoriëntatie en persoonlijke ontwikkeling.",
-    doelgroep: "Studenten hoger onderwijs, studentenbegeleiders.",
+    doelgroep: "Studenten 17-23 jaar, studentenbegeleiders.",
     start: { label: "Ontdek T4Students", route: "/studie/leerlingen", direct: false },
     rapportTeaser:
       "Een T4Students talentpaspoort met jobdomein-mapping en een eerste LinkedIn-formulering voor de start op de arbeidsmarkt.",
-    leeftijdsfocus: "18+ · hoger onderwijs",
+    leeftijdsfocus: "17-23 jaar",
     icoon: "GraduationCap",
   },
 ];

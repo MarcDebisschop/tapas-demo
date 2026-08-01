@@ -376,6 +376,10 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
   const gemEnergie = num(meta.averageEnergy);
   const consistentie = num(meta.consistency?.score);
   const consLabel = String(meta.consistency?.label ?? "");
+  // Kwaliteitsmelding over de afname (tijd per item). Null bij afnames zonder
+  // tijdgegevens; die tonen dan geen melding.
+  const afnamekwaliteit = meta.afnamekwaliteit ?? null;
+  const tempoMelding: string | null = afnamekwaliteit?.melding ?? null;
   const risicoLabel = String(meta.driverRisk?.label ?? "");
   const schermen = num(meta.completedScreens);
   const schermenTotaal = num(meta.totalScreens, schermen);
@@ -552,8 +556,11 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
             `${kort(alle.filter((r) => r.shown > 0).length)} / ${kort(alle.length)}`,
             "Geduide constructen",
           ],
-          [`${kort(consistentie)} / 100`, "Interne consistentie"],
+          [`${kort(consistentie)} / 100`, "Antwoorden in dezelfde richting"],
           [consLabel, "Datakwaliteit"],
+          ...(tempoMelding
+            ? [[`${Math.round(num(afnamekwaliteit?.aandeelOnderDrempel) * 100)} %`, "Items binnen twee seconden"]]
+            : []),
         ],
         kolombreedtes: BREEDTE.datakwaliteit,
       },
@@ -565,6 +572,11 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
             variant: "",
             tekst: `Deze lezing rust op een volledig en consistent ingevulde vragenlijst. De datakwaliteit is ${consLabel}; de duiding is goed gedragen zonder dat scores absolute uitspraken worden.`,
           },
+          // Melding over het tempo van invullen. Gaat over de afname, niet over
+          // de persoon, en verschijnt alleen als er tijdgegevens zijn.
+          ...(tempoMelding
+            ? [{ kop: "Tempo van invullen", variant: "", tekst: tempoMelding }]
+            : []),
           {
             kop: "Professionele betekenis",
             variant: "",
@@ -2490,7 +2502,7 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
           {
             kop: "Data en signalen",
             variant: "",
-            tekst: `Interne consistentie ${kort(consistentie)}/100${
+            tekst: `Antwoorden binnen een construct wijzen ${kort(consistentie)}/100 in dezelfde richting${
               consLabel ? ` (${consLabel.toLowerCase()})` : ""
             }. Volledigheid: ${kort(schermen)}/${kort(schermenTotaal)} schermen, ${kort(
               alle.filter((r) => r.shown > 0).length,

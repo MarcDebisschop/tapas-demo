@@ -476,6 +476,10 @@ try {
   // betrouwbaar te reconstrueren en raden zou het spoor vervalsen.
   if (!heeft("aangemaakt_door_beheerder_id")) add(`ALTER TABLE afnames ADD COLUMN aangemaakt_door_beheerder_id INTEGER;`);
   if (!heeft("aangemaakt_door_organisatie_id")) add(`ALTER TABLE afnames ADD COLUMN aangemaakt_door_organisatie_id INTEGER;`);
+  // Tijdmeting per item (normentoetsing C07, C08, C20). Duur per item in
+  // milliseconden als JSON-tekst. Strikt additief en nullable: bestaande
+  // afnames houden NULL en tonen daardoor geen kwaliteitsmelding.
+  if (!heeft("item_tijden")) add(`ALTER TABLE afnames ADD COLUMN item_tijden TEXT;`);
   // Auditbevinding K-1 (kritiek), derde ronde: bezitsbewijs per afname. De
   // respondentCode is leesbaar en dus raadbaar; dit token is dat niet. Bestaande
   // rijen krijgen meteen een token, zodat de oude, raadbare code nergens meer als

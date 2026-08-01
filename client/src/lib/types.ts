@@ -42,8 +42,13 @@ export interface BlockAnswer {
   itemEnergy: { most: number | null; least: number | null };
   blockEnergy: number | null;
   toelichting?: string | null;
+  /** Tijdstip waarop dit item werd beantwoord (ISO-tekst). */
+  beantwoordOp?: string | null;
 }
 export type AnswerState = Record<string, BlockAnswer>;
+
+/** Duur per item in milliseconden, met de itemsleutel als sleutel. */
+export type ItemTijden = Record<string, number>;
 
 export interface Afname {
   id: number;

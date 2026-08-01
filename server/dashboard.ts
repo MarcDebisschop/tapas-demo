@@ -266,13 +266,13 @@ export function bouwDashboardData(contractRaw: unknown, taal: Taal): DashboardDa
         ? `De interne herkenbaarheid van dit beeld scoort ${score}/100. Hoe hoger, hoe meer het profiel als een coherent geheel leest.`
         : `Dit beeld vormt een samenhangend geheel op basis van je antwoorden.`,
       fr: score !== null
-        ? `La cohérence interne de cette image est de ${score}/100. Plus c'est élevé, plus le profil se lit comme un tout cohérent.`
+        ? `La reconnaissabilité interne de cette image est de ${score}/100. Plus c'est élevé, plus le profil se lit comme un tout cohérent.`
         : `Cette image forme un ensemble cohérent basé sur tes réponses.`,
       en: score !== null
         ? `The internal recognisability of this picture scores ${score}/100. The higher, the more the profile reads as a coherent whole.`
         : `This picture forms a coherent whole based on your answers.`,
       es: score !== null
-        ? `La coherencia interna de esta imagen es ${score}/100. Cuanto más alto, más se lee el perfil como un todo coherente.`
+        ? `El reconocimiento interno de esta imagen es ${score}/100. Cuanto más alto, más se lee el perfil como un todo coherente.`
         : `Esta imagen forma un conjunto coherente según tus respuestas.`,
       ru: score !== null
         ? `Внутренняя узнаваемость этого портрета — ${score}/100. Чем выше, тем целостнее читается профиль.`
