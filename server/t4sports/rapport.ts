@@ -451,7 +451,7 @@ export function genereerT4SportsRapport(contractRaw: unknown, taal: string = "nl
         <li>Bespreek het verschil tussen de energiebalans in de vragenlijst (${normEnergy.toFixed(1)}/10) en de zelf-ingeschatte baseline (${baselineEnergy.toFixed(1)}/10)</li>
         <li>De dominante talent-focus is "${escHtml(sportprofiel.dominanteFocus ?? "—")}" — benoem specifiek hoe dit zichtbaar is in het gedrag</li>
         <li>Het drukprofiel is "${drukProfiel}" — bespreek concrete situaties waarin dit de prestatie beïnvloedde</li>
-        <li>Consistentiescore: ${consistency.score ?? "—"}/100 — ${(consistency.score ?? 0) >= 80 ? "hoge betrouwbaarheid" : (consistency.score ?? 0) >= 60 ? "gemiddelde betrouwbaarheid" : "lage betrouwbaarheid — toets bevindingen in gesprek"}</li>
+        <li>Consistentiescore: ${consistency.score ?? "—"}/100 - ${(consistency.score ?? 0) >= 80 ? "hoge consistentie" : (consistency.score ?? 0) >= 60 ? "gemiddelde consistentie" : "lage consistentie, toets bevindingen in gesprek"} (geen psychometrische betrouwbaarheidsmaat)</li>
         <li>Sportpassie: ${sportpassie}/10 — ${sportpassie < 6 ? "aandacht vereist: onderzoek of de motivatie nog intrinsiek is" : "gezonde verbinding met de sport"}</li>
       </ul>
     </div>

@@ -67,10 +67,10 @@ export function hoofdstukDatakwaliteit(d: ChapterData): string {
   const energieDelta = d.normEnergy - d.baselineEnergy;
   const consistLabel = d.consistency?.label ?? "—";
   const consistScore = num(d.consistency?.score, 0);
-  const betrouwbaarheid =
-    consistScore >= 80 ? "hoge betrouwbaarheid — de bevindingen mogen stevig worden gelezen"
-    : consistScore >= 60 ? "gemiddelde betrouwbaarheid — toets de kernbevindingen in gesprek"
-    : "beperkte betrouwbaarheid — gebruik dit rapport uitsluitend als gespreksopener";
+  const consistDuiding =
+    consistScore >= 80 ? "hoge consistentie, de bevindingen mogen stevig worden gelezen"
+    : consistScore >= 60 ? "gemiddelde consistentie, toets de kernbevindingen in gesprek"
+    : "beperkte consistentie, gebruik dit rapport uitsluitend als gespreksopener";
   return `
   <div class="section">
     <div class="section-header">
@@ -99,7 +99,7 @@ export function hoofdstukDatakwaliteit(d: ChapterData): string {
     </div>
     <div style="border-left:4px solid #C9A84C;background:#f8f9fc;border-radius:0 8px 8px 0;padding:14px 18px;margin-bottom:12px;">
       <div style="color:#8a6000;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Datakwaliteit</div>
-      <p style="color:#444;font-size:0.88rem;line-height:1.7;">De consistentie van deze afname is <strong>${esc(consistLabel)}</strong> (${consistScore}/100): ${betrouwbaarheid}.</p>
+      <p style="color:#444;font-size:0.88rem;line-height:1.7;">De consistentie van deze afname is <strong>${esc(consistLabel)}</strong> (${consistScore}/100): ${consistDuiding}. Deze score zegt hoe volledig er is ingevuld en hoe goed de energieantwoorden onderling uitgelijnd zijn; het is geen psychometrische betrouwbaarheidsmaat.</p>
     </div>
     <div style="border-left:4px solid ${energieDelta <= -1.5 ? "#e74c3c" : "#2ecc71"};background:#f8f9fc;border-radius:0 8px 8px 0;padding:14px 18px;">
       <div style="color:#555;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Energie-signaal</div>

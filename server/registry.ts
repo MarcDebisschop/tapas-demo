@@ -8,6 +8,10 @@ import {
   clientInstrumentVan,
 } from "./instrument";
 import t4sportsJson from "./data/t4sports.json";
+import {
+  ONDERBOUWING_T4PROFESSIONAL,
+  type InstrumentOnderbouwing,
+} from "../shared/onderbouwing-t4professional";
 
 // ---------------------------------------------------------------------------
 // Instrument-registry (Fase 1) — singleton → registry.
@@ -104,6 +108,11 @@ export interface InstrumentDescriptor {
   profileElicitation?: ProfileElicitationCapability;
   // Enkel voor flowType "journey": de gefaseerde orkestratie (HDD).
   journey?: JourneyCapability;
+  // Wetenschappelijke onderbouwing van dit instrument: wat er aan onderzoek is,
+  // wat er nog ontbreekt en waar de claimgrens ligt. Enkel ingevuld waar er
+  // werkelijk iets te tonen valt; ontbreekt de structuur, dan is er (nog) geen
+  // instrumentspecifieke onderbouwing en mag er ook geen worden gesuggereerd.
+  onderbouwing?: InstrumentOnderbouwing;
   // C-1 (audit): staat dit instrument in de publieke catalogus? Voorheen werd
   // dat geregeld met een filter op naam in het catalogusendpoint, waardoor het
   // aanbod niet uit één bron af te leiden was. Nu is het een expliciete vlag op
@@ -144,6 +153,8 @@ function bouwRegistry(): Map<string, InstrumentDescriptor> {
     isDefault: true,
     instrument: inst,
     creditCost: 1,
+    // T4Professional: het instrument uit instrument.json ("t4p-business-kompas").
+    onderbouwing: ONDERBOUWING_T4PROFESSIONAL,
   });
 
   // -------------------------------------------------------------------------

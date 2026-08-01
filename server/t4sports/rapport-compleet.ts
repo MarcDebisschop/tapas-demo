@@ -753,7 +753,7 @@ export function genereerT4SportsRapportCompleet(
         <li>Bespreek het verschil tussen de energiebalans in de lijst (${normEnergy.toFixed(1)}/10) en de baseline (${baselineEnergy.toFixed(1)}/10)</li>
         <li>Dominante focus "${esc(sportprofiel.dominanteFocus ?? "—")}" — benoem hoe dit concreet zichtbaar is in het gedrag</li>
         <li>Drukprofiel "${drukProfiel}" — bespreek situaties waarin dit de prestatie beïnvloedde</li>
-        <li>Consistentiescore ${consistency.score ?? "—"}/100 — ${(consistency.score ?? 0) >= 80 ? "hoge betrouwbaarheid" : (consistency.score ?? 0) >= 60 ? "gemiddelde betrouwbaarheid" : "toets bevindingen in gesprek"}</li>
+        <li>Consistentiescore ${consistency.score ?? "—"}/100 - ${(consistency.score ?? 0) >= 80 ? "hoge consistentie" : (consistency.score ?? 0) >= 60 ? "gemiddelde consistentie" : "toets bevindingen in gesprek"} (geen psychometrische betrouwbaarheidsmaat)</li>
         <li>Sportpassie ${sportpassie}/10 — ${sportpassie < 6 ? "onderzoek of de motivatie nog intrinsiek is" : "gezonde verbinding met de sport"}</li>
       </ul>
     </div>

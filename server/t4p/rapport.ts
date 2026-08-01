@@ -16,6 +16,7 @@
 // ---------------------------------------------------------------------------
 
 import { isTapasBeeld } from "../../shared/talent-constructs";
+import { ONDERBOUWING_T4PROFESSIONAL } from "../../shared/onderbouwing-t4professional";
 
 // --- Types -----------------------------------------------------------------
 
@@ -264,7 +265,7 @@ export function bouwT4pBusinessProfiel(contract: any): T4pRapportInhoud {
       { waarde: `${fmt(beleefd, 1)}/10`, label: "Beleefde startenergie" },
       { waarde: `${fmt(gemeten, 1)}/10`, label: "Gemeten energie" },
       { waarde: fmt(discrepantie, 1, true), label: "Energiediscrepantie" },
-      { waarde: `${Math.round(num(consistency?.score))}/100`, label: `Consistentie (${consistency?.label ?? "—"})` },
+      { waarde: `${Math.round(num(consistency?.score))}/100`, label: `Energie-consistentie (${consistency?.label ?? "—"})` },
       { waarde: String(driverRisk?.label ?? "—"), label: "Driver-risico" },
       { waarde: `${isFinite(zelf) ? zelf : "—"} / ${isFinite(org) ? org : "—"}`, label: "Zelf- vs. org-investering" },
     ],
@@ -296,8 +297,10 @@ export function bouwT4pBusinessProfiel(contract: any): T4pRapportInhoud {
         "aflopend gerangschikt. De volgorde is geen scoreladder, maar toont welke ingang het talent het " +
         "makkelijkst opent.",
       `Datakwaliteit: de vragenlijst werd ingevuld voor ${ingevuld}/${totaal} schermen (${keuzes} keuzes). ` +
-        `De antwoorden binnen een construct wijzen voor ${Math.round(num(consistency?.score))}/100 in dezelfde ` +
-        `richting (${consistency?.label ?? "—"}). ` +
+        `De energie-consistentie komt uit op ${Math.round(num(consistency?.score))}/100 ` +
+        `(${consistency?.label ?? "—"}). Die score drukt uit hoe volledig er is ingevuld en hoe goed de ` +
+        `energieantwoorden onderling uitgelijnd zijn bij de sterkst herkende drivers; het is uitdrukkelijk ` +
+        `geen psychometrische betrouwbaarheidsmaat. ` +
         `Het verschil tussen beleefde startenergie (${fmt(beleefd, 1)}/10) en gemeten energie (${fmt(
           gemeten,
           1
@@ -782,7 +785,7 @@ export function bouwT4pBusinessProfiel(contract: any): T4pRapportInhoud {
   secties.push({
     nummer: "21",
     titel: "Wetenschappelijke onderbouwing",
-    ondertitel: "De interpretatieve lenzen achter het profiel — en hun grenzen.",
+    ondertitel: "De interpretatieve lenzen achter het profiel, hun grenzen, en wat er voor T4Professional zelf is onderzocht.",
     tabel: {
       kolommen: ["Theoretische lens", "Waarvoor gebruikt", "Interpretatiegrens"],
       rijen: [
@@ -797,6 +800,15 @@ export function bouwT4pBusinessProfiel(contract: any): T4pRapportInhoud {
     blokken: [
       { kop: "Inspiratiebron", tekst: "De TaPas-methodiek integreert deze kaders in één praktische taal van talent, energie en context, zoals uitgewerkt in het werk Zichtbaar." },
       { kop: "Belangrijke nuance", tekst: "Geen enkel TaPas-onderdeel komt één-op-één uit één studie. De kaders vormen een zorgvuldige verankeringslaag voor interpretatie en gesprek." },
+      // Instrumentspecifieke onderbouwing uit het register: wat er is, wat er
+      // ontbreekt en waar de claimgrens ligt. Zo staat naast de theoretische
+      // lenzen ook het empirische antwoord op "en wat is er over dit instrument
+      // zelf gemeten?", inclusief wat er nog niet gemeten is.
+      ...ONDERBOUWING_T4PROFESSIONAL.blokken.map((blok) => ({
+        kop: blok.kop,
+        tekst: blok.punten.join(" "),
+      })),
+      { kop: "De claimgrens", tekst: ONDERBOUWING_T4PROFESSIONAL.claimgrens },
     ],
   });
 
@@ -886,10 +898,12 @@ export function bouwT4pBusinessProfiel(contract: any): T4pRapportInhoud {
     gegenereerdOp: new Date().toISOString(),
     inhoudsopgave: INHOUDSOPGAVE,
     secties,
+    // De claimgrens komt uit de gedeelde onderbouwing van T4Professional, zodat
+    // het rapport en de publieke onderbouwingssectie dezelfde grens trekken.
     disclaimer:
       "Dit T4P Business Profiel beschrijft talent, drivers, energie en context op basis van zelfgerapporteerde " +
-      "keuzes. Het is een momentopname en geen psychologische diagnose, geen meting van intelligentie of " +
-      "potentieel, en geen selectie-instrument. Het is bedoeld als professioneel kompas voor reflectie en gesprek.",
+      "keuzes. Het is geen psychologische diagnose en geen meting van intelligentie of potentieel. " +
+      ONDERBOUWING_T4PROFESSIONAL.claimgrens,
   };
 }
 

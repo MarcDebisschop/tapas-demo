@@ -11,6 +11,9 @@
 //
 //   GEEN aannames over cijfers: alle getallen komen uit de gevalideerde
 //   rapporten (gem. congruentie 0,93 · KMO 0,83 · 10/11 factoren · EFA UA).
+//   Die cijfers zijn berekend op Tapas4Students (T4S) en op niets anders; dat
+//   staat daarom bij elk cijfer en in de begeleidende noot. T4Professional
+//   heeft zijn eigen, afzonderlijke passage met wat er wel en niet is.
 // ---------------------------------------------------------------------------
 
 import { useState } from "react";
@@ -27,6 +30,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import type { StringSleutel } from "@shared/i18n";
+import { ONDERBOUWING_T4PROFESSIONAL } from "@shared/onderbouwing-t4professional";
 
 export type Toegangsniveau = "publiek" | "op-aanvraag" | "intern";
 
@@ -86,6 +90,39 @@ export const ONDERBOUWING_DOCUMENTEN: OnderbouwingDoc[] = [
     bestandUrl: "/api/onderbouwing/document/data-exportgids",
   },
 ];
+
+// Eigen onderbouwing van T4Professional: wat er aan onderzoek is, wat er nog
+// ontbreekt en waar de claimgrens ligt. Staat los van de T4S-cijfers hierboven,
+// juist om te vermijden dat een lezer die cijfers op T4Professional betrekt.
+function T4ProfessionalOnderbouwing({ n }: { n: Vert }) {
+  const ob = ONDERBOUWING_T4PROFESSIONAL;
+  return (
+    <Card className="mt-4" data-testid="onderbouwing-t4professional">
+      <CardContent className="p-5">
+        <h3 className="text-base font-semibold text-foreground">{n("ob_t4p_titel")}</h3>
+        <p className="mt-0.5 text-xs text-muted-foreground">{ob.instrument}</p>
+
+        {ob.blokken.map((blok) => (
+          <div key={blok.kop} className="mt-4">
+            <h4 className="text-sm font-semibold text-foreground">{blok.kop}</h4>
+            <ul className="mt-1.5 list-disc space-y-1.5 pl-5 text-sm text-muted-foreground">
+              {blok.punten.map((punt) => (
+                <li key={punt}>{punt}</li>
+              ))}
+            </ul>
+          </div>
+        ))}
+
+        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50/70 p-3">
+          <h4 className="text-sm font-semibold text-foreground">{n("ob_t4p_claimgrens_kop")}</h4>
+          <p className="mt-1 text-sm text-muted-foreground">{ob.claimgrens}</p>
+        </div>
+
+        <p className="mt-3 text-xs text-muted-foreground">{n("ob_t4p_taalnoot")}</p>
+      </CardContent>
+    </Card>
+  );
+}
 
 function NiveauBadge({ niveau, n }: { niveau: Toegangsniveau; n: Vert }) {
   if (niveau === "publiek") {
@@ -337,10 +374,16 @@ export function OnderbouwingSectie({
                   </div>
                 ))}
               </div>
+              <p className="mt-3 text-xs text-muted-foreground" data-testid="onderbouwing-cijfers-bron">
+                {n("ob_cijfers_bron")}
+              </p>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Eigen onderbouwing van T4Professional (los van de T4S-cijfers) */}
+      <T4ProfessionalOnderbouwing n={n} />
 
       {/* Documentkaarten */}
       <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
