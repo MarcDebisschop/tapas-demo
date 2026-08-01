@@ -57,7 +57,7 @@ import { resolve } from "path";
 import { renderRapportHtml } from "./rapportgenerator";
 import { kiesGenerator, heeftDedicatedGenerator } from "./rapport-registry";
 import { genereerAiDuiding, isLiveDuidingAan, DUIDING_INSTRUMENT } from "./duiding-manager";
-import { anonimiseringsPatch } from "./anonimisering";
+import { anonimiseringsPatch, rapportAnonimiseringsPatch, INTREKKINGSREDEN } from "./anonimisering";
 import { type Scope, organisatieFilterVanScope } from "./scope";
 // Ontvlechting van deze god-module (spoor 3). De repositories bestonden al maar
 // werden door NIEMAND aangeroepen: het waren kopieen van de code hieronder, met
@@ -2916,6 +2916,12 @@ export class DatabaseStorage implements IStorage {
     if (!a) return undefined;
     if (a.geanonimiseerdAt) return a;
     const now = new Date().toISOString();
+    // De afgeleide documenten gaan mee. Zonder deze stap blijft de volledige
+    // persoon in het rapport staan en wist een wissing feitelijk niets.
+    db.update(rapporten)
+      .set(rapportAnonimiseringsPatch(reden, now))
+      .where(eq(rapporten.afnameId, afnameId))
+      .run();
     // Eén gedeelde definitie van de te wissen velden (server/anonimisering.ts),
     // zodat deze implementatie niet opnieuw kan uiteenlopen met de repository.
     return db
@@ -2926,16 +2932,20 @@ export class DatabaseStorage implements IStorage {
       .get();
   }
 
+  // Het intrekken van de toestemming moet gevolg hebben. Zonder rechtsgrond mag
+  // de verwerking niet doorlopen (AVG art. 7 lid 3), dus zetten we niet alleen
+  // het tijdstip van de intrekking vast maar wissen we de gegevens meteen. Het
+  // tijdstip zelf blijft bewaard als bewijs dat de intrekking verwerkt is.
   async trekConsentIn(afnameId: number): Promise<Afname | undefined> {
     const a = await this.getAfname(afnameId);
     if (!a) return undefined;
     const now = new Date().toISOString();
-    return db
-      .update(afnames)
-      .set({ consentIngetrokkenAt: now })
+    db.update(afnames)
+      .set({ consentIngetrokkenAt: now, consentGiven: false, bewaartotDatum: now })
       .where(eq(afnames.id, afnameId))
-      .returning()
-      .get();
+      .run();
+    const geanonimiseerd = await this.anonimiseerAfname(afnameId, INTREKKINGSREDEN);
+    return geanonimiseerd ?? (await this.getAfname(afnameId));
   }
 
   // --- Deelnemers & persoonlijk dashboard (TaPas Persoonlijk — Fase 1) ------

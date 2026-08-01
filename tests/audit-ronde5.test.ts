@@ -288,7 +288,7 @@ describe("P-2 doorgifteregister", () => {
     expect(regel.gegevens).toMatch(/e-mailadres/);
   });
 
-  it("brengt taalmodel en e-mail samen in één register", async () => {
+  it("brengt taalmodel, e-mail en betaaldienst samen in één register", async () => {
     const { volledigDoorgifteRegister } = await import("../server/doorgifteregister");
     const register = volledigDoorgifteRegister([
       {
@@ -300,9 +300,13 @@ describe("P-2 doorgifteregister", () => {
         grondslagVereist: "DPA met Google",
       },
     ]);
-    expect(register).toHaveLength(2);
+    // Drie kanalen: het taalmodel, de mailleverancier en de betaaldienst. Die
+    // laatste hoort er sinds de privacydoorlichting bij: artikel 30 vraagt elke
+    // ontvanger, ook wanneer het kanaal vandaag nog in simulatie draait.
+    expect(register).toHaveLength(3);
     expect(register[0].kanaal).toContain("taalmodel");
-    expect(register[register.length - 1].kanaal).toBe("e-mail");
+    expect(register.map((r) => r.kanaal)).toContain("e-mail");
+    expect(register[register.length - 1].kanaal).toBe("betaaldienst");
     for (const r of register) {
       expect(r.doel.length).toBeGreaterThan(10);
       expect(r.grondslagVereist.length).toBeGreaterThan(10);

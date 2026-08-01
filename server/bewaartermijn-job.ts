@@ -22,6 +22,7 @@
 
 import { storage, sqlite } from "./storage";
 import { schrijfAuditLog } from "./audit-log";
+import { ruimVerstrekenIntakesOp } from "./prive-aankoop/bewaartermijn";
 
 export const ANONIMISERINGSREDEN = "bewaartermijn verstreken - automatisch";
 
@@ -73,6 +74,15 @@ export async function voerBewaartermijnOpruimingUit(): Promise<number> {
     console.error("[bewaartermijn] Kon verstreken afnames niet opzoeken:", err);
     return 0;
   }
+  // De intakes van particuliere aankopen vallen onder dezelfde opslagbeperking
+  // en worden in dezelfde ronde opgeruimd, ook wanneer er geen enkele afname
+  // verstreken is.
+  try {
+    ruimVerstrekenIntakesOp();
+  } catch (err) {
+    console.error("[bewaartermijn] Opruiming van de aankoop-intakes mislukt:", err);
+  }
+
   if (ids.length === 0) {
     console.log("[bewaartermijn] Geen verstreken afnames gevonden.");
     return 0;

@@ -65,6 +65,10 @@ export default function Koop() {
   const [kindNaam, setKindNaam] = useState("");
   const [kindEmail, setKindEmail] = useState("");
   const [consent, setConsent] = useState(false);
+  // Leeftijdspoort (AVG art. 8): enkel voor de instrumenten die zich echt op
+  // minderjarigen richten. T4Students valt daar niet onder.
+  const isMinderjarig = instrumentId === "t4kids" || instrumentId === "t4teens";
+  const [ouderToestemming, setOuderToestemming] = useState(false);
   const [bezig, setBezig] = useState(false);
 
   const [betalingId, setBetalingId] = useState<number | null>(null);
@@ -76,6 +80,7 @@ export default function Koop() {
     achternaam.trim() &&
     /.+@.+\..+/.test(email) &&
     consent &&
+    (!isMinderjarig || ouderToestemming) &&
     (!isKind || (kindNaam.trim() && /.+@.+\..+/.test(kindEmail)));
 
   async function verzendIntake() {
@@ -89,6 +94,7 @@ export default function Koop() {
         email: email.trim(),
         consent: true,
         ...(isKind ? { kindNaam: kindNaam.trim(), kindEmail: kindEmail.trim() } : {}),
+        ...(isMinderjarig ? { ouderlijkeToestemming: true } : {}),
       });
       const data = await res.json();
       setBetalingId(data.betalingId);
@@ -204,6 +210,21 @@ export default function Koop() {
                       </div>
                     </div>
                   </div>
+                )}
+
+                {isMinderjarig && (
+                  <label className="flex items-start gap-3 rounded-xl border border-border p-4">
+                    <Checkbox
+                      checked={ouderToestemming}
+                      onCheckedChange={(v) => setOuderToestemming(v === true)}
+                      data-testid="checkbox-ouderlijke-toestemming"
+                      className="mt-0.5"
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      Ik ben de ouder of de voogd van dit kind of deze jongere en ik geef toestemming
+                      voor de deelname en voor de verwerking van zijn of haar gegevens.
+                    </span>
+                  </label>
                 )}
 
                 <label className="flex items-start gap-3 rounded-xl border border-border p-4">

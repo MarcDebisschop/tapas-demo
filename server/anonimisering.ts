@@ -39,6 +39,37 @@ export const TE_ANONIMISEREN_VELDEN = [
 
 export const GEANONIMISEERDE_NAAM = "[geanonimiseerd]";
 
+// De reden die in het controlespoor komt wanneer de wissing volgt uit een
+// ingetrokken toestemming (AVG art. 7 lid 3).
+export const INTREKKINGSREDEN = "toestemming ingetrokken door de betrokkene";
+
+// ---------------------------------------------------------------------------
+// Afgeleide documenten (AVG art. 17 lid 1 en lid 2)
+//
+// Het wissen raakte tot nu toe enkel de afname zelf. Het gegenereerde rapport
+// bleef daarbij ongemoeid, en dat rapport is juist de plaats waar alles
+// samenkomt: de naam van de deelnemer, de volledige scores en de duidende
+// tekst, zowel in de JSON-inhoud als in de HTML en in het eventuele
+// PDF-document. Een wissing die het rapport laat staan, wist in de praktijk
+// niets. Daarom hoort het rapport bij dezelfde handeling.
+//
+// We verwijderen de rij niet: het bestaan van een rapport is een boekhoudkundig
+// en organisatorisch feit (er is een credit voor verbruikt). Wat verdwijnt is
+// de volledige inhoud. Wat overblijft is een lege huls met het tijdstip van de
+// wissing, zodat het controlespoor aantoonbaar blijft.
+// ---------------------------------------------------------------------------
+
+export function rapportAnonimiseringsPatch(reden: string, nu: string) {
+  return {
+    titel: GEANONIMISEERDE_NAAM,
+    inhoud: JSON.stringify({ geanonimiseerd: true, reden, op: nu }),
+    html:
+      "<p>De inhoud van dit rapport is gewist omdat de persoonsgegevens van de " +
+      "bijhorende afname geanonimiseerd zijn.</p>",
+    pdfBase64: null,
+  };
+}
+
 // De patch die op de afname wordt toegepast. `reden` komt in consentScope zodat
 // het verwerkingsregister aantoont waarom er gewist is.
 export function anonimiseringsPatch(reden: string, nu: string) {

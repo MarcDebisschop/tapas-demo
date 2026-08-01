@@ -17,7 +17,8 @@
  *   GET  /api/gdpr/afnames/:id/export         — GDPR persoonsexport (JSON)
  *   GET  /api/gdpr/afnames/:id/export.json    — GDPR persoonsexport (download)
  *   POST /api/gdpr/bewaartermijn              — bewaartermijn instellen
- *   POST /api/gdpr/afnames/:id/intrekken      — consent intrekken
+ *   POST /api/gdpr/afnames/:id/intrekken      - consent intrekken (wist meteen)
+ *   POST /api/gdpr/afnames/:id/rectificatie   - verbetering (AVG art. 16)
  *   POST /api/gdpr/afnames/:id/anonimiseer    — afname anonimiseren
  */
 
@@ -695,6 +696,52 @@ export function registerAfnameRoutes(app: Express): void {
       adminId: adminIdVanSessie(req),
       actie: "consent_intrekking",
       afnameId: Number(req.params.id),
+    });
+    res.json(updated);
+  });
+
+  // --- Recht op rectificatie (AVG art. 16) ----------------------------------
+  // Dit recht ontbrak volledig: een verkeerd geschreven naam of een fout
+  // e-mailadres kon alleen nog gewist worden, niet gecorrigeerd. Enkel de
+  // identificerende velden zijn te verbeteren; de antwoorden van de deelnemer
+  // blijven onaanraakbaar, want die corrigeren zou de meting vervalsen.
+  const rectificatieSchema = z
+    .object({
+      name: z.string().trim().min(1).max(120).optional(),
+      company: z.string().trim().max(160).optional(),
+      role: z.string().trim().max(160).optional(),
+      deelnemerEmail: z.string().trim().email("Ongeldig e-mailadres").optional(),
+    })
+    .strict()
+    .refine((d) => Object.keys(d).length > 0, {
+      message: "Geef minstens een veld op om te verbeteren",
+    });
+
+  app.post("/api/gdpr/afnames/:id/rectificatie", vereisScope, async (req, res) => {
+    if (DEMO_MODE) {
+      return res.status(403).json({ error: "Niet beschikbaar in de publieke demo." });
+    }
+    const id = Number(req.params.id);
+    const parsed = rectificatieSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
+    }
+    if (await afnameBuitenScope(req, res, id)) return;
+    const bestaand = await storage.getAfname(id);
+    // Een geanonimiseerde afname weer van een naam voorzien zou de wissing
+    // ongedaan maken. Dat mag niet.
+    if (bestaand?.geanonimiseerdAt) {
+      return res.status(409).json({ error: "Deze afname is geanonimiseerd en kan niet meer verbeterd worden." });
+    }
+    const updated = await storage.updateAfname(id, parsed.data);
+    if (!updated) return res.status(404).json({ error: "Afname niet gevonden" });
+    // Aantoonbaarheid: welke velden verbeterd zijn, niet welke waarden. De oude
+    // en de nieuwe waarde in het logboek zetten zou de fout net vereeuwigen.
+    schrijfAuditLog({
+      adminId: adminIdVanSessie(req),
+      actie: "gdpr_rectificatie",
+      afnameId: id,
+      detail: `verbeterde velden: ${Object.keys(parsed.data).join(", ")}`,
     });
     res.json(updated);
   });

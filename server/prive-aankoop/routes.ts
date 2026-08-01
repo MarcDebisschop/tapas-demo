@@ -19,7 +19,8 @@
 import type { Express, Request, Response } from "express";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
-import { db, sqlite } from "../storage";
+import { db, sqlite, STANDAARD_BEWAARMAANDEN, PRIVACY_VERKLARING_VERSIE } from "../storage";
+import { isMinderjarigInstrument } from "@shared/leeftijd";
 import {
   betalingen,
   facturen,
@@ -54,7 +55,24 @@ function init(): void {
       aangemaakt_op TEXT NOT NULL
     );
   `);
+  // Opslagbeperking (AVG art. 5.1.e) voor de intake. De intake bevat naam en
+  // e-mailadres van de koper en, bij een instrument voor minderjarigen, ook
+  // gegevens van het kind. Die stonden hier zonder enige termijn. Additief
+  // toegevoegd zodat bestaande databanken meegroeien zonder migratie.
+  zorgVoorKolom("bewaartot", "TEXT");
+  zorgVoorKolom("geanonimiseerd_op", "TEXT");
+  // Bewijs van de toestemming: welke versie van de privacyverklaring gold en
+  // vanaf welk netwerkadres de bevestiging kwam.
+  zorgVoorKolom("consent_versie", "TEXT");
+  zorgVoorKolom("consent_ip", "TEXT");
   ingesteld = true;
+}
+
+/** Voegt een kolom toe wanneer die nog niet bestaat (SQLite kent geen IF NOT EXISTS). */
+function zorgVoorKolom(naam: string, type: string): void {
+  const kolommen = sqlite.prepare(`PRAGMA table_info(prive_aankoop)`).all() as Array<{ name: string }>;
+  if (kolommen.some((k) => k.name === naam)) return;
+  sqlite.exec(`ALTER TABLE prive_aankoop ADD COLUMN ${naam} ${type}`);
 }
 
 /** Vind of maak de speciale particulier-organisatie (één record). */
@@ -106,6 +124,10 @@ const intakeSchema = z
     // Voor t4teens/t4students: gegevens van het kind/de student.
     kindNaam: z.string().trim().optional(),
     kindEmail: z.string().trim().email("Ongeldig e-mailadres kind").optional(),
+    // Leeftijdspoort (AVG art. 8) voor de instrumenten die zich op
+    // minderjarigen richten. De koper is hier per definitie de ouder of voogd,
+    // dus vragen we een uitdrukkelijke bevestiging in die hoedanigheid.
+    ouderlijkeToestemming: z.boolean().optional(),
     // Expliciete, verplichte GDPR-consent.
     consent: z.literal(true, {
       errorMap: () => ({ message: "Toestemming is verplicht" }),
@@ -203,6 +225,23 @@ export function registerPriveAankoopRoutes(app: Express): void {
       return res.status(404).json({ error: "Instrument niet beschikbaar voor privé-aankoop" });
     }
 
+    // Leeftijdspoort (AVG art. 8). Dit pad omzeilde de poort volledig: iemand
+    // kon T4Kids of T4Teens kopen en de naam en het e-mailadres van een kind
+    // achterlaten zonder enige toestemmingsvraag. Voor alle andere instrumenten
+    // verandert er niets.
+    if (isMinderjarigInstrument(data.instrumentId)) {
+      if (data.ouderlijkeToestemming !== true) {
+        return res.status(400).json({
+          error:
+            "Dit instrument is voor minderjarigen. Bevestig dat u de ouder of " +
+            "voogd bent en toestemming geeft.",
+        });
+      }
+      if (!data.kindNaam || data.kindNaam.length < 2) {
+        return res.status(400).json({ error: "Vul de naam van het kind of de jongere in." });
+      }
+    }
+
     const org = particulierOrg();
     const biller = actieveBiller();
     const btwTarief = biller?.btwTarief ?? 21;
@@ -232,13 +271,33 @@ export function registerPriveAankoopRoutes(app: Express): void {
       .returning()
       .get();
 
-    // Persisteer de intake voor gebruik bij bevestiging (klantSnapshot).
+    // Persisteer de intake voor gebruik bij bevestiging (klantSnapshot), nu met
+    // een bewaartermijn en een bewijs van de toestemming. De factuur zelf houdt
+    // haar eigen, wettelijk verplichte bewaartermijn; deze intake is enkel de
+    // werkkopie en mag dus samen met de profieldata verdwijnen.
+    const bewaartot = new Date(
+      Date.now() + STANDAARD_BEWAARMAANDEN * 30 * 24 * 3600 * 1000,
+    ).toISOString();
+    const consentIp =
+      (req.headers["x-forwarded-for"] as string)?.split(",")[0]?.trim() ||
+      req.socket.remoteAddress ||
+      null;
     sqlite
       .prepare(
-        `INSERT INTO prive_aankoop (betaling_id, instrument_id, intake, factuur_id, aangemaakt_op)
-         VALUES (?, ?, ?, NULL, ?)`,
+        `INSERT INTO prive_aankoop
+           (betaling_id, instrument_id, intake, factuur_id, aangemaakt_op,
+            bewaartot, consent_versie, consent_ip)
+         VALUES (?, ?, ?, NULL, ?, ?, ?, ?)`,
       )
-      .run(betaling.id, data.instrumentId, JSON.stringify(data), now);
+      .run(
+        betaling.id,
+        data.instrumentId,
+        JSON.stringify(data),
+        now,
+        bewaartot,
+        PRIVACY_VERKLARING_VERSIE,
+        consentIp,
+      );
 
     res.json({
       betalingId: betaling.id,

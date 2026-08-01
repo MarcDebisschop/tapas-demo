@@ -67,6 +67,39 @@ export function mailDoorgifteKanaal(): DoorgifteKanaal {
 }
 
 /**
+ * De betaalregel. Het derde kanaal waarlangs persoonsgegevens het platform
+ * kunnen verlaten is de betaaldienst bij een particuliere aankoop: naam,
+ * e-mailadres en het bedrag gaan dan naar de betaalprovider. Dat kanaal stond
+ * nergens in het register, terwijl artikel 30 elke ontvanger vraagt.
+ *
+ * Net als bij de mailregel is dit een waarneming en geen belofte: zonder
+ * `MOLLIE_API_KEY` draait de betaalflow in simulatie en verlaat er geen enkel
+ * gegeven het platform. Het register meldt dan ook precies dat, zodat niemand
+ * uit dit document kan afleiden dat er al echt betaald wordt.
+ */
+export function betaalDoorgifteKanaal(sleutelOverride?: string): DoorgifteKanaal {
+  const sleutel = (sleutelOverride ?? process.env.MOLLIE_API_KEY ?? "").trim();
+  const actief = sleutel.length > 0;
+  return {
+    kanaal: "betaaldienst",
+    doel: "Een particuliere aankoop van een instrument laten betalen en factureren.",
+    gegevens: actief
+      ? "Naam, e-mailadres, bedrag en een referentie van de bestelling."
+      : "Geen. De betaling wordt lokaal gesimuleerd.",
+    ontvanger: actief ? "Mollie B.V." : "geen (simulatiemodus)",
+    land: actief ? "Nederland (EER)" : "n.v.t.",
+    actief,
+    grondslagVereist:
+      "Verwerkersovereenkomst met de betaaldienst. De factuurgegevens zelf " +
+      "berusten op een wettelijke verplichting (boekhouding).",
+    vaststelling: actief
+      ? "Er is een sleutel voor de betaaldienst geconfigureerd: betalingen lopen echt."
+      : "Er is geen sleutel voor de betaaldienst geconfigureerd: de aankoopflow " +
+        "maakt een gesimuleerde betaling aan en er gaat niets naar buiten.",
+  };
+}
+
+/**
  * Het volledige register: de bestaande taalmodelregels plus de mailregel.
  * De taalmodelregels komen als parameter binnen, zodat deze module niets hoeft
  * te weten over de duidingmodule en apart te testen blijft.
@@ -96,5 +129,5 @@ export function volledigDoorgifteRegister(
       : "Live duiding staat uit: het rapport gebruikt de statische duiding.",
   }));
 
-  return [...taalmodel, mailDoorgifteKanaal()];
+  return [...taalmodel, mailDoorgifteKanaal(), betaalDoorgifteKanaal()];
 }

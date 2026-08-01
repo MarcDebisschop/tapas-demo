@@ -28,6 +28,8 @@ export const AUDIT_ACTIES = [
   "consent_intrekking",
   "bewaartermijn_wijziging",
   "afname_inzage",
+  "gdpr_rectificatie",
+  "prive_intake_anonimisering",
 ] as const;
 
 export type AuditActie = (typeof AUDIT_ACTIES)[number];
