@@ -140,6 +140,13 @@ const T = {
     "Este perfil describe cómo se distribuye la energía entre distintos tipos de comportamiento laboral. Es una instantánea, no un dato fijo ni diagnóstico.",
     "Этот профиль описывает, как энергия распределяется по разным видам рабочего поведения. Это моментальный снимок, а не фиксированный или диагностический показатель."
   ),
+  energie_consistentie_uitleg: m(
+    "Energie-consistentie geeft aan hoe volledig de vragenlijst is ingevuld en hoe goed de energieantwoorden onderling uitgelijnd zijn bij de sterkst herkende drivers. Het is uitdrukkelijk geen psychometrische betrouwbaarheidsmaat; er wordt geen samenhang tussen items mee berekend.",
+    "La cohérence énergétique indique dans quelle mesure le questionnaire a été rempli complètement et dans quelle mesure les réponses sur l'énergie concordent entre elles pour les drivers les plus reconnus. Ce n'est expressément pas une mesure psychométrique de fidélité ; aucune covariance entre items n'est calculée.",
+    "Energy consistency indicates how completely the questionnaire was filled in and how well the energy answers line up with one another for the most strongly recognized drivers. It is explicitly not a psychometric reliability measure; no covariance between items is computed.",
+    "La coherencia energética indica en qué medida se completó el cuestionario y hasta qué punto las respuestas sobre la energía concuerdan entre sí en los drivers más reconocidos. No es, de forma explícita, una medida psicométrica de fiabilidad; no se calcula covarianza entre ítems.",
+    "Согласованность энергии показывает, насколько полно заполнен опросник и насколько ответы об энергии согласуются между собой по наиболее выраженным drivers. Это явно не психометрический показатель надёжности; ковариация между пунктами не рассчитывается."
+  ),
   verschil_dichtbij: m(
     "De zelfingeschatte baseline en het beeld uit de vragenlijst liggen dicht bij elkaar. Dat wijst op een herkenbaar, consistent energiebeeld.",
     "L'énergie de référence auto-évaluée et l'image issue du questionnaire sont proches. Cela indique une image énergétique reconnaissable et cohérente.",
@@ -164,7 +171,7 @@ const T = {
   ind_energie_vl: m("Energie uit vragenlijst (0-10)", "Énergie du questionnaire (0-10)", "Energy from questionnaire (0-10)", "Energía del cuestionario (0-10)", "Энергия по опроснику (0-10)"),
   ind_baseline: m("Zelfingeschatte baseline (0-10)", "Référence auto-évaluée (0-10)", "Self-rated baseline (0-10)", "Referencia autoevaluada (0-10)", "Самооценённый базовый уровень (0-10)"),
   ind_verschil: m("Verschil", "Écart", "Difference", "Diferencia", "Разница"),
-  ind_betrouwbaar: m("Energie-betrouwbaarheid", "Fiabilité énergétique", "Energy reliability", "Fiabilidad energética", "Надёжность энергии"),
+  ind_consistentie: m("Energie-consistentie", "Cohérence énergétique", "Energy consistency", "Coherencia energética", "Согласованность энергии"),
   col_indicator: m("Indicator", "Indicateur", "Indicator", "Indicador", "Показатель"),
   col_waarde: m("Waarde", "Valeur", "Value", "Valor", "Значение"),
   // Sectie 2 — talentfoci
@@ -374,6 +381,7 @@ export function bouwRapportInhoud(
       fmt(k(T.energie_p1, taal), { g: genormaliseerd, niveau }),
       fmt(k(T.energie_p2, taal), { b: baseline, verschil: verschilZin(verschil, taal) }),
       k(T.energie_p3, taal),
+      k(T.energie_consistentie_uitleg, taal),
     ],
     tabel: {
       kolommen: [k(T.col_indicator, taal), k(T.col_waarde, taal)],
@@ -381,7 +389,7 @@ export function bouwRapportInhoud(
         [k(T.ind_energie_vl, taal), genormaliseerd],
         [k(T.ind_baseline, taal), baseline],
         [k(T.ind_verschil, taal), verschil],
-        [k(T.ind_betrouwbaar, taal), `${niveauLabel(meta?.consistency?.label, taal)} (${num(meta?.consistency?.score)}/100)`],
+        [k(T.ind_consistentie, taal), `${niveauLabel(meta?.consistency?.label, taal)} (${num(meta?.consistency?.score)}/100)`],
       ],
     },
   });
