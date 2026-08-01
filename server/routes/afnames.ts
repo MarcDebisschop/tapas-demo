@@ -34,6 +34,7 @@ import {
   bewaartermijnSchema,
 } from "@shared/schema";
 import { valideerLeeftijdspoort } from "@shared/leeftijd";
+import { leesItemTijden } from "../afnamekwaliteit";
 import { bewijsGeldig, bewijsUitBody, koppelBeslissing } from "../koppel-bewijs";
 import { vereisAfnameBewijs } from "../afname-bewijs";
 import { vereisAdmin, adminIdVanSessie } from "../admin-guard";
@@ -65,6 +66,14 @@ import { isDemoModus } from "../demomodus";
 // plaats van alles op "Onbekend" te laten vallen.
 function standaardInstrumentId(): string {
   return getDefaultDescriptor().instrumentId;
+}
+
+// Tijdmeting per item (normentoetsing C07, C08, C20). Alleen wegschrijven
+// wanneer de client daadwerkelijk tijden meestuurt: een oudere client stuurt
+// niets mee en mag de eerder bewaarde tijden niet met leegte overschrijven.
+function tijdenVeld(tijden: Record<string, number> | undefined): { itemTijden?: string } {
+  if (!tijden || Object.keys(tijden).length === 0) return {};
+  return { itemTijden: JSON.stringify(tijden) };
 }
 
 // Genereert een leesbare respondentCode op basis van naam + jaar + volgnummer.
@@ -386,6 +395,7 @@ export function registerAfnameRoutes(app: Express): void {
     }
     const updated = await storage.updateAfname(id, {
       mainResponses: JSON.stringify(parsed.data.responses),
+      ...tijdenVeld(parsed.data.tijden),
     });
     res.json({ ok: true, status: updated?.status ?? a.status });
   });
@@ -404,6 +414,7 @@ export function registerAfnameRoutes(app: Express): void {
     }
     const updated = await storage.updateAfname(id, {
       mainResponses: JSON.stringify(parsed.data.responses),
+      ...tijdenVeld(parsed.data.tijden),
       status: "deel2",
     });
     res.json(updated);
@@ -434,6 +445,9 @@ export function registerAfnameRoutes(app: Express): void {
     }
     const connection = parsed.data.answers;
     const responses = JSON.parse(a.mainResponses);
+    // Tijd per item, bewaard tijdens deel 1. Ontbreekt bij afnames van voor de
+    // invoering van de tijdmeting; die krijgen dan gewoon geen kwaliteitsmelding.
+    const itemTijden = leesItemTijden(a.itemTijden);
 
     // Server-side scoring + generatie van het bevroren A3-contract.
     // Additief (T4Students): een T4Students-afname krijgt een eigen contract met
@@ -475,6 +489,7 @@ export function registerAfnameRoutes(app: Express): void {
         responses,
         reflectie,
         taal: a.taal,
+        itemTijden,
       });
     } else if (a.instrumentId === "t4teens") {
       // T4Teens: eigen itembank + eigen scoringscontract (instrumentId "t4teens"),
@@ -501,6 +516,7 @@ export function registerAfnameRoutes(app: Express): void {
         baseline: a.baselineEnergy,
         connection,
         taal: a.taal,
+        itemTijden,
       });
     }
 

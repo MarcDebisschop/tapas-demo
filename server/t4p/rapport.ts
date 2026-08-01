@@ -279,6 +279,9 @@ export function bouwT4pBusinessProfiel(contract: any): T4pRapportInhoud {
   const ingevuld = num(meta?.completedScreens);
   const totaal = num(meta?.totalScreens);
   const keuzes = num(meta?.totalChoices);
+  // Kwaliteitsmelding over de afname (tijd per item). Ontbreekt bij afnames
+  // zonder tijdgegevens; dan valt de alinea gewoon weg.
+  const tempoMelding = meta?.afnamekwaliteit?.melding ?? null;
   secties.push({
     nummer: "02",
     titel: "Leeswijzer en datakwaliteit",
@@ -293,11 +296,13 @@ export function bouwT4pBusinessProfiel(contract: any): T4pRapportInhoud {
         "aflopend gerangschikt. De volgorde is geen scoreladder, maar toont welke ingang het talent het " +
         "makkelijkst opent.",
       `Datakwaliteit: de vragenlijst werd ingevuld voor ${ingevuld}/${totaal} schermen (${keuzes} keuzes). ` +
-        `De interne consistentie is ${Math.round(num(consistency?.score))}/100 (${consistency?.label ?? "—"}). ` +
+        `De antwoorden binnen een construct wijzen voor ${Math.round(num(consistency?.score))}/100 in dezelfde ` +
+        `richting (${consistency?.label ?? "—"}). ` +
         `Het verschil tussen beleefde startenergie (${fmt(beleefd, 1)}/10) en gemeten energie (${fmt(
           gemeten,
           1
         )}/10) is een interpretatief signaal, geen diagnose.`,
+      ...(tempoMelding ? [`Tempo van invullen: ${tempoMelding}`] : []),
     ],
   });
 

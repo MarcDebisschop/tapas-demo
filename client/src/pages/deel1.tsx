@@ -9,12 +9,17 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import type { ClientInstrument, ClientBlock, AnswerState, BlockAnswer, EnergyOption, Afname } from "@/lib/types";
+import type { ClientInstrument, ClientBlock, AnswerState, BlockAnswer, EnergyOption, Afname, ItemTijden } from "@/lib/types";
 import { ChevronLeft, ChevronRight, ThumbsUp, ThumbsDown, Check, CheckCircle2 } from "lucide-react";
 import { maakVertaler, normaliseerTaal, STANDAARD_TAAL, publiekeFamilie } from "@shared/i18n";
 
 function emptyAnswer(): BlockAnswer {
   return { most: null, least: null, itemEnergy: { most: null, least: null }, blockEnergy: null, toelichting: null };
+}
+
+// Hele milliseconden sinds een eerder meetpunt, nooit negatief.
+function verstrekenMs(start: number): number {
+  return Math.max(0, Math.round(performance.now() - start));
 }
 
 // Label voor de optionele driver-toelichting bij een energiekostende keuze.
@@ -76,6 +81,11 @@ export default function Deel1() {
   const [hervat, setHervat] = useState(false);
   const geladenRef = useRef(false);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Tijdmeting per item (normentoetsing C07, C08, C20). Per item tellen we op
+  // hoe lang het scherm zichtbaar was. Terugbladeren telt gewoon mee: de totale
+  // aandacht per item is wat we willen weten.
+  const tijdenRef = useRef<ItemTijden>({});
+  const itemStartRef = useRef<number | null>(null);
 
   // Eerst de afname ophalen om de (bevroren) taal te kennen.
   const { data: afname } = useQuery<Afname>({
@@ -174,7 +184,10 @@ export default function Deel1() {
     setConceptStatus("bezig");
     saveTimer.current = setTimeout(async () => {
       try {
-        await apiRequest("POST", `/api/afnames/${id}/concept`, { responses: answers });
+        await apiRequest("POST", `/api/afnames/${id}/concept`, {
+          responses: answers,
+          tijden: huidigeTijden(),
+        });
         setConceptStatus("bewaard");
       } catch {
         // Stil falen: tussentijds bewaren mag de afname nooit blokkeren.
@@ -187,8 +200,41 @@ export default function Deel1() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [answers]);
 
+  // Meet hoe lang elk item zichtbaar was. Start de klok zodra een item in beeld
+  // komt en tel de verstreken tijd op bij dat item zodra het uit beeld gaat.
+  // performance.now() is ongevoelig voor het verzetten van de systeemklok.
+  useEffect(() => {
+    if (!stateKey) return;
+    itemStartRef.current = performance.now();
+    return () => {
+      const start = itemStartRef.current;
+      itemStartRef.current = null;
+      if (start === null) return;
+      tijdenRef.current[stateKey] = (tijdenRef.current[stateKey] ?? 0) + verstrekenMs(start);
+    };
+  }, [stateKey]);
+
+  // De tijd van het item dat nu nog in beeld staat, is nog niet afgesloten.
+  // Tel die er bij het versturen alsnog bij op.
+  function huidigeTijden(): ItemTijden {
+    const tijden = { ...tijdenRef.current };
+    const start = itemStartRef.current;
+    if (stateKey && start !== null) {
+      tijden[stateKey] = (tijden[stateKey] ?? 0) + verstrekenMs(start);
+    }
+    return tijden;
+  }
+
   function update(patch: Partial<BlockAnswer>) {
-    setAnswers((prev) => ({ ...prev, [stateKey]: { ...emptyAnswer(), ...prev[stateKey], ...patch } }));
+    setAnswers((prev) => ({
+      ...prev,
+      [stateKey]: {
+        ...emptyAnswer(),
+        ...prev[stateKey],
+        ...patch,
+        beantwoordOp: new Date().toISOString(),
+      },
+    }));
   }
 
   function setMost(pos: string) {
@@ -219,7 +265,10 @@ export default function Deel1() {
   async function finishDeel1() {
     setSubmitting(true);
     try {
-      await apiRequest("POST", `/api/afnames/${id}/main`, { responses: answers });
+      await apiRequest("POST", `/api/afnames/${id}/main`, {
+        responses: answers,
+        tijden: huidigeTijden(),
+      });
       navigate(`/afname/${id}/deel2`);
     } catch (e: any) {
       toast({ title: t("fout_opslaan_titel"), description: String(e.message ?? e), variant: "destructive" });

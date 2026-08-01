@@ -18,6 +18,7 @@
 // ---------------------------------------------------------------------------
 
 import type { ConstructRow, FamilyRow } from "../scoring";
+import { berekenAfnamekwaliteit, type Afnamekwaliteit, type ItemTijden } from "../afnamekwaliteit";
 import { laadInstrumentItems } from "../question-manager";
 
 const T4STUDENTS_INSTRUMENT = "tapas-t4students";
@@ -72,6 +73,9 @@ export interface T4StudentsMainMeta {
     extrinsiek: number;
     balansLabel: "intrinsiek" | "extrinsiek" | "evenwichtig";
   };
+  // Kwaliteitsmelding over de afname op basis van de tijd per item. Null
+  // wanneer er geen tijdgegevens zijn (afnames van voor de invoering).
+  afnamekwaliteit: Afnamekwaliteit | null;
 }
 
 export interface T4StudentsContract {
@@ -117,6 +121,8 @@ export interface BuildT4StudentsOpts {
   // itemId -> open antwoord (voor de Reflectie-familie).
   reflectie?: Record<string, string> | null;
   taal?: string | null;
+  // Duur per item in milliseconden. Ontbreekt bij afnames zonder tijdmeting.
+  itemTijden?: ItemTijden | null;
 }
 
 export function buildT4StudentsContract(opts: BuildT4StudentsOpts): T4StudentsContract {
@@ -223,6 +229,7 @@ export function buildT4StudentsContract(opts: BuildT4StudentsOpts): T4StudentsCo
           totalItems: items.filter((i) => i.family !== T4S_FAMILIES.reflectie).length,
           averageScore,
           motivatie: { intrinsiek, extrinsiek, balansLabel },
+          afnamekwaliteit: berekenAfnamekwaliteit(opts.itemTijden),
         },
         constructRows,
         familyRows,

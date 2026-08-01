@@ -147,9 +147,10 @@ describe("tendensmonitoring — UA-structuurijkpunt (extern gevalideerd)", () =>
       "SELECT sleutel, gemiddelde, instrument, n, onderdrukt FROM tendens_snapshot WHERE dimensie = 'structuur_ua' AND is_baseline = 1"
     ).all() as any[];
     expect(rijen.length).toBe(6);
-    // Alle rijen horen bij het t4sports-instrument en zijn geen steekproef (n=0).
+    // De UA-factoranalyse is uitgevoerd op Tapas4Students, dus horen alle rijen
+    // bij het t4students-instrument. Ze zijn geen steekproef (n=0).
     for (const r of rijen) {
-      expect(r.instrument).toBe("t4sports");
+      expect(r.instrument).toBe("t4students");
       expect(r.n).toBe(0);
       expect(r.onderdrukt).toBe(0);
     }
