@@ -88,6 +88,10 @@ export interface T4KidsExacteStelling {
   id: string; // T4K-Z-NN
   tekst: string; // letterlijke stelling
   soort: StellingSoort;
+  // Welke sterkte of welke driver deze stelling meet. Zonder dit veld kan het
+  // rapport niet zien over welke driver een antwoord gaat en zou een zin over
+  // een bepaalde driver ook bij de andere vier vallen.
+  mapping: string;
   gekozenWaarde: number; // 0..3
   gekozenWoord: string; // "bijna nooit" | "soms" | "vaak" | "bijna altijd"
 }
@@ -528,6 +532,7 @@ export function buildT4KidsContract(opts: BuildT4KidsOpts): T4KidsContract {
       id: s.id,
       tekst: s.tekst,
       soort: s.soort,
+      mapping: s.mapping,
       gekozenWaarde: score,
       gekozenWoord: woordVan(score),
     });
