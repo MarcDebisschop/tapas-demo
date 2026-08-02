@@ -119,7 +119,7 @@ export interface T4SScoringMap {
     driverDoorslagFactor: number;
     beeldNietInEnergieDrempel: number;
     leastCharacteristicCount: number;
-    tieMargin?: number;
+    tieMargin: number;
   };
   beeldItems: Record<string, string>;
   recognitionItems: Record<string, string>;

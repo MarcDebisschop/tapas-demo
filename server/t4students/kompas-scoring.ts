@@ -51,11 +51,15 @@
 //     Hoeveel elementen aan de onderkant getoond worden als nuance. Twee: één
 //     is toeval, drie leest als een lijstje tekorten.
 //
-//   tieMargin
-//     Staat niet in de scoringMap van dit instrument. De motor valt dan terug
-//     op 1.0: scores die minder dan een punt uit elkaar liggen, gelden als
-//     gelijk en komen in dezelfde groep. Zo wordt een verschil van een tiende
-//     niet als een rangorde gepresenteerd.
+//   tieMargin (1.0)
+//     Scores die niet meer dan een punt uit elkaar liggen, gelden als gelijk en
+//     komen in dezelfde groep. Zo wordt een verschil van een tiende niet als
+//     een rangorde gepresenteerd.
+//     LET OP: als enige van deze constanten is deze niet gekalibreerd. De
+//     blauwdruk noemt hem nergens. Tot fase 1c stond hij helemaal niet in de
+//     scoringMap en zette een terugval in de code hem op 1.0; hij staat nu
+//     benoemd op diezelfde waarde, zodat zichtbaar is dat hij bestaat en wat
+//     hij doet. Zie het verslag van fase 1c.
 //
 // De overzetting is letterlijk. Geen enkele constante, drempel of formule is
 // gewijzigd, ook niet waar iets bevreemdt. Wat opviel staat beschreven in
@@ -450,7 +454,13 @@ export function scoreStudiekompas(
   }
 
   // ── Foci en versnellers (blauwdruk §4) ───────────────────────────────────
-  const tieMargin = C.tieMargin != null ? C.tieMargin : 1.0;
+  //
+  // tieMargin stond eerder nergens en werd door een terugval in deze regel op
+  // 1.0 gezet (punt 4 uit fase 1). Hij staat nu bij de andere acht constanten
+  // in het instrumentbestand, met dezelfde waarde, zodat er nog maar een plaats
+  // is waar het getal vandaan komt. Let op: 1.0 is niet gekalibreerd. De
+  // blauwdruk noemt tieMargin niet; de waarde komt uit de oorspronkelijke code.
+  const tieMargin = C.tieMargin;
 
   // Scores die dicht bij elkaar liggen worden tot één groep gebundeld, zodat
   // een verschil binnen de meetruis niet als rangorde gepresenteerd wordt.
@@ -680,7 +690,15 @@ export function scoreStudiekompas(
   }
 
   // ── Keerzijde (blauwdruk §9) ─────────────────────────────────────────────
-  const leastCount = C.leastCharacteristicCount || 2;
+  // De terugval "|| 2" die hier stond is weg om dezelfde reden als bij
+  // tieMargin (punt 4): het getal hoort uit één plaats te komen, en die plaats
+  // is het instrumentbestand. De waarde is niet veranderd.
+  //
+  // Het losse object scoringMap.leastCharacteristic wordt hier bewust niet
+  // gelezen, want er is nog niets dat het kan tonen (punt 3). Daarin staat de
+  // framing die de blauwdruk in punt 7 verplicht stelt: nuance, geen tekort.
+  // Zie het verslag van fase 1c.
+  const leastCount = C.leastCharacteristicCount;
   const minFoci = fociSorted.slice(-leastCount);
   const minVersnellers = versRangorde.slice(-leastCount);
   const minDrivers = driverSorted.slice(-leastCount);

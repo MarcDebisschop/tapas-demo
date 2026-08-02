@@ -1103,7 +1103,8 @@
       "voorlopigDrempel": 20,
       "driverDoorslagFactor": 2,
       "beeldNietInEnergieDrempel": 0,
-      "leastCharacteristicCount": 2
+      "leastCharacteristicCount": 2,
+      "tieMargin": 1.0
     },
     "beeldItems": {
       "BE1": "Helderheid/zingeving",
