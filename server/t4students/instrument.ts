@@ -126,13 +126,59 @@ export interface T4SScoringMap {
   energyItems: string[];
   sjtItems: string[];
   interestItems: Record<string, string>;
+
+  /**
+   * NIET UITGEVOERD ONTWERP (punt 2 uit fase 1). Geen enkele regel code leest
+   * dit veld vandaag.
+   *
+   * De blauwdruk kent er wel een rol aan toe, in punt 4: "rankItems = V1-V6
+   * worden onderling gerangschikt om de dominante versneller(s) te bepalen."
+   * De motor rangschikt in plaats daarvan de opgetelde constructscores. Dat is
+   * niet hetzelfde, omdat de zes versnellers een verschillend aantal bronnen
+   * hebben: Impact en Constructief onderscheidend hebben alleen hun eigen item
+   * en lopen tot 3, Groepsondersteunend vangt er nog drie situatieladingen bij
+   * op en loopt tot 6. Wat dat in de praktijk scheeftrekt is gemeten en
+   * voorgelegd in het verslag van fase 1c. Niet zelf gerepareerd: het verandert
+   * de studiestrategie die de deelnemer te lezen krijgt.
+   */
   rankItems: string[];
+
   convergenceAxes: Record<string, [string, string][]>;
   riasecDerivation: Record<string, { derivedFrom: [string, string][]; confirmItem: string }>;
   tenStudyFields: Record<string, string[]>;
   studyStrategy: Record<string, { strategie: string; belofte: string }>;
+  /**
+   * NIET UITGEVOERD ONTWERP (punt 3 uit fase 1). Dit object wordt door geen
+   * enkele regel code gelezen. Let op het verschil met de constante
+   * leastCharacteristicCount, die wel gelezen wordt: de motor berekent de
+   * keerzijde dus wel, maar zonder de dimensielijst en zonder de framing.
+   *
+   * De blauwdruk kent er in punt 7 wel een rol aan toe: de minst kenmerkende
+   * focus, versneller en driver worden getoond als nuance, "wat je minst
+   * kenmerkt maakt je beeld scherper", nadrukkelijk geen tekort, en alleen in
+   * Verdieping. Die framing is de deontologische kern van dit onderdeel en
+   * staat nergens in code. Voorgelegd in het verslag van fase 1c.
+   */
   leastCharacteristic: { dimensions: string[]; framing: string };
+
   profileAnchor: Record<string, any>;
+
+  /**
+   * NIET UITGEVOERD ONTWERP (punt 3 uit fase 1). Dit object wordt door geen
+   * enkele regel code gelezen.
+   *
+   * De blauwdruk kent er in punt 7 wel een rol aan toe: een meting, twee
+   * rapporten, via licenseRender.flag = license in {basis, verdieping}. De
+   * tabel legt per sectie vast in welke van de twee hij hoort, en welke secties
+   * in Verdieping dieper gaan. De blauwdruk noemt de scheiding uitdrukkelijk
+   * "de deontologische scheidslijn": de interpretatieve en keuze-bepalende
+   * secties 8 tot 11 horen uitsluitend in Verdieping.
+   *
+   * Zolang niets dit leest, maakt de motor dat onderscheid niet en levert hij
+   * alles. Dat is niet gerepareerd omdat het over de rapportlaag gaat en niet
+   * over de meting; het staat in het verslag van fase 1c zodat het niet
+   * ongemerkt blijft liggen als er wel op gebouwd wordt.
+   */
   licenseRender: Record<string, any>;
   alertOverride: {
     alwaysInBasis: boolean;

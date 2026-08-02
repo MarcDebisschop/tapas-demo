@@ -19,6 +19,20 @@
 // scoringMap.constants in het instrument, zodat er maar één plaats is waar ze
 // wijzigen kunnen. Wat ze betekenen, in gewone taal:
 //
+//   sjtWeight (2)
+//     AFGELEID, NIET TOEGEPAST (punt 1 uit fase 1). De motor leest deze
+//     constante nergens, en dat is goed: het gewicht zit al in de data. De
+//     blauwdruk zegt "een gekozen SJT-optie laadt het bijbehorende construct
+//     met gewicht 2 (zie loads in D5/D6/F4/F5)", en zo staat het er ook: zes
+//     van de acht situatie-opties dragen een lading met gewicht 2. De twee
+//     uitzonderingen zijn F4 optie b (gewicht 0, zie punt 6) en F5 optie b, dat
+//     zijn eigen construct niet laadt maar Be Strong en Analyse elk met 1.
+//     De constante is dus overbodig, niet fout. Ze blijft staan omdat de
+//     blauwdruk haar bij naam noemt en ze zo leesbaar houdt waar het getal 2
+//     in de ladingen vandaan komt. Zou de motor haar alsnog gaan toepassen,
+//     dan verdubbelt elke situatielading en verschuift elke score; dat is geen
+//     kleine ingreep en is niet op eigen houtje gedaan.
+//
 //   energyToRecognitionFactor (0.5)
 //     Herkenning zegt of iets je kenmerkt, de energie-anker zegt of het je
 //     energie geeft. Dat zijn twee verschillende dingen. Een kenmerk dat je
@@ -563,6 +577,16 @@ export function scoreStudiekompas(
     versScores[con] = combined(con);
     versBalans[con] = balanceLabel(con);
   }
+  // LET OP (punt 2 uit fase 1). Hier wordt gerangschikt op de opgetelde
+  // constructscore. De blauwdruk beschrijft in punt 4 iets anders: "rankItems =
+  // V1-V6 worden onderling gerangschikt om de dominante versneller(s) te
+  // bepalen", dus een rangorde over de zes items zelf. Dat is niet hetzelfde,
+  // want de zes versnellers hebben een verschillend aantal bronnen. Impact en
+  // Constructief onderscheidend hebben alleen hun eigen item en lopen tot 3;
+  // Groepsondersteunend vangt daarnaast ladingen op uit D5, F5 en S1 en loopt
+  // tot 6. De uitkomst hiervan stuurt de studiestrategie die de deelnemer leest.
+  // Wat dat scheeftrekt is gemeten en voorgelegd in het verslag van fase 1c;
+  // het is niet zelf gewijzigd, omdat het de uitvoer van elke deelnemer raakt.
   const versRangorde = versCons.slice().sort((a, b) => versScores[b] - versScores[a]);
   const versGroepen = groepeerRangorde(versRangorde, (c) => versScores[c]);
   const versKopGroep = versGroepen[0] || [];
