@@ -93,7 +93,9 @@ describe("T4Teens: de doelgroepgrens komt uit een enkele bron", () => {
 
   it("geen enkel bronbestand noemt nog een van de oude grenzen", () => {
     // 16 tot 21 stond in de vragenlijst en het rapport, 14 tot 18 in de
-    // catalogus en de gids op de server.
+    // catalogus en de gids op de server. Het lange streepje staat hier omdat de
+    // oude tekst het gebruikte; zonder dat teken vindt deze test de oude grens
+    // in de gids niet terug.
     const oud = /16\s*(?:-|tot)\s*21|14\s*[-–]\s*18/;
     const treffers = bronbestanden()
       .map((pad) => path.relative(wortel, pad))
