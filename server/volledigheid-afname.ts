@@ -41,10 +41,13 @@ export type Volledigheid =
  * gedrag van vandaag.
  *
  * Bewust nog niet in deze lijst:
- *   - t4teens: het invulscherm bouwt per item een blok met één uitspraak,
- *     waardoor "meest" en "minst" nooit allebei gezet kunnen worden. Zolang dat
- *     niet opgelost is, zou een controle elke T4Teens-afname weigeren. Zie het
- *     verslag.
+ *   - t4teens: het invulscherm is invulbaar gemaakt, dus de oude reden (meest en
+ *     minst waren nooit allebei te zetten) geldt niet meer. Wat hier nog
+ *     ontbreekt is de vragenset: verwachteBlokken() leest de blokken uit de
+ *     descriptor, en die van T4Teens draagt er geen. De blokken komen uit
+ *     server/routes/vragenlijst-t4teens.ts. Zolang die twee niet gekoppeld zijn,
+ *     zou een controle hier op een lege lijst draaien en dus niets weigeren.
+ *     Zie het verslag.
  *   - t4students: het invulscherm wordt in een andere fase gebouwd.
  */
 function kentVerwachteVragenset(instrumentId: string | null | undefined): boolean {

@@ -118,11 +118,19 @@ describe("T4Teens: wat de server per blok aanlevert", () => {
     expect(blokken.length).toBeGreaterThan(0);
   });
 
-  it("levert per blok genoeg uitspraken voor de regel die het scherm hanteert", () => {
-    const teKlein = blokken
-      .filter((b) => b.items.length < 2)
-      .map((b) => `${b.stateKey} (${b.items.length})`);
-    expect(teKlein).toEqual([]);
+  // Gemeten, niet aangenomen: elk blok draagt precies één uitspraak. Dat is de
+  // vorm van T4Teens en ze is juist. De itembank kent 25 losse uitspraken, de
+  // schaal waardeert er één per keer, en de scoring leest één waarde per item.
+  // De melding vermoedde dat de server hier te weinig leverde; de meting wijst
+  // uit dat het scherm te veel verwachtte.
+  it("draagt één uitspraak per blok, voor alle blokken", () => {
+    const aantallen = new Set(blokken.map((b) => b.items.length));
+    expect([...aantallen]).toEqual([1]);
+  });
+
+  it("benoemt zo'n blok als waarderingsblok, met één waardering voor het blok", () => {
+    const afwijkend = blokken.filter((b) => b.energyMode !== "block").map((b) => b.stateKey);
+    expect(afwijkend).toEqual([]);
   });
 });
 
@@ -134,5 +142,14 @@ describe("T4Teens: kan de deelnemer de vragenlijst afmaken", () => {
 
   it("de deelnemer komt voorbij het eerste blok", () => {
     expect(blokIsAfTeKrijgen(blokken[0]!)).toBe(true);
+  });
+
+  // De keerzijde: invulbaar maken mag niet betekenen dat een blok zonder
+  // antwoord doorgelaten wordt.
+  it("laat geen blok door waarin niets ingevuld is", () => {
+    const doorgelaten = blokken
+      .filter((b) => blokAntwoordVolledig(b, leegAntwoord()))
+      .map((b) => b.stateKey);
+    expect(doorgelaten).toEqual([]);
   });
 });

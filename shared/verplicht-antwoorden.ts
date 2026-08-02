@@ -45,22 +45,37 @@ export function keuzeGemaakt(waarde: string | null | undefined): boolean {
 }
 
 /**
+ * Draagt dit blok één uitspraak in plaats van een keuze tussen uitspraken?
+ *
+ * Twee blokvormen komen voor. Een keuzeblok legt meerdere uitspraken naast
+ * elkaar en vraagt welke het meest en welke het minst past; dat is de vorm van
+ * T4P Business. Een waarderingsblok draagt één uitspraak en vraagt hoe sterk
+ * die past; dat is de vorm van T4Teens. Bij één uitspraak valt er niets te
+ * rangschikken, dus een meest- en minst-keuze zijn daar niet te maken.
+ *
+ * Een blok zonder itemlijst wordt als keuzeblok behandeld: dat is de vorm die
+ * er altijd al was, en de oude regel blijft dan gelden.
+ */
+export function isWaarderingsblok(blok: Pick<BlokVorm, "items">): boolean {
+  return Array.isArray(blok.items) && blok.items.length < 2;
+}
+
+/**
  * Is dit blok volledig beantwoord?
  *
- * Een forced-choice-blok vraagt drie dingen: welk item past het meest, welk
- * item past het minst, en hoeveel energie het kost of geeft. Bij energyMode
- * "block" is dat één energiewaarde voor het hele blok, bij "item" een waarde
- * voor de meest- en voor de minst-keuze.
+ * Een keuzeblok vraagt drie dingen: welk item past het meest, welk item past
+ * het minst, en hoeveel energie het kost of geeft. Bij energyMode "block" is
+ * dat één energiewaarde voor het hele blok, bij "item" een waarde voor de
+ * meest- en voor de minst-keuze.
  *
- * Let op: een blok met minder dan twee items kan per definitie geen aparte
- * meest- en minst-keuze hebben. De aanroeper moet zulke blokken niet langs deze
- * regel leggen; zie de opmerking bij T4Teens in het verslag.
+ * Een waarderingsblok vraagt één ding: de waardering van zijn enige uitspraak.
  */
 export function blokAntwoordVolledig(
-  blok: Pick<BlokVorm, "energyMode">,
+  blok: Pick<BlokVorm, "energyMode" | "items">,
   antwoord: BlokAntwoord | undefined | null,
 ): boolean {
   if (!antwoord) return false;
+  if (isWaarderingsblok(blok)) return schaalAntwoordGegeven(antwoord.blockEnergy);
   if (!keuzeGemaakt(antwoord.most) || !keuzeGemaakt(antwoord.least)) return false;
   if (blok.energyMode === "block") {
     return schaalAntwoordGegeven(antwoord.blockEnergy);
