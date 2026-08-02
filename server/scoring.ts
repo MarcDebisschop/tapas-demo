@@ -1,4 +1,4 @@
-import { instrument } from "./instrument";
+import { instrument, huidigeInhoudsVersie } from "./instrument";
 import type { InstrumentBlock } from "./instrument";
 import { berekenAfnamekwaliteit, type Afnamekwaliteit, type ItemTijden } from "./afnamekwaliteit";
 import { energieNaarTienschaal } from "../shared/energie-schaal";
@@ -307,6 +307,12 @@ export function buildGeneratorContract(opts: {
   return {
     contractVersion: "1.0.0",
     instrumentId: instrument.instrumentId,
+    // Welke vragenlijst is deze deelnemer werkelijk voorgelegd? Zonder dit
+    // nummer kunnen twee afnames met hetzelfde instrument-ID een andere
+    // vragenlijst geweest zijn, en is elke vergelijking over de tijd
+    // aanvechtbaar. Het nummer schuift op zodra er aan de inhoud van de items
+    // geraakt wordt; zie server/instrument-inhoudsversie.ts.
+    instrumentVersie: huidigeInhoudsVersie(),
     generatedAt: new Date().toISOString(),
     // Fase E: de afname-taal reist mee met het contract, zodat de
     // rapportgenerator in de juiste taal kan renderen.

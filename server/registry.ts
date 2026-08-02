@@ -6,7 +6,9 @@ import {
   type Vertaalbaar,
   hydrateInstrument,
   clientInstrumentVan,
+  huidigeInhoudsVersie,
 } from "./instrument";
+import { inhoudsVersie } from "./instrument-inhoudsversie";
 import t4sportsJson from "./data/t4sports.json";
 import {
   ONDERBOUWING_T4PROFESSIONAL,
@@ -148,7 +150,13 @@ function bouwRegistry(): Map<string, InstrumentDescriptor> {
     instrumentId: inst.instrumentId,
     flowType: "individual",
     name: inst.name,
-    version: inst.version,
+    // Geen vaste tekst maar een afgeleide waarde: het nummer wordt bij elke
+    // uitlezing opnieuw uit de inhoud van de vragenlijst gerekend, inclusief de
+    // tekstwijzigingen die beheerders via het vraagbeheer opslaan. Zo kan het
+    // register nooit een nummer tonen dat bij een andere vragenlijst hoort.
+    get version() {
+      return huidigeInhoudsVersie();
+    },
     description: inst.description,
     isDefault: true,
     instrument: inst,

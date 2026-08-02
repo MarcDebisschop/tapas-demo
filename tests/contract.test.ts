@@ -42,8 +42,21 @@ describe("generator-contract (bevroren v1.0.0)", () => {
 
   it("bevat de verwachte top-level secties/velden", () => {
     const c = maakContract();
+    // "instrumentVersie" is er in ronde C bijgekomen. Het contract blijft
+    // contractVersion 1.0.0: het veld is zuiver toegevoegd, geen bestaand veld
+    // is van vorm of betekenis veranderd, en oudere contracten zonder dit veld
+    // blijven leesbaar. Zie tests/instrument-inhoudsversie.test.ts.
     expect(Object.keys(c).sort()).toEqual(
-      ["consent", "contractVersion", "generatedAt", "instrumentId", "participant", "sections", "taal"].sort(),
+      [
+        "consent",
+        "contractVersion",
+        "generatedAt",
+        "instrumentId",
+        "instrumentVersie",
+        "participant",
+        "sections",
+        "taal",
+      ].sort(),
     );
   });
 

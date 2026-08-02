@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { TALEN, STANDAARD_TAAL, type Taal } from "../shared/talen";
-import { getVraagTekst } from "./question-manager";
+import { getVraagTekst, getOverridesMap } from "./question-manager";
+import { inhoudsVersie } from "./instrument-inhoudsversie";
 
 // Laadt de bevroren instrumentdefinitie (A1) als server-side configuratie.
 // De definitie is de enige bron voor blokken, items, families en deel-2 vragen.
@@ -71,6 +72,10 @@ export function hydrateInstrument(def: any): Instrument {
   };
 }
 
+// De ongewijzigde, ingelezen definitie. Nodig naast het gehydrateerde
+// instrument omdat de inhoudsversie over het databestand zelf gerekend wordt.
+let ruweDefinitie: any = null;
+
 function loadInstrument(): Instrument {
   // In dev draait dit vanuit server/ (tsx). In productie wordt het bestand
   // mee gebundeld; we proberen meerdere paden.
@@ -89,7 +94,8 @@ function loadInstrument(): Instrument {
     }
   }
   if (!raw) throw new Error("Instrumentdefinitie niet gevonden");
-  return hydrateInstrument(JSON.parse(raw));
+  ruweDefinitie = JSON.parse(raw);
+  return hydrateInstrument(ruweDefinitie);
 }
 
 // Het standaard individuele instrument. Blijft als named export beschikbaar
@@ -97,6 +103,24 @@ function loadInstrument(): Instrument {
 // gedrag-behoudend. De registry verwijst naar exact dit instrument als
 // default; we laden het hier één keer en delen dezelfde instantie.
 export const instrument: Instrument = loadInstrument();
+
+// De sleutel waaronder het vraagbeheer de overschrijvingen van T4Professional
+// bewaart. Zie server/question-manager.ts.
+export const T4P_VRAAGBEHEER_SLEUTEL = "tapas-t4p";
+
+/**
+ * Het versienummer dat hoort bij de vragenlijst zoals die op dit ogenblik aan
+ * een deelnemer voorgelegd wordt: het nummer uit het databestand plus een
+ * vingerafdruk over de inhoud, inclusief de tekstwijzigingen die beheerders via
+ * het vraagbeheer hebben opgeslagen.
+ *
+ * Dit is het nummer dat bij een afname hoort te worden vastgelegd. Zonder dit
+ * nummer kunnen twee afnames met dezelfde "1.0.0" een andere vragenlijst
+ * geweest zijn.
+ */
+export function huidigeInhoudsVersie(): string {
+  return inhoudsVersie(ruweDefinitie, getOverridesMap(T4P_VRAAGBEHEER_SLEUTEL));
+}
 
 // De energie-schaal kan meertalige labels hebben; we leveren één taal af,
 // voor een willekeurig instrument.
