@@ -3,7 +3,7 @@
 //
 // Een catalogus van beschikbare instrumenten die de deelnemer (extra) kan
 // invullen, met een "past bij jou"-logica die kijkt naar het bestaande profiel
-// (energie, driver-belasting, herkenbaarheid). De galerij is meertalig en
+// (energie, driver-belasting, invulzorgvuldigheid). De galerij is meertalig en
 // toont per instrument een korte preview. "Driver" blijft beschermd & onvertaald.
 //
 // Opmerking: de echte afname-flow van extra instrumenten komt later; hier
@@ -208,12 +208,12 @@ const REDEN = {
     es: "Tienes focos de talento claros — profundízalos con situaciones concretas.",
     ru: "У вас есть чёткие фокусы таланта — углубите их на конкретных ситуациях.",
   } as ML,
-  herkenbaarheidLaag: {
-    nl: "De herkenbaarheid van je beeld was lager — een korte hercheck kan helpen.",
-    fr: "La reconnaissance de ton image était plus faible — un nouveau contrôle peut aider.",
-    en: "The recognisability of your picture was lower — a quick re-check can help.",
-    es: "La reconocibilidad de tu imagen era más baja — una nueva comprobación puede ayudar.",
-    ru: "Узнаваемость вашего портрета была ниже — быстрая повторная проверка может помочь.",
+  invulzorgvuldigheidLaag: {
+    nl: "Je hebt de vragenlijst maar deels of wisselend ingevuld. Een korte hercheck kan helpen.",
+    fr: "Tu n'as rempli le questionnaire que partiellement ou de façon variable. Un nouveau contrôle peut aider.",
+    en: "You filled in the questionnaire only partly or inconsistently. A quick re-check can help.",
+    es: "Has rellenado el cuestionario solo en parte o de forma variable. Una nueva comprobación puede ayudar.",
+    ru: "Вы заполнили опросник лишь частично или непоследовательно. Быстрая повторная проверка может помочь.",
   } as ML,
 };
 
@@ -279,10 +279,10 @@ export function bouwGalerij(contractRaw: unknown, taal: Taal): GalerijItem[] {
         score = 2;
         reden = k(REDEN.talentSterk, taal);
       }
-      // Lage herkenbaarheid → energie-monitor extra aanbevelen.
+      // Lage invulzorgvuldigheid: energie-monitor extra aanbevelen.
       if (raw.thema === "energie" && consScore !== null && consScore < 50 && score < 3) {
         score = Math.max(score, 2);
-        reden = k(REDEN.herkenbaarheidLaag, taal);
+        reden = k(REDEN.invulzorgvuldigheidLaag, taal);
       }
       if (score > 0 && reden) {
         item.aanbevolen = true;

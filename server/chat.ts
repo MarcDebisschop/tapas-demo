@@ -141,35 +141,35 @@ export function bouwChatProfiel(contractRaw: unknown, taal: Taal, naam?: string 
       `Versterkend gedrag: ${versnTxt}. ` +
       `Energie tijdens de vragenlijst: ${vragenlijstEnergie.toFixed(1)}/10 (eigen inschatting vooraf: ${baseline.toFixed(1)}/10). ` +
       `Drivers om in het oog te houden (naar Taibi Kahler): ${driverTxt}; driver-belasting: ${driverLabel}. ` +
-      `${consScore !== null ? `Herkenbaarheid van het beeld: ${consScore}/100.` : ""}`,
+      `${consScore !== null ? `Invulzorgvuldigheid van deze vragenlijst: ${consScore}/100.` : ""}`,
     fr:
       `${naamTxt ? `Nom : ${naamTxt}. ` : ""}` +
       `Focus de talent les plus forts (où l'énergie circule) : ${fociTxt}. ` +
       `Comportement amplificateur : ${versnTxt}. ` +
       `Énergie pendant le questionnaire : ${vragenlijstEnergie.toFixed(1)}/10 (auto-évaluation préalable : ${baseline.toFixed(1)}/10). ` +
       `Drivers à surveiller (d'après Taibi Kahler) : ${driverTxt} ; charge des Drivers : ${driverLabel}. ` +
-      `${consScore !== null ? `Reconnaissance de l'image : ${consScore}/100.` : ""}`,
+      `${consScore !== null ? `Soin apporté au remplissage de ce questionnaire : ${consScore}/100.` : ""}`,
     en:
       `${naamTxt ? `Name: ${naamTxt}. ` : ""}` +
       `Strongest talent foci (where energy flows freely): ${fociTxt}. ` +
       `Amplifying behaviour: ${versnTxt}. ` +
       `Energy during the questionnaire: ${vragenlijstEnergie.toFixed(1)}/10 (own estimate beforehand: ${baseline.toFixed(1)}/10). ` +
       `Drivers to keep an eye on (after Taibi Kahler): ${driverTxt}; Driver load: ${driverLabel}. ` +
-      `${consScore !== null ? `Recognisability of the picture: ${consScore}/100.` : ""}`,
+      `${consScore !== null ? `Care taken when filling in this questionnaire: ${consScore}/100.` : ""}`,
     es:
       `${naamTxt ? `Nombre: ${naamTxt}. ` : ""}` +
       `Focos de talento más fuertes (donde fluye la energía): ${fociTxt}. ` +
       `Comportamiento amplificador: ${versnTxt}. ` +
       `Energía durante el cuestionario: ${vragenlijstEnergie.toFixed(1)}/10 (estimación previa propia: ${baseline.toFixed(1)}/10). ` +
       `Drivers a vigilar (según Taibi Kahler): ${driverTxt}; carga de Drivers: ${driverLabel}. ` +
-      `${consScore !== null ? `Reconocibilidad de la imagen: ${consScore}/100.` : ""}`,
+      `${consScore !== null ? `Cuidado al rellenar este cuestionario: ${consScore}/100.` : ""}`,
     ru:
       `${naamTxt ? `Имя: ${naamTxt}. ` : ""}` +
       `Сильнейшие фокусы таланта (где энергия течёт свободно): ${fociTxt}. ` +
       `Усиливающее поведение: ${versnTxt}. ` +
       `Энергия во время опросника: ${vragenlijstEnergie.toFixed(1)}/10 (собственная предварительная оценка: ${baseline.toFixed(1)}/10). ` +
       `Drivers, за которыми стоит следить (по Taibi Kahler): ${driverTxt}; нагрузка Drivers: ${driverLabel}. ` +
-      `${consScore !== null ? `Узнаваемость портрета: ${consScore}/100.` : ""}`,
+      `${consScore !== null ? `Тщательность заполнения этого опросника: ${consScore}/100.` : ""}`,
   };
 
   // --- Zorg-kompas laag A: risicosignalen ---
@@ -240,11 +240,11 @@ export function bouwChatProfiel(contractRaw: unknown, taal: Taal, naam?: string 
     redenen.push(
       k(
         {
-          nl: "Lage herkenbaarheid van het beeld",
-          fr: "Faible reconnaissance de l'image",
-          en: "Low recognisability of the picture",
-          es: "Baja reconocibilidad de la imagen",
-          ru: "Низкая узнаваемость портрета",
+          nl: "De vragenlijst is maar deels of wisselend ingevuld",
+          fr: "Le questionnaire n'a été rempli que partiellement ou de façon variable",
+          en: "The questionnaire was only partly or inconsistently filled in",
+          es: "El cuestionario se rellenó solo en parte o de forma variable",
+          ru: "Опросник заполнен лишь частично или непоследовательно",
         },
         taal,
       ),

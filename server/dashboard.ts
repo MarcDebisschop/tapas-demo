@@ -95,12 +95,14 @@ const T = {
     es: "Drivers a vigilar",
     ru: "Drivers, за которыми стоит следить",
   } as ML,
-  kaartConsistentie: {
-    nl: "Hoe herkenbaar dit beeld is",
-    fr: "À quel point cette image est reconnaissable",
-    en: "How recognisable this picture is",
-    es: "Qué tan reconocible es esta imagen",
-    ru: "Насколько узнаваем этот портрет",
+  // Gaat over hoe deze vragenlijst is ingevuld, niet over hoe goed het beeld
+  // of het instrument is. De titel zegt dat nu ook.
+  kaartInvulzorgvuldigheid: {
+    nl: "Hoe je de vragenlijst hebt ingevuld",
+    fr: "Comment tu as rempli le questionnaire",
+    en: "How you filled in the questionnaire",
+    es: "Cómo has rellenado el cuestionario",
+    ru: "Как вы заполнили опросник",
   } as ML,
 };
 
@@ -270,22 +272,22 @@ export function bouwDashboardData(contractRaw: unknown, taal: Taal): DashboardDa
     const score = typeof cons.score === "number" ? cons.score : null;
     const m: ML = {
       nl: score !== null
-        ? `De interne herkenbaarheid van dit beeld scoort ${score}/100. Hoe hoger, hoe meer het profiel als een coherent geheel leest.`
-        : `Dit beeld vormt een samenhangend geheel op basis van je antwoorden.`,
+        ? `Je invulzorgvuldigheid komt uit op ${score}/100. Dat gaat over hoe volledig je hebt geantwoord en hoe goed je antwoorden bij elkaar aansluiten. Het zegt niets over jou en niets over de kwaliteit van de vragenlijst.`
+        : `Er is te weinig ingevuld om hier iets over te zeggen.`,
       fr: score !== null
-        ? `La reconnaissabilité interne de cette image est de ${score}/100. Plus c'est élevé, plus le profil se lit comme un tout cohérent.`
-        : `Cette image forme un ensemble cohérent basé sur tes réponses.`,
+        ? `Le soin apporté au remplissage atteint ${score}/100. Cela porte sur le caractère complet de tes réponses et sur leur concordance entre elles. Cela ne dit rien sur toi ni sur la qualité du questionnaire.`
+        : `Il y a trop peu de réponses pour dire quoi que ce soit à ce sujet.`,
       en: score !== null
-        ? `The internal recognisability of this picture scores ${score}/100. The higher, the more the profile reads as a coherent whole.`
-        : `This picture forms a coherent whole based on your answers.`,
+        ? `The care taken when filling in comes out at ${score}/100. That is about how fully you answered and how well your answers line up with one another. It says nothing about you and nothing about the quality of the questionnaire.`
+        : `Too little was filled in to say anything about this.`,
       es: score !== null
-        ? `El reconocimiento interno de esta imagen es ${score}/100. Cuanto más alto, más se lee el perfil como un todo coherente.`
-        : `Esta imagen forma un conjunto coherente según tus respuestas.`,
+        ? `El cuidado al rellenar alcanza ${score}/100. Se refiere a lo completas que son tus respuestas y a lo bien que concuerdan entre sí. No dice nada sobre ti ni sobre la calidad del cuestionario.`
+        : `Se ha rellenado muy poco para decir algo al respecto.`,
       ru: score !== null
-        ? `Внутренняя узнаваемость этого портрета — ${score}/100. Чем выше, тем целостнее читается профиль.`
-        : `Этот портрет образует целостную картину на основе ваших ответов.`,
+        ? `Тщательность заполнения составляет ${score}/100. Это о том, насколько полно вы ответили и насколько ваши ответы согласуются между собой. Это ничего не говорит о вас и о качестве опросника.`
+        : `Заполнено слишком мало, чтобы что-то об этом сказать.`,
     };
-    kaarten.push({ titel: k(T.kaartConsistentie, taal), tekst: k(m, taal) });
+    kaarten.push({ titel: k(T.kaartInvulzorgvuldigheid, taal), tekst: k(m, taal) });
   }
 
   // Reminders / mini-acties.

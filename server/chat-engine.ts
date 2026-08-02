@@ -1452,11 +1452,11 @@ export function beantwoord(vraag: string, p: ProfielFeiten, taal: Taal): { reply
     const herk =
       p.herkenbaarheid !== null
         ? {
-            nl: ` De herkenbaarheid van je beeld is ${p.herkenbaarheid}/100${p.herkenbaarheid >= 70 ? " — dat is hoog, je profiel is dus goed herkenbaar." : "."}`,
-            fr: ` Reconnaissance : ${p.herkenbaarheid}/100.`,
-            en: ` Recognisability: ${p.herkenbaarheid}/100.`,
-            es: ` Reconocibilidad: ${p.herkenbaarheid}/100.`,
-            ru: ` Узнаваемость: ${p.herkenbaarheid}/100.`,
+            nl: ` Je invulzorgvuldigheid is ${p.herkenbaarheid}/100${p.herkenbaarheid >= 70 ? ", dus je hebt de vragenlijst volledig en gelijkmatig ingevuld." : "."}`,
+            fr: ` Soin apporté au remplissage : ${p.herkenbaarheid}/100.`,
+            en: ` Care taken when filling in: ${p.herkenbaarheid}/100.`,
+            es: ` Cuidado al rellenar: ${p.herkenbaarheid}/100.`,
+            ru: ` Тщательность заполнения: ${p.herkenbaarheid}/100.`,
           }
         : { nl: "", fr: "", en: "", es: "", ru: "" };
     const m: ML = {

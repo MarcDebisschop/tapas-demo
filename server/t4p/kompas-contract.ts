@@ -505,7 +505,7 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
           { waarde: kort(discrepantie, true), label: "ENERGIEDISCREPANTIE" },
           {
             waarde: `${kort(consistentie)}/100`,
-            label: `CONSISTENTIE (${consLabel.toUpperCase()})`,
+            label: `INVULZORGVULDIGHEID (${consLabel.toUpperCase()})`,
           },
           { waarde: risicoLabel, label: "DRIVER-RISICO" },
           { waarde: `${kort(q3)} / ${kort(q4)}`, label: "ZELF- VS. ORG-INVESTERING" },
@@ -539,7 +539,7 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
     compact: false,
   });
 
-  // 02 — Leeswijzer en datakwaliteit ----------------------------------------
+  // 02. Leeswijzer en datakwaliteit --------------------------------------------
   secties.push({
     nummer: "02",
     titel: "Leeswijzer en datakwaliteit",
@@ -556,8 +556,8 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
             `${kort(alle.filter((r) => r.shown > 0).length)} / ${kort(alle.length)}`,
             "Geduide constructen",
           ],
-          [`${kort(consistentie)} / 100`, "Antwoorden in dezelfde richting"],
-          [consLabel, "Datakwaliteit"],
+          [`${kort(consistentie)} / 100`, "Invulzorgvuldigheid"],
+          [consLabel, "Invulzorgvuldigheid in woorden"],
           ...(tempoMelding
             ? [[`${Math.round(num(afnamekwaliteit?.aandeelOnderDrempel) * 100)} %`, "Items binnen twee seconden"]]
             : []),
@@ -570,7 +570,7 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
           {
             kop: "Kernboodschap",
             variant: "",
-            tekst: `Deze lezing rust op een volledig en consistent ingevulde vragenlijst. De datakwaliteit is ${consLabel}; de duiding is goed gedragen zonder dat scores absolute uitspraken worden.`,
+            tekst: `De invulzorgvuldigheid van deze vragenlijst is ${consLabel} (${kort(consistentie)}/100). Dat cijfer gaat over deze invulling: hoe volledig er geantwoord is en hoe goed de energieantwoorden bij elkaar aansluiten. Het zegt niets over de kwaliteit van het instrument en niets over de persoon. Ook bij een hoog cijfer blijven de scores een lezing, geen absolute uitspraak.`,
           },
           // Melding over het tempo van invullen. Gaat over de afname, niet over
           // de persoon, en verschijnt alleen als er tijdgegevens zijn.
@@ -581,8 +581,9 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
             kop: "Professionele betekenis",
             variant: "",
             tekst:
-              "<i>Interpretatie.</i> Volledige invulling en hoge consistentie maken dat de " +
-              "profiellezing inhoudelijk stevig onderbouwd is. De energiestatus per construct — " +
+              "<i>Interpretatie.</i> Hoe vollediger en zorgvuldiger er is ingevuld, hoe minder " +
+              "gaten er in deze lezing zitten. Dat is het enige wat het cijfer hierboven zegt. " +
+              "De energiestatus per construct — " +
               "geeft (zet talent in beweging), neutraal of kost (remt vandaag de inzet) — toont of " +
               "een lijn als gaspedaal of als rem werkt op de andere lagen. Drivers, talent-foci en " +
               "versnellers vormen daarmee één samenhangend systeem, geen losse lijsten.",
@@ -2502,7 +2503,7 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
           {
             kop: "Data en signalen",
             variant: "",
-            tekst: `Antwoorden binnen een construct wijzen ${kort(consistentie)}/100 in dezelfde richting${
+            tekst: `De invulzorgvuldigheid komt uit op ${kort(consistentie)}/100${
               consLabel ? ` (${consLabel.toLowerCase()})` : ""
             }. Volledigheid: ${kort(schermen)}/${kort(schermenTotaal)} schermen, ${kort(
               alle.filter((r) => r.shown > 0).length,

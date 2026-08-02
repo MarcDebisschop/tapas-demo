@@ -265,7 +265,7 @@ export function bouwT4pBusinessProfiel(contract: any): T4pRapportInhoud {
       { waarde: `${fmt(beleefd, 1)}/10`, label: "Beleefde startenergie" },
       { waarde: `${fmt(gemeten, 1)}/10`, label: "Gemeten energie" },
       { waarde: fmt(discrepantie, 1, true), label: "Energiediscrepantie" },
-      { waarde: `${Math.round(num(consistency?.score))}/100`, label: `Energie-consistentie (${consistency?.label ?? "—"})` },
+      { waarde: `${Math.round(num(consistency?.score))}/100`, label: `Invulzorgvuldigheid (${consistency?.label ?? "—"})` },
       { waarde: String(driverRisk?.label ?? "—"), label: "Driver-risico" },
       { waarde: `${isFinite(zelf) ? zelf : "—"} / ${isFinite(org) ? org : "—"}`, label: "Zelf- vs. org-investering" },
     ],
@@ -276,7 +276,7 @@ export function bouwT4pBusinessProfiel(contract: any): T4pRapportInhoud {
     ],
   });
 
-  // 02 — Leeswijzer en datakwaliteit ---------------------------------------
+  // 02. Leeswijzer en datakwaliteit -------------------------------------------
   const ingevuld = num(meta?.completedScreens);
   const totaal = num(meta?.totalScreens);
   const keuzes = num(meta?.totalChoices);
@@ -296,11 +296,12 @@ export function bouwT4pBusinessProfiel(contract: any): T4pRapportInhoud {
       "Rangorde en betekenis: constructen staan altijd op nettoscore (meest herkend min minst herkend), " +
         "aflopend gerangschikt. De volgorde is geen scoreladder, maar toont welke ingang het talent het " +
         "makkelijkst opent.",
-      `Datakwaliteit: de vragenlijst werd ingevuld voor ${ingevuld}/${totaal} schermen (${keuzes} keuzes). ` +
-        `De energie-consistentie komt uit op ${Math.round(num(consistency?.score))}/100 ` +
-        `(${consistency?.label ?? "—"}). Die score drukt uit hoe volledig er is ingevuld en hoe goed de ` +
-        `energieantwoorden onderling uitgelijnd zijn bij de sterkst herkende drivers; het is uitdrukkelijk ` +
-        `geen psychometrische betrouwbaarheidsmaat. ` +
+      `Hoe de vragenlijst is ingevuld: ${ingevuld}/${totaal} schermen (${keuzes} keuzes). ` +
+        `De invulzorgvuldigheid komt uit op ${Math.round(num(consistency?.score))}/100 ` +
+        `(${consistency?.label ?? "—"}). Dat cijfer gaat over deze invulling: hoe volledig er is ` +
+        `geantwoord en hoe goed de energieantwoorden bij elkaar aansluiten. Het zegt niets over de ` +
+        `kwaliteit van het instrument en niets over de persoon, en het is geen psychometrische ` +
+        `betrouwbaarheidsmaat. ` +
         `Het verschil tussen beleefde startenergie (${fmt(beleefd, 1)}/10) en gemeten energie (${fmt(
           gemeten,
           1
