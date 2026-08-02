@@ -99,19 +99,41 @@ export function scoorOrganisatie(respondenten: T4ORespondentMetAntwoorden[]): T4
     buiten: perRing.buiten.length,
   };
 
-  // Verzamel alle likert/congruentie-waarden per dimensie (over alle respondenten).
+  // Verzamel de likert/congruentie-waarden van een dimensie per ring.
+  //
+  // ONTWERPKEUZE: het vermogensgemiddelde weegt PER RING, niet per hoofd. Eerst
+  // wordt per ring een gemiddelde berekend, daarna wordt over die ringgemiddelden
+  // gemiddeld. Elke ring telt dus even zwaar, hoeveel mensen erin zitten doet er
+  // niet toe. Reden: de ringstructuur binnen/midden/buiten is de kern van dit
+  // instrument, en een organisatie heeft doorgaans veel meer medewerkers dan
+  // leidinggevenden of externe stakeholders. In de demonstratiescan gaat het om
+  // 5 leiding, 41 medewerkers en 3 stakeholders (zie seed.ts). Bij tellen per
+  // hoofd is het organisatiecijfer in de praktijk het cijfer van de middenring
+  // en doet de ringstructuur niets.
+  //
+  // Een ring zonder respondenten of zonder bruikbaar antwoord op deze dimensie
+  // telt niet mee: het gewicht verdeelt zich dan evenredig over de ringen die er
+  // wel zijn. Een lege ring trekt het cijfer dus niet omlaag.
+  //
+  // Het veld `aantal` blijft het totaal aantal meegetelde antwoorden, zodat
+  // zichtbaar blijft op hoeveel gegevens het cijfer rust.
   function vermogenGemiddelde(dimensie: string, bron: T4ORespondentMetAntwoorden[]): { score: number | null; aantal: number } {
-    const waarden: number[] = [];
+    const waardenPerRing: Record<Ring, number[]> = { binnen: [], midden: [], buiten: [] };
     for (const r of bron) {
+      const ring = GROEP_NAAR_RING[r.groep as T4OGroep];
       for (const [id, ruw] of Object.entries(r.antwoorden)) {
         const item = itemById[id];
         if (!item || item.dimensie !== dimensie) continue;
         if (item.itemType !== "likert" && item.itemType !== "congruence") continue;
         const w = likertWaarde(item, ruw);
-        if (w != null) waarden.push(w);
+        if (w != null) waardenPerRing[ring].push(w);
       }
     }
-    return { score: gemiddelde(waarden), aantal: waarden.length };
+    const ringGemiddelden = Object.values(waardenPerRing)
+      .map(gemiddelde)
+      .filter((g): g is number => g != null);
+    const aantal = Object.values(waardenPerRing).reduce((a, w) => a + w.length, 0);
+    return { score: gemiddelde(ringGemiddelden), aantal };
   }
 
   const vermogens: VermogenScore[] = VERMOGENS.map((v) => {

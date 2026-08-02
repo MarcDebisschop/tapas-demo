@@ -159,16 +159,23 @@ function driverRisk(rows: ConstructRow[]): { label: string; dominant: string } {
 function consistencyScore(rows: ConstructRow[], responses: Responses): { score: number; label: string } {
   const answered = Object.values(responses).filter((r): r is BlockResponse => r != null);
   const choicePairs = answered.filter((r) => r.most && r.least).length;
-  const energyPresence = answered.filter((r, i) => {
-    const b = blocks[i];
+  // Koppel elk antwoord aan zijn blok via de sleutel "B" plus de blokindex, net
+  // zoals aggregate() hierboven doet. Eerder werd de positie in de gefilterde
+  // antwoordlijst gebruikt als blokindex. Zodra een deelnemer een vraag oversloeg
+  // schoof die lijst op en werd een antwoord tegen het verkeerde blok gelegd, met
+  // name op de overgang van blokken met energie per item naar blokken met energie
+  // per blok. Een koppeling op sleutel hangt niet af van de volgorde of van wat
+  // eruit gefilterd is.
+  const energyPresence = blocks.filter((b, idx) => {
+    const r = responses["B" + idx];
+    if (!r) return false;
     return (
-      b &&
-      ((b.energyMode === "block" && r.blockEnergy !== null && r.blockEnergy !== undefined) ||
-        (b.energyMode === "item" &&
-          r.itemEnergy.most !== null &&
-          r.itemEnergy.most !== undefined &&
-          r.itemEnergy.least !== null &&
-          r.itemEnergy.least !== undefined))
+      (b.energyMode === "block" && r.blockEnergy !== null && r.blockEnergy !== undefined) ||
+      (b.energyMode === "item" &&
+        r.itemEnergy.most !== null &&
+        r.itemEnergy.most !== undefined &&
+        r.itemEnergy.least !== null &&
+        r.itemEnergy.least !== undefined)
     );
   }).length;
   const topDrivers = rows.filter((r) => r.family === "Drivers").sort((a, b) => b.net - a.net).slice(0, 3);

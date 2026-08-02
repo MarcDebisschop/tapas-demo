@@ -21,6 +21,7 @@ import {
   UI,
   DRIVER_DUIDING,
   DRIVER_KEYS,
+  GASPEDAAL_REM_GRENS,
   veiligeTaal,
   type Taal,
   type DriverKey,
@@ -360,7 +361,7 @@ export function renderDriverScanPdf(input: DriverScanPdfInput): Promise<Buffer> 
     color: string;
     label: (ui: (typeof UI)[Taal]) => string;
   } {
-    if (avg >= 0) return { arrow: "↑", color: GAS, label: (u) => u.gaspedaalLabel };
+    if (avg >= GASPEDAAL_REM_GRENS) return { arrow: "↑", color: GAS, label: (u) => u.gaspedaalLabel };
     return { arrow: "↓", color: REM, label: (u) => u.remLabel };
   }
   function fmtNet(n: number): string {

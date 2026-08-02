@@ -10,8 +10,30 @@
 // gaspedaal- als de rem-werking uitgewerkt, met het kantelpunt ertussen.
 // ---------------------------------------------------------------------------
 
+import { ITEM_ENERGIE_MAX, ITEM_ENERGIE_MIN } from "../../shared/energie-schaal";
+
 export type Taal = "nl" | "fr" | "en" | "es" | "ru";
 export const DRIVERSCAN_TALEN: Taal[] = ["nl", "fr", "en", "es", "ru"];
+
+/**
+ * Het knippunt tussen gaspedaal en rem.
+ *
+ * WAT HET IS. Per driver wordt de gemiddelde energie gemeten op de itemschaal
+ * die van min 2 tot plus 2 loopt (zie shared/energie-schaal.ts). Ligt de
+ * gemiddelde energie op of boven dit knippunt, dan noemt het rapport de driver
+ * een gaspedaal; ligt ze eronder, dan een rem.
+ *
+ * WAAROM DEZE WAARDE. Het knippunt ligt precies in het midden van die
+ * itemschaal. Dat is het punt waarop de deelnemer noch energie wint noch
+ * energie verliest bij de items van die driver, en dus het enige punt dat uit
+ * de schaal zelf volgt in plaats van uit een keuze.
+ *
+ * WAT ER NOG NIET IS. Deze waarde is NIET op afnamegegevens geijkt. Er is geen
+ * steekproef waaruit blijkt dat een gemiddelde energie van net boven nul in de
+ * praktijk werkelijk als gaspedaal wordt ervaren en net eronder als rem. Zodra
+ * er normgegevens zijn, hoort dit knippunt te worden nagerekend.
+ */
+export const GASPEDAAL_REM_GRENS = (ITEM_ENERGIE_MIN + ITEM_ENERGIE_MAX) / 2;
 
 // De 5 Kahler-drivers. De sleutel is de construct-naam zoals ze in
 // instrument.json en in buildMainScores voorkomt (nooit vertalen — de scoring
