@@ -34,7 +34,7 @@ vi.mock("../server/question-manager", async () => {
 
 import { registerVragenlijstT4TeensRoutes } from "../server/routes/vragenlijst-t4teens";
 import { blokAntwoordVolledig } from "@shared/verplicht-antwoorden";
-import type { BlokAntwoord } from "@shared/verplicht-antwoorden";
+import { blokIsAfTeKrijgen, leegAntwoord } from "./helpers/scherm-blokregel";
 
 interface GemetenBlok {
   blockIndex: number;
@@ -57,61 +57,6 @@ beforeAll(async () => {
   blokken = (await res.json()).blocks;
   await new Promise<void>((klaar) => server.close(() => klaar()));
 });
-
-// ─── Het scherm nagebouwd ────────────────────────────────────────────────────
-// setMost en setLeast uit client/src/pages/deel1.tsx, letterlijk overgenomen.
-// Een uitspraak kan niet tegelijk de meest- en de minst-keuze zijn: wie een
-// uitspraak op "meest" zet terwijl ze al op "minst" stond, maakt de andere leeg.
-
-const leegAntwoord = (): BlokAntwoord => ({
-  most: null,
-  least: null,
-  itemEnergy: { most: null, least: null },
-  blockEnergy: null,
-});
-
-function klikMeest(a: BlokAntwoord, pos: string): BlokAntwoord {
-  const least = a.least === pos ? null : a.least;
-  return { ...a, most: a.most === pos ? null : pos, least };
-}
-
-function klikMinst(a: BlokAntwoord, pos: string): BlokAntwoord {
-  const most = a.most === pos ? null : a.most;
-  return { ...a, least: a.least === pos ? null : pos, most };
-}
-
-/**
- * Kan de deelnemer dit blok afkrijgen? Loopt alle keuzetoestanden af die met
- * de knoppen van het scherm bereikbaar zijn, en vult daarna de energieschaal
- * maximaal in. Levert een van die toestanden een volledig blok, dan is het
- * blok invulbaar.
- */
-function blokIsAfTeKrijgen(blok: GemetenBlok): boolean {
-  const posities = blok.items.map((i) => i.pos);
-  const gezien = new Set<string>();
-  const wachtrij: BlokAntwoord[] = [leegAntwoord()];
-
-  while (wachtrij.length > 0) {
-    const huidig = wachtrij.shift()!;
-    const vinger = `${huidig.most ?? "-"}|${huidig.least ?? "-"}`;
-    if (gezien.has(vinger)) continue;
-    gezien.add(vinger);
-
-    // Energie mag de deelnemer altijd invullen; we gunnen hem elke waarde.
-    const ingevuld: BlokAntwoord = {
-      ...huidig,
-      itemEnergy: { most: 1, least: -1 },
-      blockEnergy: 1,
-    };
-    if (blokAntwoordVolledig(blok, ingevuld)) return true;
-
-    for (const pos of posities) {
-      wachtrij.push(klikMeest(huidig, pos));
-      wachtrij.push(klikMinst(huidig, pos));
-    }
-  }
-  return false;
-}
 
 describe("T4Teens: wat de server per blok aanlevert", () => {
   it("levert blokken aan", () => {

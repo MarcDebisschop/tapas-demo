@@ -135,10 +135,14 @@ export default function Deel1() {
   // Een blok met één uitspraak wordt gewaardeerd, niet gerangschikt: "meest" en
   // "minst" hebben daar geen betekenis.
   const waarderingsblok = block ? isWaarderingsblok(block) : false;
+  // Eén schaal voor het hele blok, of een aparte schaal voor de meest- en de
+  // minst-keuze. Bij één uitspraak is er maar één schaal, wat het blok verder
+  // ook over zichzelf zegt: er valt geen tweede keuze te waarderen.
+  const eenSchaalVoorHetBlok = waarderingsblok || block?.energyMode === "block";
   const isDriverBlok = block?.family === "Drivers";
   const toonToelichting =
     isDriverBlok &&
-    (block?.energyMode === "block"
+    (eenSchaalVoorHetBlok
       ? isEnergieKostend(cur.blockEnergy)
       : isEnergieKostend(cur.itemEnergy.most) || isEnergieKostend(cur.itemEnergy.least));
   const toelichtingLabel = TOELICHTING_LABELS[taal] ?? TOELICHTING_LABELS.nl;
@@ -414,7 +418,7 @@ export default function Deel1() {
 
             {/* Energie-bevraging */}
             <div className="mt-6 space-y-4 rounded-lg border border-border bg-muted/30 p-4">
-              {block.energyMode === "block" ? (
+              {eenSchaalVoorHetBlok ? (
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-foreground">
                     {t(waarderingsblok ? "deel1_waardering_vraag" : "energie_thema_vraag")}
