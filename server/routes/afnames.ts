@@ -573,6 +573,24 @@ export function registerAfnameRoutes(app: Express): void {
       completedAt: new Date().toISOString(),
     });
 
+    // Punt B: T4Teens leidde een afgeronde afname nooit vanzelf tot een
+    // rapport; het deelnemersdashboard bleef op "Rapport in voorbereiding"
+    // staan omdat POST /api/rapporten enkel bereikbaar is met een
+    // beheerderssessie (server/routes/rapporten.ts, vereisScope). Gemeten
+    // (bevindingen-punt-b-rapportontwerp.md): rapportgeneratie verbruikt geen
+    // credits (dat gebeurt al hierboven bij het afronden) en T4Teens heeft een
+    // eigen, synchrone generator zonder AI-duiding, dus dit kan hier veilig
+    // synchroon gebeuren. Enkel voor t4teens; andere instrumenten blijven op
+    // het bestaande, beheerder-gestuurde pad. Een rapportfout mag de afronding
+    // van de afname nooit blokkeren.
+    if (a.instrumentId === "t4teens") {
+      try {
+        await storage.genereerRapport(id, "kompas");
+      } catch (e) {
+        console.warn(`[rapport] automatische T4Teens-rapportgeneratie mislukt (afname ${id}):`, e);
+      }
+    }
+
     // TaPas Persoonlijk — Fase 1: als de deelnemer (optioneel) een e-mailadres
     // opgaf bij het afronden, koppelen we deze afname meteen aan een
     // deelnemer-account zodat ze later via hun persoonlijk dashboard inloggen.

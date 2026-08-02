@@ -155,6 +155,8 @@ interface DashboardResponse {
     status: string;
     taal: string;
     voltooidOp: string | null;
+    instrumentId: string;
+    instrumentNaam: string;
     rapporten: Array<{ id: number; variant: string; titel: string }>;
   }>;
   galerij: GalerijData;
@@ -677,7 +679,7 @@ export default function Dashboard() {
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-foreground">
-                          T4P Business Kompas{a.bedrijf ? ` · ${a.bedrijf}` : ""}
+                          {a.instrumentNaam}{a.bedrijf ? ` · ${a.bedrijf}` : ""}
                         </p>
                         <div className="mt-1 flex flex-wrap items-center gap-2">
                           <Badge variant={a.status === "voltooid" ? "default" : "secondary"}>

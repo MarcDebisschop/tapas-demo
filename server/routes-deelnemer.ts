@@ -21,6 +21,7 @@ import {
 } from "./bibliotheek-deelnemer";
 import { normaliseerTaal } from "@shared/i18n";
 import { dashboardCodeVanToken, voornaamVanNaam } from "./dashboard-code";
+import { getDescriptor, getDefaultDescriptor } from "./registry";
 import { isDemoModus } from "./demomodus";
 import {
   deelnemerLoginSchema,
@@ -268,6 +269,12 @@ export function registerDeelnemerRoutes(app: Express): void {
     const dashboard = recentste ? bouwDashboardData(recentste.generatorContract, taal) : null;
 
     // Afnamelijst met (eventuele) gegenereerde rapporten.
+    //
+    // instrumentNaam: het dashboard toonde hier vroeger altijd de vaste tekst
+    // "T4P Business Kompas", ongeacht welk instrument de deelnemer werkelijk
+    // invulde (bevinding 5 in verslag-t4teens-doorloop.md). Dit haalt de
+    // werkelijke naam op uit de registry (server/registry.ts), dezelfde
+    // eenduidige bron die ook de vragenlijst- en rapportroutes gebruiken.
     const afnameLijst = [] as Array<{
       id: number;
       naam: string;
@@ -275,10 +282,13 @@ export function registerDeelnemerRoutes(app: Express): void {
       status: string;
       taal: string;
       voltooidOp: string | null;
+      instrumentId: string;
+      instrumentNaam: string;
       rapporten: Array<{ id: number; variant: string; titel: string }>;
     }>;
     for (const a of afnames) {
       const raps = await storage.listRapporten(a.id);
+      const descriptor = (a.instrumentId && getDescriptor(a.instrumentId)) || getDefaultDescriptor();
       afnameLijst.push({
         id: a.id,
         naam: a.name,
@@ -286,6 +296,8 @@ export function registerDeelnemerRoutes(app: Express): void {
         status: a.status,
         taal: a.taal,
         voltooidOp: a.completedAt ?? null,
+        instrumentId: descriptor.instrumentId,
+        instrumentNaam: descriptor.name,
         rapporten: raps.map((r) => ({ id: r.id, variant: r.variant, titel: r.titel })),
       });
     }
