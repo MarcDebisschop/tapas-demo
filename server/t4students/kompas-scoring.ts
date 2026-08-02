@@ -639,6 +639,32 @@ export function scoreStudiekompas(
   const intTopGroep = intGroepen[0] || [];
 
   // ── Drivers (blauwdruk §8) ───────────────────────────────────────────────
+  //
+  // ZES ITEMS, VIJF DRIVERS. Dat ziet er scheef uit maar klopt (punt 5 uit
+  // fase 1). D1 tot en met D4 zijn herkenningsitems die elk een eigen driver
+  // meten: Be Perfect, Please Others, Try Hard, Hurry Up. D5 en D6 zijn geen
+  // vijfde en zesde driver maar situatie-items: je kiest een handelwijze en de
+  // gekozen optie verdeelt ladingen over de driver die erachter zit. D5 optie b
+  // laadt Please Others, D6 optie b laadt Hurry Up. Er is dus geen zesde driver
+  // die ontbreekt.
+  //
+  // Blauwdruk regel 10 zegt het zo: "Constructen zonder energie-anker (D1-D4
+  // drivers)", en TABEL 1 zet D5 en D6 in de rij "SJT-keuze", naast F4 en F5.
+  // ITEMSELECTIE punt 3 telt het al voor: "Drivers (6 items, bron: clusters
+  // 1-5)". Zes items, vijf clusters, zo bedoeld.
+  //
+  // Wat wel verwarrend blijft: D5 en D6 dragen in de data allebei het veld
+  // construct "Be Strong". Dat veld wordt hier alleen gelezen om een
+  // energyValue op te bergen, en geen van beide items heeft er een. Het doet
+  // dus niets. Het is niet aangeraakt omdat de blauwdruk er niets over zegt en
+  // wijzigen zou gokken zijn; het staat in het verslag van fase 1c.
+  //
+  // Let bij het lezen van driverScores op dat de vijf drivers een verschillend
+  // bereik hebben, omdat ze een verschillend aantal bronnen hebben: Try Hard
+  // 0 tot 3 (alleen D3), Be Perfect 0 tot 4, Hurry Up en Be Strong 0 tot 5,
+  // Please Others 0 tot 6. Be Strong heeft zelfs helemaal geen eigen
+  // herkenningsitem. De doorslagregel hieronder vergelijkt die ruwe sommen
+  // rechtstreeks; het gevolg daarvan is gemeten en voorgelegd in het verslag.
   const driverFam = instrumentDef.families.find((f) => f.id === "Drivers");
   const driverCons = driverFam ? driverFam.constructs : [];
   const driverScores: Record<string, number> = {};
