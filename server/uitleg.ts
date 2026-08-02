@@ -14,6 +14,7 @@
 
 import type { Taal } from "@shared/talen";
 import { filterTalentFoci } from "@shared/talent-constructs";
+import { ENERGIE_TERUGVAL, isLageEnergie } from "@shared/energie-schaal";
 
 // ---------------------------------------------------------------------------
 // VLAAMSE STEM — definitieve prompt voor Sulafat TTS
@@ -136,7 +137,9 @@ function bouwProfiel(main: any, naam?: string): UitlegProfiel | null {
   const driverLabel: "laag" | "matig" | "hoog" = (driverRisk.label as any) ?? "laag";
 
   const vragenlijstEnergie =
-    typeof meta.normalizedQuestionnaireEnergy === "number" ? meta.normalizedQuestionnaireEnergy : 6;
+    typeof meta.normalizedQuestionnaireEnergy === "number"
+      ? meta.normalizedQuestionnaireEnergy
+      : ENERGIE_TERUGVAL;
   const baselineEnergie =
     typeof meta.baselineProfessionalEnergy === "number" ? meta.baselineProfessionalEnergy : vragenlijstEnergie;
   const consScore =
@@ -406,7 +409,8 @@ function blok5(p: UitlegProfiel, taal: Taal, toon: Toon): string {
   const driverNaam = p.driverTop ? p.driverTop.construct : "";
   const driverHoog = p.driverLabel === "hoog";
   const driverMatig = p.driverLabel === "matig";
-  const energieLaag = p.vragenlijstEnergie < 4.5;
+  // Eigen grens 4,5 vervangen door de gedeelde onderste band.
+  const energieLaag = isLageEnergie(p.vragenlijstEnergie);
 
   if (toon === "deelnemer") {
     const m: ML = {

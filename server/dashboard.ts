@@ -12,6 +12,13 @@
 // ---------------------------------------------------------------------------
 import type { Taal } from "@shared/talen";
 import { filterTalentFoci } from "@shared/talent-constructs";
+import {
+  ENERGIE_MAX,
+  ENERGIE_MIN,
+  ENERGIE_TERUGVAL,
+  energieBand,
+  type EnergieBand,
+} from "@shared/energie-schaal";
 
 type ML = Record<Taal, string>;
 const k = (m: ML, taal: Taal): string => m[taal] ?? m.nl;
@@ -128,20 +135,20 @@ function quoteVoorFocus(naam: string, taal: Taal): string {
   return k(m, taal);
 }
 
+// Het dashboard toont vier niveaus met eigen woorden. De grenzen komen uit
+// shared/energie-schaal.ts; hier staat alleen nog de vertaling van de canonieke
+// band naar het woord dat het dashboard gebruikt. Voorheen knipte het dashboard
+// zelf op 7,5 / 6 / 4,5, terwijl het rapport op 7,5 / 5 / 3 knipte.
+const DASHBOARD_ENERGIEWOORD: Record<EnergieBand, ML> = {
+  hoog: { nl: "hoog", fr: "élevée", en: "high", es: "alta", ru: "высокая" },
+  stevig: { nl: "gezond", fr: "saine", en: "healthy", es: "saludable", ru: "здоровая" },
+  wisselend: { nl: "matig", fr: "modérée", en: "moderate", es: "moderada", ru: "умеренная" },
+  kwetsbaar: { nl: "laag", fr: "basse", en: "low", es: "baja", ru: "низкая" },
+};
+
 function energieLabel(n: number, taal: Taal): string {
   // n op /10
-  let key: "hoog" | "gezond" | "matig" | "laag";
-  if (n >= 7.5) key = "hoog";
-  else if (n >= 6) key = "gezond";
-  else if (n >= 4.5) key = "matig";
-  else key = "laag";
-  const m: Record<typeof key, ML> = {
-    hoog: { nl: "hoog", fr: "élevée", en: "high", es: "alta", ru: "высокая" },
-    gezond: { nl: "gezond", fr: "saine", en: "healthy", es: "saludable", ru: "здоровая" },
-    matig: { nl: "matig", fr: "modérée", en: "moderate", es: "moderada", ru: "умеренная" },
-    laag: { nl: "laag", fr: "basse", en: "low", es: "baja", ru: "низкая" },
-  } as const;
-  return k(m[key], taal);
+  return k(DASHBOARD_ENERGIEWOORD[energieBand(n)], taal);
 }
 
 export interface DashboardData {
@@ -195,11 +202,11 @@ export function bouwDashboardData(contractRaw: unknown, taal: Taal): DashboardDa
 
   // Energie op /10.
   const vragenlijstEnergie = typeof meta.normalizedQuestionnaireEnergy === "number"
-    ? Math.max(0, Math.min(10, meta.normalizedQuestionnaireEnergy))
-    : 5;
+    ? Math.max(ENERGIE_MIN, Math.min(ENERGIE_MAX, meta.normalizedQuestionnaireEnergy))
+    : ENERGIE_TERUGVAL;
   const baseline = typeof meta.baselineProfessionalEnergy === "number"
-    ? Math.max(0, Math.min(10, meta.baselineProfessionalEnergy))
-    : 5;
+    ? Math.max(ENERGIE_MIN, Math.min(ENERGIE_MAX, meta.baselineProfessionalEnergy))
+    : ENERGIE_TERUGVAL;
 
   // Quotes voor de hero.
   const quotes: string[] = [];

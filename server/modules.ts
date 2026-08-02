@@ -27,6 +27,7 @@
 // ---------------------------------------------------------------------------
 import type { Taal } from "@shared/talen";
 import { isTapasBeeld, isTalentFocusConstruct } from "@shared/talent-constructs";
+import { ENERGIE_TERUGVAL } from "@shared/energie-schaal";
 
 type ML = Record<Taal, string>;
 const k = (m: ML, taal: Taal): string => m[taal] ?? m.nl;
@@ -148,8 +149,8 @@ export function parseModuleProfiel(contractRaw: unknown, naam?: string | null): 
     driversEnergiekost,
     tapasBeeld,
     driverLabel: String(dr.label ?? "laag"),
-    energie: num(meta.normalizedQuestionnaireEnergy, 5),
-    baseline: num(meta.baselineProfessionalEnergy, 5),
+    energie: num(meta.normalizedQuestionnaireEnergy, ENERGIE_TERUGVAL),
+    baseline: num(meta.baselineProfessionalEnergy, ENERGIE_TERUGVAL),
     discrepantie: num(meta.energyDiscrepancy, 0),
     herkenbaarheid: typeof cons.score === "number" ? cons.score : null,
   };

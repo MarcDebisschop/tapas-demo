@@ -5,6 +5,7 @@
 // Wetenschappelijke bronnen inline vermeld per module.
 
 import { sportNaam } from "./scoring";
+import { ENERGIE_TERUGVAL } from "../../shared/energie-schaal";
 import type { ConstructRow } from "./scoring";
 import type { ModuleResultaat, SchaalResultaat } from "./module-scoring";
 import {
@@ -372,8 +373,8 @@ export function genereerT4SportsRapportCompleet(
   const sportprofiel = meta.sportprofiel ?? {};
   const consistency = meta.consistency ?? {};
 
-  const normEnergy = num(meta.normalizedQuestionnaireEnergy, 5);
-  const baselineEnergy = num(meta.baselineAthleetEnergy, 5);
+  const normEnergy = num(meta.normalizedQuestionnaireEnergy, ENERGIE_TERUGVAL);
+  const baselineEnergy = num(meta.baselineAthleetEnergy, ENERGIE_TERUGVAL);
   const energieProfiel = sportprofiel.energieProfiel ?? "midden";
   const drukProfiel = sportprofiel.drukProfiel ?? "wisselvallig";
 

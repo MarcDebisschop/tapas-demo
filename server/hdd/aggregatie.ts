@@ -20,6 +20,8 @@
  * (assembled from the source instruments at report time).
  */
 
+import { ENERGIE_GRENZEN } from "../../shared/energie-schaal";
+
 // ---------------------------------------------------------------------------
 // Scientific anchors (documented, not arbitrary)
 // ---------------------------------------------------------------------------
@@ -27,8 +29,14 @@
 // Lencioni official 38-item online assessment cut-offs (average-based).
 export const TEAM_HEALTH_BANDS = { high: 3.75, medium: 3.25 } as const;
 
-// 2MINSCAN energy bands on the 0–10 scale.
-export const ENERGY_BANDS = { robust: 7.0, watch: 5.0 } as const;
+// Energy bands on the 0-10 scale. De grenzen komen uit shared/energie-schaal.ts
+// en staan hier niet meer apart. Voorheen knipte HDD op 7,0 en 5,0; de gedeelde
+// knipverdeling knipt op 7,5 en 5,0. De naam ENERGY_BANDS blijft, zodat de rest
+// van deze module en de tests ongewijzigd blijven lezen.
+export const ENERGY_BANDS = {
+  robust: ENERGIE_GRENZEN.hoog,
+  watch: ENERGIE_GRENZEN.stevig,
+} as const;
 
 // Composite weights (open, adjustable per engagement). Team Health carries most
 // weight as the strongest predictor of execution/retention; Energy and Talent

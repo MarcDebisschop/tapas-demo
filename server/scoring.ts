@@ -1,6 +1,7 @@
 import { instrument } from "./instrument";
 import type { InstrumentBlock } from "./instrument";
 import { berekenAfnamekwaliteit, type Afnamekwaliteit, type ItemTijden } from "./afnamekwaliteit";
+import { energieNaarTienschaal } from "../shared/energie-schaal";
 
 // ---------------------------------------------------------------------------
 // Server-side scoringengine — getrouwe port van de gevalideerde JS-engine
@@ -172,10 +173,6 @@ function driverRisk(rows: ConstructRow[]): DriverRisk {
   return { avg, label, top };
 }
 
-function energyToTenScale(avg: number): number {
-  return round2(((avg + 2) / 4) * 10);
-}
-
 export interface Consistency {
   score: number;
   label: string;
@@ -255,7 +252,7 @@ export function buildMainScores(
     ? round2(allEnergy.reduce((a, b) => a + b, 0) / allEnergy.length)
     : 0;
   const consistency = consistencyMetrics(rows, responses);
-  const normalized = energyToTenScale(avgEnergy);
+  const normalized = energieNaarTienschaal(avgEnergy);
   const discrepancy = round2(baseline - normalized);
   return {
     meta: {

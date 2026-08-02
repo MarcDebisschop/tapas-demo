@@ -5,6 +5,7 @@
 import { hydrateInstrument } from "../instrument";
 import type { InstrumentBlock } from "../instrument";
 import t4sportsJson from "../data/t4sports.json";
+import { energieBandDrie, energieNaarTienschaal } from "../../shared/energie-schaal";
 
 const t4sportsInstrument = hydrateInstrument(t4sportsJson);
 const blocks: InstrumentBlock[] = t4sportsInstrument.blocks;
@@ -155,10 +156,6 @@ function driverRisk(rows: ConstructRow[]): { label: string; dominant: string } {
   return { label, dominant: top?.construct ?? "—" };
 }
 
-function energyToTenScale(avg: number): number {
-  return round2(((avg + 2) / 4) * 10);
-}
-
 function consistencyScore(rows: ConstructRow[], responses: Responses): { score: number; label: string } {
   const answered = Object.values(responses).filter((r): r is BlockResponse => r != null);
   const choicePairs = answered.filter((r) => r.most && r.least).length;
@@ -215,7 +212,7 @@ export function buildT4SportsContract(opts: {
 
   const allEnergy = rows.map((r) => r.avgEnergy).filter((v) => typeof v === "number");
   const avgEnergy = allEnergy.length ? round2(allEnergy.reduce((a, b) => a + b, 0) / allEnergy.length) : 0;
-  const normalizedQuestionnaireEnergy = energyToTenScale(avgEnergy);
+  const normalizedQuestionnaireEnergy = energieNaarTienschaal(avgEnergy);
 
   const consistency = consistencyScore(rows, opts.responses);
   const driverR = driverRisk(rows);
@@ -227,8 +224,9 @@ export function buildT4SportsContract(opts: {
   const dominanteVersneller = versnellers[0] ? sportNaam(versnellers[0].construct) : "—";
   const dominanteDriver = driverR.dominant;
 
-  const energieProfiel: "hoog" | "midden" | "laag" =
-    normalizedQuestionnaireEnergy >= 7 ? "hoog" : normalizedQuestionnaireEnergy >= 4.5 ? "midden" : "laag";
+  // Knipverdeling uit shared/energie-schaal.ts. T4Sports hanteerde hier eigen
+  // grenzen (7 en 4,5) op dezelfde schaal 0 tot 10 als de rest van het platform.
+  const energieProfiel: "hoog" | "midden" | "laag" = energieBandDrie(normalizedQuestionnaireEnergy);
 
   // Drukprofiel: dominant driver energie bepaalt gaspedaal/rem
   const dominantDriverRow = rows.filter((r) => r.family === "Drivers").sort((a, b) => b.net - a.net)[0];

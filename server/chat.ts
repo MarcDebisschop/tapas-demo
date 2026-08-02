@@ -12,6 +12,7 @@
 // ---------------------------------------------------------------------------
 import type { Taal } from "@shared/talen";
 import { filterTalentFoci } from "@shared/talent-constructs";
+import { isLageEnergie } from "@shared/energie-schaal";
 
 // --- Centrale, instelbare limiet-config ------------------------------------
 // gratisLimiet: hoeveel vragen een deelnemer gratis mag stellen (instelbaar).
@@ -203,7 +204,7 @@ export function bouwChatProfiel(contractRaw: unknown, taal: Taal, naam?: string 
     );
     score += 1;
   }
-  if (vragenlijstEnergie < 4.5) {
+  if (isLageEnergie(vragenlijstEnergie)) {
     redenen.push(
       k(
         {

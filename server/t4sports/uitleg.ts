@@ -3,6 +3,7 @@
 // Bouwt een gesproken script van 6 blokken op basis van het T4Sports contract.
 
 import { sportNaam } from "./scoring";
+import { ENERGIE_TERUGVAL } from "../../shared/energie-schaal";
 
 export interface UitlegBlok {
   id: string;
@@ -132,8 +133,8 @@ export function bouwT4SportsUitlegScript(
   const dominanteDriver = topDriverRow?.construct ?? "—";
   const driverDuiding = DRIVER_SPORTDUIDING[dominanteDriver];
 
-  const normEnergy = meta.normalizedQuestionnaireEnergy ?? 5;
-  const baselineEnergy = meta.baselineAthleetEnergy ?? 5;
+  const normEnergy = meta.normalizedQuestionnaireEnergy ?? ENERGIE_TERUGVAL;
+  const baselineEnergy = meta.baselineAthleetEnergy ?? ENERGIE_TERUGVAL;
   const drukProfielRaw: string = String(sportprofiel.drukProfiel ?? "wisselvallig");
   const drukProfiel: "gaspedaal" | "rem" | "wisselvallig" =
     drukProfielRaw === "gaspedaal" || drukProfielRaw === "rem" ? drukProfielRaw : "wisselvallig";

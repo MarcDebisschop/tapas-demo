@@ -20,6 +20,7 @@
 // ---------------------------------------------------------------------------
 import type { Taal } from "@shared/talen";
 import { isTapasBeeld } from "@shared/talent-constructs";
+import { ENERGIE_TERUGVAL, isPositieveEnergie } from "@shared/energie-schaal";
 
 type ML = Record<Taal, string>;
 const k = (m: ML, t: Taal): string => m[t] ?? m.nl;
@@ -153,8 +154,8 @@ export function parseProfiel(contractRaw: unknown, naam?: string | null): Profie
     tapasBeeld,
     driverTopNet: drivers.length ? drivers[0]! : null,
     driverLabel: String(dr.label ?? "laag"),
-    energieVragenlijst: num(meta.normalizedQuestionnaireEnergy, 5),
-    baseline: num(meta.baselineProfessionalEnergy, 5),
+    energieVragenlijst: num(meta.normalizedQuestionnaireEnergy, ENERGIE_TERUGVAL),
+    baseline: num(meta.baselineProfessionalEnergy, ENERGIE_TERUGVAL),
     discrepantie: num(meta.energyDiscrepancy, 0),
     herkenbaarheid: typeof cons.score === "number" ? cons.score : null,
     driverItems,
@@ -943,7 +944,7 @@ export function beantwoord(vraag: string, p: ProfielFeiten, taal: Taal): { reply
   const synDriver = p.driverTopNet?.construct ?? null;
   const synKost = p.driversEnergieverlies[0]?.construct ?? null;
   const synEnergie = e1(p.energieVragenlijst);
-  const synEnergiePos = p.energieVragenlijst >= 6;
+  const synEnergiePos = isPositieveEnergie(p.energieVragenlijst);
   const synBeeld = p.tapasBeeld?.construct ?? null;
   // Discrepantie: baseline (eigen voorinschatting) - gemeten. Positief = je
   // schatte jezelf vooraf hoger in dan de meting; negatief = lager. Alleen
@@ -1372,7 +1373,7 @@ export function beantwoord(vraag: string, p: ProfielFeiten, taal: Taal): { reply
     const fociTekst = f2 ? lijst([f1, f2], taal) : f1;
     const versnTekst = v2 ? lijst([v1, v2], taal) : v1;
     const tlEnergie = e1(p.energieVragenlijst);
-    const tlEnergiePos = p.energieVragenlijst >= 6;
+    const tlEnergiePos = isPositieveEnergie(p.energieVragenlijst);
     const tlKost = p.driversEnergieverlies[0]?.construct ?? null;
     // Verbatim bewijs voor de stuwende driver — verankert de loopbaanrichting in
     // de eigen onderschreven uitspraken i.p.v. abstract advies.

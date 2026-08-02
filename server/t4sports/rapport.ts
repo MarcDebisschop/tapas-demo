@@ -4,6 +4,7 @@
 // Kleurstijl: donker navy #0D1B3E + goud #C9A84C + wit.
 
 import { sportNaam } from "./scoring";
+import { ENERGIE_TERUGVAL } from "../../shared/energie-schaal";
 import type { ConstructRow } from "./scoring";
 
 function num(x: unknown, fallback = 0): number {
@@ -140,8 +141,8 @@ export function genereerT4SportsRapport(contractRaw: unknown, taal: string = "nl
   const consistency = meta.consistency ?? {};
   const driverRisk = meta.driverRisk ?? {};
 
-  const normEnergy = num(meta.normalizedQuestionnaireEnergy, 5);
-  const baselineEnergy = num(meta.baselineAthleetEnergy, 5);
+  const normEnergy = num(meta.normalizedQuestionnaireEnergy, ENERGIE_TERUGVAL);
+  const baselineEnergy = num(meta.baselineAthleetEnergy, ENERGIE_TERUGVAL);
   const energieProfiel = sportprofiel.energieProfiel ?? "midden";
   const drukProfiel = sportprofiel.drukProfiel ?? "wisselvallig";
 

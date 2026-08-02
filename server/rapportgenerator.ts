@@ -20,6 +20,7 @@
 import { instrument, kies } from "./instrument";
 import { TALEN, STANDAARD_TAAL, type Taal } from "../shared/talen";
 import { isTapasBeeld } from "../shared/talent-constructs";
+import { energieBand, type EnergieBand } from "../shared/energie-schaal";
 
 export interface RapportSectie {
   kop: string;
@@ -55,18 +56,18 @@ function k(v: ML, taal: Taal): string {
   return v[taal] ?? v[STANDAARD_TAAL];
 }
 
-// Energielabel-duiding op basis van het genormaliseerde niveau.
-const ENERGIE_NIVEAU: Record<"hoog" | "stevig" | "wisselend" | "kwetsbaar", ML> = {
+// Energielabel-duiding op basis van het genormaliseerde niveau. De grenzen
+// staan in shared/energie-schaal.ts; hier staat alleen nog het woord dat het
+// rapport per band toont. Deze verdeling is als canoniek gekozen, dus de
+// getoonde woorden veranderen hier niet.
+const ENERGIE_NIVEAU: Record<EnergieBand, ML> = {
   hoog: m("hoog", "élevé", "high", "alto", "высокий"),
   stevig: m("stevig", "solide", "solid", "sólido", "устойчивый"),
   wisselend: m("wisselend", "variable", "variable", "variable", "переменный"),
   kwetsbaar: m("kwetsbaar", "fragile", "fragile", "frágil", "уязвимый"),
 };
-function energieNiveauKey(g: number): keyof typeof ENERGIE_NIVEAU {
-  if (g >= 7.5) return "hoog";
-  if (g >= 5) return "stevig";
-  if (g >= 3) return "wisselend";
-  return "kwetsbaar";
+function energieNiveauKey(g: number): EnergieBand {
+  return energieBand(g);
 }
 
 // Niveau-labels (laag/matig/middelmatig/hoog) zoals het bevroren contract ze
