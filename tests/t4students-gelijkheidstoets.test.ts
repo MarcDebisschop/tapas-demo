@@ -101,6 +101,16 @@ import { T4STUDENTS_INSTRUMENT } from "../server/t4students/instrument";
 //    uitvoer gehaald, dus de bron heeft daar een getal waar wij niets meer
 //    hebben. Zie tests/t4students-geen-gemengd-getal.test.ts.
 //
+// J. drivers.energielabels (17 velden, een per patroon)
+//    De vijf drivers hebben sinds de motorronde een energie-anker, en dus een
+//    energiesaldo. Dat saldo krijgt een eigen woord: remmend, neutraal of
+//    gaspedaal. Bewust niet de vier balanslabels van de foci en de versnellers,
+//    want die spreken over een talent dat je wel of niet inzet en een driver is
+//    geen talent. De bron kende dit veld niet, dus staat het overal naast een
+//    lege plaats. Omdat de bron het veld in het geheel niet heeft, telt het per
+//    patroon als een verschil en niet per driver. Zie
+//    tests/t4students-drivers-energielabel.test.ts.
+//
 // I. de overige velden van energie.kaart (27 velden)
 //    Motorronde punt 4. Een onbeantwoord of half beantwoord energie-item kreeg
 //    "neutraal", hetzelfde woord als wie werkelijk neutraal antwoordde. Het
@@ -199,6 +209,10 @@ const TOEGESTANE_AFWIJKINGEN: { reden: string; patroon: RegExp }[] = [
   {
     reden: "I. energie.kaart: een onbeantwoord item heet niet langer neutraal (motorronde punt 4)",
     patroon: /^[^.]+\.energie\.kaart\.[^.]+$/,
+  },
+  {
+    reden: "J. drivers.energielabels: het energiesaldo van een driver krijgt een eigen woord",
+    patroon: /^[^.]+\.drivers\.energielabels(\..+)?$/,
   },
 ];
 
@@ -311,8 +325,9 @@ describe("gelijkheidstoets deel 1: tegen de originele motor, met benoemde uitzon
       "G. interesse.topGroep: de kleinere marge deelt ook de interessegebieden anders in (motorronde punt 3)": 51,
       "H. constructScores: geen energiegetal waar geen energie gemeten is (motorronde punt 4), en het gemengde getal bestaat niet meer": 639,
       "I. energie.kaart: een onbeantwoord item heet niet langer neutraal (motorronde punt 4)": 27,
+      "J. drivers.energielabels: het energiesaldo van een driver krijgt een eigen woord": 17,
     });
-    expect(totaal).toBe(2110);
+    expect(totaal).toBe(2127);
   });
 
   it("de veranderde balanslabels zijn precies de constructen met meer dan een bron", () => {

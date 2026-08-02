@@ -186,6 +186,12 @@ export interface T4SResultaat {
     sorted: string[];
     top2: string[];
     doorslag: string | null;
+    /**
+     * Het energiesaldo van elke driver in een eigen woord: remmend, neutraal of
+     * gaspedaal. Bewust niet de vier balanslabels van de foci en de
+     * versnellers, want die spreken over talent en een driver is geen talent.
+     */
+    energielabels: Record<string, string>;
   };
   keerzijde: { minFoci: string[]; minVersnellers: string[]; minDrivers: string[] };
   profielAnker: {
@@ -756,6 +762,33 @@ export function scoreStudiekompas(
   const driverCons = driverFam ? driverFam.constructs : [];
   const driverScores: Record<string, number> = {};
   for (const con of driverCons) driverScores[con] = constructs[con].recognition;
+
+  /**
+   * Het energiesaldo van een driver in een eigen woord.
+   *
+   * WAAROM NIET HET BALANSLABEL
+   * De foci en de versnellers krijgen kernsterkte, overbelast, onderbenut of
+   * latent. Die vier woorden gaan over een talent dat je wel of niet inzet. Een
+   * driver is geen talent maar iets wat je aandrijft, dus zeggen ze daar het
+   * verkeerde. Drie eigen waarden zeggen wat er wel gemeten is: trekt deze
+   * driver je vooruit, houdt hij je tegen, of komt het op nul uit.
+   *
+   * WAAROM NUL NIET HETZELFDE IS ALS NIETS
+   * Nul is op de energieschaal een antwoord: de deelnemer heeft gezegd dat het
+   * hem niets kost en niets oplevert. Dat heet neutraal. Is er geen energie
+   * gemeten, dan is er ook geen saldo en dus geen oordeel; dan staat er dat er
+   * te weinig antwoorden zijn. Neutraal is een uitspraak die gemeten moet zijn.
+   */
+  function driverEnergielabel(con: string): string {
+    const en = avgEnergy(con);
+    if (en === null) return GEEN_MEETPUNT;
+    if (en < 0) return "remmend";
+    if (en > 0) return "gaspedaal";
+    return "neutraal";
+  }
+
+  const driverEnergielabels: Record<string, string> = {};
+  for (const con of driverCons) driverEnergielabels[con] = driverEnergielabel(con);
   const driverSorted = driverCons.slice().sort((a, b) => driverScores[b] - driverScores[a]);
   const tweedeDriver = driverSorted.length >= 2 ? driverScores[driverSorted[1]] : 0;
   let driverDoorslag: string | null = null;
@@ -971,6 +1004,7 @@ export function scoreStudiekompas(
       sorted: driverSorted,
       top2: driverSorted.slice(0, 2),
       doorslag: driverDoorslag,
+      energielabels: driverEnergielabels,
     },
 
     keerzijde: { minFoci, minVersnellers, minDrivers },

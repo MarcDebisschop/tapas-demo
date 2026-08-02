@@ -459,7 +459,14 @@
       "Please Others",
       "Hurry Up"
     ],
-    "doorslag": "Please Others"
+    "doorslag": "Please Others",
+    "energielabels": {
+      "Be Perfect": "te_weinig_antwoorden",
+      "Please Others": "te_weinig_antwoorden",
+      "Try Hard": "te_weinig_antwoorden",
+      "Hurry Up": "te_weinig_antwoorden",
+      "Be Strong": "te_weinig_antwoorden"
+    }
   },
   "keerzijde": {
     "minFoci": [

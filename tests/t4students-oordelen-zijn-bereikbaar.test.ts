@@ -127,6 +127,7 @@ function oordeelCellen(r: (typeof uitkomsten)[number]): string[] {
     ...Object.values(r.versnellers.balanslabels),
     ...Object.values(r.foci.balanslabels),
     ...Object.values(r.energie.kaart),
+    ...Object.values(r.drivers.energielabels),
   ];
 }
 
@@ -136,6 +137,11 @@ const alertIds = uitkomsten.map((r) => r.alerts.actief.map((a) => a.id));
 
 const BALANSLABELS = ["kernsterkte", "overbelast", "onderbenut", "latent"];
 const ENERGIESTATUSSEN = ["kernsterkte", "overbelasting", "onderbenutting", "neutraal"];
+/**
+ * Het energiesaldo van een driver in een eigen woord. "neutraal" staat al in de
+ * lijst hierboven en betekent daar hetzelfde: gemeten, en het saldo is nul.
+ */
+const DRIVER_ENERGIELABELS = ["remmend", "neutraal", "gaspedaal"];
 const SIGNALEN = [
   "beeld_en_zekerheid_lopen_gelijk",
   "hoge_zekerheid_open_beeld",
@@ -169,6 +175,11 @@ describe("punt 5: elk oordeel kan vallen en geen enkel oordeel valt altijd", () 
     expect(aantalMet(label), `${label} valt altijd`).toBeLessThan(cellen.length);
   });
 
+  it.each(DRIVER_ENERGIELABELS)("het energielabel '%s' van een driver valt en valt niet altijd", (label) => {
+    expect(aantalMet(label), `${label} valt nooit`).toBeGreaterThan(0);
+    expect(aantalMet(label), `${label} valt altijd`).toBeLessThan(cellen.length);
+  });
+
   it("de melding dat er te weinig antwoorden zijn, valt en valt niet altijd", () => {
     expect(aantalMet(GEEN_OORDEEL)).toBeGreaterThan(0);
     expect(aantalMet(GEEN_OORDEEL)).toBeLessThan(cellen.length);
@@ -188,7 +199,13 @@ describe("punt 5: elk oordeel kan vallen en geen enkel oordeel valt altijd", () 
 
   it("er komt geen enkel oordeel voor dat hierboven niet opgesomd staat", () => {
     // Anders kan er een oordeel bijkomen dat nooit bewaakt wordt.
-    const bekend = new Set([...BALANSLABELS, ...ENERGIESTATUSSEN, GEEN_OORDEEL, "niet_van_toepassing"]);
+    const bekend = new Set([
+      ...BALANSLABELS,
+      ...ENERGIESTATUSSEN,
+      ...DRIVER_ENERGIELABELS,
+      GEEN_OORDEEL,
+      "niet_van_toepassing",
+    ]);
     const onbekend = [...new Set(cellen)].filter((c) => !bekend.has(c));
     expect(onbekend, `onbewaakte oordelen: ${onbekend.join(", ")}`).toEqual([]);
     expect(
