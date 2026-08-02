@@ -65,15 +65,19 @@
 //     Hoeveel elementen aan de onderkant getoond worden als nuance. Twee: één
 //     is toeval, drie leest als een lijstje tekorten.
 //
-//   tieMargin (1.0)
-//     Scores die niet meer dan een punt uit elkaar liggen, gelden als gelijk en
-//     komen in dezelfde groep. Zo wordt een verschil van een tiende niet als
-//     een rangorde gepresenteerd.
-//     LET OP: als enige van deze constanten is deze niet gekalibreerd. De
-//     blauwdruk noemt hem nergens. Tot fase 1c stond hij helemaal niet in de
-//     scoringMap en zette een terugval in de code hem op 1.0; hij staat nu
-//     benoemd op diezelfde waarde, zodat zichtbaar is dat hij bestaat en wat
-//     hij doet. Zie het verslag van fase 1c.
+//   tieMargin (0.3)
+//     Scores die niet meer dan deze marge uit elkaar liggen, gelden als gelijk
+//     en komen in dezelfde groep. Tot de motorronde stond de marge op 1.0, en
+//     dan gold een heel punt verschil op de herkenningsschaal nog als gelijk:
+//     wie zich in iets duidelijk meer herkende dan in iets anders, las dat de
+//     twee even sterk waren. Op verzoek van de opdrachtgever staat de marge nu
+//     op 0.3.
+//     LET OP: sinds punt 2 wordt er op herkenning gerangschikt, en die scores
+//     zijn allemaal hele getallen. Elke marge onder 1 komt daardoor op
+//     hetzelfde neer: alleen wie precies gelijk scoort, komt in dezelfde groep.
+//     0.3 laat wel ruimte als er ooit een halve punt bij komt.
+//     De blauwdruk noemt tieMargin nergens; de waarde is een keuze van de
+//     opdrachtgever en niet uit het ontwerp afgeleid.
 //
 // De overzetting is letterlijk. Geen enkele constante, drempel of formule is
 // gewijzigd, ook niet waar iets bevreemdt. Wat opviel staat beschreven in
@@ -490,9 +494,9 @@ export function scoreStudiekompas(
   //
   // tieMargin stond eerder nergens en werd door een terugval in deze regel op
   // 1.0 gezet (punt 4 uit fase 1). Hij staat nu bij de andere acht constanten
-  // in het instrumentbestand, met dezelfde waarde, zodat er nog maar een plaats
-  // is waar het getal vandaan komt. Let op: 1.0 is niet gekalibreerd. De
-  // blauwdruk noemt tieMargin niet; de waarde komt uit de oorspronkelijke code.
+  // in het instrumentbestand, zodat er nog maar een plaats is waar het getal
+  // vandaan komt. De waarde is in de motorronde op 0.3 gezet; zie de uitleg
+  // bovenaan dit bestand en tests/t4students-gelijke-stand.test.ts.
   const tieMargin = C.tieMargin;
 
   // Scores die dicht bij elkaar liggen worden tot één groep gebundeld, zodat

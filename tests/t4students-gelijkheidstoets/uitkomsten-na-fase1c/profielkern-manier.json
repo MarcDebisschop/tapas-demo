@@ -218,12 +218,7 @@
       "Systematisch/Uitvoerend"
     ],
     "topGroep": [
-      "Complexiteit/Conceptueel",
-      "Functioneel Innovatief",
-      "Sociaal Interactief",
-      "Overdrachtelijk Interactief",
-      "Artistiek Innovatief",
-      "Systematisch/Uitvoerend"
+      "Complexiteit/Conceptueel"
     ],
     "top2": [
       "Complexiteit/Conceptueel",
@@ -239,10 +234,16 @@
     },
     "groepen": [
       [
-        "Complexiteit/Conceptueel",
+        "Complexiteit/Conceptueel"
+      ],
+      [
         "Functioneel Innovatief",
-        "Sociaal Interactief",
-        "Overdrachtelijk Interactief",
+        "Sociaal Interactief"
+      ],
+      [
+        "Overdrachtelijk Interactief"
+      ],
+      [
         "Artistiek Innovatief",
         "Systematisch/Uitvoerend"
       ]
@@ -266,16 +267,13 @@
       "Resultaat"
     ],
     "kopGroep": [
-      "Constructief onderscheidend",
-      "Analyse",
-      "Individueel ondersteunend",
-      "Groepsondersteunend",
-      "Impact",
-      "Resultaat"
+      "Constructief onderscheidend"
     ],
     "groepen": [
       [
-        "Constructief onderscheidend",
+        "Constructief onderscheidend"
+      ],
+      [
         "Analyse",
         "Individueel ondersteunend",
         "Groepsondersteunend",
@@ -292,13 +290,7 @@
       "Constructief onderscheidend": "kernsterkte"
     },
     "dominante": "Constructief onderscheidend",
-    "gedeeldMet": [
-      "Analyse",
-      "Individueel ondersteunend",
-      "Groepsondersteunend",
-      "Impact",
-      "Resultaat"
-    ]
+    "gedeeldMet": []
   },
   "convergentie": {
     "onderzoekend": "bevestigd",
@@ -439,15 +431,12 @@
       "strategie": "herstructurerend",
       "belofte": "maak er je eigen versie van; herordenen en hertekenen mag"
     },
-    "secondaryVersneller": null,
-    "secundair": null,
-    "gedeeldMet": [
-      "Analyse",
-      "Individueel ondersteunend",
-      "Groepsondersteunend",
-      "Impact",
-      "Resultaat"
-    ]
+    "secondaryVersneller": "Analyse",
+    "secundair": {
+      "strategie": "bottom-up vanuit de onderdelen",
+      "belofte": "begin bij de bouwstenen en doorgrond eerst hoe het in elkaar zit"
+    },
+    "gedeeldMet": []
   },
   "interesse": {
     "scores": {
@@ -468,11 +457,7 @@
     ],
     "topGroep": [
       "Investigative",
-      "Conventioneel",
-      "Realistisch",
-      "Sociaal",
-      "Ondernemend",
-      "Artistiek"
+      "Conventioneel"
     ]
   },
   "drivers": {

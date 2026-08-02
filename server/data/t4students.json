@@ -1150,7 +1150,7 @@
       "driverDoorslagFactor": 2,
       "beeldNietInEnergieDrempel": 0,
       "leastCharacteristicCount": 2,
-      "tieMargin": 1.0
+      "tieMargin": 0.3
     },
     "beeldItems": {
       "BE1": "Helderheid/zingeving",

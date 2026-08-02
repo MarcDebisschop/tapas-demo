@@ -216,12 +216,7 @@
       "Sociaal Interactief"
     ],
     "topGroep": [
-      "Overdrachtelijk Interactief",
-      "Functioneel Innovatief",
-      "Artistiek Innovatief",
-      "Complexiteit/Conceptueel",
-      "Systematisch/Uitvoerend",
-      "Sociaal Interactief"
+      "Overdrachtelijk Interactief"
     ],
     "top2": [
       "Overdrachtelijk Interactief",
@@ -237,10 +232,14 @@
     },
     "groepen": [
       [
-        "Overdrachtelijk Interactief",
+        "Overdrachtelijk Interactief"
+      ],
+      [
         "Functioneel Innovatief",
         "Artistiek Innovatief",
-        "Complexiteit/Conceptueel",
+        "Complexiteit/Conceptueel"
+      ],
+      [
         "Systematisch/Uitvoerend",
         "Sociaal Interactief"
       ]
@@ -265,19 +264,21 @@
     ],
     "kopGroep": [
       "Individueel ondersteunend",
-      "Resultaat",
-      "Constructief onderscheidend",
-      "Analyse",
-      "Impact",
-      "Groepsondersteunend"
+      "Resultaat"
     ],
     "groepen": [
       [
         "Individueel ondersteunend",
-        "Resultaat",
-        "Constructief onderscheidend",
+        "Resultaat"
+      ],
+      [
+        "Constructief onderscheidend"
+      ],
+      [
         "Analyse",
-        "Impact",
+        "Impact"
+      ],
+      [
         "Groepsondersteunend"
       ]
     ],
@@ -291,11 +292,7 @@
     },
     "dominante": "Individueel ondersteunend",
     "gedeeldMet": [
-      "Resultaat",
-      "Constructief onderscheidend",
-      "Analyse",
-      "Impact",
-      "Groepsondersteunend"
+      "Resultaat"
     ]
   },
   "convergentie": {
@@ -440,11 +437,7 @@
     "secondaryVersneller": null,
     "secundair": null,
     "gedeeldMet": [
-      "Resultaat",
-      "Constructief onderscheidend",
-      "Analyse",
-      "Impact",
-      "Groepsondersteunend"
+      "Resultaat"
     ]
   },
   "interesse": {
@@ -466,11 +459,7 @@
     ],
     "topGroep": [
       "Realistisch",
-      "Conventioneel",
-      "Investigative",
-      "Sociaal",
-      "Artistiek",
-      "Ondernemend"
+      "Conventioneel"
     ]
   },
   "drivers": {

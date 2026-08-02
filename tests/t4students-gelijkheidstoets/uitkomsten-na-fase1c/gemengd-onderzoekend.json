@@ -220,11 +220,7 @@
     ],
     "topGroep": [
       "Functioneel Innovatief",
-      "Complexiteit/Conceptueel",
-      "Systematisch/Uitvoerend",
-      "Artistiek Innovatief",
-      "Sociaal Interactief",
-      "Overdrachtelijk Interactief"
+      "Complexiteit/Conceptueel"
     ],
     "top2": [
       "Functioneel Innovatief",
@@ -241,8 +237,12 @@
     "groepen": [
       [
         "Functioneel Innovatief",
-        "Complexiteit/Conceptueel",
-        "Systematisch/Uitvoerend",
+        "Complexiteit/Conceptueel"
+      ],
+      [
+        "Systematisch/Uitvoerend"
+      ],
+      [
         "Artistiek Innovatief",
         "Sociaal Interactief",
         "Overdrachtelijk Interactief"
@@ -275,8 +275,12 @@
       ],
       [
         "Resultaat",
-        "Constructief onderscheidend",
-        "Impact",
+        "Constructief onderscheidend"
+      ],
+      [
+        "Impact"
+      ],
+      [
         "Individueel ondersteunend",
         "Groepsondersteunend"
       ]
@@ -457,11 +461,7 @@
     ],
     "topGroep": [
       "Investigative",
-      "Conventioneel",
-      "Realistisch",
-      "Artistiek",
-      "Sociaal",
-      "Ondernemend"
+      "Conventioneel"
     ]
   },
   "drivers": {

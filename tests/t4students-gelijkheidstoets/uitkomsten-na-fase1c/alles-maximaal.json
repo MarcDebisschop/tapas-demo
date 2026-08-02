@@ -245,7 +245,9 @@
         "Overdrachtelijk Interactief"
       ],
       [
-        "Sociaal Interactief",
+        "Sociaal Interactief"
+      ],
+      [
         "Systematisch/Uitvoerend"
       ]
     ]
@@ -268,17 +270,16 @@
       "Constructief onderscheidend"
     ],
     "kopGroep": [
-      "Groepsondersteunend",
-      "Analyse",
-      "Individueel ondersteunend",
-      "Impact",
-      "Resultaat",
-      "Constructief onderscheidend"
+      "Groepsondersteunend"
     ],
     "groepen": [
       [
-        "Groepsondersteunend",
-        "Analyse",
+        "Groepsondersteunend"
+      ],
+      [
+        "Analyse"
+      ],
+      [
         "Individueel ondersteunend",
         "Impact",
         "Resultaat",
@@ -294,13 +295,7 @@
       "Constructief onderscheidend": "kernsterkte"
     },
     "dominante": "Groepsondersteunend",
-    "gedeeldMet": [
-      "Analyse",
-      "Individueel ondersteunend",
-      "Impact",
-      "Resultaat",
-      "Constructief onderscheidend"
-    ]
+    "gedeeldMet": []
   },
   "convergentie": {
     "onderzoekend": "bevestigd",
@@ -441,15 +436,12 @@
       "strategie": "structuurgestuurd in groep",
       "belofte": "breng eerst orde, overzicht en planning aan, het liefst samen"
     },
-    "secondaryVersneller": null,
-    "secundair": null,
-    "gedeeldMet": [
-      "Analyse",
-      "Individueel ondersteunend",
-      "Impact",
-      "Resultaat",
-      "Constructief onderscheidend"
-    ]
+    "secondaryVersneller": "Analyse",
+    "secundair": {
+      "strategie": "bottom-up vanuit de onderdelen",
+      "belofte": "begin bij de bouwstenen en doorgrond eerst hoe het in elkaar zit"
+    },
+    "gedeeldMet": []
   },
   "interesse": {
     "scores": {

@@ -221,9 +221,7 @@
       "Functioneel Innovatief",
       "Artistiek Innovatief",
       "Sociaal Interactief",
-      "Overdrachtelijk Interactief",
-      "Complexiteit/Conceptueel",
-      "Systematisch/Uitvoerend"
+      "Overdrachtelijk Interactief"
     ],
     "top2": [
       "Functioneel Innovatief",
@@ -242,8 +240,12 @@
         "Functioneel Innovatief",
         "Artistiek Innovatief",
         "Sociaal Interactief",
-        "Overdrachtelijk Interactief",
-        "Complexiteit/Conceptueel",
+        "Overdrachtelijk Interactief"
+      ],
+      [
+        "Complexiteit/Conceptueel"
+      ],
+      [
         "Systematisch/Uitvoerend"
       ]
     ]
@@ -266,20 +268,21 @@
       "Individueel ondersteunend"
     ],
     "kopGroep": [
-      "Resultaat",
-      "Groepsondersteunend",
-      "Impact",
-      "Analyse",
-      "Constructief onderscheidend",
-      "Individueel ondersteunend"
+      "Resultaat"
     ],
     "groepen": [
       [
-        "Resultaat",
+        "Resultaat"
+      ],
+      [
         "Groepsondersteunend",
-        "Impact",
+        "Impact"
+      ],
+      [
         "Analyse",
-        "Constructief onderscheidend",
+        "Constructief onderscheidend"
+      ],
+      [
         "Individueel ondersteunend"
       ]
     ],
@@ -292,13 +295,7 @@
       "Constructief onderscheidend": "kernsterkte"
     },
     "dominante": "Resultaat",
-    "gedeeldMet": [
-      "Groepsondersteunend",
-      "Impact",
-      "Analyse",
-      "Constructief onderscheidend",
-      "Individueel ondersteunend"
-    ]
+    "gedeeldMet": []
   },
   "convergentie": {
     "onderzoekend": "inactief",
@@ -439,15 +436,12 @@
       "strategie": "top-down vanuit het eindbeeld",
       "belofte": "begin bij hoe het eindresultaat eruit moet zien en werk terug"
     },
-    "secondaryVersneller": null,
-    "secundair": null,
-    "gedeeldMet": [
-      "Groepsondersteunend",
-      "Impact",
-      "Analyse",
-      "Constructief onderscheidend",
-      "Individueel ondersteunend"
-    ]
+    "secondaryVersneller": "Groepsondersteunend",
+    "secundair": {
+      "strategie": "structuurgestuurd in groep",
+      "belofte": "breng eerst orde, overzicht en planning aan, het liefst samen"
+    },
+    "gedeeldMet": []
   },
   "interesse": {
     "scores": {
@@ -468,11 +462,7 @@
     ],
     "topGroep": [
       "Realistisch",
-      "Ondernemend",
-      "Artistiek",
-      "Sociaal",
-      "Conventioneel",
-      "Investigative"
+      "Ondernemend"
     ]
   },
   "drivers": {

@@ -34,8 +34,8 @@ import { T4STUDENTS_INSTRUMENT } from "../server/t4students/instrument";
 // uitzondering die niets meer dekt is dus ook een fout: dan klopt de uitleg
 // niet meer met de werkelijkheid.
 //
-// DE ZES TOEGESTANE AFWIJKINGEN, MET REDEN
-// A tot en met C komen uit fase 1c, D tot en met F uit de motorronde.
+// DE ZEVEN TOEGESTANE AFWIJKINGEN, MET REDEN
+// A tot en met C komen uit fase 1c, D tot en met G uit de motorronde.
 //
 // A. alerts.actief[].boodschap (10 velden over 6 patronen)
 //    Al bekend uit fase 1 en niet nieuw. De alertteksten staan in de motor
@@ -68,15 +68,26 @@ import { T4STUDENTS_INSTRUMENT } from "../server/t4students/instrument";
 //    Strong, Systematisch/Uitvoerend en Sociaal Interactief er met D7, F7 en F8
 //    voor het eerst een eigen vraag bij krijgen.
 //
-// F. alles wat een volgorde is of eruit volgt (1123 velden)
-//    Motorronde punt 2. De bronmotor rangschikte de foci en de versnellers op
-//    het gemengde getal van herkenning plus de helft van de gemiddelde energie.
-//    Dat gebeurt nu op de herkenning alleen. Omdat de RIASEC-letters uit
-//    dezelfde constructscores worden opgeteld, schuiven ook de letters, de tien
-//    studiegebieden, de studiestrategie, de convergentie-assen, de keerzijde en
-//    de profieluitgesprokenheid mee. Dit is veruit de grootste post; het gaat
-//    telkens om hetzelfde ene besluit. Zie
-//    tests/t4students-rangschikken-op-herkenning.test.ts.
+// F. alles wat een volgorde is of eruit volgt (1180 velden)
+//    Motorronde punt 2 en punt 3 samen. De bronmotor rangschikte de foci en de
+//    versnellers op het gemengde getal van herkenning plus de helft van de
+//    gemiddelde energie. Dat gebeurt nu op de herkenning alleen. Omdat de
+//    RIASEC-letters uit dezelfde constructscores worden opgeteld, schuiven ook
+//    de letters, de tien studiegebieden, de studiestrategie, de
+//    convergentie-assen, de keerzijde en de profieluitgesprokenheid mee. Boven
+//    op die verschuiving komt de kleinere marge voor gelijke stand uit punt 3,
+//    die dezelfde groepsvelden nog eens anders indeelt. Dit is veruit de
+//    grootste post; het gaat telkens om dezelfde twee besluiten. Zie
+//    tests/t4students-rangschikken-op-herkenning.test.ts en
+//    tests/t4students-gelijke-stand.test.ts.
+//
+// G. interesse.topGroep (51 velden)
+//    Motorronde punt 3. De zes interessegebieden werden altijd al op de
+//    herkenning gerangschikt, want het antwoord op een interessevraag telt daar
+//    rechtstreeks bij op en er is geen energie-anker. Punt 2 raakt ze dus niet.
+//    Wat ze wel raakt, is de marge voor gelijke stand: met 1,0 stonden gebieden
+//    die een punt uiteenliepen samen bovenaan, met 0,3 alleen nog gebieden die
+//    precies gelijk scoren. Zie tests/t4students-gelijke-stand.test.ts.
 //
 // HOE HET BEWIJSMATERIAAL TOT STAND KWAM
 // De patronen staan in tests/t4students-gelijkheidstoets/patronen.json. De
@@ -141,7 +152,8 @@ const TOEGESTANE_AFWIJKINGEN: { reden: string; patroon: RegExp }[] = [
     patroon: /^[^.]+\.betrouwbaarheid\.totaalItems$/,
   },
   {
-    reden: "F. rangschikken gebeurt op herkenning en niet meer op het gemengde getal (motorronde punt 2)",
+    reden:
+      "F. rangschikken gebeurt op herkenning en niet meer op het gemengde getal, en de marge voor gelijke stand is kleiner (motorronde punt 2 en 3)",
     patroon: new RegExp(
       "^[^.]+\\.(" +
         [
@@ -156,6 +168,10 @@ const TOEGESTANE_AFWIJKINGEN: { reden: string; patroon: RegExp }[] = [
         ].join("|") +
         ")(\\..+)?$",
     ),
+  },
+  {
+    reden: "G. interesse.topGroep: de kleinere marge deelt ook de interessegebieden anders in (motorronde punt 3)",
+    patroon: /^[^.]+\.interesse\.topGroep(\..+)?$/,
   },
 ];
 
@@ -245,7 +261,7 @@ describe("gelijkheidstoets deel 1: tegen de originele motor, met benoemde uitzon
   });
 
   it("het aantal afwijkende velden is precies wat het verslag noemt", () => {
-    // Twaalfhonderdvijfennegentig velden over zeventien patronen. Elk getal hieronder
+    // Veertienhonderddrie velden over zeventien patronen. Elk getal hieronder
     // staat ook in het verslag van de motorronde; loopt het uiteen, dan klopt
     // een van de twee niet meer.
     const perUitzondering: Record<string, number> = {};
@@ -264,9 +280,10 @@ describe("gelijkheidstoets deel 1: tegen de originele motor, met benoemde uitzon
       "C. teller beantwoord: een enkel energie-antwoord telt nu mee (punt 8)": 3,
       "D. energie.kaart: de vijf drivers en twee foci hebben nu ook een anker (motorronde punt 1)": 119,
       "E. totaalItems: drie nieuwe items, 31 wordt 34 (motorronde punt 1)": 17,
-      "F. rangschikken gebeurt op herkenning en niet meer op het gemengde getal (motorronde punt 2)": 1123,
+      "F. rangschikken gebeurt op herkenning en niet meer op het gemengde getal, en de marge voor gelijke stand is kleiner (motorronde punt 2 en 3)": 1180,
+      "G. interesse.topGroep: de kleinere marge deelt ook de interessegebieden anders in (motorronde punt 3)": 51,
     });
-    expect(totaal).toBe(1295);
+    expect(totaal).toBe(1403);
   });
 
   it("de veranderde balanslabels zijn precies de constructen met meer dan een bron", () => {

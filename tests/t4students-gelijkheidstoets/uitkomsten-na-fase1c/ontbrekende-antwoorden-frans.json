@@ -265,8 +265,12 @@
         "Analyse"
       ],
       [
-        "Resultaat",
-        "Individueel ondersteunend",
+        "Resultaat"
+      ],
+      [
+        "Individueel ondersteunend"
+      ],
+      [
         "Groepsondersteunend",
         "Impact",
         "Constructief onderscheidend"
@@ -447,12 +451,7 @@
       "Conventioneel"
     ],
     "topGroep": [
-      "Artistiek",
-      "Realistisch",
-      "Investigative",
-      "Sociaal",
-      "Ondernemend",
-      "Conventioneel"
+      "Artistiek"
     ]
   },
   "drivers": {

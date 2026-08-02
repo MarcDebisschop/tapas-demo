@@ -256,17 +256,16 @@
       "Constructief onderscheidend"
     ],
     "kopGroep": [
-      "Analyse",
-      "Resultaat",
-      "Individueel ondersteunend",
-      "Groepsondersteunend",
-      "Impact",
-      "Constructief onderscheidend"
+      "Analyse"
     ],
     "groepen": [
       [
-        "Analyse",
-        "Resultaat",
+        "Analyse"
+      ],
+      [
+        "Resultaat"
+      ],
+      [
         "Individueel ondersteunend",
         "Groepsondersteunend",
         "Impact",
@@ -282,13 +281,7 @@
       "Constructief onderscheidend": "latent"
     },
     "dominante": "Analyse",
-    "gedeeldMet": [
-      "Resultaat",
-      "Individueel ondersteunend",
-      "Groepsondersteunend",
-      "Impact",
-      "Constructief onderscheidend"
-    ]
+    "gedeeldMet": []
   },
   "convergentie": {
     "onderzoekend": "bevestigd",
@@ -429,15 +422,12 @@
       "strategie": "bottom-up vanuit de onderdelen",
       "belofte": "begin bij de bouwstenen en doorgrond eerst hoe het in elkaar zit"
     },
-    "secondaryVersneller": null,
-    "secundair": null,
-    "gedeeldMet": [
-      "Resultaat",
-      "Individueel ondersteunend",
-      "Groepsondersteunend",
-      "Impact",
-      "Constructief onderscheidend"
-    ]
+    "secondaryVersneller": "Resultaat",
+    "secundair": {
+      "strategie": "top-down vanuit het eindbeeld",
+      "belofte": "begin bij hoe het eindresultaat eruit moet zien en werk terug"
+    },
+    "gedeeldMet": []
   },
   "interesse": {
     "scores": {

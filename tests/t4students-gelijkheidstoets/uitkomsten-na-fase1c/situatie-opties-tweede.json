@@ -238,7 +238,9 @@
       ],
       [
         "Artistiek Innovatief",
-        "Sociaal Interactief",
+        "Sociaal Interactief"
+      ],
+      [
         "Functioneel Innovatief",
         "Complexiteit/Conceptueel",
         "Systematisch/Uitvoerend"
@@ -270,10 +272,16 @@
         "Groepsondersteunend"
       ],
       [
-        "Individueel ondersteunend",
-        "Analyse",
+        "Individueel ondersteunend"
+      ],
+      [
+        "Analyse"
+      ],
+      [
         "Resultaat",
-        "Constructief onderscheidend",
+        "Constructief onderscheidend"
+      ],
+      [
         "Impact"
       ]
     ],
@@ -453,11 +461,7 @@
     ],
     "topGroep": [
       "Realistisch",
-      "Sociaal",
-      "Conventioneel",
-      "Investigative",
-      "Artistiek",
-      "Ondernemend"
+      "Sociaal"
     ]
   },
   "drivers": {

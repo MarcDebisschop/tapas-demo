@@ -218,12 +218,7 @@
       "Overdrachtelijk Interactief"
     ],
     "topGroep": [
-      "Functioneel Innovatief",
-      "Artistiek Innovatief",
-      "Complexiteit/Conceptueel",
-      "Systematisch/Uitvoerend",
-      "Sociaal Interactief",
-      "Overdrachtelijk Interactief"
+      "Functioneel Innovatief"
     ],
     "top2": [
       "Functioneel Innovatief",
@@ -239,11 +234,17 @@
     },
     "groepen": [
       [
-        "Functioneel Innovatief",
+        "Functioneel Innovatief"
+      ],
+      [
         "Artistiek Innovatief",
         "Complexiteit/Conceptueel",
-        "Systematisch/Uitvoerend",
-        "Sociaal Interactief",
+        "Systematisch/Uitvoerend"
+      ],
+      [
+        "Sociaal Interactief"
+      ],
+      [
         "Overdrachtelijk Interactief"
       ]
     ]
@@ -267,19 +268,21 @@
     ],
     "kopGroep": [
       "Analyse",
-      "Groepsondersteunend",
-      "Impact",
-      "Resultaat"
+      "Groepsondersteunend"
     ],
     "groepen": [
       [
         "Analyse",
-        "Groepsondersteunend",
+        "Groepsondersteunend"
+      ],
+      [
         "Impact",
         "Resultaat"
       ],
       [
-        "Constructief onderscheidend",
+        "Constructief onderscheidend"
+      ],
+      [
         "Individueel ondersteunend"
       ]
     ],
@@ -293,9 +296,7 @@
     },
     "dominante": "Analyse",
     "gedeeldMet": [
-      "Groepsondersteunend",
-      "Impact",
-      "Resultaat"
+      "Groepsondersteunend"
     ]
   },
   "convergentie": {
@@ -440,9 +441,7 @@
     "secondaryVersneller": null,
     "secundair": null,
     "gedeeldMet": [
-      "Groepsondersteunend",
-      "Impact",
-      "Resultaat"
+      "Groepsondersteunend"
     ]
   },
   "interesse": {
@@ -464,11 +463,7 @@
     ],
     "topGroep": [
       "Realistisch",
-      "Investigative",
-      "Artistiek",
-      "Ondernemend",
-      "Conventioneel",
-      "Sociaal"
+      "Investigative"
     ]
   },
   "drivers": {

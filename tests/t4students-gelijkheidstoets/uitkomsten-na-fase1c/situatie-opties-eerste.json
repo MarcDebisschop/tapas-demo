@@ -218,12 +218,7 @@
       "Functioneel Innovatief"
     ],
     "topGroep": [
-      "Artistiek Innovatief",
-      "Complexiteit/Conceptueel",
-      "Systematisch/Uitvoerend",
-      "Sociaal Interactief",
-      "Overdrachtelijk Interactief",
-      "Functioneel Innovatief"
+      "Artistiek Innovatief"
     ],
     "top2": [
       "Artistiek Innovatief",
@@ -239,11 +234,15 @@
     },
     "groepen": [
       [
-        "Artistiek Innovatief",
+        "Artistiek Innovatief"
+      ],
+      [
         "Complexiteit/Conceptueel",
         "Systematisch/Uitvoerend",
         "Sociaal Interactief",
-        "Overdrachtelijk Interactief",
+        "Overdrachtelijk Interactief"
+      ],
+      [
         "Functioneel Innovatief"
       ]
     ]
@@ -266,20 +265,23 @@
       "Constructief onderscheidend"
     ],
     "kopGroep": [
-      "Resultaat",
-      "Individueel ondersteunend",
-      "Analyse",
-      "Groepsondersteunend",
-      "Impact",
-      "Constructief onderscheidend"
+      "Resultaat"
     ],
     "groepen": [
       [
-        "Resultaat",
-        "Individueel ondersteunend",
+        "Resultaat"
+      ],
+      [
+        "Individueel ondersteunend"
+      ],
+      [
         "Analyse",
-        "Groepsondersteunend",
-        "Impact",
+        "Groepsondersteunend"
+      ],
+      [
+        "Impact"
+      ],
+      [
         "Constructief onderscheidend"
       ]
     ],
@@ -292,13 +294,7 @@
       "Constructief onderscheidend": "latent"
     },
     "dominante": "Resultaat",
-    "gedeeldMet": [
-      "Individueel ondersteunend",
-      "Analyse",
-      "Groepsondersteunend",
-      "Impact",
-      "Constructief onderscheidend"
-    ]
+    "gedeeldMet": []
   },
   "convergentie": {
     "onderzoekend": "inactief",
@@ -439,15 +435,12 @@
       "strategie": "top-down vanuit het eindbeeld",
       "belofte": "begin bij hoe het eindresultaat eruit moet zien en werk terug"
     },
-    "secondaryVersneller": null,
-    "secundair": null,
-    "gedeeldMet": [
-      "Individueel ondersteunend",
-      "Analyse",
-      "Groepsondersteunend",
-      "Impact",
-      "Constructief onderscheidend"
-    ]
+    "secondaryVersneller": "Individueel ondersteunend",
+    "secundair": {
+      "strategie": "sociaal-dialogisch (één op één)",
+      "belofte": "leer in dialoog, leg het aan iemand uit, bespreek het samen"
+    },
+    "gedeeldMet": []
   },
   "interesse": {
     "scores": {
@@ -468,11 +461,7 @@
     ],
     "topGroep": [
       "Artistiek",
-      "Sociaal",
-      "Investigative",
-      "Ondernemend",
-      "Realistisch",
-      "Conventioneel"
+      "Sociaal"
     ]
   },
   "drivers": {

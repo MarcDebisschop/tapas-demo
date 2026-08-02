@@ -221,11 +221,7 @@
     ],
     "topGroep": [
       "Sociaal Interactief",
-      "Overdrachtelijk Interactief",
-      "Artistiek Innovatief",
-      "Systematisch/Uitvoerend",
-      "Functioneel Innovatief",
-      "Complexiteit/Conceptueel"
+      "Overdrachtelijk Interactief"
     ],
     "top2": [
       "Sociaal Interactief",
@@ -242,9 +238,13 @@
     "groepen": [
       [
         "Sociaal Interactief",
-        "Overdrachtelijk Interactief",
+        "Overdrachtelijk Interactief"
+      ],
+      [
         "Artistiek Innovatief",
-        "Systematisch/Uitvoerend",
+        "Systematisch/Uitvoerend"
+      ],
+      [
         "Functioneel Innovatief",
         "Complexiteit/Conceptueel"
       ]
@@ -268,18 +268,21 @@
       "Analyse"
     ],
     "kopGroep": [
-      "Groepsondersteunend",
-      "Individueel ondersteunend"
+      "Groepsondersteunend"
     ],
     "groepen": [
       [
-        "Groepsondersteunend",
+        "Groepsondersteunend"
+      ],
+      [
         "Individueel ondersteunend"
       ],
       [
         "Impact",
         "Resultaat",
-        "Constructief onderscheidend",
+        "Constructief onderscheidend"
+      ],
+      [
         "Analyse"
       ]
     ],
@@ -292,9 +295,7 @@
       "Constructief onderscheidend": "kernsterkte"
     },
     "dominante": "Groepsondersteunend",
-    "gedeeldMet": [
-      "Individueel ondersteunend"
-    ]
+    "gedeeldMet": []
   },
   "convergentie": {
     "onderzoekend": "inactief",
@@ -435,11 +436,12 @@
       "strategie": "structuurgestuurd in groep",
       "belofte": "breng eerst orde, overzicht en planning aan, het liefst samen"
     },
-    "secondaryVersneller": null,
-    "secundair": null,
-    "gedeeldMet": [
-      "Individueel ondersteunend"
-    ]
+    "secondaryVersneller": "Individueel ondersteunend",
+    "secundair": {
+      "strategie": "sociaal-dialogisch (één op één)",
+      "belofte": "leer in dialoog, leg het aan iemand uit, bespreek het samen"
+    },
+    "gedeeldMet": []
   },
   "interesse": {
     "scores": {
@@ -460,11 +462,7 @@
     ],
     "topGroep": [
       "Sociaal",
-      "Ondernemend",
-      "Investigative",
-      "Artistiek",
-      "Realistisch",
-      "Conventioneel"
+      "Ondernemend"
     ]
   },
   "drivers": {
