@@ -65,17 +65,23 @@ describe("punt 6: de lading met gewicht nul bij F4 optie b staat er nog, met opz
 
   it("de motor slaat de lading over, dus gewicht nul is hetzelfde als geen lading", () => {
     const b = scoreStudiekompas(I, { F4: { choice: "b" } }, null, "nl");
-    // Alleen de energiewaarde blijft over: min 1, voor de helft verrekend.
+    // De herkenning blijft op nul staan: de lading met gewicht nul telt niet
+    // op. De energiewaarde van de optie wordt wel opgepikt, en die staat los
+    // van de herkenning.
     expect(b.constructScores["Systematisch/Uitvoerend"].recognition).toBe(0);
-    expect(b.constructScores["Systematisch/Uitvoerend"].combined).toBe(-0.5);
+    expect(b.constructScores["Systematisch/Uitvoerend"].avgEnergy).toBe(-1);
   });
 
   it("optie a laadt wel, en het verschil tussen a en b is daardoor groot", () => {
     const a = scoreStudiekompas(I, { F4: { choice: "a" } }, null, "nl");
     const b = scoreStudiekompas(I, { F4: { choice: "b" } }, null, "nl");
+    // De twee opties lopen op allebei de grootheden uiteen, en ze blijven nu
+    // ook los van elkaar afleesbaar. Op de herkenning is het verschil twee
+    // punten, en juist daar slaat het gewicht nul toe.
     expect(a.constructScores["Systematisch/Uitvoerend"].recognition).toBe(2);
-    expect(a.constructScores["Systematisch/Uitvoerend"].combined).toBe(2.5);
-    expect(b.constructScores["Systematisch/Uitvoerend"].combined).toBe(-0.5);
+    expect(b.constructScores["Systematisch/Uitvoerend"].recognition).toBe(0);
+    expect(a.constructScores["Systematisch/Uitvoerend"].avgEnergy).toBe(1);
+    expect(b.constructScores["Systematisch/Uitvoerend"].avgEnergy).toBe(-1);
   });
 
   it("F5 optie b laat zien waarom de blauwdrukzin niets beslist", () => {

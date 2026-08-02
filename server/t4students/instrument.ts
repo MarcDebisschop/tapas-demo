@@ -111,7 +111,6 @@ export interface T4SScoringMap {
   scorerVersion: string;
   constants: {
     sjtWeight: number;
-    energyToRecognitionFactor: number;
     overloadRecognitionMin: number;
     underuseRecognitionMax: number;
     voorlopigDrempel: number;

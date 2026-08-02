@@ -1143,7 +1143,6 @@
     "scorerVersion": "t4students-1.0.0",
     "constants": {
       "sjtWeight": 2,
-      "energyToRecognitionFactor": 0.5,
       "overloadRecognitionMin": 2,
       "underuseRecognitionMax": 1,
       "voorlopigDrempel": 20,

@@ -202,7 +202,6 @@ describe("naloop C: bij nul antwoorden staan er toch namen in de uitvoer", () =>
     for (const s of waarden) {
       expect(s.recognition).toBe(0);
       expect(s.avgEnergy).toBeNull();
-      expect(s.combined).toBeNull();
     }
   });
 });

@@ -54,152 +54,127 @@
     "Helderheid/zingeving": {
       "family": "TaPas-BEELD",
       "recognition": 2,
-      "avgEnergy": 1,
-      "combined": 2.5
+      "avgEnergy": 1
     },
     "Energie-status": {
       "family": "TaPas-BEELD",
       "recognition": 2,
-      "avgEnergy": 1,
-      "combined": 2.5
+      "avgEnergy": 1
     },
     "Be Perfect": {
       "family": "Drivers",
       "recognition": 1,
-      "avgEnergy": null,
-      "combined": null
+      "avgEnergy": null
     },
     "Please Others": {
       "family": "Drivers",
       "recognition": 6,
-      "avgEnergy": null,
-      "combined": null
+      "avgEnergy": null
     },
     "Try Hard": {
       "family": "Drivers",
       "recognition": 2,
-      "avgEnergy": null,
-      "combined": null
+      "avgEnergy": null
     },
     "Hurry Up": {
       "family": "Drivers",
       "recognition": 3,
-      "avgEnergy": null,
-      "combined": null
+      "avgEnergy": null
     },
     "Be Strong": {
       "family": "Drivers",
       "recognition": 0,
-      "avgEnergy": null,
-      "combined": null
+      "avgEnergy": null
     },
     "Analyse": {
       "family": "Talent-versnellers",
       "recognition": 1,
-      "avgEnergy": -1,
-      "combined": 0.5
+      "avgEnergy": -1
     },
     "Individueel ondersteunend": {
       "family": "Talent-versnellers",
       "recognition": 4,
-      "avgEnergy": 2,
-      "combined": 5
+      "avgEnergy": 2
     },
     "Groepsondersteunend": {
       "family": "Talent-versnellers",
       "recognition": 5,
-      "avgEnergy": 2,
-      "combined": 6
+      "avgEnergy": 2
     },
     "Impact": {
       "family": "Talent-versnellers",
       "recognition": 2,
-      "avgEnergy": 1,
-      "combined": 2.5
+      "avgEnergy": 1
     },
     "Resultaat": {
       "family": "Talent-versnellers",
       "recognition": 2,
-      "avgEnergy": 0,
-      "combined": 2
+      "avgEnergy": 0
     },
     "Constructief onderscheidend": {
       "family": "Talent-versnellers",
       "recognition": 2,
-      "avgEnergy": 1,
-      "combined": 2.5
+      "avgEnergy": 1
     },
     "Functioneel Innovatief": {
       "family": "Talent-foci",
       "recognition": 1,
-      "avgEnergy": -1,
-      "combined": 0.5
+      "avgEnergy": -1
     },
     "Artistiek Innovatief": {
       "family": "Talent-foci",
       "recognition": 2,
-      "avgEnergy": 1,
-      "combined": 2.5
+      "avgEnergy": 1
     },
     "Complexiteit/Conceptueel": {
       "family": "Talent-foci",
       "recognition": 1,
-      "avgEnergy": -1,
-      "combined": 0.5
+      "avgEnergy": -1
     },
     "Systematisch/Uitvoerend": {
       "family": "Talent-foci",
       "recognition": 2,
-      "avgEnergy": 1,
-      "combined": 2.5
+      "avgEnergy": 1
     },
     "Sociaal Interactief": {
       "family": "Talent-foci",
       "recognition": 3,
-      "avgEnergy": 1,
-      "combined": 3.5
+      "avgEnergy": 1
     },
     "Overdrachtelijk Interactief": {
       "family": "Talent-foci",
       "recognition": 3,
-      "avgEnergy": 2,
-      "combined": 4
+      "avgEnergy": 2
     },
     "Realistisch": {
       "family": "Interesse",
       "recognition": 0,
-      "avgEnergy": null,
-      "combined": null
+      "avgEnergy": null
     },
     "Investigative": {
       "family": "Interesse",
       "recognition": 1,
-      "avgEnergy": null,
-      "combined": null
+      "avgEnergy": null
     },
     "Artistiek": {
       "family": "Interesse",
       "recognition": 1,
-      "avgEnergy": null,
-      "combined": null
+      "avgEnergy": null
     },
     "Sociaal": {
       "family": "Interesse",
       "recognition": 2,
-      "avgEnergy": null,
-      "combined": null
+      "avgEnergy": null
     },
     "Ondernemend": {
       "family": "Interesse",
       "recognition": 2,
-      "avgEnergy": null,
-      "combined": null
+      "avgEnergy": null
     },
     "Conventioneel": {
       "family": "Interesse",
       "recognition": 0,
-      "avgEnergy": null,
-      "combined": null
+      "avgEnergy": null
     }
   },
   "foci": {

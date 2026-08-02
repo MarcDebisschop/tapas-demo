@@ -92,10 +92,14 @@ import { T4STUDENTS_INSTRUMENT } from "../server/t4students/instrument";
 //    die een punt uiteenliepen samen bovenaan, met 0,3 alleen nog gebieden die
 //    precies gelijk scoren. Zie tests/t4students-gelijke-stand.test.ts.
 //
-// H. constructScores[...].avgEnergy en .combined (428 velden)
-//    Motorronde punt 4. Waar geen enkel energie-antwoord is, stond in de bron
-//    een nul, en nul is het midden van de energieschaal. Nu blijven die twee
-//    getallen leeg. Zie tests/t4students-geen-halve-oordelen.test.ts.
+// H. constructScores[...].avgEnergy en .combined (639 velden)
+//    Twee redenen tegelijk. Waar geen enkel energie-antwoord is, stond in de
+//    bron een nul bij avgEnergy, en nul is het midden van de energieschaal; nu
+//    blijft dat getal leeg (motorronde punt 4, zie
+//    tests/t4students-geen-halve-oordelen.test.ts). En combined bestaat niet
+//    meer: het mengsel van herkenning en energie is volledig uit de motor en de
+//    uitvoer gehaald, dus de bron heeft daar een getal waar wij niets meer
+//    hebben. Zie tests/t4students-geen-gemengd-getal.test.ts.
 //
 // I. de overige velden van energie.kaart (27 velden)
 //    Motorronde punt 4. Een onbeantwoord of half beantwoord energie-item kreeg
@@ -189,7 +193,7 @@ const TOEGESTANE_AFWIJKINGEN: { reden: string; patroon: RegExp }[] = [
     patroon: /^[^.]+\.interesse\.topGroep(\..+)?$/,
   },
   {
-    reden: "H. constructScores: geen energiegetal waar geen energie gemeten is (motorronde punt 4)",
+    reden: "H. constructScores: geen energiegetal waar geen energie gemeten is (motorronde punt 4), en het gemengde getal bestaat niet meer",
     patroon: /^[^.]+\.constructScores\.[^.]+\.(avgEnergy|combined)$/,
   },
   {
@@ -305,10 +309,10 @@ describe("gelijkheidstoets deel 1: tegen de originele motor, met benoemde uitzon
       "E. totaalItems: drie nieuwe items, 31 wordt 34 (motorronde punt 1)": 17,
       "F. rangschikken gebeurt op herkenning en niet meer op het gemengde getal, en de marge voor gelijke stand is kleiner (motorronde punt 2 en 3)": 1180,
       "G. interesse.topGroep: de kleinere marge deelt ook de interessegebieden anders in (motorronde punt 3)": 51,
-      "H. constructScores: geen energiegetal waar geen energie gemeten is (motorronde punt 4)": 428,
+      "H. constructScores: geen energiegetal waar geen energie gemeten is (motorronde punt 4), en het gemengde getal bestaat niet meer": 639,
       "I. energie.kaart: een onbeantwoord item heet niet langer neutraal (motorronde punt 4)": 27,
     });
-    expect(totaal).toBe(1899);
+    expect(totaal).toBe(2110);
   });
 
   it("de veranderde balanslabels zijn precies de constructen met meer dan een bron", () => {

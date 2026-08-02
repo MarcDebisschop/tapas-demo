@@ -208,7 +208,6 @@ describe("punt 5: een lege invulling levert nergens een oordeel op", () => {
   it("er staat geen getal waar niets gemeten is", () => {
     for (const [con, s] of Object.entries(leeg.constructScores)) {
       expect(s.avgEnergy, `${con} heeft een energiegetal zonder antwoorden`).toBeNull();
-      expect(s.combined, `${con} heeft een gemengd getal zonder antwoorden`).toBeNull();
     }
     expect(leeg.beeldScherpte.zelfZekerheid).toBeNull();
     expect(leeg.drivers.doorslag).toBeNull();

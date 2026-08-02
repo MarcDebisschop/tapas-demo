@@ -41,152 +41,127 @@
     "Helderheid/zingeving": {
       "family": "TaPas-BEELD",
       "recognition": 2,
-      "avgEnergy": 0,
-      "combined": 2
+      "avgEnergy": 0
     },
     "Energie-status": {
       "family": "TaPas-BEELD",
       "recognition": 2,
-      "avgEnergy": 0,
-      "combined": 2
+      "avgEnergy": 0
     },
     "Be Perfect": {
       "family": "Drivers",
       "recognition": 2,
-      "avgEnergy": null,
-      "combined": null
+      "avgEnergy": null
     },
     "Please Others": {
       "family": "Drivers",
       "recognition": 2,
-      "avgEnergy": null,
-      "combined": null
+      "avgEnergy": null
     },
     "Try Hard": {
       "family": "Drivers",
       "recognition": 2,
-      "avgEnergy": null,
-      "combined": null
+      "avgEnergy": null
     },
     "Hurry Up": {
       "family": "Drivers",
       "recognition": 4,
-      "avgEnergy": null,
-      "combined": null
+      "avgEnergy": null
     },
     "Be Strong": {
       "family": "Drivers",
       "recognition": 3,
-      "avgEnergy": null,
-      "combined": null
+      "avgEnergy": null
     },
     "Analyse": {
       "family": "Talent-versnellers",
       "recognition": 4,
-      "avgEnergy": 0,
-      "combined": 4
+      "avgEnergy": 0
     },
     "Individueel ondersteunend": {
       "family": "Talent-versnellers",
       "recognition": 2,
-      "avgEnergy": 0,
-      "combined": 2
+      "avgEnergy": 0
     },
     "Groepsondersteunend": {
       "family": "Talent-versnellers",
       "recognition": 2,
-      "avgEnergy": 0,
-      "combined": 2
+      "avgEnergy": 0
     },
     "Impact": {
       "family": "Talent-versnellers",
       "recognition": 2,
-      "avgEnergy": 0,
-      "combined": 2
+      "avgEnergy": 0
     },
     "Resultaat": {
       "family": "Talent-versnellers",
       "recognition": 3,
-      "avgEnergy": 0,
-      "combined": 3
+      "avgEnergy": 0
     },
     "Constructief onderscheidend": {
       "family": "Talent-versnellers",
       "recognition": 2,
-      "avgEnergy": 0,
-      "combined": 2
+      "avgEnergy": 0
     },
     "Functioneel Innovatief": {
       "family": "Talent-foci",
       "recognition": 2,
-      "avgEnergy": 0,
-      "combined": 2
+      "avgEnergy": 0
     },
     "Artistiek Innovatief": {
       "family": "Talent-foci",
       "recognition": 2,
-      "avgEnergy": 0,
-      "combined": 2
+      "avgEnergy": 0
     },
     "Complexiteit/Conceptueel": {
       "family": "Talent-foci",
       "recognition": 2,
-      "avgEnergy": 0,
-      "combined": 2
+      "avgEnergy": 0
     },
     "Systematisch/Uitvoerend": {
       "family": "Talent-foci",
       "recognition": 2,
-      "avgEnergy": 1,
-      "combined": 2.5
+      "avgEnergy": 1
     },
     "Sociaal Interactief": {
       "family": "Talent-foci",
       "recognition": 0,
-      "avgEnergy": 0,
-      "combined": 0
+      "avgEnergy": 0
     },
     "Overdrachtelijk Interactief": {
       "family": "Talent-foci",
       "recognition": 2,
-      "avgEnergy": 0,
-      "combined": 2
+      "avgEnergy": 0
     },
     "Realistisch": {
       "family": "Interesse",
       "recognition": 1,
-      "avgEnergy": null,
-      "combined": null
+      "avgEnergy": null
     },
     "Investigative": {
       "family": "Interesse",
       "recognition": 1,
-      "avgEnergy": null,
-      "combined": null
+      "avgEnergy": null
     },
     "Artistiek": {
       "family": "Interesse",
       "recognition": 1,
-      "avgEnergy": null,
-      "combined": null
+      "avgEnergy": null
     },
     "Sociaal": {
       "family": "Interesse",
       "recognition": 1,
-      "avgEnergy": null,
-      "combined": null
+      "avgEnergy": null
     },
     "Ondernemend": {
       "family": "Interesse",
       "recognition": 1,
-      "avgEnergy": null,
-      "combined": null
+      "avgEnergy": null
     },
     "Conventioneel": {
       "family": "Interesse",
       "recognition": 1,
-      "avgEnergy": null,
-      "combined": null
+      "avgEnergy": null
     }
   },
   "foci": {

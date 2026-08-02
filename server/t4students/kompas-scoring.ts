@@ -33,13 +33,6 @@
 //     dan verdubbelt elke situatielading en verschuift elke score; dat is geen
 //     kleine ingreep en is niet op eigen houtje gedaan.
 //
-//   energyToRecognitionFactor (0.5)
-//     Herkenning zegt of iets je kenmerkt, de energie-anker zegt of het je
-//     energie geeft. Dat zijn twee verschillende dingen. Een kenmerk dat je
-//     leegtrekt is een signaal, geen sterkte. Daarom corrigeert de gemiddelde
-//     energie de herkenning, voor de helft: sterk genoeg om richting te geven,
-//     te zwak om de herkenning te overstemmen.
-//
 //   overloadRecognitionMin (2) en underuseRecognitionMax (1)
 //     De twee kantelpunten op de herkenningsschaal van 0 tot 3. Vanaf 2 heet
 //     iets kenmerkend, tot en met 1 heet het niet kenmerkend. Kenmerkend plus
@@ -125,8 +118,6 @@ export interface T4SConstructScore {
    * dus leeg mag daar niet op uitkomen.
    */
   avgEnergy: number | null;
-  /** Leeg om dezelfde reden: zonder energie is er geen mengsel te maken. */
-  combined: number | null;
 }
 
 export interface T4SResultaat {
@@ -487,18 +478,11 @@ export function scoreStudiekompas(
     return v.length ? round2(v.reduce((a, b) => a + b, 0) / v.length) : null;
   }
 
-  function combined(con: string): number | null {
-    const en = avgEnergy(con);
-    if (en === null) return null;
-    return round2(constructs[con].recognition + en * C.energyToRecognitionFactor);
-  }
-
-  // Rangschikken gebeurt op herkenning (motorronde punt 2). Het gemengde getal
-  // uit combined() staat nog wel in de uitvoer, maar het bepaalt geen volgorde,
-  // geen drempel en geen label meer. Reden: het mengsel liet energie de plaats
-  // bepalen, zodat wie zich sterk herkent maar er weinig energie uit haalt onder
-  // iemand zakte die zich nauwelijks herkent maar het wel leuk vindt. Energie
-  // weegt nog altijd even zwaar mee in het balanslabel en in de energiekaart.
+  // Rangschikken gebeurt op herkenning. Reden: een mengsel van herkenning en
+  // energie liet energie de plaats bepalen, zodat wie zich sterk herkent maar er
+  // weinig energie uit haalt onder iemand zakte die zich nauwelijks herkent maar
+  // het wel leuk vindt. Energie weegt nog altijd even zwaar mee in het
+  // balanslabel en in de energiekaart, maar dan apart en zichtbaar als energie.
   function herkenning(con: string): number {
     return constructs[con].recognition;
   }
@@ -601,7 +585,7 @@ export function scoreStudiekompas(
    * We nemen de herkenning van het anker-item zelf, precies de grootheid
    * waarvoor de drempels gemaakt zijn. Daarmee komt dit label overeen met
    * energie.kaart, dat dezelfde matrix al per item toepaste en wel klopte.
-   * De som blijft ongemoeid: constructScores.recognition, combined en alle
+   * De som blijft ongemoeid: constructScores.recognition en alle
    * rangordes rekenen verder zoals voorheen.
    *
    * VOORGELEGD, NIET ZELF BESLIST
@@ -923,7 +907,6 @@ export function scoreStudiekompas(
       family: constructs[con].family,
       recognition: constructs[con].recognition,
       avgEnergy: avgEnergy(con),
-      combined: combined(con),
     };
   }
 

@@ -53,9 +53,10 @@ describe("punt 2: de volgorde volgt de herkenning en niet de energie", () => {
     expect(r.constructScores["Impact"].recognition).toBe(2);
     expect(r.constructScores["Constructief onderscheidend"].recognition).toBe(1);
 
-    // Het gemengde getal draait die verhouding om: 2 min 1 tegenover 1 plus 1.
-    expect(r.constructScores["Impact"].combined).toBeLessThan(
-      r.constructScores["Constructief onderscheidend"].combined,
+    // De energie wijst de andere kant op. Wie herkenning en energie tot een
+    // getal zou samenvoegen, draait de verhouding hier dus om.
+    expect(r.constructScores["Impact"].avgEnergy!).toBeLessThan(
+      r.constructScores["Constructief onderscheidend"].avgEnergy!,
     );
 
     // De rangorde hoort de herkenning te volgen.
@@ -123,22 +124,20 @@ describe("punt 2: de volgorde volgt de herkenning en niet de energie", () => {
     }
   });
 
-  it("het gemengde getal stuurt nergens meer een uitkomst", () => {
-    // De motor mag combined() nog uitrekenen en tonen, maar geen enkele
-    // volgorde, drempel of label mag er nog van afhangen. Dat is met de hand
-    // niet te zien, dus wordt het hier op de bron zelf nagelezen: buiten de
-    // definitie en de uitvoer komt het woord niet meer voor.
+  it("het gemengde getal bestaat niet meer in de motor", () => {
+    // Er mag geen volgorde, drempel of label meer van een mengsel afhangen.
+    // Dat is met de hand niet te zien, dus wordt het hier op de bron zelf
+    // nagelezen: het woord komt er niet meer in voor. De volledige bewaking
+    // over de hele rapportketen staat in
+    // tests/t4students-geen-gemengd-getal.test.ts.
     const bron = readFileSync(
       path.resolve(__dirname, "..", "server", "t4students", "kompas-scoring.ts"),
       "utf-8",
     )
       .replace(/\/\*[\s\S]*?\*\//g, " ")
       .replace(/(^|[^:])\/\/.*$/gm, "$1");
-    const regels = bron.split("\n").filter((r) => /\bcombined\(/.test(r));
-    expect(regels.map((r) => r.trim())).toEqual([
-      "function combined(con: string): number | null {",
-      "combined: combined(con),",
-    ]);
+    const regels = bron.split("\n").filter((r) => /\bcombined\b/.test(r));
+    expect(regels.map((r) => r.trim())).toEqual([]);
   });
 
   it("de energie blijft even zwaar meewegen als voorheen in het balanslabel", () => {
@@ -147,6 +146,5 @@ describe("punt 2: de volgorde volgt de herkenning en niet de energie", () => {
     const r = scoreStudiekompas(I, HERKEND_MAAR_ZWAAR, null, "nl");
     expect(r.versnellers.balanslabels["Impact"]).toBe("overbelast");
     expect(r.versnellers.balanslabels["Constructief onderscheidend"]).toBe("onderbenut");
-    expect(C.energyToRecognitionFactor).toBe(0.5);
   });
 });
