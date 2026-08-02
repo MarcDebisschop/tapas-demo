@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { AppHeader } from "@/components/Brand";
@@ -11,7 +11,15 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { ClientInstrument, Afname } from "@/lib/types";
 import { CheckCircle2 } from "lucide-react";
 import { maakVertaler, normaliseerTaal, STANDAARD_TAAL } from "@shared/i18n";
+import { ontbrekendeSchaalvragen } from "@shared/verplicht-antwoorden";
 import { bewijsSleutel } from "@/pages/klaar";
+
+/**
+ * De stand waarop een nog niet aangeraakte regelaar getoond wordt. Dit is enkel
+ * een beeld: zolang de deelnemer de regelaar niet zelf gezet heeft, geldt de
+ * vraag als onbeantwoord en blijft de knop afronden dicht.
+ */
+const MIDDEN = 5;
 
 export default function Deel2() {
   const params = useParams();
@@ -19,7 +27,10 @@ export default function Deel2() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
-  const [vals, setVals] = useState<Record<string, number>>({ q1: 5, q2: 5, q3: 5, q4: 5 });
+  // De regelaars starten leeg. Vroeger stonden ze op 5, waardoor een deelnemer
+  // die niets aanraakte toch vier antwoorden inleverde die hij nooit gegeven
+  // heeft.
+  const [vals, setVals] = useState<Record<string, number | null>>({});
 
   const { data: afname } = useQuery<Afname>({
     queryKey: ["/api/afnames", id],
@@ -38,7 +49,15 @@ export default function Deel2() {
   });
   const questions = inst?.connectionQuestions ?? [];
 
+  // Verplicht doorklikken: afronden kan pas als elke regelaar echt gezet is.
+  const nogOpen = useMemo(
+    () => ontbrekendeSchaalvragen(questions.map((q) => q.id), vals),
+    [questions, vals],
+  );
+  const alleBeantwoord = questions.length > 0 && nogOpen.length === 0;
+
   async function finish() {
+    if (!alleBeantwoord) return;
     setSubmitting(true);
     try {
       const res = await apiRequest("POST", `/api/afnames/${id}/connection`, {
@@ -113,12 +132,19 @@ export default function Deel2() {
                     <p className="text-xs font-medium text-accent">{q.label}</p>
                     <p className="mt-1 text-sm text-foreground">{q.text}</p>
                   </div>
-                  <span className="rounded-md bg-primary/10 px-2.5 py-1 text-sm font-semibold text-primary" data-testid={`value-${q.id}`}>
-                    {vals[q.id]}
+                  <span
+                    className={
+                      vals[q.id] == null
+                        ? "rounded-md bg-muted px-2.5 py-1 text-sm font-semibold text-muted-foreground"
+                        : "rounded-md bg-primary/10 px-2.5 py-1 text-sm font-semibold text-primary"
+                    }
+                    data-testid={`value-${q.id}`}
+                  >
+                    {vals[q.id] ?? "?"}
                   </span>
                 </div>
                 <Slider
-                  value={[vals[q.id]!]}
+                  value={[vals[q.id] ?? MIDDEN]}
                   onValueChange={(v) => setVals((p) => ({ ...p, [q.id]: v[0]! }))}
                   min={0}
                   max={10}
@@ -129,12 +155,25 @@ export default function Deel2() {
                   <span>0</span>
                   <span>10</span>
                 </div>
+                {vals[q.id] == null && (
+                  <p className="text-xs text-muted-foreground" data-testid={`hint-${q.id}`}>
+                    {t("schaal_nog_te_zetten")}
+                  </p>
+                )}
               </CardContent>
             </Card>
           ))}
         </div>
 
-        <Button onClick={finish} disabled={submitting} size="lg" className="mt-6 w-full" data-testid="button-finish">
+        {!alleBeantwoord && questions.length > 0 && (
+          <p className="mt-4 text-center text-sm text-muted-foreground" data-testid="text-nog-open">
+            {t("schaal_nog_open")
+              .replace("{aantal}", String(nogOpen.length))
+              .replace("{totaal}", String(questions.length))}
+          </p>
+        )}
+
+        <Button onClick={finish} disabled={submitting || !alleBeantwoord} size="lg" className="mt-6 w-full" data-testid="button-finish">
           <CheckCircle2 className="mr-2 h-4 w-4" />
           {submitting ? t("knop_genereren_bezig") : t("knop_afronden")}
         </Button>
