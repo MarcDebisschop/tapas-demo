@@ -2,7 +2,7 @@
  * server/routes/instrumenten-catalogus.ts
  *
  * Verrijkte instrumentencatalogus voor demo-bezoekers en admin-overzicht.
- * Geeft een leesbaar overzicht van alle 10 TaPas-instrumenten met
+ * Geeft een leesbaar overzicht van alle 16 TaPas-instrumenten met
  * doelgroep, use case, outcome en credits.
  *
  * Routes:
