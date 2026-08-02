@@ -147,8 +147,17 @@ function scoreM2(antwoorden: Record<string, number>): ModuleResultaat {
         n++;
       }
     }
-    const gem = n > 0 ? round1(som / n) : 0; // gemiddelde per schaal (1–5)
-    const normInfo = normVoor(gem, mod.normen);
+    const gem = n > 0 ? round1(som / n) : 0; // gemiddelde per schaal (1 tot 5)
+    // De normtabel van M2 loopt over de SOMSCORE van een schaal, niet over het
+    // gemiddelde: elke schaal heeft twee items op een schaal van 1 tot 5, dus de
+    // tabel loopt van 2 tot 10. Dat is dezelfde opzet als bij M1 en M3, waar de
+    // norm ook op de somschaal wordt opgezocht. Wie hier het gemiddelde (1 tot 5)
+    // in stopt, laat een perfecte invulling in het laagste vakje vallen.
+    // Bij een overgeslagen item rekenen we het gemiddelde terug naar de volle
+    // somschaal, zodat een ontbrekend antwoord de schaal niet kunstmatig omlaag
+    // trekt.
+    const somOpNormschaal = n > 0 ? round1(gem * itemNrs.length) : 0;
+    const normInfo = normVoor(somOpNormschaal, mod.normen);
     return {
       id: schaal.id,
       naam: schaal.naam,
