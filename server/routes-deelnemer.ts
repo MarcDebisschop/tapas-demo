@@ -22,6 +22,7 @@ import {
 import { normaliseerTaal } from "@shared/i18n";
 import { dashboardCodeVanToken, voornaamVanNaam } from "./dashboard-code";
 import { getDescriptor, getDefaultDescriptor } from "./registry";
+import { renderRapportPdf } from "./rapport-pdf";
 import { isDemoModus } from "./demomodus";
 import {
   deelnemerLoginSchema,
@@ -321,6 +322,86 @@ export function registerDeelnemerRoutes(app: Express): void {
       afnames: afnameLijst,
       galerij,
     });
+  });
+
+  // Punt B (doorloop-herstel): het deelnemersdashboard toont een "Bekijken"-
+  // link naar /api/rapporten/:id/html zodra er een rapport is, maar die route
+  // ligt achter vereisScope (enkel beheerders/organisaties). Voor een
+  // deelnemer zonder adminsessie gaf dat altijd 403: het rapport ontstond wel
+  // (zie Punt B hierboven), maar was voor de jongere zelf niet te openen.
+  // Deze route geeft dezelfde HTML terug, maar bewijst eigenaarschap via het
+  // dashboardtoken in plaats van een sessie: enkel rapporten die horen bij een
+  // afname van de deelnemer achter dit token zijn hiermee te openen.
+  app.get("/api/dashboard/:token/rapport/:rapportId/html", async (req, res) => {
+    const deelnemer = await storage.getDeelnemerByToken(req.params.token);
+    if (!deelnemer) return res.status(404).json({ error: "Dashboard niet gevonden" });
+    const rapportId = Number(req.params.rapportId);
+    if (!Number.isInteger(rapportId)) {
+      return res.status(400).json({ error: "Ongeldig rapport-id" });
+    }
+    const rapport = await storage.getRapport(rapportId);
+    if (!rapport) return res.status(404).json({ error: "Rapport niet gevonden" });
+    // Eigenaarschap: het rapport moet horen bij een afname van precies deze
+    // deelnemer. Zonder deze controle zou een geraden rapport-id het profiel
+    // van een andere deelnemer lekken.
+    const afnames = await storage.listAfnamesVoorDeelnemer(deelnemer.email);
+    const magZien = afnames.some((a) => a.id === rapport.afnameId);
+    if (!magZien) return res.status(404).json({ error: "Rapport niet gevonden" });
+
+    const pdf = (rapport as any).pdfBase64 as string | null | undefined;
+    if (pdf) {
+      const buf = Buffer.from(pdf, "base64");
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", "inline");
+      return res.send(buf);
+    }
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.send(rapport.html);
+  });
+
+  // Zelfde eigenaarschapscontrole als hierboven, maar voor de downloadknop
+  // (PDF). /api/rapporten/:id/pdf heeft dezelfde vereisScope-blokkade als
+  // /html; zonder dit endpoint kon een deelnemer zijn rapport wel zien maar
+  // niet downloaden.
+  app.get("/api/dashboard/:token/rapport/:rapportId/pdf", async (req, res) => {
+    const deelnemer = await storage.getDeelnemerByToken(req.params.token);
+    if (!deelnemer) return res.status(404).json({ error: "Dashboard niet gevonden" });
+    const rapportId = Number(req.params.rapportId);
+    if (!Number.isInteger(rapportId)) {
+      return res.status(400).json({ error: "Ongeldig rapport-id" });
+    }
+    const rapport = await storage.getRapport(rapportId);
+    if (!rapport) return res.status(404).json({ error: "Rapport niet gevonden" });
+    const afnames = await storage.listAfnamesVoorDeelnemer(deelnemer.email);
+    const magZien = afnames.some((a) => a.id === rapport.afnameId);
+    if (!magZien) return res.status(404).json({ error: "Rapport niet gevonden" });
+
+    const veiligeNaam =
+      (rapport.titel || "profiel")
+        .normalize("NFKD")
+        .replace(/[^\w\s-]/g, "")
+        .trim()
+        .replace(/\s+/g, "-")
+        .slice(0, 80) || "profiel";
+
+    const bestaandePdf = (rapport as any).pdfBase64 as string | null | undefined;
+    if (bestaandePdf) {
+      const buf = Buffer.from(bestaandePdf, "base64");
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${veiligeNaam}.pdf"`);
+      return res.send(buf);
+    }
+    try {
+      const buffer = await renderRapportPdf(rapport.html, { titel: rapport.titel });
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${veiligeNaam}.pdf"`);
+      return res.send(buffer);
+    } catch (e) {
+      console.error("[rapport-deelnemer] PDF-render mislukt, terugval op HTML:", e);
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.setHeader("Content-Disposition", `attachment; filename="${veiligeNaam}.html"`);
+      return res.send(rapport.html);
+    }
   });
 
   // Profiel bijwerken (naam, foto, taal, mailcadans) vanuit het dashboard.

@@ -707,7 +707,7 @@ export default function Dashboard() {
                             </p>
                             <div className="flex flex-wrap gap-2">
                               <a
-                                href={`${API_BASE}/api/rapporten/${rapport.id}/html`}
+                                href={`${API_BASE}/api/dashboard/${token}/rapport/${rapport.id}/html`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 data-testid={`link-rapport-bekijk-${rapport.id}`}
@@ -727,7 +727,7 @@ export default function Dashboard() {
                                   en houdt de HTML-download enkel als vangnet bij een
                                   renderfout. */}
                               <a
-                                href={`${API_BASE}/api/rapporten/${rapport.id}/pdf`}
+                                href={`${API_BASE}/api/dashboard/${token}/rapport/${rapport.id}/pdf`}
                                 data-testid={`link-rapport-download-${rapport.id}`}
                               >
                                 <Button size="sm">
