@@ -1,0 +1,74 @@
+{
+  "bron": "duidingsteksten-t4students.md, letterlijk overgenomen",
+  "sleutel": "de constructnaam zoals die in server/data/t4students.json staat",
+  "constructen": {
+    "Functioneel Innovatief": {
+      "familie": "Talent-foci",
+      "tekst": "Je kunt snel een nieuwe oplossing of een idee te pakken krijgen waar anderen niet zomaar op komen, en dat met weinig moeite. Waar een bestaande aanpak vastloopt, zie je moeiteloos een alternatief dat wel werkt. Bij studeren betekent dit dat je een opdracht in korte tijd anders kunt invullen dan voorgeschreven staat. In een groep kun je snel met een voorstel komen waar niemand nog aan dacht, en dat voorstel houdt meteen al stand. De valkuil bij een sterke uiting is dat je zoveel nieuwe richtingen ziet dat afwerken erbij inschiet. Bij een lagere uiting duurt het langer voor je tot een nieuw idee komt; dat is geen tekort, je vermogen ligt dan waarschijnlijk sterker bij het uitwerken of overbrengen van een idee dat er al is."
+    },
+    "Artistiek Innovatief": {
+      "familie": "Talent-foci",
+      "tekst": "Je kunt snel vorm geven aan iets dat er nog niet was, met woorden, beeld, geluid, materialen of beweging, op een manier die meteen aanspreekt. Waar anderen nog zoeken naar de juiste vorm, zie jij die al en kun je hem ook maken. Bij studeren uit dit vermogen zich doordat je een open, vormgevende opdracht met weinig energie tot iets sterks kunt maken. In samenwerking kun je snel de esthetische of expressieve kant inbrengen die anderen minder snel zien. De valkuil bij een sterke uiting is dat vorm soms meer aandacht krijgt dan de inhoud erachter. Bij een lagere uiting kost het meer moeite om iets nieuws vorm te geven; dat zegt niets over wat je kunt maken, je werkt dan sterker binnen een duidelijk kader dan in volledige vrijheid."
+    },
+    "Complexiteit/Conceptueel": {
+      "familie": "Talent-foci",
+      "tekst": "Je kunt een ingewikkelde situatie met veel lagen en verbanden snel doorzien en het geheel blijven overzien, ook als anderen het overzicht al kwijt zijn. Je ziet het patroon voor je in de details duikt, en dat kost je weinig energie. Bij studeren betekent dit dat je bij vakken of opdrachten met veel onderling verbonden onderdelen snel kunt aanwijzen hoe alles samenhangt. In een groep kun je de losse stukken die anderen hebben aangedragen vlot weer aan elkaar knopen. De valkuil bij een sterke uiting is dat het concrete, kleine detail dan te weinig aandacht krijgt. Bij een lagere uiting kost het meer moeite om snel overzicht te pakken in een complex geheel; dat is geen tekort, je werkt dan waarschijnlijk sterker binnen een overzichtelijke, afgebakende opdracht."
+    },
+    "Systematisch/Uitvoerend": {
+      "familie": "Talent-foci",
+      "tekst": "Je kunt werk dat stap voor stap en nauwgezet uitgevoerd moet worden snel en nauwkeurig afwerken, zonder dat het je veel moeite kost om dat vol te houden tot het klopt. Bij studeren zie je dat vermogen terug in hoe snel je een planning kunt maken en hoe precies je een taak kunt afwerken tot het resultaat klopt. In samenwerking kun je snel zorgvuldig werk afleveren waar anderen op kunnen bouwen, ook bij taken die weinig ruimte voor fouten geven. De valkuil bij een sterke uiting is dat het proces soms belangrijker wordt dan het doel erachter. Bij een lagere uiting kost nauwgezette uitvoering je meer moeite; dat is geen tekort, je vermogen ligt dan waarschijnlijk sterker bij het overzien van het geheel dan bij de precieze uitvoering ervan."
+    },
+    "Sociaal Interactief": {
+      "familie": "Talent-foci",
+      "tekst": "Je kunt snel aanvoelen wat er bij anderen speelt en moeiteloos meedraaien in een team, zonder dat samenwerken je energie kost. Waar anderen moeten wennen aan een groep, functioneer jij daar meteen goed in. Bij studeren zie je dat vermogen terug doordat je in groepswerk snel kunt schakelen tussen de inbreng van verschillende mensen. In samenwerking kun je snel signaleren hoe de sfeer en de afstemming in de groep ervoor staan, en daarop bijsturen. De valkuil bij een sterke uiting is dat je eigen inbreng soms ondergeschikt raakt aan de wens om de groep goed te laten samenwerken. Bij een lagere uiting kost het meer energie om in een team te functioneren; dat is geen tekort, je werkt dan sterker in je eentje."
+    },
+    "Overdrachtelijk Interactief": {
+      "familie": "Talent-foci",
+      "tekst": "Je kunt wat je weet snel begrijpelijk maken voor iemand anders, ook als de stof ingewikkeld is, en dat kost je weinig moeite. Je maakt kennis of inzicht toegankelijk zodat een ander het meteen kan volgen. Bij studeren zie je dat vermogen terug doordat je moeite met stof vaak pas echt oplost op het moment dat je het aan iemand anders uitlegt. In samenwerking kun je snel en helder antwoord geven op een vraag, waardoor mensen vanzelf naar je toekomen. De valkuil bij een sterke uiting is dat je zoveel tijd steekt in het helder maken voor anderen dat je eigen verdieping erbij inschiet. Bij een lagere uiting kost het overbrengen van kennis je meer bewuste moeite; dat zegt niets over hoeveel je zelf weet of begrijpt."
+    },
+    "Analyse": {
+      "familie": "Talent-versnellers",
+      "tekst": "Je kunt een complexe situatie snel ontleden en begrijpen, ook als de opbouw, de logica of de oorzaak niet meteen zichtbaar is. Dat lukt je met weinig moeite en in korte tijd. Bij studeren zie je dat vermogen terug doordat je een opdracht snel kunt opdelen van onderdeel naar geheel, zonder de samenhang te verliezen. In een groep kun je snel doorvragen tot iets echt klopt, waardoor een antwoord grondiger onderbouwd raakt. De valkuil bij een sterke uiting is dat het ontleden soms langer duurt dan nodig is voor een beslissing genomen kan worden. Bij een lagere uiting kost het meer tijd om iets helemaal te doorgronden; dat is geen tekort, je neemt dan waarschijnlijk sneller een werkbaar antwoord aan, wat in veel situaties ook precies handig is."
+    },
+    "Individueel ondersteunend": {
+      "familie": "Talent-versnellers",
+      "tekst": "Je kunt snel en met weinig moeite een goed gesprek voeren met iemand over dingen die voor die persoon moeilijk liggen. Je biedt aandacht en ruimte zonder dat dit je veel energie kost. Bij studeren zie je dat vermogen terug in hoe snel je een medestudent die vastloopt weer op weg kunt helpen. In samenwerking kun je snel het vertrouwen winnen waardoor anderen hun twijfels bij je durven te delen. De valkuil bij een sterke uiting is dat je zoveel ruimte geeft aan de ander dat je eigen agenda op de achtergrond raakt. Bij een lagere uiting kost het begeleiden van een individueel gesprek je meer moeite; dat is geen tekort, je vermogen ligt dan waarschijnlijk sterker bij de inhoud dan bij de begeleiding van de persoon erachter."
+    },
+    "Groepsondersteunend": {
+      "familie": "Talent-versnellers",
+      "tekst": "Je kunt de verschillen in een groep snel op één lijn krijgen rond een gezamenlijk doel, ook als meningen en werkstijlen ver uiteenlopen. Dat verbinden lukt je met weinig moeite. Bij studeren zie je dat vermogen terug doordat je snel een structuur kunt neerzetten die de hele groep kan volgen. In samenwerking kun je snel zorgen dat iedereen dezelfde kant op beweegt, ook wanneer de groep dreigt uiteen te vallen. De valkuil bij een sterke uiting is dat het bewaken van de eenheid soms ten koste gaat van een nodig, scherp meningsverschil. Bij een lagere uiting kost het meer moeite om een groep op één lijn te krijgen; dat is geen tekort, je richt je energie dan waarschijnlijk sterker op je eigen bijdrage."
+    },
+    "Impact": {
+      "familie": "Talent-versnellers",
+      "tekst": "Je kunt mensen snel en met weinig moeite in beweging krijgen om iets te doen, iets wat anderen ook bij jou opmerken. Je overtuigt of trekt mensen mee in een richting zonder daar veel energie voor nodig te hebben. Bij studeren zie je dat vermogen terug doordat je een groepstaak snel op gang kunt trekken of anderen snel enthousiast kunt maken voor een aanpak. In samenwerking kun je snel de knoop doorhakken zodat er beweging komt waar de groep vastzat. De valkuil bij een sterke uiting is dat je hun eigen tempo of twijfel te snel opzij zet. Bij een lagere uiting kost het meer moeite om anderen via overtuigingskracht in beweging te krijgen; dat is geen tekort, je beweegt anderen dan sterker via inhoud of voorbeeldgedrag."
+    },
+    "Resultaat": {
+      "familie": "Talent-versnellers",
+      "tekst": "Je kunt moeiteloos gefocust blijven op het resultaat dat je wilt halen, ook als het proces ernaartoe lang duurt. Je verliest het doel niet uit het oog, zonder dat dit je veel energie kost. Bij studeren zie je dat vermogen terug doordat je bij een grote opdracht snel het eindpunt kunt vastleggen en van daaruit kunt werken. In samenwerking kun je de groep snel en scherp houden op wat er bereikt moet worden. De valkuil bij een sterke uiting is dat het proces zelf, en de mensen erin, ondergeschikt raken aan het halen van het doel. Bij een lagere uiting kost het meer moeite om vast te houden aan één eindresultaat; dat is geen tekort, je hecht dan sterker waarde aan de weg ernaartoe dan aan het eindresultaat op zich."
+    },
+    "Constructief onderscheidend": {
+      "familie": "Talent-versnellers",
+      "tekst": "Je kunt snel en met weinig moeite vooruitdenken over wat er nog moet gebeuren. Je ziet aankomen welke stappen nog nodig zijn en waar iets nog niet af is, vaak eerder dan anderen dat zien. Bij studeren zie je dat vermogen terug doordat je een opdracht in één oogopslag kunt overzien op wat nog ontbreekt, terwijl anderen dat nog moeten uitzoeken. In samenwerking kun je als eerste signaleren wat een groep nog mist om verder te komen. De valkuil bij een sterke uiting is dat je zoveel volgende stappen ziet dat het huidige moment te weinig aandacht krijgt. Bij een lagere uiting kost het meer moeite om vooruit te kijken naar wat nog moet gebeuren; dat is geen tekort, je richt je dan sterker op wat er nu concreet voorligt."
+    },
+    "Be Perfect": {
+      "familie": "Drivers",
+      "tekst": "Be Perfect is het patroon om dingen tot in de puntjes af te werken, zodat het echt klopt. Het geeft je scherpte, zorgvuldigheid en een instinct voor kwaliteit. Bij studeren zie je dit terug in werk dat je pas inlevert als het helemaal goed zit, en in samenwerking let je vaak als eerste op wat nog niet klopt. Onder druk kan Be Perfect gaan duwen: dan wordt nooit helemaal klaar het gevoel, en gaat tijd zitten in een detail dat er eigenlijk al niet meer toe doet. Te weinig van dit patroon kan betekenen dat je sneller genoegen neemt met werk dat nog niet helemaal af is. Het is geen gebrek en geen deugd, het is een patroon dat je kunt leren herkennen en bijsturen."
+    },
+    "Please Others": {
+      "familie": "Drivers",
+      "tekst": "Please Others is het patroon om het de mensen om je heen naar hun zin te maken. Het geeft je een fijn gevoel voor wat anderen nodig hebben en een natuurlijke inzet voor de groep. Bij studeren zie je dit terug als je in een groepsopdracht snel meebeweegt om de sfeer goed te houden, en in samenwerking ben je vaak degene die zorgt dat niemand buiten de boot valt. Onder druk kan Please Others gaan duwen: dan verdwijnt je eigen mening naar de achtergrond uit angst om iemand teleur te stellen. Te weinig van dit patroon kan betekenen dat je minder snel rekening houdt met wat een ander nodig heeft. Het is geen gebrek en geen deugd, het is een patroon dat je kunt leren herkennen en bijsturen."
+    },
+    "Try Hard": {
+      "familie": "Drivers",
+      "tekst": "Try Hard is het patroon om voor iemand die je echt waardeert, er alles aan te doen om te slagen. Het geeft je inzet, doorzettingsvermogen en betrokkenheid. Bij studeren zie je dit terug als je net dat stapje harder gaat voor een vak of een docent die je waardeert, en in samenwerking geef je vaak meer dan strikt gevraagd wordt. Onder druk kan Try Hard gaan duwen: dan blijf je proberen, ook als een andere aanpak of gewoon stoppen verstandiger zou zijn. Te weinig van dit patroon kan betekenen dat je minder snel die extra inspanning levert als het even tegenzit. Het is geen gebrek en geen deugd, het is een patroon dat je kunt leren herkennen en bijsturen."
+    },
+    "Hurry Up": {
+      "familie": "Drivers",
+      "tekst": "Hurry Up is het patroon waarbij je, terwijl je bezig bent, vaak denkt: tijd is kostbaar. Het geeft je vaart, daadkracht en het vermogen om snel te schakelen. Bij studeren zie je dit terug als je opdrachten vlot wilt afronden en moeite hebt met stilstaan, en in samenwerking ben je vaak degene die de groep in beweging houdt als het tempo zakt. Onder druk kan Hurry Up gaan duwen: dan ga je zo snel dat zorgvuldigheid of rust inschieten, en mis je soms iets dat net wat meer tijd nodig had. Te weinig van dit patroon kan betekenen dat je minder snel urgentie voelt als iets echt haast heeft. Het is geen gebrek en geen deugd, het is een patroon dat je kunt leren herkennen en bijsturen."
+    },
+    "Be Strong": {
+      "familie": "Drivers",
+      "tekst": "Be Strong is het patroon om het zelf op te lossen en overeind te blijven, ook als een groepsopdracht vastloopt of iets je emotioneel raakt. Het geeft je stabiliteit, zelfstandigheid en het vermogen om verantwoordelijkheid te nemen zonder er groot over te doen. Bij studeren zie je dit terug als jij degene bent die de knoop doorhakt wanneer een groepstaak vastzit, en in samenwerking laat je zelden merken als iets je raakt. Onder druk kan Be Strong gaan duwen: dan houd je te veel alleen vast en vraag je te laat om hulp. Te weinig van dit patroon kan betekenen dat je sneller laat zien wat iets met je doet, ook een vorm van kracht. Het is geen gebrek en geen deugd, het is een patroon dat je kunt leren herkennen en bijsturen."
+    }
+  }
+}
