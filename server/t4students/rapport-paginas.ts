@@ -54,7 +54,7 @@ import {
 const ONEPAGE_ONDERTITEL = "Drie lagen, elk met een eigen rangorde en een eigen energie.";
 
 const ONEPAGE_INTRO =
-  "Deze pagina zet je drie lagen naast elkaar: waarin je je talent inzet, hoe je het doet, " +
+  "Deze pagina zet je drie lagen onder elkaar: waarin je je talent inzet, hoe je het doet, " +
   "en wat je daarbij aandrijft. Het cijfer links zegt hoeveel je jezelf erin herkent, het " +
   "balkje rechts wat het je kost of geeft. Twee verschillende dingen.";
 
@@ -543,8 +543,8 @@ export function bouwT4StudentsRapport(
       wat: FAM_FOCI,
       openerTekst: [
         "Een talent-focus zegt waarin je je talent inzet: het soort werk dat je met weinig moeite af " +
-          "krijgt en waar je vanzelf naartoe beweegt. Het gaat niet over wat je leuk vindt maar over " +
-          "wat je kunt, en over hoe moeiteloos dat gaat.",
+          "krijgt en waarin je resultaat haalt zonder jezelf te moeten forceren. Het gaat niet over " +
+          "wat je leuk vindt maar over wat je kunt, en over hoe moeiteloos dat gaat.",
         "Hieronder staan alle zes op volgorde van herkenning, met de energie ernaast. Op de bladen " +
           "hierna lees je wat de sterkste betekenen.",
       ],
