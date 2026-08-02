@@ -359,6 +359,15 @@ export function scoreStudiekompas(
   // Situatie-items D5, D6, F4 en F5. Je kiest een handelwijze en de gekozen
   // optie laadt de constructen die erachter zitten. Zo vangt het instrument
   // sociaal wenselijk antwoorden op: je beoordeelt jezelf niet, je kiest.
+  //
+  // De regel "if (load.weight > 0)" hieronder is geen voorzorg maar raakt een
+  // echte lading: F4 optie b laadt Systematisch/Uitvoerend met gewicht nul, de
+  // enige lading met gewicht nul in het instrument (punt 6 uit fase 1). Die
+  // wordt dus overgeslagen, en gewicht nul werkt hier hetzelfde als helemaal
+  // geen lading. Of daar een getal vergeten is dan wel uitdrukkelijk niets
+  // bedoeld is, valt uit de blauwdruk noch uit het itemselectiedocument op te
+  // maken; het is daarom niet veranderd maar voorgelegd in het verslag van
+  // fase 1c, met de gemeten gevolgen van 0, 1 en 2.
   for (const sItemId of sm.sjtItems) {
     const sa = answers[sItemId];
     if (sa == null || sa.choice == null) continue;
