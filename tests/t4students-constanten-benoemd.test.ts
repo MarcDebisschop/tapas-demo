@@ -23,16 +23,15 @@ import { T4STUDENTS_INSTRUMENT as I } from "../server/t4students/instrument";
 // enige terugval van dit soort in welke scoringsmotor van het platform dan ook.
 //
 // WAT ER NU GEBEURT
-// De waarde staat op de plek waar de andere acht ook staan, met dezelfde
-// waarde: 1.0. De terugval in de code is weg, zodat er nog maar een plaats is
-// waar het getal vandaan komt. De waarde zelf is niet veranderd; dat was
-// uitdrukkelijk niet de bedoeling.
+// De waarde staat op de plek waar de andere acht ook staan. De terugval in de
+// code is weg, zodat er nog maar een plaats is waar het getal vandaan komt.
 //
-// EERLIJK ERBIJ: 1.0 IS NIET GEKALIBREERD
-// De blauwdruk noemt tieMargin nergens. Anders dan de acht andere constanten
-// is deze dus niet uit het ontwerp afgeleid maar uit de oorspronkelijke code
-// overgenomen. Hij staat nu benoemd zodat dat zichtbaar is, niet omdat hij
-// verantwoord is. Zie het verslag van fase 1c.
+// DE WAARDE ZELF STAAT INMIDDELS OP 0.3
+// Fase 1c heeft de constante alleen benoemd en de waarde met opzet op 1.0
+// gelaten. In de motorronde heeft de opdrachtgever haar op 0.3 gezet. Wat dat
+// verandert, staat in tests/t4students-gelijke-stand.test.ts en in het verslag
+// van de motorronde. Deze test bewaakt alleen nog dat de constante bestaat, uit
+// het instrument komt en nergens anders vandaan.
 // ---------------------------------------------------------------------------
 
 const C = I.scoringMap.constants;
@@ -46,12 +45,7 @@ describe("punt 4: elke constante die de motor leest staat ook in het instrument"
     expect(
       C.tieMargin,
       "de motor leest tieMargin, dus die hoort in de constantenlijst te staan",
-    ).toBe(1.0);
-  });
-
-  it("de waarde is niet veranderd door hem te benoemen", () => {
-    // De oude terugval was 1.0. Benoemen mag de uitkomst niet verschuiven.
-    expect(C.tieMargin).toBe(1.0);
+    ).toBe(0.3);
   });
 
   it("er is geen terugval meer in de code, dus maar een bron voor het getal", () => {

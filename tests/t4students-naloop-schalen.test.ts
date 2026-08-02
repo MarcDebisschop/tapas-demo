@@ -16,25 +16,30 @@ import { T4STUDENTS_INSTRUMENT as I } from "../server/t4students/instrument";
 // A. DE RIASEC-DREMPELS LIGGEN OP EEN SOM MET ONGELIJK BEREIK
 // De motor noemt een letter "afgeleid hoog" bij een score boven 3 en "afgeleid
 // laag" bij 1 of minder. Die score is een som van twee of drie
-// construct-scores, en die sommen hebben heel verschillende bereiken: R komt
-// tot 7, E tot 15. Drie is voor R bijna de helft van het bereik en voor E een
-// vijfde. Gemeten over 20000 toevallige volledige invullingen haalt E de grens
-// in 93,7 procent van de gevallen en R in 38,0 procent; omgekeerd geldt "laag"
-// bij R in 27,4 procent en bij E in 0,3 procent. Het scherpst zichtbaar bij wie
-// elke stelling voluit herkent: vijf letters komen dan boven de grens uit en
-// Realistisch als enige niet. De divergentienuance is daardoor niet
-// vergelijkbaar tussen de letters. De blauwdruk noemt de nuance wel (§6) maar
-// noemt geen enkel getal, dus hier is niets uitgevoerd.
+// construct-scores, en die sommen hebben heel verschillende bereiken. Gemeten
+// over 20000 toevallige volledige invullingen komt A niet hoger dan 8 en E tot
+// 16. Drie is voor A ruim een derde van het bereik en voor E minder dan een
+// vijfde. In diezelfde reeks haalt E de grens in 96,8 procent van de gevallen
+// en A in 43,0 procent; omgekeerd geldt "laag" bij A in 20,2 procent en bij E
+// in 0,3 procent. De divergentienuance is daardoor niet vergelijkbaar tussen de
+// letters. De blauwdruk noemt de nuance wel (§6) maar noemt geen enkel getal,
+// dus hier is niets uitgevoerd.
+//
+// De scheefheid is in de motorronde wel kleiner geworden. Zolang Systematisch/
+// Uitvoerend geen eigen herkenningsitem had, bleef Realistisch als enige letter
+// onder de grens, ook bij wie elke stelling voluit herkende. Met F7 erbij haalt
+// Realistisch die grens nu wel. Het verschil in bereik tussen de letters blijft.
 //
 // B. EEN VAN DE DRIE CONSISTENTIESIGNALEN IS PRAKTISCH ONBEREIKBAAR
 // profielUitgesprokenheid is de spreiding van de zes focusscores gedeeld door
-// 4,0 en begrensd op 1,0. De zes focusscores kunnen samen nooit een spreiding
-// boven 2,5 halen, dus de uitkomst blijft altijd onder 0,63 en de begrenzing op
-// 1,0 wordt nooit geraakt. Het signaal lage_zekerheid_uitgesproken_beeld vraagt
-// meer dan 0,55, dus meer dan 2,2 spreiding van de maximaal mogelijke 2,5. In
-// 20000 toevallige volledige invullingen kwam het geen enkele keer voor. Met de
-// hand in elkaar gezet lukt het wel, en die invulling staat hieronder, zodat
-// duidelijk is dat het geen dode code is maar een hoek van de ruimte.
+// 4,0 en begrensd op 1,0. Alle mogelijke invullingen van de zes focusitems en
+// de vier situatie-items zijn nagerekend: de hoogst haalbare waarde is 0,65,
+// dus de begrenzing op 1,0 wordt nooit geraakt. Het signaal
+// lage_zekerheid_uitgesproken_beeld vraagt meer dan 0,55 en zit daarmee in de
+// bovenste tien procent van wat er te halen valt. In 20000 toevallige volledige
+// invullingen kwam het geen enkele keer voor. Met de hand in elkaar gezet lukt
+// het wel, en die invulling staat hieronder, zodat duidelijk is dat het geen
+// dode code is maar een hoek van de ruimte.
 //
 // C. BIJ NUL ANTWOORDEN NOEMT DE MOTOR TOCH CONSTRUCTEN
 // Wie niets invult, krijgt overal nul, en de rangordes sorteren dan op de
@@ -46,6 +51,28 @@ import { T4STUDENTS_INSTRUMENT as I } from "../server/t4students/instrument";
 // ---------------------------------------------------------------------------
 
 const sm = I.scoringMap;
+
+/**
+ * De scherpst mogelijke invulling van het focusbeeld, gevonden door alle
+ * combinaties van de zes focusitems (elk 0 of 3) en de vier situatie-items door
+ * de motor te halen. P1 op B en de twee schuiven op nul zetten de zelfzekerheid
+ * zo laag mogelijk, want het signaal vraagt allebei tegelijk.
+ */
+const SCHERPST_MOGELIJKE_BEELD = {
+  F1: { recognition: 0 },
+  F2: { recognition: 0 },
+  F3: { recognition: 0 },
+  F6: { recognition: 0 },
+  F7: { recognition: 3 },
+  F8: { recognition: 3 },
+  D5: { choice: "b" },
+  D6: { choice: "a" },
+  F4: { choice: "a" },
+  F5: { choice: "a" },
+  P1: { choice: "B" },
+  P2: { value: 0 },
+  I1: { value: 0 },
+};
 
 describe("naloop A: de RIASEC-drempels liggen op ongelijke sommen", () => {
   it("de drempels zijn vaste getallen in code, niet in de constanten", () => {
@@ -63,7 +90,7 @@ describe("naloop A: de RIASEC-drempels liggen op ongelijke sommen", () => {
     expect(bronnen).toEqual({ R: 2, I: 2, A: 2, S: 3, E: 3, C: 2 });
   });
 
-  it("wie elke stelling voluit herkent, haalt de grens bij vijf letters wel en bij Realistisch niet", () => {
+  it("wie elke stelling voluit herkent, haalt de grens nu bij alle zes de letters", () => {
     // De scherpste invulling die er is: elke herkenningsstelling op 3, dus
     // "kenmerkt me helemaal". Dan hangt het verschil tussen de letters niet meer
     // van de deelnemer af maar alleen nog van het aantal bronnen en hun bereik.
@@ -73,25 +100,37 @@ describe("naloop A: de RIASEC-drempels liggen op ongelijke sommen", () => {
     }
     const r = scoreStudiekompas(I, a, null, "nl");
     const afg = (l: string) => r.riasec.details[l].afgeleideScore;
-    expect([afg("I"), afg("A"), afg("S"), afg("E"), afg("C")]).toEqual([6, 6, 6, 6, 6]);
-    // R blijft op 3 en blijft daarmee als enige onder de grens van "meer dan 3".
-    // Oorzaak: R leunt mede op Systematisch/Uitvoerend, en dat construct heeft
-    // geen eigen herkenningsitem, alleen ladingen uit situatiekeuzes.
-    expect(afg("R")).toBe(3);
-    expect(r.riasec.details.R.afgeleideScore > 3).toBe(false);
-    expect(r.riasec.details.E.afgeleideScore > 3).toBe(true);
+
+    // Realistisch stond hier voor de motorronde op 3 en bleef als enige onder de
+    // grens van "meer dan 3", omdat het mede op Systematisch/Uitvoerend leunt en
+    // dat construct toen alleen ladingen uit situatiekeuzes kreeg. Met F7 erbij
+    // telt de eigen herkenning van de deelnemer wel mee en komt R op 6.
+    expect(afg("R")).toBe(6);
+    for (const l of ["R", "I", "A", "S", "E", "C"]) {
+      expect(afg(l) > 3, `${l} hoort de grens te halen`).toBe(true);
+    }
+
+    // Wat blijft, is het ongelijke bereik. S en E leunen op drie constructen en
+    // komen op 9, de vier andere op twee constructen en blijven op 6. Dezelfde
+    // deelnemer, dezelfde antwoorden, en toch anderhalf keer zo veel.
+    expect([afg("I"), afg("A"), afg("C")]).toEqual([6, 6, 6]);
+    expect([afg("S"), afg("E")]).toEqual([9, 9]);
   });
 });
 
 describe("naloop B: het derde consistentiesignaal is praktisch onbereikbaar", () => {
   it("de begrenzing op 1,0 wordt nooit geraakt", () => {
-    // De zes focusscores lopen van min 1 tot hoogstens 4, en met zes waarden in
-    // dat bereik is 2,5 de grootst mogelijke spreiding. Gedeeld door 4,0 geeft
-    // dat 0,625 als absolute bovengrens.
+    // De zes focusscores zijn herkenningsscores (motorronde punt 2). Ze lopen
+    // van 0 tot hoogstens 6, maar niet alle zes tegelijk: alleen Sociaal
+    // Interactief haalt 6 en alleen Systematisch/Uitvoerend haalt 5, en dan
+    // uitsluitend bij situatiekeuzes die de andere vier op nul laten. Alle
+    // mogelijke combinaties van de zes focusitems en de vier situatie-items zijn
+    // nagerekend; hieronder staat de scherpste die eruit kwam.
     const foci = I.families.find((f) => f.id === "Talent-foci")!.constructs;
     expect(foci).toHaveLength(6);
-    const grootsteSpreiding = 2.5;
-    expect(grootsteSpreiding / 4.0).toBeLessThan(1.0);
+    const scherpst = scoreStudiekompas(I, SCHERPST_MOGELIJKE_BEELD, null, "nl");
+    expect(scherpst.beeldScherpte.profielUitgesprokenheid).toBe(0.65);
+    expect(scherpst.beeldScherpte.profielUitgesprokenheid!).toBeLessThan(1.0);
   });
 
   it("een gewoon uitgesproken profiel haalt de grens van 0,55 niet", () => {
@@ -112,21 +151,17 @@ describe("naloop B: het derde consistentiesignaal is praktisch onbereikbaar", ()
   });
 
   it("het signaal is wel bereikbaar, maar alleen in een uiterste hoek", () => {
-    // Pas met de energie er maximaal bij, drie foci op hun top en drie eronder,
-    // en de zelfzekerheid op haar laagst, komt het signaal eruit.
-    const a = {
-      F1: { recognition: 3, energy: 2 },
-      F2: { recognition: 3, energy: 2 },
-      F3: { recognition: 3, energy: 2 },
-      F6: { recognition: 0, energy: -2 },
-      F4: { choice: "b" },
-      F5: { choice: "b" },
-      P1: { choice: "B" },
-      P2: { value: 0 },
-      I1: { value: 0 },
-    };
-    const r = scoreStudiekompas(I, a, null, "nl");
-    expect(r.beeldScherpte.profielUitgesprokenheid).toBe(0.57);
+    // De twee foci met het grootste bereik helemaal boven, de vier andere op
+    // nul, en de zelfzekerheid op haar laagst. Dan pas komt het signaal eruit.
+    const r = scoreStudiekompas(I, SCHERPST_MOGELIJKE_BEELD, null, "nl");
+    expect(r.foci.scores).toEqual({
+      "Functioneel Innovatief": 0,
+      "Artistiek Innovatief": 0,
+      "Complexiteit/Conceptueel": 0,
+      "Systematisch/Uitvoerend": 5,
+      "Sociaal Interactief": 6,
+      "Overdrachtelijk Interactief": 0,
+    });
     expect(r.beeldScherpte.zelfZekerheid).toBe(0.14);
     expect(r.beeldScherpte.consistentieSignaal).toBe("lage_zekerheid_uitgesproken_beeld");
   });
@@ -157,16 +192,16 @@ describe("naloop C: bij nul antwoorden staan er toch namen in de uitvoer", () =>
     expect(leeg.studiegebieden.top.map((g) => g.score)).toEqual([0, 0, 0]);
   });
 
-  it("alle 25 constructen staan op precies nul, dus er is niets gedeeld door nul", () => {
-    // De lege noemer in het energiegemiddelde valt netjes terug op nul en
-    // levert geen NaN op. Dat deel is dus in orde.
+  it("alle 25 constructen staan op nul herkenning en hebben geen energiegetal", () => {
+    // De lege noemer leverde nooit een NaN op, maar wel een nul, en nul is het
+    // midden van de energieschaal. Sinds motorronde punt 4 blijft dat getal
+    // leeg. De herkenning blijft wel nul, want dat is een optelsom en geen
+    // gemiddelde. Zie tests/t4students-geen-halve-oordelen.test.ts.
     const waarden = Object.values(leeg.constructScores);
     expect(waarden).toHaveLength(25);
     for (const s of waarden) {
-      expect(Number.isNaN(s.avgEnergy)).toBe(false);
       expect(s.recognition).toBe(0);
-      expect(s.avgEnergy).toBe(0);
-      expect(s.combined).toBe(0);
+      expect(s.avgEnergy).toBeNull();
     }
   });
 });

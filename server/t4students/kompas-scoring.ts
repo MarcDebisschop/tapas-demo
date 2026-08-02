@@ -10,7 +10,7 @@
 // Naast dit bestand staat server/t4students/scoring.ts. Dat is de oudere
 // aanpak, die rekent op de itembank van 37 items in server/question-manager.ts
 // en die vandaag door de afnameroute gebruikt wordt. Die blijft ongewijzigd
-// staan. Deze motor hoort bij het studiekompas van 31 items uit
+// staan. Deze motor hoort bij het studiekompas van 34 items uit
 // server/data/t4students.json. Welke van de twee het platform uiteindelijk
 // gebruikt, is een beslissing voor een latere fase.
 //
@@ -32,13 +32,6 @@
 //     in de ladingen vandaan komt. Zou de motor haar alsnog gaan toepassen,
 //     dan verdubbelt elke situatielading en verschuift elke score; dat is geen
 //     kleine ingreep en is niet op eigen houtje gedaan.
-//
-//   energyToRecognitionFactor (0.5)
-//     Herkenning zegt of iets je kenmerkt, de energie-anker zegt of het je
-//     energie geeft. Dat zijn twee verschillende dingen. Een kenmerk dat je
-//     leegtrekt is een signaal, geen sterkte. Daarom corrigeert de gemiddelde
-//     energie de herkenning, voor de helft: sterk genoeg om richting te geven,
-//     te zwak om de herkenning te overstemmen.
 //
 //   overloadRecognitionMin (2) en underuseRecognitionMax (1)
 //     De twee kantelpunten op de herkenningsschaal van 0 tot 3. Vanaf 2 heet
@@ -65,15 +58,19 @@
 //     Hoeveel elementen aan de onderkant getoond worden als nuance. Twee: één
 //     is toeval, drie leest als een lijstje tekorten.
 //
-//   tieMargin (1.0)
-//     Scores die niet meer dan een punt uit elkaar liggen, gelden als gelijk en
-//     komen in dezelfde groep. Zo wordt een verschil van een tiende niet als
-//     een rangorde gepresenteerd.
-//     LET OP: als enige van deze constanten is deze niet gekalibreerd. De
-//     blauwdruk noemt hem nergens. Tot fase 1c stond hij helemaal niet in de
-//     scoringMap en zette een terugval in de code hem op 1.0; hij staat nu
-//     benoemd op diezelfde waarde, zodat zichtbaar is dat hij bestaat en wat
-//     hij doet. Zie het verslag van fase 1c.
+//   tieMargin (0.3)
+//     Scores die niet meer dan deze marge uit elkaar liggen, gelden als gelijk
+//     en komen in dezelfde groep. Tot de motorronde stond de marge op 1.0, en
+//     dan gold een heel punt verschil op de herkenningsschaal nog als gelijk:
+//     wie zich in iets duidelijk meer herkende dan in iets anders, las dat de
+//     twee even sterk waren. Op verzoek van de opdrachtgever staat de marge nu
+//     op 0.3.
+//     LET OP: sinds punt 2 wordt er op herkenning gerangschikt, en die scores
+//     zijn allemaal hele getallen. Elke marge onder 1 komt daardoor op
+//     hetzelfde neer: alleen wie precies gelijk scoort, komt in dezelfde groep.
+//     0.3 laat wel ruimte als er ooit een halve punt bij komt.
+//     De blauwdruk noemt tieMargin nergens; de waarde is een keuze van de
+//     opdrachtgever en niet uit het ontwerp afgeleid.
 //
 // De overzetting is letterlijk. Geen enkele constante, drempel of formule is
 // gewijzigd, ook niet waar iets bevreemdt. Wat opviel staat beschreven in
@@ -115,8 +112,12 @@ export interface T4SAlert {
 export interface T4SConstructScore {
   family: string;
   recognition: number;
-  avgEnergy: number;
-  combined: number;
+  /**
+   * Leeg wanneer er geen enkel energie-antwoord voor dit construct is
+   * (motorronde punt 4). Nul is op deze schaal een antwoord en geen lege plaats,
+   * dus leeg mag daar niet op uitkomen.
+   */
+  avgEnergy: number | null;
 }
 
 export interface T4SResultaat {
@@ -185,6 +186,12 @@ export interface T4SResultaat {
     sorted: string[];
     top2: string[];
     doorslag: string | null;
+    /**
+     * Het energiesaldo van elke driver in een eigen woord: remmend, neutraal of
+     * gaspedaal. Bewust niet de vier balanslabels van de foci en de
+     * versnellers, want die spreken over talent en een driver is geen talent.
+     */
+    energielabels: Record<string, string>;
   };
   keerzijde: { minFoci: string[]; minVersnellers: string[]; minDrivers: string[] };
   profielAnker: {
@@ -251,15 +258,25 @@ const ALERT_BOODSCHAPPEN: Record<string, Record<T4STaal, string>> = {
   },
 };
 
+/**
+ * De toestand die in de plaats komt van een oordeel wanneer de nodige
+ * antwoorden ontbreken (motorronde punt 4). Zij staat zowel in de energiekaart
+ * per item als bij de balanslabels per construct, zodat er maar een woord is
+ * voor "hier is niet genoeg gemeten om iets te zeggen". T4Teens en T4Kids
+ * gebruiken hiervoor de tekst "te weinig antwoorden"; deze motor schrijft haar
+ * als sleutel, net als "niet_van_toepassing" en de andere labels hier.
+ */
+export const GEEN_MEETPUNT = "te_weinig_antwoorden";
+
 // De items die meetellen voor de vraag of er genoeg signaal is. Bewust een
 // vaste lijst en niet "alle items": de profiel-, studiecontext- en
 // betekenisitems sturen de toon van het rapport, maar dragen zelf geen
 // talentsignaal.
 const SIGNAALDRAGENDE_ITEMS = [
   "I1", "BE1", "BE2",
-  "D1", "D2", "D3", "D4", "D5", "D6",
+  "D1", "D2", "D3", "D4", "D5", "D6", "D7",
   "V1", "V2", "V3", "V4", "V5", "V6",
-  "F1", "F2", "F3", "F4", "F5", "F6",
+  "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8",
   "R1", "R2", "R3", "R4", "R5", "R6",
 ];
 
@@ -443,21 +460,48 @@ export function scoreStudiekompas(
   }
 
   // ── Scores per construct (blauwdruk §2) ──────────────────────────────────
-  function avgEnergy(con: string): number {
+  /**
+   * De gemiddelde energie van een construct, of leeg als er niets gemeten is
+   * (motorronde punt 4).
+   *
+   * WAT HIER MIS GING
+   * De energieschaal loopt van min twee tot plus twee, en nul is daar geen lege
+   * plaats maar een antwoord: "dit doet me niets". Deze functie gaf nul terug
+   * wanneer de lijst met antwoorden leeg was. Wie niets invulde en wie
+   * uitdrukkelijk neutraal antwoordde, kwamen daardoor op hetzelfde getal uit,
+   * en alles wat op dat getal steunde sprak een oordeel uit over iemand van wie
+   * niets gemeten was.
+   *
+   * WAT ER NU GEBEURT
+   * Geen antwoorden betekent geen getal. Wie het getal gebruikt, moet dus zelf
+   * beslissen wat te doen als het ontbreekt, en kan het niet meer per ongeluk
+   * als een middenwaarde lezen. Dit is dezelfde oplossing als in T4Teens en
+   * T4Kids, waar een onvolledig construct "niet ingevuld" krijgt in plaats van
+   * een score.
+   */
+  function avgEnergy(con: string): number | null {
     const v = constructs[con].energyVals;
-    return v.length ? round2(v.reduce((a, b) => a + b, 0) / v.length) : 0;
+    return v.length ? round2(v.reduce((a, b) => a + b, 0) / v.length) : null;
   }
 
-  function combined(con: string): number {
-    return round2(constructs[con].recognition + avgEnergy(con) * C.energyToRecognitionFactor);
+  // Rangschikken gebeurt op herkenning. Reden: een mengsel van herkenning en
+  // energie liet energie de plaats bepalen, zodat wie zich sterk herkent maar er
+  // weinig energie uit haalt onder iemand zakte die zich nauwelijks herkent maar
+  // het wel leuk vindt. Energie weegt nog altijd even zwaar mee in het
+  // balanslabel en in de energiekaart, maar dan apart en zichtbaar als energie.
+  function herkenning(con: string): number {
+    return constructs[con].recognition;
   }
 
   // ── Energie-status per item (blauwdruk §3) ───────────────────────────────
   function energyStatus(eId: string): string {
     const ea = answers[eId];
-    if (!ea) return "neutraal";
-    const rec = ea.recognition != null ? ea.recognition : 0;
-    const eng = ea.energy != null ? ea.energy : 0;
+    // Motorronde punt 4. Hier stond "neutraal" bij een onbeantwoord item, en
+    // ook bij een half beantwoord item, want de ontbrekende helft werd stil op
+    // nul gezet. Neutraal is een antwoord van de deelnemer en geen lege plaats.
+    if (!ea || ea.recognition == null || ea.energy == null) return GEEN_MEETPUNT;
+    const rec = ea.recognition;
+    const eng = ea.energy;
     if (rec >= C.overloadRecognitionMin && eng < 0) return "overbelasting";
     if (rec <= C.underuseRecognitionMax && eng > 0) return "onderbenutting";
     if (rec >= C.overloadRecognitionMin && eng > 0) return "kernsterkte";
@@ -470,8 +514,8 @@ export function scoreStudiekompas(
   const energieBronnen: string[] = [];
   const energieLekken: string[] = [];
   for (const ck of Object.keys(constructs)) {
-    if (constructs[ck].energyVals.length === 0) continue;
     const e = avgEnergy(ck);
+    if (e === null) continue;
     if (e >= 1) energieBronnen.push(ck);
     else if (e <= -1) energieLekken.push(ck);
   }
@@ -480,9 +524,9 @@ export function scoreStudiekompas(
   //
   // tieMargin stond eerder nergens en werd door een terugval in deze regel op
   // 1.0 gezet (punt 4 uit fase 1). Hij staat nu bij de andere acht constanten
-  // in het instrumentbestand, met dezelfde waarde, zodat er nog maar een plaats
-  // is waar het getal vandaan komt. Let op: 1.0 is niet gekalibreerd. De
-  // blauwdruk noemt tieMargin niet; de waarde komt uit de oorspronkelijke code.
+  // in het instrumentbestand, zodat er nog maar een plaats is waar het getal
+  // vandaan komt. De waarde is in de motorronde op 0.3 gezet; zie de uitleg
+  // bovenaan dit bestand en tests/t4students-gelijke-stand.test.ts.
   const tieMargin = C.tieMargin;
 
   // Scores die dicht bij elkaar liggen worden tot één groep gebundeld, zodat
@@ -547,7 +591,7 @@ export function scoreStudiekompas(
    * We nemen de herkenning van het anker-item zelf, precies de grootheid
    * waarvoor de drempels gemaakt zijn. Daarmee komt dit label overeen met
    * energie.kaart, dat dezelfde matrix al per item toepaste en wel klopte.
-   * De som blijft ongemoeid: constructScores.recognition, combined en alle
+   * De som blijft ongemoeid: constructScores.recognition en alle
    * rangordes rekenen verder zoals voorheen.
    *
    * VOORGELEGD, NIET ZELF BESLIST
@@ -561,8 +605,14 @@ export function scoreStudiekompas(
     const ankerItem = ankerItemVanConstruct[con];
     if (!ankerItem) return "niet_van_toepassing";
     const a = answers[ankerItem];
-    const rec = a != null && a.recognition != null ? a.recognition : 0;
     const en = avgEnergy(con);
+    // Motorronde punt 4. Het label leest twee dingen van het anker-item: de
+    // herkenning en de energie. Ontbrak er een van de twee, dan werd zij stil op
+    // nul gezet en kwam er toch een oordeel uit; bij een lege invulling was dat
+    // "latent", en dat zegt tegen de deelnemer dat hij een sterkte heeft die nog
+    // niet tot leven komt. Een halve invulling levert nu geen half oordeel op.
+    if (a == null || a.recognition == null || en === null) return GEEN_MEETPUNT;
+    const rec = a.recognition;
     if (rec >= C.overloadRecognitionMin && en >= 1) return "kernsterkte";
     if (rec >= C.overloadRecognitionMin && en <= -1) return "overbelast";
     if (rec <= C.underuseRecognitionMax && en >= 1) return "onderbenut";
@@ -574,11 +624,11 @@ export function scoreStudiekompas(
   const versScores: Record<string, number> = {};
   const versBalans: Record<string, string> = {};
   for (const con of versCons) {
-    versScores[con] = combined(con);
+    versScores[con] = herkenning(con);
     versBalans[con] = balanceLabel(con);
   }
   // LET OP (punt 2 uit fase 1). Hier wordt gerangschikt op de opgetelde
-  // constructscore. De blauwdruk beschrijft in punt 4 iets anders: "rankItems =
+  // herkenning van het construct. De blauwdruk beschrijft in punt 4 iets anders: "rankItems =
   // V1-V6 worden onderling gerangschikt om de dominante versneller(s) te
   // bepalen", dus een rangorde over de zes items zelf. Dat is niet hetzelfde,
   // want de zes versnellers hebben een verschillend aantal bronnen. Impact en
@@ -609,7 +659,7 @@ export function scoreStudiekompas(
   const fociScores: Record<string, number> = {};
   const fociBalans: Record<string, string> = {};
   for (const con of fociCons) {
-    fociScores[con] = combined(con);
+    fociScores[con] = herkenning(con);
     fociBalans[con] = balanceLabel(con);
   }
   const fociSorted = fociCons.slice().sort((a, b) => fociScores[b] - fociScores[a]);
@@ -622,7 +672,7 @@ export function scoreStudiekompas(
   // uitkomt, is een robuuster signaal dan een enkele hoge score.
   const famAvg: Record<string, number> = {};
   for (const fam of instrumentDef.families) {
-    const vals = fam.constructs.map((c) => combined(c));
+    const vals = fam.constructs.map((c) => herkenning(c));
     famAvg[fam.id] = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
   }
 
@@ -630,7 +680,7 @@ export function scoreStudiekompas(
   for (const [as, bronnen] of Object.entries(sm.convergenceAxes)) {
     let boven = 0;
     for (const [famId, con] of bronnen) {
-      if (combined(con) > famAvg[famId]) boven++;
+      if (herkenning(con) > famAvg[famId]) boven++;
     }
     convergentie[as] = boven >= 2 ? "bevestigd" : boven === 1 ? "indicatief" : "inactief";
   }
@@ -643,7 +693,7 @@ export function scoreStudiekompas(
   const riasecDetails: T4SResultaat["riasec"]["details"] = {};
   for (const [letter, def] of Object.entries(sm.riasecDerivation)) {
     let afgeleideScore = 0;
-    for (const bron of def.derivedFrom) afgeleideScore += combined(bron[1]);
+    for (const bron of def.derivedFrom) afgeleideScore += herkenning(bron[1]);
     const confirmAns = answers[def.confirmItem];
     const confirmScore = confirmAns != null && confirmAns.interest != null ? confirmAns.interest : 0;
     const riasecScore = round2(afgeleideScore + confirmScore);
@@ -712,6 +762,33 @@ export function scoreStudiekompas(
   const driverCons = driverFam ? driverFam.constructs : [];
   const driverScores: Record<string, number> = {};
   for (const con of driverCons) driverScores[con] = constructs[con].recognition;
+
+  /**
+   * Het energiesaldo van een driver in een eigen woord.
+   *
+   * WAAROM NIET HET BALANSLABEL
+   * De foci en de versnellers krijgen kernsterkte, overbelast, onderbenut of
+   * latent. Die vier woorden gaan over een talent dat je wel of niet inzet. Een
+   * driver is geen talent maar iets wat je aandrijft, dus zeggen ze daar het
+   * verkeerde. Drie eigen waarden zeggen wat er wel gemeten is: trekt deze
+   * driver je vooruit, houdt hij je tegen, of komt het op nul uit.
+   *
+   * WAAROM NUL NIET HETZELFDE IS ALS NIETS
+   * Nul is op de energieschaal een antwoord: de deelnemer heeft gezegd dat het
+   * hem niets kost en niets oplevert. Dat heet neutraal. Is er geen energie
+   * gemeten, dan is er ook geen saldo en dus geen oordeel; dan staat er dat er
+   * te weinig antwoorden zijn. Neutraal is een uitspraak die gemeten moet zijn.
+   */
+  function driverEnergielabel(con: string): string {
+    const en = avgEnergy(con);
+    if (en === null) return GEEN_MEETPUNT;
+    if (en < 0) return "remmend";
+    if (en > 0) return "gaspedaal";
+    return "neutraal";
+  }
+
+  const driverEnergielabels: Record<string, string> = {};
+  for (const con of driverCons) driverEnergielabels[con] = driverEnergielabel(con);
   const driverSorted = driverCons.slice().sort((a, b) => driverScores[b] - driverScores[a]);
   const tweedeDriver = driverSorted.length >= 2 ? driverScores[driverSorted[1]] : 0;
   let driverDoorslag: string | null = null;
@@ -839,13 +916,21 @@ export function scoreStudiekompas(
     profielUitgesprokenheid = round2(Math.min(Math.sqrt(variance) / 4.0, 1.0));
   }
 
-  let consistentieSignaal = "beeld_en_zekerheid_lopen_gelijk";
-  if (zelfZekerheid != null && profielUitgesprokenheid != null) {
-    if (zelfZekerheid >= 0.65 && profielUitgesprokenheid < 0.3) {
-      consistentieSignaal = "hoge_zekerheid_open_beeld";
-    } else if (zelfZekerheid <= 0.4 && profielUitgesprokenheid > 0.55) {
-      consistentieSignaal = "lage_zekerheid_uitgesproken_beeld";
-    }
+  // Motorronde punt 5, met dezelfde regel als punt 4. Dit signaal legt twee
+  // dingen naast elkaar: hoe zeker iemand zelf zegt te zijn, en hoe uitgesproken
+  // zijn beeld is. Ontbreekt een van de twee, dan viel de motor terug op
+  // "beeld_en_zekerheid_lopen_gelijk". Dat is een uitspraak over de deelnemer,
+  // en bij een lege vragenlijst is er niets om haar op te baseren. Nu meldt het
+  // signaal in dat geval dat er te weinig antwoorden zijn.
+  let consistentieSignaal: string;
+  if (zelfZekerheid == null || profielUitgesprokenheid == null) {
+    consistentieSignaal = GEEN_MEETPUNT;
+  } else if (zelfZekerheid >= 0.65 && profielUitgesprokenheid < 0.3) {
+    consistentieSignaal = "hoge_zekerheid_open_beeld";
+  } else if (zelfZekerheid <= 0.4 && profielUitgesprokenheid > 0.55) {
+    consistentieSignaal = "lage_zekerheid_uitgesproken_beeld";
+  } else {
+    consistentieSignaal = "beeld_en_zekerheid_lopen_gelijk";
   }
 
   // ── Resultaat ────────────────────────────────────────────────────────────
@@ -854,8 +939,7 @@ export function scoreStudiekompas(
     constructScores[con] = {
       family: constructs[con].family,
       recognition: constructs[con].recognition,
-      avgEnergy: round2(avgEnergy(con)),
-      combined: combined(con),
+      avgEnergy: avgEnergy(con),
     };
   }
 
@@ -920,6 +1004,7 @@ export function scoreStudiekompas(
       sorted: driverSorted,
       top2: driverSorted.slice(0, 2),
       doorslag: driverDoorslag,
+      energielabels: driverEnergielabels,
     },
 
     keerzijde: { minFoci, minVersnellers, minDrivers },

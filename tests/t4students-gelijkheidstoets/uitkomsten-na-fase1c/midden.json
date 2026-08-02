@@ -14,6 +14,11 @@
     "kaart": {
       "BE1": "neutraal",
       "BE2": "neutraal",
+      "D1": "te_weinig_antwoorden",
+      "D2": "te_weinig_antwoorden",
+      "D3": "te_weinig_antwoorden",
+      "D4": "te_weinig_antwoorden",
+      "D7": "te_weinig_antwoorden",
       "V1": "neutraal",
       "V2": "neutraal",
       "V3": "neutraal",
@@ -23,7 +28,9 @@
       "F1": "neutraal",
       "F2": "neutraal",
       "F3": "neutraal",
-      "F6": "neutraal"
+      "F6": "neutraal",
+      "F7": "te_weinig_antwoorden",
+      "F8": "te_weinig_antwoorden"
     },
     "bronnen": [
       "Systematisch/Uitvoerend"
@@ -34,152 +41,127 @@
     "Helderheid/zingeving": {
       "family": "TaPas-BEELD",
       "recognition": 2,
-      "avgEnergy": 0,
-      "combined": 2
+      "avgEnergy": 0
     },
     "Energie-status": {
       "family": "TaPas-BEELD",
       "recognition": 2,
-      "avgEnergy": 0,
-      "combined": 2
+      "avgEnergy": 0
     },
     "Be Perfect": {
       "family": "Drivers",
       "recognition": 2,
-      "avgEnergy": 0,
-      "combined": 2
+      "avgEnergy": null
     },
     "Please Others": {
       "family": "Drivers",
       "recognition": 2,
-      "avgEnergy": 0,
-      "combined": 2
+      "avgEnergy": null
     },
     "Try Hard": {
       "family": "Drivers",
       "recognition": 2,
-      "avgEnergy": 0,
-      "combined": 2
+      "avgEnergy": null
     },
     "Hurry Up": {
       "family": "Drivers",
       "recognition": 4,
-      "avgEnergy": 0,
-      "combined": 4
+      "avgEnergy": null
     },
     "Be Strong": {
       "family": "Drivers",
       "recognition": 3,
-      "avgEnergy": 0,
-      "combined": 3
+      "avgEnergy": null
     },
     "Analyse": {
       "family": "Talent-versnellers",
       "recognition": 4,
-      "avgEnergy": 0,
-      "combined": 4
+      "avgEnergy": 0
     },
     "Individueel ondersteunend": {
       "family": "Talent-versnellers",
       "recognition": 2,
-      "avgEnergy": 0,
-      "combined": 2
+      "avgEnergy": 0
     },
     "Groepsondersteunend": {
       "family": "Talent-versnellers",
       "recognition": 2,
-      "avgEnergy": 0,
-      "combined": 2
+      "avgEnergy": 0
     },
     "Impact": {
       "family": "Talent-versnellers",
       "recognition": 2,
-      "avgEnergy": 0,
-      "combined": 2
+      "avgEnergy": 0
     },
     "Resultaat": {
       "family": "Talent-versnellers",
       "recognition": 3,
-      "avgEnergy": 0,
-      "combined": 3
+      "avgEnergy": 0
     },
     "Constructief onderscheidend": {
       "family": "Talent-versnellers",
       "recognition": 2,
-      "avgEnergy": 0,
-      "combined": 2
+      "avgEnergy": 0
     },
     "Functioneel Innovatief": {
       "family": "Talent-foci",
       "recognition": 2,
-      "avgEnergy": 0,
-      "combined": 2
+      "avgEnergy": 0
     },
     "Artistiek Innovatief": {
       "family": "Talent-foci",
       "recognition": 2,
-      "avgEnergy": 0,
-      "combined": 2
+      "avgEnergy": 0
     },
     "Complexiteit/Conceptueel": {
       "family": "Talent-foci",
       "recognition": 2,
-      "avgEnergy": 0,
-      "combined": 2
+      "avgEnergy": 0
     },
     "Systematisch/Uitvoerend": {
       "family": "Talent-foci",
       "recognition": 2,
-      "avgEnergy": 1,
-      "combined": 2.5
+      "avgEnergy": 1
     },
     "Sociaal Interactief": {
       "family": "Talent-foci",
       "recognition": 0,
-      "avgEnergy": 0,
-      "combined": 0
+      "avgEnergy": 0
     },
     "Overdrachtelijk Interactief": {
       "family": "Talent-foci",
       "recognition": 2,
-      "avgEnergy": 0,
-      "combined": 2
+      "avgEnergy": 0
     },
     "Realistisch": {
       "family": "Interesse",
       "recognition": 1,
-      "avgEnergy": 0,
-      "combined": 1
+      "avgEnergy": null
     },
     "Investigative": {
       "family": "Interesse",
       "recognition": 1,
-      "avgEnergy": 0,
-      "combined": 1
+      "avgEnergy": null
     },
     "Artistiek": {
       "family": "Interesse",
       "recognition": 1,
-      "avgEnergy": 0,
-      "combined": 1
+      "avgEnergy": null
     },
     "Sociaal": {
       "family": "Interesse",
       "recognition": 1,
-      "avgEnergy": 0,
-      "combined": 1
+      "avgEnergy": null
     },
     "Ondernemend": {
       "family": "Interesse",
       "recognition": 1,
-      "avgEnergy": 0,
-      "combined": 1
+      "avgEnergy": null
     },
     "Conventioneel": {
       "family": "Interesse",
       "recognition": 1,
-      "avgEnergy": 0,
-      "combined": 1
+      "avgEnergy": null
     }
   },
   "foci": {
@@ -187,43 +169,43 @@
       "Functioneel Innovatief": 2,
       "Artistiek Innovatief": 2,
       "Complexiteit/Conceptueel": 2,
-      "Systematisch/Uitvoerend": 2.5,
+      "Systematisch/Uitvoerend": 2,
       "Sociaal Interactief": 0,
       "Overdrachtelijk Interactief": 2
     },
     "sorted": [
-      "Systematisch/Uitvoerend",
       "Functioneel Innovatief",
       "Artistiek Innovatief",
       "Complexiteit/Conceptueel",
+      "Systematisch/Uitvoerend",
       "Overdrachtelijk Interactief",
       "Sociaal Interactief"
     ],
     "topGroep": [
-      "Systematisch/Uitvoerend",
       "Functioneel Innovatief",
       "Artistiek Innovatief",
       "Complexiteit/Conceptueel",
+      "Systematisch/Uitvoerend",
       "Overdrachtelijk Interactief"
     ],
     "top2": [
-      "Systematisch/Uitvoerend",
-      "Functioneel Innovatief"
+      "Functioneel Innovatief",
+      "Artistiek Innovatief"
     ],
     "balanslabels": {
       "Functioneel Innovatief": "latent",
       "Artistiek Innovatief": "latent",
       "Complexiteit/Conceptueel": "latent",
-      "Systematisch/Uitvoerend": "niet_van_toepassing",
-      "Sociaal Interactief": "niet_van_toepassing",
+      "Systematisch/Uitvoerend": "te_weinig_antwoorden",
+      "Sociaal Interactief": "te_weinig_antwoorden",
       "Overdrachtelijk Interactief": "latent"
     },
     "groepen": [
       [
-        "Systematisch/Uitvoerend",
         "Functioneel Innovatief",
         "Artistiek Innovatief",
         "Complexiteit/Conceptueel",
+        "Systematisch/Uitvoerend",
         "Overdrachtelijk Interactief"
       ],
       [
@@ -249,17 +231,16 @@
       "Constructief onderscheidend"
     ],
     "kopGroep": [
-      "Analyse",
-      "Resultaat",
-      "Individueel ondersteunend",
-      "Groepsondersteunend",
-      "Impact",
-      "Constructief onderscheidend"
+      "Analyse"
     ],
     "groepen": [
       [
-        "Analyse",
-        "Resultaat",
+        "Analyse"
+      ],
+      [
+        "Resultaat"
+      ],
+      [
         "Individueel ondersteunend",
         "Groepsondersteunend",
         "Impact",
@@ -275,13 +256,7 @@
       "Constructief onderscheidend": "latent"
     },
     "dominante": "Analyse",
-    "gedeeldMet": [
-      "Resultaat",
-      "Individueel ondersteunend",
-      "Groepsondersteunend",
-      "Impact",
-      "Constructief onderscheidend"
-    ]
+    "gedeeldMet": []
   },
   "convergentie": {
     "onderzoekend": "bevestigd",
@@ -294,7 +269,7 @@
   },
   "riasec": {
     "scores": {
-      "R": 5.5,
+      "R": 5,
       "I": 7,
       "A": 5,
       "S": 5,
@@ -303,9 +278,9 @@
     },
     "details": {
       "R": {
-        "afgeleideScore": 4.5,
+        "afgeleideScore": 4,
         "bevestigingScore": 1,
-        "totaalScore": 5.5,
+        "totaalScore": 5,
         "divergentie": false,
         "confirmItem": "R1"
       },
@@ -349,14 +324,14 @@
   "studiegebieden": {
     "scores": {
       "Kunst & Cultuur": 5,
-      "Exact & ICT": 12.5,
+      "Exact & ICT": 12,
       "Gedrag & Maatschappij": 12,
       "Economie & Bedrijf": 15,
       "Taal, Communicatie & Media": 10,
       "Recht & Bestuur": 20,
-      "Techniek": 12.5,
+      "Techniek": 12,
       "Onderwijs & Opvoeding": 10,
-      "Aarde & Milieu": 12.5,
+      "Aarde & Milieu": 12,
       "Gezondheid": 12
     },
     "gesorteerd": [
@@ -370,18 +345,18 @@
       },
       {
         "naam": "Exact & ICT",
-        "score": 12.5
-      },
-      {
-        "naam": "Techniek",
-        "score": 12.5
-      },
-      {
-        "naam": "Aarde & Milieu",
-        "score": 12.5
+        "score": 12
       },
       {
         "naam": "Gedrag & Maatschappij",
+        "score": 12
+      },
+      {
+        "naam": "Techniek",
+        "score": 12
+      },
+      {
+        "naam": "Aarde & Milieu",
         "score": 12
       },
       {
@@ -412,7 +387,7 @@
       },
       {
         "naam": "Exact & ICT",
-        "score": 12.5
+        "score": 12
       }
     ]
   },
@@ -422,15 +397,12 @@
       "strategie": "bottom-up vanuit de onderdelen",
       "belofte": "begin bij de bouwstenen en doorgrond eerst hoe het in elkaar zit"
     },
-    "secondaryVersneller": null,
-    "secundair": null,
-    "gedeeldMet": [
-      "Resultaat",
-      "Individueel ondersteunend",
-      "Groepsondersteunend",
-      "Impact",
-      "Constructief onderscheidend"
-    ]
+    "secondaryVersneller": "Resultaat",
+    "secundair": {
+      "strategie": "top-down vanuit het eindbeeld",
+      "belofte": "begin bij hoe het eindresultaat eruit moet zien en werk terug"
+    },
+    "gedeeldMet": []
   },
   "interesse": {
     "scores": {
@@ -477,7 +449,14 @@
       "Hurry Up",
       "Be Strong"
     ],
-    "doorslag": null
+    "doorslag": null,
+    "energielabels": {
+      "Be Perfect": "te_weinig_antwoorden",
+      "Please Others": "te_weinig_antwoorden",
+      "Try Hard": "te_weinig_antwoorden",
+      "Hurry Up": "te_weinig_antwoorden",
+      "Be Strong": "te_weinig_antwoorden"
+    }
   },
   "keerzijde": {
     "minFoci": [
@@ -513,14 +492,14 @@
   },
   "betrouwbaarheid": {
     "beantwoord": 31,
-    "totaalItems": 31,
+    "totaalItems": 34,
     "totaalSignaal": 27,
     "voorlopigDrempel": 20,
     "voorlopig": false
   },
   "beeldScherpte": {
     "zelfZekerheid": 0.62,
-    "profielUitgesprokenheid": 0.2,
+    "profielUitgesprokenheid": 0.19,
     "consistentieSignaal": "beeld_en_zekerheid_lopen_gelijk"
   },
   "betekenis": {

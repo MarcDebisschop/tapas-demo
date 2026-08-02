@@ -5,27 +5,21 @@ import { scoreStudiekompas } from "../server/t4students/kompas-scoring";
 import { T4STUDENTS_INSTRUMENT as I } from "../server/t4students/instrument";
 
 // ---------------------------------------------------------------------------
-// Punt 9 uit fase 1: translationStatus staat op "nl-only" terwijl de Franse en
-// Engelse teksten er wel degelijk allemaal in staan.
+// De vertaalvlag van T4Students.
 //
-// ER IS HIER MET OPZET NIETS GEREPAREERD
-// De opdracht is duidelijk: laat allebei staan. De vlag omzetten zou zeggen
-// dat de vertalingen nagelezen en vrijgegeven zijn, en dat weten we niet. De
-// vertalingen weghalen zou werk vernietigen dat er al is. Er zijn ook geen
-// vertalingen bijgemaakt of geraden.
+// WAT DE VLAG NU ZEGT
+// translationStatus staat op "nl-fr-en" en dat klopt met de inhoud: elk
+// vertaalbaar veld van het instrument draagt een Nederlandse, een Franse en een
+// Engelse tekst. Eerder stond er "nl-only" terwijl er al 76 van de 79 velden
+// drietalig waren; die tegenspraak is weg nu D7, F7 en F8 hun Franse en Engelse
+// tekst hebben gekregen.
 //
-// WAT DEZE TEST BEWAAKT
-// Zolang de vlag en de inhoud elkaar tegenspreken, mag geen enkele regel code
-// zich op die vlag baseren om vertalingen te tonen of te verbergen. Wie dat
-// wel doet, bouwt op een uitspraak waarvan hier gemeten is dat ze niet klopt:
-// de vlag zegt "alleen Nederlands", de inhoud is drietalig, en het instrument
-// zegt zelf multilingual: true. Welke van die drie je ook gelooft, je verbergt
-// of toont het verkeerde.
-//
-// Deze test wordt dus rood zodra iemand de vlag gaat uitlezen, en blijft rood
-// tot de tegenspraak zelf is opgelost: ofwel de vertalingen zijn nagelezen en
-// de vlag gaat om, ofwel de vertalingen verdwijnen. Pas dan mag de uitsluiting
-// hieronder weg.
+// WAT DE VLAG NIET ZEGT
+// Zij zegt welke talen aanwezig zijn, niet dat ze nagelezen zijn. De
+// opdrachtgever leest de vertalingen na; tot dat gebeurd is mag geen enkele
+// regel code de vlag gebruiken om vertalingen te tonen of te verbergen, want
+// dan zou de vlag een vrijgave betekenen die er niet is. Dat is wat de laatste
+// test hieronder bewaakt.
 // ---------------------------------------------------------------------------
 
 const TALEN = ["nl", "fr", "en"] as const;
@@ -62,27 +56,33 @@ function telVertaalbareVelden(): { totaal: number; gevuld: Record<string, number
   return { totaal, gevuld };
 }
 
-describe("punt 9: de vertaalvlag spreekt de inhoud tegen", () => {
-  it("de vlag zegt alleen Nederlands", () => {
-    expect(I.translationStatus).toBe("nl-only");
+describe("de vertaalvlag en de inhoud zeggen hetzelfde", () => {
+  it("de vlag noemt de drie talen die er werkelijk in staan", () => {
+    expect(I.translationStatus).toBe("nl-fr-en");
   });
 
-  it("het instrument zegt tegelijk dat het meertalig is", () => {
-    // Twee velden in hetzelfde bestand die elkaar tegenspreken. Dit is de kern
-    // van punt 9 en de reden dat de vlag niets mag sturen.
+  it("het instrument noemt zich meertalig, met Nederlands als voertaal", () => {
     expect(I.multilingual).toBe(true);
     expect(I.language).toBe("nl");
   });
 
-  it("alle vertaalbare teksten zijn in alle drie de talen gevuld", () => {
+  it("elk vertaalbaar veld draagt alle drie de talen", () => {
     const { totaal, gevuld } = telVertaalbareVelden();
-    expect(totaal).toBe(76);
-    expect(gevuld.nl).toBe(76);
-    expect(gevuld.fr).toBe(76);
-    expect(gevuld.en).toBe(76);
+    expect(totaal).toBe(79);
+    expect(gevuld.nl).toBe(79);
+    expect(gevuld.fr).toBe(79);
+    expect(gevuld.en).toBe(79);
   });
 
-  it("de motor levert vandaag gewoon Frans en Engels, ongeacht de vlag", () => {
+  it("geen enkel item mist nog Frans of Engels", () => {
+    const main = I.sections.find((s) => s.sectionId === "main")!;
+    const leeg = main.items
+      .filter((i) => i.text != null && (!i.text.fr?.trim() || !i.text.en?.trim()))
+      .map((i) => i.id);
+    expect(leeg).toEqual([]);
+  });
+
+  it("de motor levert Frans en Engels zonder de vlag te raadplegen", () => {
     // Een lege invulling zet het alert voorlopig_profiel aan. Dat alert draagt
     // een boodschap in de gevraagde taal. De vlag speelt daar geen rol in.
     const nl = scoreStudiekompas(I, {}, null, "nl");
@@ -105,7 +105,7 @@ describe("punt 9: de vertaalvlag spreekt de inhoud tegen", () => {
     expect(r.taal).toBe("nl");
   });
 
-  it("geen enkele regel code baseert zich op de vlag om vertalingen te sturen", () => {
+  it("geen enkele regel code stuurt vertalingen op de vlag", () => {
     const wortel = path.resolve(__dirname, "..");
     const uit: string[] = [];
     function loop(map: string) {
@@ -121,7 +121,7 @@ describe("punt 9: de vertaalvlag spreekt de inhoud tegen", () => {
     const uitgesloten = [
       // Dit bestand zelf: het noemt de vlag om haar te bewaken.
       "t4students-vertaalvlag.test.ts",
-      // De typedeclaratie plus de uitleg waarom de vlag niet klopt. Geen sturing.
+      // De typedeclaratie plus de uitleg bij de vlag. Geen sturing.
       path.join("t4students", "instrument.ts"),
       // Gaat over een ander instrument (server/data/instrument.json) en toont
       // juist aan dat de vlag de inhoudsvingerafdruk niet raakt. Geen sturing.
@@ -140,9 +140,9 @@ describe("punt 9: de vertaalvlag spreekt de inhoud tegen", () => {
 
     expect(
       noemers,
-      "Zolang translationStatus (\"nl-only\") de inhoud (76 van 76 velden in " +
-        "nl, fr en en) tegenspreekt, mag geen code die vlag gebruiken om " +
-        "vertalingen te tonen of te verbergen. Los eerst de tegenspraak op.",
+      "translationStatus zegt welke talen aanwezig zijn, niet dat ze nagelezen " +
+        "zijn. Zolang de opdrachtgever de vertalingen niet heeft nagelezen, mag " +
+        "geen code de vlag gebruiken om vertalingen te tonen of te verbergen.",
     ).toEqual([]);
   });
 });
