@@ -283,6 +283,31 @@ function isBeantwoord(item: T4SItem | undefined, antwoorden: T4SAntwoorden): boo
   return a.recognition != null;
 }
 
+/**
+ * Hoeveel vragen er per dimensie beantwoord zijn, zoals blauwdruk 5.2 voor
+ * pagina 4 vraagt. Een item dat meer dan een construct binnen dezelfde familie
+ * voedt, telt daar een keer mee: het is een vraag die de student een keer heeft
+ * beantwoord, niet twee.
+ */
+export function beantwoordPerFamilie(
+  inst: T4SInstrument,
+  antwoorden: T4SAntwoorden,
+): { familie: string; beantwoord: number; totaal: number }[] {
+  const voeding = voedingPerConstruct(inst);
+  const items = itemIndex(inst);
+  return inst.families.map((f) => {
+    const ids = new Set<string>();
+    for (const con of f.constructs) {
+      const v = voeding[con];
+      if (!v) continue;
+      for (const id of v.herkenningsItems) ids.add(id);
+      for (const id of v.energieItems) ids.add(id);
+    }
+    const beantwoord = Array.from(ids).filter((id) => isBeantwoord(items[id], antwoorden)).length;
+    return { familie: f.id, beantwoord, totaal: ids.size };
+  });
+}
+
 // ── Tekst van items en antwoorden, letterlijk ───────────────────────────────
 
 function t(v: T4SVertaalbaar | undefined, taal: string): string {

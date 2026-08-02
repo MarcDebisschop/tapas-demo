@@ -38,6 +38,7 @@ import {
   kleurVanFamilie,
   lijst,
   rangschik,
+  beantwoordPerFamilie,
   voedingPerConstruct,
   type T4SBand,
   type T4SBlok,
@@ -401,6 +402,23 @@ export function bouwT4StudentsRapport(
             : "Je hebt genoeg ingevuld om een stabiel beeld te geven. Dat betekent niet dat dit rapport " +
               "het laatste woord heeft. Het betekent dat wat erin staat, stevig genoeg staat om over " +
               "te praten.",
+        },
+        {
+          // De naam van de dimensie staat in de punt zelf en niet in een
+          // kaderlabel, want die labels worden in kapitalen gezet en dan staat
+          // TaPas-BEELD hier anders geschreven dan overal elders in het rapport.
+          soort: "opsomming",
+          kop: "Wat je per dimensie hebt ingevuld",
+          punten: beantwoordPerFamilie(inst, antwoorden).map(
+            (d) => `${d.familie}: ${d.beantwoord} van ${d.totaal} vragen`,
+          ),
+        },
+        {
+          soort: "alinea",
+          tekst:
+            "Een dimensie waar minder is ingevuld, draagt ook minder ver. Waar er te weinig " +
+            "antwoorden zijn om iets te kunnen zeggen, staat dat er met zoveel woorden bij en " +
+            "wordt er geen getal ingevuld dat er niet is.",
         },
         {
           soort: "alinea",
