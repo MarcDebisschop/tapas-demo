@@ -13,6 +13,8 @@ import {
 import { inhoudsVersie } from "./instrument-inhoudsversie";
 import t4sportsJson from "./data/t4sports.json";
 import t4sportsModulesJson from "./data/t4sports-modules.json";
+import t4studentsJson from "./data/t4students.json";
+import { T4STUDENTS_AANTAL_ITEMS } from "./t4students/instrument";
 import {
   ONDERBOUWING_T4PROFESSIONAL,
   type InstrumentOnderbouwing,
@@ -445,22 +447,61 @@ function bouwRegistry(): Map<string, InstrumentDescriptor> {
   });
 
   // -------------------------------------------------------------------------
-  // T4Students — individueel instrument voor studenten in het hoger onderwijs.
+  // T4Students, het studiekompas voor jongvolwassenen.
   //
-  // T4Students is een op maat gemaakte variant van het T4P-profiel, ontwikkeld
-  // voor studenten in het hoger onderwijs. De descriptor is metadata-only;
-  // de rapport-branch gebruikt instrumentId "t4students" als routing-sleutel.
+  // WAT HIER IS RECHTGEZET
+  // Deze descriptor bestond al, maar beschreef het instrument niet zoals het
+  // werkelijk is. Er stond letterlijk:
+  //
+  //   version: "1.0.0"
+  //   description: "Individueel TaPas-profiel voor studenten (17-23 jaar):
+  //                 ontdek je talent, energie en gedragspatroon in een
+  //                 academisch kader."
+  //
+  // Twee dingen klopten niet. De doelgroep stond op 17 tot 23 jaar, terwijl het
+  // instrument zelf jongvolwassenen van 17 tot 25 en ouder noemt. En het
+  // versienummer stond als vaste tekst in het register, terwijl het
+  // gezaghebbende nummer in het databestand van het instrument hoort. Verder
+  // ontbrak wat de descriptors van de andere instrumenten wel vermelden: het
+  // aantal items, de afnamevorm en wat de meting oplevert.
+  //
+  // VERSIE
+  // Komt nu uit server/data/t4students.json, met een vingerafdruk over de
+  // inhoud erachter, precies zoals bij T4Sports. Zie
+  // tests/registerversies-sluiten-aan.test.ts.
+  //
+  // WAAROM GEEN GEHYDRATEERDE DEFINITIE
+  // hydrateInstrument() zoekt in de hoofdsectie naar "blocks". De hoofdsectie
+  // van T4Students draagt "items" en geen blocks, omdat de itemvormen van dit
+  // instrument (twee schalen op één item, keuze-opties die op meerdere
+  // constructen tegelijk laden) niet in de blokvorm passen. Zou de definitie
+  // hier toch gehydrateerd worden, dan kreeg de descriptor een lege
+  // blokkenlijst mee en zou de invulflow van fase 2 concluderen dat er niets
+  // in te vullen valt. Daarom draagt deze descriptor geen gehydrateerde
+  // definitie. De items zijn te bereiken via server/t4students/instrument.ts.
+  //
+  // creditCost: NIET BEVESTIGD. Nergens staat een afgesproken creditkost voor
+  // T4Students. De waarde hieronder is 1, de kost van elk ander individueel
+  // instrument in dit register, en is dus een plaatshouder en geen besluit.
+  // De opdrachtgever moet hem bevestigen. Tot dan is hij te overschrijven met
+  // de omgevingsvariabele T4S_SESSIE_CREDITS, zonder code te wijzigen, net
+  // zoals eerder bij T4Organizations is gedaan.
   // -------------------------------------------------------------------------
+  const t4studentsKost = Number(process.env.T4S_SESSIE_CREDITS ?? 1);
   map.set("t4students", {
     instrumentId: "t4students",
     flowType: "individual",
     name: "T4Students",
-    version: "1.0.0",
+    version: inhoudsVersie(t4studentsJson),
     description:
-      "Individueel TaPas-profiel voor studenten (17-23 jaar): ontdek je " +
-      "talent, energie en gedragspatroon in een academisch kader.",
+      `Individueel studiekompas voor jongvolwassenen (17 tot 25 jaar en ouder): ${T4STUDENTS_AANTAL_ITEMS} ` +
+      "items die de student zelf invult, in een enkele zitting. De meting levert " +
+      "een beeld van zichzelf, een energiebeeld, zes talentfoci, zes " +
+      "talent-versnellers, een driverprofiel, een uit de eigen antwoorden " +
+      "afgeleid en daarna bevestigd RIASEC-vermoeden gekoppeld aan de tien " +
+      "studiegebieden, en een persoonlijke studiestrategie.",
     isDefault: false,
-    creditCost: 1,
+    creditCost: t4studentsKost,
   });
 
   // -------------------------------------------------------------------------

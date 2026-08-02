@@ -40,6 +40,21 @@ describe("register en databestand noemen hetzelfde versienummer", () => {
     }
   });
 
+  it("T4Students volgt server/data/t4students.json", async () => {
+    // T4Students kwam er in fase 1 bij. De descriptor droeg toen nog de vaste
+    // tekst "1.0.0" terwijl het instrument sindsdien een eigen databestand
+    // heeft. Dezelfde afspraak geldt hier dus als bij T4Sports.
+    const { getDescriptor } = await import("../server/registry");
+    const bestand = lees("server/data/t4students.json");
+    const d = getDescriptor("t4students");
+    expect(d).toBeDefined();
+    expect(bestand.version).toBe("1.0.0");
+    expect(basisVersieVan(d!.version)).toBe(bestand.version);
+    // En het nummer draagt werkelijk een inhoudsvingerafdruk, want anders zou
+    // een wijziging aan de items ongemerkt kunnen passeren.
+    expect(d!.version).toMatch(/^1\.0\.0\+i[0-9a-f]{8}$/);
+  });
+
   it("T4Professional volgt server/data/instrument.json", async () => {
     const { getDefaultDescriptor } = await import("../server/registry");
     const bestand = lees("server/data/instrument.json");
