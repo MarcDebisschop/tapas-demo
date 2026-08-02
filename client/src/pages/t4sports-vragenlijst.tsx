@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { bewaarBewijs } from "@/lib/afname-bewijs";
 import type { ClientBlock, BlockAnswer, EnergyOption } from "@/lib/types";
+import { blokAntwoordVolledig, ontbrekendeSchaalvragen } from "@shared/verplicht-antwoorden";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 // ============================================================
@@ -391,7 +392,11 @@ function VragenlijstScherm({
     updateCur({ least: pos, itemEnergy: newItemEnergy });
   }
 
-  const canNext = cur.most !== null && cur.least !== null;
+  // Verplicht doorklikken. De keuze meest/minst opent de energiemeting; pas als
+  // ook de energie gezet is, gaat de knop verder open. Vroeger volstond de
+  // keuze en kon een blok zonder energiewaarde ingeleverd worden.
+  const keuzeGezet = cur.most !== null && cur.least !== null;
+  const canNext = blokAntwoordVolledig(block ?? { energyMode: "block" }, cur);
 
   if (!block) {
     return (
@@ -540,7 +545,7 @@ function VragenlijstScherm({
         </div>
 
         {/* Block energie (non-item mode) — pas zichtbaar als forced choice compleet */}
-        {block.energyMode === "block" && canNext && (
+        {block.energyMode === "block" && keuzeGezet && (
           <div className="rounded-2xl border mb-5 px-5 py-4" style={{ borderColor: `${GOUD}40`, background: `${GOUD}10` }}>
             <p style={{ color: GOUD }} className="text-xs font-extrabold tracking-wide uppercase mb-2">Energiemeting</p>
             <p className="text-blue-200 text-sm mb-3">Hoeveel energie geeft dit thema je als atleet?</p>
@@ -576,7 +581,9 @@ function VragenlijstScherm({
             }
           >
             {!canNext
-              ? "Maak je keuze eerst"
+              ? keuzeGezet
+                ? "Geef nog de energie aan"
+                : "Maak je keuze eerst"
               : idx < blocks.length - 1
               ? "Volgende situatie →"
               : "Vragenlijst afronden →"}
@@ -585,7 +592,9 @@ function VragenlijstScherm({
 
         {!canNext && (
           <p className="text-center text-white/30 text-xs mt-3">
-            Kies één MEEST en één MINST om verder te gaan.
+            {keuzeGezet
+              ? "Geef nog aan hoeveel energie dit je geeft of kost."
+              : "Kies één MEEST en één MINST om verder te gaan."}
           </p>
         )}
 
@@ -631,6 +640,14 @@ function VerbindingScherm({
   onVolgende: () => void;
   onTerug: () => void;
 }) {
+  // Verplicht doorklikken: een regelaar die niemand aangeraakt heeft is geen
+  // antwoord. De regelaars tonen het midden, maar tellen pas mee als de atleet
+  // ze zelf gezet heeft.
+  const nogOpen = ontbrekendeSchaalvragen(
+    VERBINDING_VRAGEN.map((vr) => vr.id),
+    verbinding,
+  );
+  const verbindingCompleet = nogOpen.length === 0;
   return (
     <div className="relative min-h-screen overflow-hidden" style={{ background: NAVY }}>
       <SportBg opacity={0.04} />
@@ -660,8 +677,11 @@ function VerbindingScherm({
                   />
                 </div>
                 <span className="text-white/40 text-xs w-4">10</span>
-                <span style={{ color: GOUD }} className="font-bold text-lg w-8 text-right">
-                  {verbinding[vr.id] ?? 5}
+                <span
+                  style={{ color: verbinding[vr.id] === undefined ? "rgba(255,255,255,0.3)" : GOUD }}
+                  className="font-bold text-lg w-8 text-right"
+                >
+                  {verbinding[vr.id] ?? "?"}
                 </span>
               </div>
               <div className="flex justify-between text-white/30 text-xs mt-1">
@@ -678,12 +698,22 @@ function VerbindingScherm({
           </Button>
           <Button
             onClick={onVolgende}
+            disabled={!verbindingCompleet}
             className="flex-1 font-bold"
-            style={{ background: GOUD, color: NAVY }}
+            style={
+              verbindingCompleet
+                ? { background: GOUD, color: NAVY }
+                : { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.3)", cursor: "not-allowed" }
+            }
           >
-            Profiel genereren →
+            {verbindingCompleet ? "Profiel genereren →" : "Zet eerst alle vier de regelaars"}
           </Button>
         </div>
+        {!verbindingCompleet && (
+          <p className="text-center text-white/30 text-xs mt-3">
+            Nog {nogOpen.length} van de {VERBINDING_VRAGEN.length} vragen te zetten.
+          </p>
+        )}
       </div>
     </div>
   );
@@ -873,9 +903,9 @@ export default function T4SportsVragenlijst() {
   const [sportType, setSportType] = useState("");
   const [ambitie, setAmbitie] = useState("");
   const [baseline, setBaseline] = useState(5);
-  const [verbinding, setVerbinding] = useState<Record<string, number>>({
-    q1: 5, q2: 5, q3: 5, q4: 5,
-  });
+  // Leeg, niet op 5. Een regelaar die op 5 start levert vier antwoorden op die
+  // de atleet nooit gegeven heeft.
+  const [verbinding, setVerbinding] = useState<Record<string, number>>({});
   const [answers, setAnswers] = useState<AnswerState>({});
   const [stap, setStap] = useState<Stap>("welkom");
   const [afnameId, setAfnameId] = useState<number | null>(null);
