@@ -232,7 +232,7 @@ function tekenRij(doc: Doc, rij: T4SRij, x: number, y: number, kleur: string): n
 
   if (!rij.ingevuld) {
     doc.font(F.dm).fontSize(7.4).fillColor(KLEUR.inktZacht);
-    doc.text("Nog niet ingevuld", xHerk, midden - 3.8, { width: TEKST_B - (xHerk - x), lineBreak: false });
+    doc.text("Te weinig antwoorden", xHerk, midden - 3.8, { width: TEKST_B - (xHerk - x), lineBreak: false });
     return RIJ_H;
   }
 
@@ -447,7 +447,7 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
         );
       } else {
         doc.font(F.dm).fontSize(7.6).fillColor(KLEUR.inktZacht);
-        doc.text("Nog niet ingevuld", xHerk, y + 14, { width: HERK_B + ENERGIE_B + KOL_GAT, lineBreak: false });
+        doc.text("Te weinig antwoorden", xHerk, y + 14, { width: HERK_B + ENERGIE_B + KOL_GAT, lineBreak: false });
       }
       schrijf(doc, blok.duiding, x + 16, y + 32, TEKST_B - 32, F.dm, 9, KLEUR.inkt, 3.4);
       return totaal + 6;

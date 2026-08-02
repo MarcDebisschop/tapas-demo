@@ -217,7 +217,7 @@ function bronPagina(
     blokken.push({
       soort: "alinea",
       tekst:
-        "Nog niet ingevuld: " +
+        "Te weinig antwoorden bij: " +
         nietIngevuld.map((id) => (items[id]?.text ? id : id)).join(", ") +
         ". Daarom staat er bij de bijbehorende onderdelen geen score.",
     });
@@ -334,7 +334,7 @@ export function bouwT4StudentsRapport(
           tekst:
             "Is er binnen een onderdeel iets niet ingevuld, dan krijgt dat onderdeel geen score en " +
             "geen plaats in de rangorde. Er wordt niets ingeschat en niets gemiddeld. Er staat dan " +
-            "Nog niet ingevuld.",
+            "Te weinig antwoorden.",
         },
       ],
       "Drie dingen die je nodig hebt om de rest te begrijpen.",
@@ -342,15 +342,20 @@ export function bouwT4StudentsRapport(
   );
 
   // ── 3. De one-page ────────────────────────────────────────────────────────
-  const naschrift: string[] = [];
-  for (const dim of [foci, versnellers, drivers]) {
-    for (const r of dim.zonderOordeel) {
-      naschrift.push(
-        `Van ${r.construct} is nog niet alles ingevuld. Daarom staat er geen score bij. Zodra je ` +
-          `die vraag beantwoordt, krijgt dit onderdeel ook een plek in je rangorde.`,
-      );
-    }
-  }
+  // Een zin voor alle onderdelen samen, en niet een alinea per onderdeel. Anders
+  // groeit dit blok mee met het aantal openstaande vragen en wordt de one-page
+  // juist bij een dunne invulling van haar eigen blad geduwd.
+  const zonderOordeel = [foci, versnellers, drivers].flatMap((dim) =>
+    dim.zonderOordeel.map((r) => r.construct),
+  );
+  const naschrift: string[] =
+    zonderOordeel.length === 0
+      ? []
+      : [
+          `Van ${lijst(zonderOordeel)} is nog niet alles ingevuld. Daarom staat er geen score bij ` +
+            `en geen plaats in de rangorde. Zodra je die vragen beantwoordt, ${staan(zonderOordeel.length)} ` +
+            `${zonderOordeel.length === 1 ? "dat onderdeel" : "die onderdelen"} er vanzelf bij.`,
+        ];
   paginas.push(
     pagina(
       3,
