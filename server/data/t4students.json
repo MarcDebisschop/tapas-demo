@@ -443,8 +443,8 @@
           "energyScale": "energy",
           "text": {
             "nl": "Ik hou me sterk en los het liefst zelf op wat me bezighoudt.",
-            "fr": "",
-            "en": ""
+            "fr": "Je fais face sans rien montrer et je préfère régler moi-même ce qui me préoccupe.",
+            "en": "I keep it together and prefer to sort out on my own whatever is on my mind."
           },
           "sourceItems": []
         },
@@ -735,8 +735,8 @@
           "energyScale": "energy",
           "text": {
             "nl": "Ik kan stap voor stap en zorgvuldig afwerken wat ik begonnen ben, ook als het lang duurt.",
-            "fr": "",
-            "en": ""
+            "fr": "Je peux terminer pas à pas et avec soin ce que j'ai commencé, même si cela prend longtemps.",
+            "en": "I can finish step by step and carefully what I have started, even when it takes a long time."
           },
           "sourceItems": []
         },
@@ -749,8 +749,8 @@
           "energyScale": "energy",
           "text": {
             "nl": "Ik kan vlot contact maken en goed samenwerken met heel verschillende mensen.",
-            "fr": "",
-            "en": ""
+            "fr": "Je peux nouer le contact facilement et bien collaborer avec des personnes très différentes.",
+            "en": "I can make contact easily and work well with very different people."
           },
           "sourceItems": []
         },
@@ -1616,6 +1616,6 @@
     }
   },
   "multilingual": true,
-  "translationStatus": "nl-only",
+  "translationStatus": "nl-fr-en",
   "license": "verdieping"
 }

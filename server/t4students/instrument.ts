@@ -24,13 +24,13 @@
 // 34 items, de vijf responsschalen, de volledige scoringMap met haar constanten
 // en de drie talen zijn ongewijzigd overgenomen. Geen enkel getal is aangeraakt.
 //
-// EEN OPENSTAAND PUNT UIT DE BRON
-// Het bronbestand zet translationStatus op "nl-only" terwijl er wel degelijk
-// Franse en Engelse teksten in staan. Die vlag is bewust overgenomen zoals ze
-// is, en de vertalingen ook. Lees de vlag dus als: de Franse en Engelse teksten
-// bestaan, maar zijn nog niet nagelezen en nog niet vrijgegeven. Wie ze wil
-// gebruiken in een afname, laat ze eerst nakijken en zet de vlag daarna om.
-// Er zijn geen vertalingen bijgemaakt of geraden.
+// DE VERTAALVLAG
+// Het bronbestand zette translationStatus op "nl-only" terwijl er wel degelijk
+// Franse en Engelse teksten in stonden. Die tegenspraak is opgelost: D7, F7 en
+// F8 hebben hun Franse en Engelse tekst gekregen en de vlag staat op
+// "nl-fr-en". Zij zegt daarmee welke talen aanwezig zijn, niet dat ze nagelezen
+// zijn. Het nalezen van de vertalingen ligt bij de opdrachtgever, en zolang dat
+// niet gebeurd is stuurt geen enkele regel code op deze vlag.
 // ---------------------------------------------------------------------------
 
 import definitie from "../data/t4students.json";
@@ -97,8 +97,7 @@ export interface T4SInstrument {
   identity: { required: string[]; optional: string[] };
   scoringMap: T4SScoringMap;
   multilingual: boolean;
-  /** Zie de opmerking bovenaan dit bestand: staat op "nl-only" terwijl de
-   *  Franse en Engelse teksten wel aanwezig zijn, maar nog niet nagelezen. */
+  /** Welke talen aanwezig zijn, niet of ze nagelezen zijn. Zie bovenaan. */
   translationStatus: string;
   license: string;
 }
