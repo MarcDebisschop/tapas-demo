@@ -24,6 +24,7 @@
       "code": "fundament",
       "naam": "Fundament — Waarden- & normenfit",
       "instructie": "Geef voor elke uitspraak aan in welke mate die op jouw team van toepassing is.",
+      "_dimensie": "Het subveld 'dimensie' bij de items hieronder is louter beschrijvend. Het zegt of een uitspraak over professionele, persoonlijke of proceswaarden gaat, en helpt bij het samenstellen en nalezen van de itemlijst. De scoring gebruikt het NIET: het fundamentcijfer is het gewone gemiddelde van alle acht items, die allemaal even zwaar tellen. Deelcijfers per dimensie bestaan bewust niet, onder meer omdat er maar een enkel procesitem is (F7) en een cijfer op een enkel item te wankel is om te rapporteren. Wie hier toch deelcijfers aan wil hangen, maakt een inhoudelijke keuze die eerst afgesproken moet worden.",
       "items": [
         { "id": "F1", "tekst": "Wat wij in dit team belangrijk vinden in ons werk (kwaliteit, inzet, omgang met fouten) komt sterk overeen.", "dimensie": "professioneel" },
         { "id": "F2", "tekst": "We delen dezelfde opvattingen over wat professioneel acceptabel gedrag is en wat niet.", "dimensie": "professioneel" },

@@ -21,6 +21,7 @@ import t4sportsJson from "../server/data/t4sports.json";
 import { scoorOrganisatie } from "../server/t4organizations/scoring";
 import { itemsVoorRing } from "../server/t4organizations/instrument";
 import type { T4ORespondentMetAntwoorden } from "../server/t4organizations/storage";
+import { itembank as teamscanItembank, scoorIndividueel } from "../server/teamscan/scoring";
 
 const t4sportsInstrument = hydrateInstrument(t4sportsJson);
 
@@ -201,6 +202,47 @@ describe("T4Organizations, weging van de ringen in het vermogensgemiddelde", () 
       respondent("stakeholder", 4),
     ];
     expect(scoreVoorDimensie(scheef)).toBeCloseTo(scoreVoorDimensie(gelijk), 6);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Punt 4: Teamscan, het veld `dimensie` is beschrijvend en rekent niet mee
+// ---------------------------------------------------------------------------
+describe("Teamscan, het subveld dimensie bij de fundamentitems", () => {
+  const fundamentItems = teamscanItembank.blokken.A_fundament.items as {
+    id: string;
+    dimensie: string;
+  }[];
+
+  const antwoordenVoor = (perItem: (id: string) => number) => ({
+    fundament: Object.fromEntries(fundamentItems.map((i) => [i.id, perItem(i.id)])),
+    lencioni: {} as Record<string, number>,
+    vertrouwenRanking: {} as Record<string, number>,
+    vertrouwenPrestatie: {} as Record<string, number>,
+  });
+
+  it("is bij elk fundamentitem ingevuld", () => {
+    expect(fundamentItems).toHaveLength(8);
+    for (const item of fundamentItems) {
+      expect(["professioneel", "persoonlijk", "proces"]).toContain(item.dimensie);
+    }
+  });
+
+  it("staat als beschrijvend gedocumenteerd in de itembank", () => {
+    expect(teamscanItembank.blokken.A_fundament._dimensie).toMatch(/beschrijvend/);
+  });
+
+  it("laat elk item even zwaar tellen, ongeacht zijn dimensie", () => {
+    // Er is een enkel procesitem (F7) en drie persoonlijke items. Als de scoring
+    // per dimensie zou wegen, zou een hoge score op alleen het procesitem
+    // zwaarder tellen dan een hoge score op een van de persoonlijke items. Dat
+    // is niet zo: het fundamentcijfer is het gewone gemiddelde van acht items.
+    const alleenProcesHoog = antwoordenVoor((id) => (id === "F7" ? 5 : 1));
+    const alleenPersoonlijkHoog = antwoordenVoor((id) => (id === "F5" ? 5 : 1));
+    const a = scoorIndividueel(alleenProcesHoog).fundament.gemiddelde;
+    const b = scoorIndividueel(alleenPersoonlijkHoog).fundament.gemiddelde;
+    expect(a).toBe(b);
+    expect(a).toBe((5 + 7 * 1) / 8);
   });
 });
 

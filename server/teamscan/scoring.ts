@@ -81,6 +81,10 @@ function gem(getallen: number[]): number {
 
 // --- Fundament --------------------------------------------------------------
 
+// Alle acht fundamentitems tellen even zwaar. Het subveld `dimensie` in de
+// itembank (professioneel, persoonlijk, proces) is beschrijvend en rekent hier
+// niet mee; zie de toelichting bij blokken.A_fundament._dimensie in
+// itembank.json.
 function scoorFundament(fundament: Record<string, number>): PijlerResultaat {
   const fp = itembank.fundamentPijler;
   const scores = fp.items.map((id: string) => fundament[id]).filter((v: number) => typeof v === "number");
