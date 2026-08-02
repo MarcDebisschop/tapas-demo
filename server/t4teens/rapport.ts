@@ -51,11 +51,18 @@ function volledig(r: ConstructRowLike): boolean {
 }
 
 // Duidingslabel voor een gemiddelde item-score op -2..+2 (jongeren-toon).
+//
+// Het invulscherm biedt vijf antwoordpunten (-2 tot +2) en er zijn vijf
+// labels: een per antwoordpunt. De grenzen liggen daarom halverwege tussen
+// twee punten, zodat het label steeds het antwoordpunt aanwijst waar het
+// gemiddelde het dichtst bij ligt. Met de vroegere grenzen (0.25 en -0.25)
+// konden "herkenbaar" en "minder herkenbaar" nooit vallen bij een construct
+// met een vraag, en dat zijn er 23 van de 24.
 function scoreLabel(avg: number): string {
-  if (avg >= 1) return "heel herkenbaar";
-  if (avg >= 0.25) return "herkenbaar";
-  if (avg > -0.25) return "soms wel, soms niet";
-  if (avg > -1) return "minder herkenbaar";
+  if (avg >= 1.5) return "heel herkenbaar";
+  if (avg >= 0.5) return "herkenbaar";
+  if (avg > -0.5) return "soms wel, soms niet";
+  if (avg > -1.5) return "minder herkenbaar";
   return "niet echt herkenbaar";
 }
 
@@ -85,11 +92,16 @@ function lijst(namen: string[]): string {
 }
 
 // Batterij (-2..+2) omzetten naar een korte, herkenbare zin.
+//
+// De grenzen liggen op het antwoordrooster. Met de vroegere grens (b > -1)
+// kon de zin over een wat lagere batterij bij geen enkel antwoord vallen: wie
+// "Past niet zo bij mij" koos, kreeg meteen de zin over een bijna lege
+// batterij. De vier zinnen zelf zijn ongewijzigd gebleven.
 function batterijZin(b: number | null): string {
   if (b === null) return "Je gaf niet aan hoe vol je batterij vandaag zit.";
-  if (b >= 1) return "Je batterij zit vandaag goed vol — er is veel energie om mee aan de slag te gaan.";
+  if (b >= 2) return "Je batterij zit vandaag goed vol — er is veel energie om mee aan de slag te gaan.";
   if (b >= 0) return "Je batterij zit vandaag redelijk op peil.";
-  if (b > -1) return "Je batterij is vandaag wat lager dan gewoonlijk — dat mag, het is een momentopname.";
+  if (b >= -1) return "Je batterij is vandaag wat lager dan gewoonlijk — dat mag, het is een momentopname.";
   return "Je batterij zit vandaag bijna leeg. Wees mild voor jezelf; dit zegt iets over vandaag, niet over wie je bent.";
 }
 
