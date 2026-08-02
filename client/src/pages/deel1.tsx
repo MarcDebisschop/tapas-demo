@@ -102,6 +102,13 @@ export default function Deel1() {
   // vallen terug op het standaard T4P Business endpoint.
   const isT4Teens = afname?.instrumentId === "t4teens";
   const isT4Kids = afname?.instrumentId === "t4kids";
+  // T4Students heeft, net als T4Teens, geen eigen deel 2 (organisatie-
+  // verbondenheid hoort enkel bij het T4P Business Kompas, zie
+  // bevindingen-punt-a-instrumentkaart.md en server/routes/afnames.ts:
+  // GEEN_EIGEN_DEEL2). Dit instrument gebruikt geen eigen override-endpoint
+  // (dat verandert hier niet); enkel de afronding na deel 1 volgt hieronder
+  // hetzelfde pad als T4Teens.
+  const isT4Students = afname?.instrumentId === "t4students";
   const instrumentEndpoint = isT4Kids
     ? `/api/vragenlijst/tapas-t4kids?taal=${taal}`
     : isT4Teens
@@ -266,14 +273,14 @@ export default function Deel1() {
         responses: answers,
         tijden: huidigeTijden(),
       });
-      // T4Teens heeft geen eigen deel 2: de vier organisatieverbondenheids-
-      // vragen van het T4P Business Kompas ('is je job correct verloond?')
-      // horen niet bij een jongere. Zie bevindingen-punt-a-instrumentkaart.md.
-      // In plaats van naar /deel2 te gaan (dat toont altijd de T4P-vragen,
-      // ongeacht instrument) rondt T4Teens hier meteen af: dezelfde
-      // /connection-route, maar zonder q1-q4, wat de server nu toestaat voor
-      // instrumenten zonder eigen deel 2.
-      if (isT4Teens) {
+      // T4Teens en T4Students hebben geen eigen deel 2: de vier organisatie-
+      // verbondenheidsvragen van het T4P Business Kompas ('is je job correct
+      // verloond?') horen niet bij een jongere of een student. Zie
+      // bevindingen-punt-a-instrumentkaart.md. In plaats van naar /deel2 te
+      // gaan (dat toont altijd de T4P-vragen, ongeacht instrument) ronden
+      // beide hier meteen af: dezelfde /connection-route, maar zonder q1-q4,
+      // wat de server nu toestaat voor instrumenten zonder eigen deel 2.
+      if (isT4Teens || isT4Students) {
         const res = await apiRequest("POST", `/api/afnames/${id}/connection`, {});
         try {
           const uitkomst = await res.json();
