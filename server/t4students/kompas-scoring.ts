@@ -314,11 +314,22 @@ export function scoreStudiekompas(
     acc(itemById[itemId].family, construct).recognition += a.recognition;
   }
 
-  // Energie-ankers. Deze tellen bewust niet mee voor het aantal beantwoorde
-  // items: ze horen bij een item dat al geteld is.
+  // Energie-ankers (herstel van punt 8 uit fase 1).
+  //
+  // Een item met een energie-anker stelt twee vragen: kenmerkt dit mij, en
+  // geeft het mij energie. Het blijft een item. Alle twaalf items met een
+  // anker worden al geteld via hun herkenningsantwoord, hierboven of bij de
+  // TaPas-BEELD-items hieronder, dus het anker mag de teller niet nog eens
+  // ophogen: dat zou 43 van 31 opleveren.
+  //
+  // Maar wie alleen de energieschuif beweegt en de herkenning openlaat, heeft
+  // wel iets beantwoord en werd voorheen als onbeantwoord geteld. Daarom telt
+  // het anker alleen mee wanneer het item nog niet via zijn herkenning geteld
+  // is. Zo telt de teller items, precies eenmaal, en nooit meer dan er zijn.
   for (const eItemId of sm.energyItems) {
     const ea = answers[eItemId];
     if (ea == null || ea.energy == null) continue;
+    if (ea.recognition == null) beantwoord++;
     const eit = itemById[eItemId];
     acc(eit.family, eit.construct as string).energyVals.push(ea.energy);
     if (eItemId === "BE2") be2EnergyVal = ea.energy;
