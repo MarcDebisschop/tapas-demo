@@ -18,6 +18,9 @@ import { ITEM_ENERGIE_MAX, ITEM_ENERGIE_MIN } from "../shared/energie-schaal";
 import { buildT4SportsContract, type Responses } from "../server/t4sports/scoring";
 import { hydrateInstrument } from "../server/instrument";
 import t4sportsJson from "../server/data/t4sports.json";
+import { scoorOrganisatie } from "../server/t4organizations/scoring";
+import { itemsVoorRing } from "../server/t4organizations/instrument";
+import type { T4ORespondentMetAntwoorden } from "../server/t4organizations/storage";
 
 const t4sportsInstrument = hydrateInstrument(t4sportsJson);
 
@@ -138,6 +141,66 @@ describe("T4Sports consistentie bij een overgeslagen vraag", () => {
       scores.set(teMissen, contractVoor(responses).sections.meta.consistency.score);
     }
     expect([...new Set(scores.values())]).toEqual([98]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Punt 3: T4Organizations, elke ring weegt even zwaar in het organisatiecijfer
+// ---------------------------------------------------------------------------
+describe("T4Organizations, weging van de ringen in het vermogensgemiddelde", () => {
+  const DIMENSIE = "identiteitscoherentie";
+  const RING_VAN_GROEP = { leiding: "binnen", medewerker: "midden", stakeholder: "buiten" } as const;
+
+  // Bouwt een respondent die op elk identiteitscoherentie-item van zijn ring
+  // dezelfde waarde na omkering geeft. Omgekeerde items krijgen 6 min de waarde,
+  // zodat de scoring er de bedoelde waarde van maakt.
+  function respondent(groep: keyof typeof RING_VAN_GROEP, waardeNaOmkering: number) {
+    const ring = RING_VAN_GROEP[groep];
+    const antwoorden: Record<string, number> = {};
+    for (const item of itemsVoorRing(ring)) {
+      if (item.dimensie !== DIMENSIE) continue;
+      if (item.itemType !== "likert" && item.itemType !== "congruence") continue;
+      antwoorden[item.id] = item.reverse ? 6 - waardeNaOmkering : waardeNaOmkering;
+    }
+    return { groep, antwoorden } as T4ORespondentMetAntwoorden;
+  }
+
+  const scoreVoorDimensie = (respondenten: T4ORespondentMetAntwoorden[]) =>
+    scoorOrganisatie(respondenten).vermogens.find((v) => v.dimensie === DIMENSIE)!.score!;
+
+  it("laat een grote middenring het organisatiecijfer niet meer bepalen", () => {
+    // Een leiding die hoog scoort, twintig medewerkers die laag scoren en drie
+    // stakeholders die hoog scoren. Per hoofd geteld komt daar 1,3 uit: het
+    // cijfer van de middenring. Per ring geteld komt daar (5 + 1 + 5) / 3 uit.
+    const respondenten = [
+      respondent("leiding", 5),
+      ...Array.from({ length: 20 }, () => respondent("medewerker", 1)),
+      ...Array.from({ length: 3 }, () => respondent("stakeholder", 5)),
+    ];
+    expect(scoreVoorDimensie(respondenten)).toBeCloseTo((5 + 1 + 5) / 3, 6);
+  });
+
+  it("verlaagt het cijfer niet wanneer een ring helemaal leeg is", () => {
+    // Geen enkele stakeholder. De buitenring mag dan niet als een nul meetellen.
+    const respondenten = [
+      respondent("leiding", 4),
+      ...Array.from({ length: 20 }, () => respondent("medewerker", 4)),
+    ];
+    expect(scoreVoorDimensie(respondenten)).toBeCloseTo(4, 6);
+  });
+
+  it("geeft hetzelfde cijfer bij een scheve en een gelijke verdeling over de ringen", () => {
+    const scheef = [
+      respondent("leiding", 5),
+      ...Array.from({ length: 30 }, () => respondent("medewerker", 3)),
+      respondent("stakeholder", 4),
+    ];
+    const gelijk = [
+      respondent("leiding", 5),
+      respondent("medewerker", 3),
+      respondent("stakeholder", 4),
+    ];
+    expect(scoreVoorDimensie(scheef)).toBeCloseTo(scoreVoorDimensie(gelijk), 6);
   });
 });
 
