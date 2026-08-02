@@ -34,8 +34,8 @@ import { T4STUDENTS_INSTRUMENT } from "../server/t4students/instrument";
 // uitzondering die niets meer dekt is dus ook een fout: dan klopt de uitleg
 // niet meer met de werkelijkheid.
 //
-// DE ZEVEN TOEGESTANE AFWIJKINGEN, MET REDEN
-// A tot en met C komen uit fase 1c, D tot en met G uit de motorronde.
+// DE NEGEN TOEGESTANE AFWIJKINGEN, MET REDEN
+// A tot en met C komen uit fase 1c, D tot en met I uit de motorronde.
 //
 // A. alerts.actief[].boodschap (10 velden over 6 patronen)
 //    Al bekend uit fase 1 en niet nieuw. De alertteksten staan in de motor
@@ -44,13 +44,16 @@ import { T4STUDENTS_INSTRUMENT } from "../server/t4students/instrument";
 //    vervangen door een punt of een komma. De betekenis is ongewijzigd. De
 //    letterlijke tabel staat in tests/t4students-kompas-alertteksten.test.ts.
 //
-// B. foci.balanslabels en versnellers.balanslabels (23 velden)
-//    Punt 7. De bronmotor legde de drempels overloadRecognitionMin (2) en
-//    underuseRecognitionMax (1) op de SOM van de herkenning over een heel
-//    construct, terwijl het waarden op de schaal van een enkel item zijn (0 tot
-//    3). De motor beoordeelt het label nu op het energie-ankeritem van het
-//    construct, zoals de blauwdruk het beschrijft. Zie
-//    tests/t4students-balanslabel-schaal.test.ts.
+// B. foci.balanslabels en versnellers.balanslabels (64 velden)
+//    Punt 7 en motorronde punt 4 samen. Punt 7: de bronmotor legde de drempels
+//    overloadRecognitionMin (2) en underuseRecognitionMax (1) op de SOM van de
+//    herkenning over een heel construct, terwijl het waarden op de schaal van
+//    een enkel item zijn (0 tot 3). De motor beoordeelt het label nu op het
+//    energie-ankeritem van het construct, zoals de blauwdruk het beschrijft.
+//    Motorronde punt 4: waar de nodige antwoorden ontbreken staat er nu
+//    "te_weinig_antwoorden" in plaats van een oordeel. Zie
+//    tests/t4students-balanslabel-schaal.test.ts en
+//    tests/t4students-geen-halve-oordelen.test.ts.
 //
 // C. betrouwbaarheid.beantwoord (3 velden)
 //    Punt 8. Wie alleen een energie-antwoord gaf en geen herkenning, telde in
@@ -88,6 +91,17 @@ import { T4STUDENTS_INSTRUMENT } from "../server/t4students/instrument";
 //    Wat ze wel raakt, is de marge voor gelijke stand: met 1,0 stonden gebieden
 //    die een punt uiteenliepen samen bovenaan, met 0,3 alleen nog gebieden die
 //    precies gelijk scoren. Zie tests/t4students-gelijke-stand.test.ts.
+//
+// H. constructScores[...].avgEnergy en .combined (428 velden)
+//    Motorronde punt 4. Waar geen enkel energie-antwoord is, stond in de bron
+//    een nul, en nul is het midden van de energieschaal. Nu blijven die twee
+//    getallen leeg. Zie tests/t4students-geen-halve-oordelen.test.ts.
+//
+// I. de overige velden van energie.kaart (27 velden)
+//    Motorronde punt 4. Een onbeantwoord of half beantwoord energie-item kreeg
+//    "neutraal", hetzelfde woord als wie werkelijk neutraal antwoordde. Het
+//    krijgt nu "te_weinig_antwoorden". Uitzondering D gaat over dezelfde kaart
+//    maar over de zeven items die in de bron nog niet bestonden.
 //
 // HOE HET BEWIJSMATERIAAL TOT STAND KWAM
 // De patronen staan in tests/t4students-gelijkheidstoets/patronen.json. De
@@ -136,7 +150,8 @@ const TOEGESTANE_AFWIJKINGEN: { reden: string; patroon: RegExp }[] = [
     patroon: /^[^.]+\.alerts\.actief\.\d+\.boodschap$/,
   },
   {
-    reden: "B. balanslabels: drempels weer op de itemschaal beoordeeld (punt 7)",
+    reden:
+      "B. balanslabels: drempels weer op de itemschaal beoordeeld (punt 7) en geen oordeel zonder antwoorden (motorronde punt 4)",
     patroon: /^[^.]+\.(foci|versnellers)\.balanslabels\..+$/,
   },
   {
@@ -172,6 +187,14 @@ const TOEGESTANE_AFWIJKINGEN: { reden: string; patroon: RegExp }[] = [
   {
     reden: "G. interesse.topGroep: de kleinere marge deelt ook de interessegebieden anders in (motorronde punt 3)",
     patroon: /^[^.]+\.interesse\.topGroep(\..+)?$/,
+  },
+  {
+    reden: "H. constructScores: geen energiegetal waar geen energie gemeten is (motorronde punt 4)",
+    patroon: /^[^.]+\.constructScores\.[^.]+\.(avgEnergy|combined)$/,
+  },
+  {
+    reden: "I. energie.kaart: een onbeantwoord item heet niet langer neutraal (motorronde punt 4)",
+    patroon: /^[^.]+\.energie\.kaart\.[^.]+$/,
   },
 ];
 
@@ -261,7 +284,7 @@ describe("gelijkheidstoets deel 1: tegen de originele motor, met benoemde uitzon
   });
 
   it("het aantal afwijkende velden is precies wat het verslag noemt", () => {
-    // Veertienhonderddrie velden over zeventien patronen. Elk getal hieronder
+    // Achttienhonderdnegenennegentig velden over zeventien patronen. Elk getal hieronder
     // staat ook in het verslag van de motorronde; loopt het uiteen, dan klopt
     // een van de twee niet meer.
     const perUitzondering: Record<string, number> = {};
@@ -276,14 +299,16 @@ describe("gelijkheidstoets deel 1: tegen de originele motor, met benoemde uitzon
     }
     expect(perUitzondering).toEqual({
       "A. alertteksten: lang streepje vervangen, betekenis ongewijzigd (fase 1)": 10,
-      "B. balanslabels: drempels weer op de itemschaal beoordeeld (punt 7)": 23,
+      "B. balanslabels: drempels weer op de itemschaal beoordeeld (punt 7) en geen oordeel zonder antwoorden (motorronde punt 4)": 64,
       "C. teller beantwoord: een enkel energie-antwoord telt nu mee (punt 8)": 3,
       "D. energie.kaart: de vijf drivers en twee foci hebben nu ook een anker (motorronde punt 1)": 119,
       "E. totaalItems: drie nieuwe items, 31 wordt 34 (motorronde punt 1)": 17,
       "F. rangschikken gebeurt op herkenning en niet meer op het gemengde getal, en de marge voor gelijke stand is kleiner (motorronde punt 2 en 3)": 1180,
       "G. interesse.topGroep: de kleinere marge deelt ook de interessegebieden anders in (motorronde punt 3)": 51,
+      "H. constructScores: geen energiegetal waar geen energie gemeten is (motorronde punt 4)": 428,
+      "I. energie.kaart: een onbeantwoord item heet niet langer neutraal (motorronde punt 4)": 27,
     });
-    expect(totaal).toBe(1403);
+    expect(totaal).toBe(1899);
   });
 
   it("de veranderde balanslabels zijn precies de constructen met meer dan een bron", () => {
@@ -291,17 +316,26 @@ describe("gelijkheidstoets deel 1: tegen de originele motor, met benoemde uitzon
     // op het item zelf, dus daar kan het herstel per definitie niets veranderen.
     // Dat het inderdaad alleen de andere raakt, is de scherpste controle dat het
     // herstel doet wat het zegt te doen.
+    // Sinds motorronde punt 4 verandert er ook een balanslabel zodra de nodige
+    // antwoorden ontbreken, en dat kan bij elk construct. Die verschillen horen
+    // hier niet thuis: ze komen niet van het herstel van de schaal maar van het
+    // wegvallen van het oordeel. Daarom blijven ze buiten beschouwing.
     const geraakt = new Set<string>();
-    for (const p of patronen)
-      for (const pad of verschillen(draai(p), bevroren("uitkomsten", p.naam), p.naam))
-        if (/\.balanslabels\./.test(pad)) geraakt.add(pad.split(".balanslabels.")[1]);
-    expect([...geraakt].sort()).toEqual([
-      "Analyse",
-      "Groepsondersteunend",
-      "Resultaat",
-      "Sociaal Interactief",
-      "Systematisch/Uitvoerend",
-    ]);
+    for (const p of patronen) {
+      const mijn = draai(p);
+      for (const pad of verschillen(mijn, bevroren("uitkomsten", p.naam), p.naam)) {
+        if (!/\.balanslabels\./.test(pad)) continue;
+        const [fam, con] = pad.split(".balanslabels.");
+        const nieuw = (mijn as any)[fam.split(".").pop()!].balanslabels[con];
+        if (nieuw === "te_weinig_antwoorden") continue;
+        geraakt.add(con);
+      }
+    }
+    // Systematisch/Uitvoerend en Sociaal Interactief stonden hier ook, tot de
+    // motorronde hun ankers F7 en F8 gaf. De zeventien patronen dateren van
+    // voor die twee items en beantwoorden ze dus nooit, waardoor die twee
+    // constructen nu onder punt 4 vallen en niet meer onder punt 7.
+    expect([...geraakt].sort()).toEqual(["Analyse", "Groepsondersteunend", "Resultaat"]);
   });
 });
 

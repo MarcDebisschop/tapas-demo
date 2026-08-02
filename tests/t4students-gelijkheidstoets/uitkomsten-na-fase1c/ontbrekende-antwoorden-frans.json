@@ -13,24 +13,24 @@
     "ijkpunt0tot10": 2,
     "kaart": {
       "BE1": "neutraal",
-      "BE2": "neutraal",
-      "D1": "neutraal",
-      "D2": "neutraal",
-      "D3": "neutraal",
-      "D4": "neutraal",
-      "D7": "neutraal",
+      "BE2": "te_weinig_antwoorden",
+      "D1": "te_weinig_antwoorden",
+      "D2": "te_weinig_antwoorden",
+      "D3": "te_weinig_antwoorden",
+      "D4": "te_weinig_antwoorden",
+      "D7": "te_weinig_antwoorden",
       "V1": "kernsterkte",
       "V2": "neutraal",
-      "V3": "neutraal",
-      "V4": "neutraal",
-      "V5": "neutraal",
-      "V6": "neutraal",
-      "F1": "onderbenutting",
-      "F2": "neutraal",
-      "F3": "neutraal",
-      "F6": "neutraal",
-      "F7": "neutraal",
-      "F8": "neutraal"
+      "V3": "te_weinig_antwoorden",
+      "V4": "te_weinig_antwoorden",
+      "V5": "te_weinig_antwoorden",
+      "V6": "te_weinig_antwoorden",
+      "F1": "te_weinig_antwoorden",
+      "F2": "te_weinig_antwoorden",
+      "F3": "te_weinig_antwoorden",
+      "F6": "te_weinig_antwoorden",
+      "F7": "te_weinig_antwoorden",
+      "F8": "te_weinig_antwoorden"
     },
     "bronnen": [
       "Analyse",
@@ -50,38 +50,38 @@
     "Energie-status": {
       "family": "TaPas-BEELD",
       "recognition": 0,
-      "avgEnergy": 0,
-      "combined": 0
+      "avgEnergy": null,
+      "combined": null
     },
     "Be Perfect": {
       "family": "Drivers",
       "recognition": 3,
-      "avgEnergy": 0,
-      "combined": 3
+      "avgEnergy": null,
+      "combined": null
     },
     "Please Others": {
       "family": "Drivers",
       "recognition": 1,
-      "avgEnergy": 0,
-      "combined": 1
+      "avgEnergy": null,
+      "combined": null
     },
     "Try Hard": {
       "family": "Drivers",
       "recognition": 0,
-      "avgEnergy": 0,
-      "combined": 0
+      "avgEnergy": null,
+      "combined": null
     },
     "Hurry Up": {
       "family": "Drivers",
       "recognition": 0,
-      "avgEnergy": 0,
-      "combined": 0
+      "avgEnergy": null,
+      "combined": null
     },
     "Be Strong": {
       "family": "Drivers",
       "recognition": 3,
-      "avgEnergy": 0,
-      "combined": 3
+      "avgEnergy": null,
+      "combined": null
     },
     "Analyse": {
       "family": "Talent-versnellers",
@@ -98,26 +98,26 @@
     "Groepsondersteunend": {
       "family": "Talent-versnellers",
       "recognition": 0,
-      "avgEnergy": 0,
-      "combined": 0
+      "avgEnergy": null,
+      "combined": null
     },
     "Impact": {
       "family": "Talent-versnellers",
       "recognition": 0,
-      "avgEnergy": 0,
-      "combined": 0
+      "avgEnergy": null,
+      "combined": null
     },
     "Resultaat": {
       "family": "Talent-versnellers",
       "recognition": 2,
-      "avgEnergy": 0,
-      "combined": 2
+      "avgEnergy": null,
+      "combined": null
     },
     "Constructief onderscheidend": {
       "family": "Talent-versnellers",
       "recognition": 0,
-      "avgEnergy": 0,
-      "combined": 0
+      "avgEnergy": null,
+      "combined": null
     },
     "Functioneel Innovatief": {
       "family": "Talent-foci",
@@ -128,20 +128,20 @@
     "Artistiek Innovatief": {
       "family": "Talent-foci",
       "recognition": 0,
-      "avgEnergy": 0,
-      "combined": 0
+      "avgEnergy": null,
+      "combined": null
     },
     "Complexiteit/Conceptueel": {
       "family": "Talent-foci",
       "recognition": 0,
-      "avgEnergy": 0,
-      "combined": 0
+      "avgEnergy": null,
+      "combined": null
     },
     "Systematisch/Uitvoerend": {
       "family": "Talent-foci",
       "recognition": 0,
-      "avgEnergy": 0,
-      "combined": 0
+      "avgEnergy": null,
+      "combined": null
     },
     "Sociaal Interactief": {
       "family": "Talent-foci",
@@ -152,44 +152,44 @@
     "Overdrachtelijk Interactief": {
       "family": "Talent-foci",
       "recognition": 0,
-      "avgEnergy": 0,
-      "combined": 0
+      "avgEnergy": null,
+      "combined": null
     },
     "Realistisch": {
       "family": "Interesse",
       "recognition": 1,
-      "avgEnergy": 0,
-      "combined": 1
+      "avgEnergy": null,
+      "combined": null
     },
     "Investigative": {
       "family": "Interesse",
       "recognition": 0,
-      "avgEnergy": 0,
-      "combined": 0
+      "avgEnergy": null,
+      "combined": null
     },
     "Artistiek": {
       "family": "Interesse",
       "recognition": 2,
-      "avgEnergy": 0,
-      "combined": 2
+      "avgEnergy": null,
+      "combined": null
     },
     "Sociaal": {
       "family": "Interesse",
       "recognition": 0,
-      "avgEnergy": 0,
-      "combined": 0
+      "avgEnergy": null,
+      "combined": null
     },
     "Ondernemend": {
       "family": "Interesse",
       "recognition": 0,
-      "avgEnergy": 0,
-      "combined": 0
+      "avgEnergy": null,
+      "combined": null
     },
     "Conventioneel": {
       "family": "Interesse",
       "recognition": 0,
-      "avgEnergy": 0,
-      "combined": 0
+      "avgEnergy": null,
+      "combined": null
     }
   },
   "foci": {
@@ -222,12 +222,12 @@
       "Artistiek Innovatief"
     ],
     "balanslabels": {
-      "Functioneel Innovatief": "onderbenut",
-      "Artistiek Innovatief": "latent",
-      "Complexiteit/Conceptueel": "latent",
-      "Systematisch/Uitvoerend": "latent",
-      "Sociaal Interactief": "latent",
-      "Overdrachtelijk Interactief": "latent"
+      "Functioneel Innovatief": "te_weinig_antwoorden",
+      "Artistiek Innovatief": "te_weinig_antwoorden",
+      "Complexiteit/Conceptueel": "te_weinig_antwoorden",
+      "Systematisch/Uitvoerend": "te_weinig_antwoorden",
+      "Sociaal Interactief": "te_weinig_antwoorden",
+      "Overdrachtelijk Interactief": "te_weinig_antwoorden"
     },
     "groepen": [
       [
@@ -279,10 +279,10 @@
     "balanslabels": {
       "Analyse": "kernsterkte",
       "Individueel ondersteunend": "latent",
-      "Groepsondersteunend": "latent",
-      "Impact": "latent",
-      "Resultaat": "latent",
-      "Constructief onderscheidend": "latent"
+      "Groepsondersteunend": "te_weinig_antwoorden",
+      "Impact": "te_weinig_antwoorden",
+      "Resultaat": "te_weinig_antwoorden",
+      "Constructief onderscheidend": "te_weinig_antwoorden"
     },
     "dominante": "Analyse",
     "gedeeldMet": []

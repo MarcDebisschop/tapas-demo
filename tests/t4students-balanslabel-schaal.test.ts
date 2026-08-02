@@ -123,10 +123,15 @@ describe("punt 7: de grenzen van het balanslabel horen op de itemschaal", () => 
   });
 
   it("een lege vragenlijst levert geen deling door nul en geen loze uitspraak op", () => {
+    // Hier stond eerder "latent" als verwachting. Sinds motorronde punt 4 is dat
+    // geen loze uitspraak meer maar helemaal geen uitspraak: latent zegt tegen
+    // de deelnemer dat hij een sterkte heeft die nog niet tot leven komt, en er
+    // is niets ingevuld om dat op te baseren. Zie
+    // tests/t4students-geen-halve-oordelen.test.ts.
     const r = scoreStudiekompas(I, {}, null, "nl");
     for (const con of I.families.find((f) => f.id === "Talent-versnellers")!.constructs) {
       expect(r.versnellers.scores[con], `${con} moet een getal zijn`).not.toBeNaN();
-      expect(r.versnellers.balanslabels[con]).toBe("latent");
+      expect(r.versnellers.balanslabels[con]).toBe("te_weinig_antwoorden");
     }
   });
 

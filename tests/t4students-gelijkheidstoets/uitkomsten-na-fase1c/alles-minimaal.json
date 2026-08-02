@@ -14,11 +14,11 @@
     "kaart": {
       "BE1": "neutraal",
       "BE2": "neutraal",
-      "D1": "neutraal",
-      "D2": "neutraal",
-      "D3": "neutraal",
-      "D4": "neutraal",
-      "D7": "neutraal",
+      "D1": "te_weinig_antwoorden",
+      "D2": "te_weinig_antwoorden",
+      "D3": "te_weinig_antwoorden",
+      "D4": "te_weinig_antwoorden",
+      "D7": "te_weinig_antwoorden",
       "V1": "neutraal",
       "V2": "neutraal",
       "V3": "neutraal",
@@ -29,8 +29,8 @@
       "F2": "neutraal",
       "F3": "neutraal",
       "F6": "neutraal",
-      "F7": "neutraal",
-      "F8": "neutraal"
+      "F7": "te_weinig_antwoorden",
+      "F8": "te_weinig_antwoorden"
     },
     "bronnen": [
       "Systematisch/Uitvoerend",
@@ -67,32 +67,32 @@
     "Be Perfect": {
       "family": "Drivers",
       "recognition": 1,
-      "avgEnergy": 0,
-      "combined": 1
+      "avgEnergy": null,
+      "combined": null
     },
     "Please Others": {
       "family": "Drivers",
       "recognition": 1,
-      "avgEnergy": 0,
-      "combined": 1
+      "avgEnergy": null,
+      "combined": null
     },
     "Try Hard": {
       "family": "Drivers",
       "recognition": 0,
-      "avgEnergy": 0,
-      "combined": 0
+      "avgEnergy": null,
+      "combined": null
     },
     "Hurry Up": {
       "family": "Drivers",
       "recognition": 0,
-      "avgEnergy": 0,
-      "combined": 0
+      "avgEnergy": null,
+      "combined": null
     },
     "Be Strong": {
       "family": "Drivers",
       "recognition": 4,
-      "avgEnergy": 0,
-      "combined": 4
+      "avgEnergy": null,
+      "combined": null
     },
     "Analyse": {
       "family": "Talent-versnellers",
@@ -169,38 +169,38 @@
     "Realistisch": {
       "family": "Interesse",
       "recognition": 0,
-      "avgEnergy": 0,
-      "combined": 0
+      "avgEnergy": null,
+      "combined": null
     },
     "Investigative": {
       "family": "Interesse",
       "recognition": 0,
-      "avgEnergy": 0,
-      "combined": 0
+      "avgEnergy": null,
+      "combined": null
     },
     "Artistiek": {
       "family": "Interesse",
       "recognition": 0,
-      "avgEnergy": 0,
-      "combined": 0
+      "avgEnergy": null,
+      "combined": null
     },
     "Sociaal": {
       "family": "Interesse",
       "recognition": 0,
-      "avgEnergy": 0,
-      "combined": 0
+      "avgEnergy": null,
+      "combined": null
     },
     "Ondernemend": {
       "family": "Interesse",
       "recognition": 0,
-      "avgEnergy": 0,
-      "combined": 0
+      "avgEnergy": null,
+      "combined": null
     },
     "Conventioneel": {
       "family": "Interesse",
       "recognition": 0,
-      "avgEnergy": 0,
-      "combined": 0
+      "avgEnergy": null,
+      "combined": null
     }
   },
   "foci": {
@@ -232,8 +232,8 @@
       "Functioneel Innovatief": "latent",
       "Artistiek Innovatief": "latent",
       "Complexiteit/Conceptueel": "latent",
-      "Systematisch/Uitvoerend": "onderbenut",
-      "Sociaal Interactief": "onderbenut",
+      "Systematisch/Uitvoerend": "te_weinig_antwoorden",
+      "Sociaal Interactief": "te_weinig_antwoorden",
       "Overdrachtelijk Interactief": "latent"
     },
     "groepen": [

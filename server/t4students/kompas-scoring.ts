@@ -119,8 +119,14 @@ export interface T4SAlert {
 export interface T4SConstructScore {
   family: string;
   recognition: number;
-  avgEnergy: number;
-  combined: number;
+  /**
+   * Leeg wanneer er geen enkel energie-antwoord voor dit construct is
+   * (motorronde punt 4). Nul is op deze schaal een antwoord en geen lege plaats,
+   * dus leeg mag daar niet op uitkomen.
+   */
+  avgEnergy: number | null;
+  /** Leeg om dezelfde reden: zonder energie is er geen mengsel te maken. */
+  combined: number | null;
 }
 
 export interface T4SResultaat {
@@ -254,6 +260,16 @@ const ALERT_BOODSCHAPPEN: Record<string, Record<T4STaal, string>> = {
     en: "There are too few answers to give a stable picture. This report is provisional. Complete the full questionnaire for a more reliable picture.",
   },
 };
+
+/**
+ * De toestand die in de plaats komt van een oordeel wanneer de nodige
+ * antwoorden ontbreken (motorronde punt 4). Zij staat zowel in de energiekaart
+ * per item als bij de balanslabels per construct, zodat er maar een woord is
+ * voor "hier is niet genoeg gemeten om iets te zeggen". T4Teens en T4Kids
+ * gebruiken hiervoor de tekst "te weinig antwoorden"; deze motor schrijft haar
+ * als sleutel, net als "niet_van_toepassing" en de andere labels hier.
+ */
+export const GEEN_MEETPUNT = "te_weinig_antwoorden";
 
 // De items die meetellen voor de vraag of er genoeg signaal is. Bewust een
 // vaste lijst en niet "alle items": de profiel-, studiecontext- en
@@ -447,13 +463,34 @@ export function scoreStudiekompas(
   }
 
   // ── Scores per construct (blauwdruk §2) ──────────────────────────────────
-  function avgEnergy(con: string): number {
+  /**
+   * De gemiddelde energie van een construct, of leeg als er niets gemeten is
+   * (motorronde punt 4).
+   *
+   * WAT HIER MIS GING
+   * De energieschaal loopt van min twee tot plus twee, en nul is daar geen lege
+   * plaats maar een antwoord: "dit doet me niets". Deze functie gaf nul terug
+   * wanneer de lijst met antwoorden leeg was. Wie niets invulde en wie
+   * uitdrukkelijk neutraal antwoordde, kwamen daardoor op hetzelfde getal uit,
+   * en alles wat op dat getal steunde sprak een oordeel uit over iemand van wie
+   * niets gemeten was.
+   *
+   * WAT ER NU GEBEURT
+   * Geen antwoorden betekent geen getal. Wie het getal gebruikt, moet dus zelf
+   * beslissen wat te doen als het ontbreekt, en kan het niet meer per ongeluk
+   * als een middenwaarde lezen. Dit is dezelfde oplossing als in T4Teens en
+   * T4Kids, waar een onvolledig construct "niet ingevuld" krijgt in plaats van
+   * een score.
+   */
+  function avgEnergy(con: string): number | null {
     const v = constructs[con].energyVals;
-    return v.length ? round2(v.reduce((a, b) => a + b, 0) / v.length) : 0;
+    return v.length ? round2(v.reduce((a, b) => a + b, 0) / v.length) : null;
   }
 
-  function combined(con: string): number {
-    return round2(constructs[con].recognition + avgEnergy(con) * C.energyToRecognitionFactor);
+  function combined(con: string): number | null {
+    const en = avgEnergy(con);
+    if (en === null) return null;
+    return round2(constructs[con].recognition + en * C.energyToRecognitionFactor);
   }
 
   // Rangschikken gebeurt op herkenning (motorronde punt 2). Het gemengde getal
@@ -469,9 +506,12 @@ export function scoreStudiekompas(
   // ── Energie-status per item (blauwdruk §3) ───────────────────────────────
   function energyStatus(eId: string): string {
     const ea = answers[eId];
-    if (!ea) return "neutraal";
-    const rec = ea.recognition != null ? ea.recognition : 0;
-    const eng = ea.energy != null ? ea.energy : 0;
+    // Motorronde punt 4. Hier stond "neutraal" bij een onbeantwoord item, en
+    // ook bij een half beantwoord item, want de ontbrekende helft werd stil op
+    // nul gezet. Neutraal is een antwoord van de deelnemer en geen lege plaats.
+    if (!ea || ea.recognition == null || ea.energy == null) return GEEN_MEETPUNT;
+    const rec = ea.recognition;
+    const eng = ea.energy;
     if (rec >= C.overloadRecognitionMin && eng < 0) return "overbelasting";
     if (rec <= C.underuseRecognitionMax && eng > 0) return "onderbenutting";
     if (rec >= C.overloadRecognitionMin && eng > 0) return "kernsterkte";
@@ -484,8 +524,8 @@ export function scoreStudiekompas(
   const energieBronnen: string[] = [];
   const energieLekken: string[] = [];
   for (const ck of Object.keys(constructs)) {
-    if (constructs[ck].energyVals.length === 0) continue;
     const e = avgEnergy(ck);
+    if (e === null) continue;
     if (e >= 1) energieBronnen.push(ck);
     else if (e <= -1) energieLekken.push(ck);
   }
@@ -575,8 +615,14 @@ export function scoreStudiekompas(
     const ankerItem = ankerItemVanConstruct[con];
     if (!ankerItem) return "niet_van_toepassing";
     const a = answers[ankerItem];
-    const rec = a != null && a.recognition != null ? a.recognition : 0;
     const en = avgEnergy(con);
+    // Motorronde punt 4. Het label leest twee dingen van het anker-item: de
+    // herkenning en de energie. Ontbrak er een van de twee, dan werd zij stil op
+    // nul gezet en kwam er toch een oordeel uit; bij een lege invulling was dat
+    // "latent", en dat zegt tegen de deelnemer dat hij een sterkte heeft die nog
+    // niet tot leven komt. Een halve invulling levert nu geen half oordeel op.
+    if (a == null || a.recognition == null || en === null) return GEEN_MEETPUNT;
+    const rec = a.recognition;
     if (rec >= C.overloadRecognitionMin && en >= 1) return "kernsterkte";
     if (rec >= C.overloadRecognitionMin && en <= -1) return "overbelast";
     if (rec <= C.underuseRecognitionMax && en >= 1) return "onderbenut";
@@ -868,7 +914,7 @@ export function scoreStudiekompas(
     constructScores[con] = {
       family: constructs[con].family,
       recognition: constructs[con].recognition,
-      avgEnergy: round2(avgEnergy(con)),
+      avgEnergy: avgEnergy(con),
       combined: combined(con),
     };
   }

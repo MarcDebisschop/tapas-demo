@@ -136,7 +136,7 @@ describe("punt 2: de volgorde volgt de herkenning en niet de energie", () => {
       .replace(/(^|[^:])\/\/.*$/gm, "$1");
     const regels = bron.split("\n").filter((r) => /\bcombined\(/.test(r));
     expect(regels.map((r) => r.trim())).toEqual([
-      "function combined(con: string): number {",
+      "function combined(con: string): number | null {",
       "combined: combined(con),",
     ]);
   });
