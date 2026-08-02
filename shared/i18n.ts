@@ -383,6 +383,30 @@ export const STRINGS = {
   ontbreekt_energie_blok: { nl: "geef de energie aan", fr: "indiquez l'énergie", en: "indicate the energy", es: "indica la energía", ru: "укажите энергию" },
   ontbreekt_energie_meest: { nl: "energie bij 'Meest'", fr: "énergie pour « Le plus »", en: "energy for 'Most'", es: "energía para «Más»", ru: "энергия для «Больше всего»" },
   ontbreekt_energie_minst: { nl: "energie bij 'Minst'", fr: "énergie pour « Le moins »", en: "energy for 'Least'", es: "energía para «Menos»", ru: "энергия для «Меньше всего»" },
+  // --- Verplicht doorklikken: vriendelijke meldingen, geen verwijt ---
+  // Een deelnemer die nog niets gekozen heeft, hoort te lezen wat er nog te
+  // doen is, niet dat hij iets fout deed.
+  schaal_nog_te_zetten: {
+    nl: "Zet de regelaar op de plek die bij jou past.",
+    fr: "Placez le curseur là où cela vous correspond.",
+    en: "Move the slider to where it fits you.",
+    es: "Coloca el control donde encaje contigo.",
+    ru: "Поставьте ползунок туда, где вам подходит.",
+  },
+  schaal_nog_open: {
+    nl: "Nog {aantal} van de {totaal} vragen te zetten.",
+    fr: "Encore {aantal} question(s) sur {totaal} à régler.",
+    en: "{aantal} of {totaal} questions still to set.",
+    es: "Quedan {aantal} de {totaal} preguntas por ajustar.",
+    ru: "Осталось задать {aantal} из {totaal} вопросов.",
+  },
+  onvolledig_indienen: {
+    nl: "Er ontbreken nog antwoorden. Vul de vragenlijst af, dan kun je ze indienen.",
+    fr: "Il manque encore des réponses. Complétez le questionnaire, puis vous pourrez l'envoyer.",
+    en: "Some answers are still missing. Complete the questionnaire and you can submit it.",
+    es: "Todavía faltan respuestas. Completa el cuestionario y podrás enviarlo.",
+    ru: "Некоторые ответы ещё отсутствуют. Заполните анкету, и вы сможете её отправить.",
+  },
   deel1_meest: { nl: "Meest", fr: "Le plus", en: "Most", es: "Más", ru: "Больше всего" },
   deel1_minst: { nl: "Minst", fr: "Le moins", en: "Least", es: "Menos", ru: "Меньше всего" },
   energie_thema_vraag: {

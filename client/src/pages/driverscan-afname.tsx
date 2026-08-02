@@ -49,11 +49,11 @@ const TALEN = [
 
 // Minimale UI-microcopy per taal (afname-scherm; rapportteksten zitten server-side).
 const T: Record<string, Record<string, string>> = {
-  nl: { titel: "Driver-scan", intro: "Kies per blok wat het MÉÉST en het MÍNST bij je past, en geef de energie aan.", meest: "Past het meest", minst: "Past het minst", energieMeest: "Energie bij 'meest'", energieMinst: "Energie bij 'minst'", blok: "Blok", van: "van", vorige: "Vorige", volgende: "Volgende", afronden: "Rapport genereren", naam: "Naam (optioneel)", genereren: "Rapport wordt gegenereerd…", klaar: "Rapport gedownload", fout: "Er ging iets mis. Probeer opnieuw.", onvolledig: "Vul eerst 'meest', 'minst' en beide energiewaarden in.", toelichting: "Wat maakt dit energiekostend? (optioneel)" },
-  fr: { titel: "Driver-scan", intro: "Par bloc, choisissez ce qui vous correspond LE PLUS et LE MOINS, puis indiquez l'énergie.", meest: "Correspond le plus", minst: "Correspond le moins", energieMeest: "Énergie pour « le plus »", energieMinst: "Énergie pour « le moins »", blok: "Bloc", van: "sur", vorige: "Précédent", volgende: "Suivant", afronden: "Générer le rapport", naam: "Nom (facultatif)", genereren: "Génération du rapport…", klaar: "Rapport téléchargé", fout: "Une erreur s'est produite. Réessayez.", onvolledig: "Complétez d'abord « le plus », « le moins » et les deux valeurs d'énergie.", toelichting: "Qu'est-ce qui rend cela épuisant ? (facultatif)" },
-  en: { titel: "Driver-scan", intro: "For each block, pick what fits you MOST and LEAST, then set the energy.", meest: "Fits most", minst: "Fits least", energieMeest: "Energy for 'most'", energieMinst: "Energy for 'least'", blok: "Block", van: "of", vorige: "Previous", volgende: "Next", afronden: "Generate report", naam: "Name (optional)", genereren: "Generating report…", klaar: "Report downloaded", fout: "Something went wrong. Please try again.", onvolledig: "First fill in 'most', 'least' and both energy values.", toelichting: "What makes this energy-draining? (optional)" },
-  es: { titel: "Driver-scan", intro: "En cada bloque, elige lo que MÁS y MENOS encaja contigo, y luego indica la energía.", meest: "Encaja más", minst: "Encaja menos", energieMeest: "Energía para «más»", energieMinst: "Energía para «menos»", blok: "Bloque", van: "de", vorige: "Anterior", volgende: "Siguiente", afronden: "Generar informe", naam: "Nombre (opcional)", genereren: "Generando informe…", klaar: "Informe descargado", fout: "Algo salió mal. Inténtalo de nuevo.", onvolledig: "Primero completa «más», «menos» y ambos valores de energía.", toelichting: "¿Qué hace que esto reste energía? (opcional)" },
-  ru: { titel: "Driver-scan", intro: "В каждом блоке выберите, что подходит вам БОЛЬШЕ и МЕНЬШЕ всего, и укажите энергию.", meest: "Подходит больше всего", minst: "Подходит меньше всего", energieMeest: "Энергия для «больше»", energieMinst: "Энергия для «меньше»", blok: "Блок", van: "из", vorige: "Назад", volgende: "Далее", afronden: "Сформировать отчёт", naam: "Имя (необязательно)", genereren: "Формирование отчёта…", klaar: "Отчёт загружен", fout: "Что-то пошло не так. Попробуйте ещё раз.", onvolledig: "Сначала укажите «больше», «меньше» и оба значения энергии.", toelichting: "Что делает это энергозатратным? (необязательно)" },
+  nl: { titel: "Driver-scan", intro: "Kies per blok wat het MÉÉST en het MÍNST bij je past, en geef de energie aan.", meest: "Past het meest", minst: "Past het minst", energieMeest: "Energie bij 'meest'", energieMinst: "Energie bij 'minst'", blok: "Blok", van: "van", vorige: "Vorige", volgende: "Volgende", afronden: "Rapport genereren", naam: "Naam (optioneel)", genereren: "Rapport wordt gegenereerd…", klaar: "Rapport gedownload", fout: "Er ging iets mis. Probeer opnieuw.", onvolledig: "Vul eerst 'meest', 'minst' en beide energiewaarden in.", toelichting: "Wat maakt dit energiekostend? (optioneel)" , nogTeDoen: "Kies eerst wat het meest en het minst past, en geef beide energiewaarden aan. Dan kun je verder." },
+  fr: { titel: "Driver-scan", intro: "Par bloc, choisissez ce qui vous correspond LE PLUS et LE MOINS, puis indiquez l'énergie.", meest: "Correspond le plus", minst: "Correspond le moins", energieMeest: "Énergie pour « le plus »", energieMinst: "Énergie pour « le moins »", blok: "Bloc", van: "sur", vorige: "Précédent", volgende: "Suivant", afronden: "Générer le rapport", naam: "Nom (facultatif)", genereren: "Génération du rapport…", klaar: "Rapport téléchargé", fout: "Une erreur s'est produite. Réessayez.", onvolledig: "Complétez d'abord « le plus », « le moins » et les deux valeurs d'énergie.", toelichting: "Qu'est-ce qui rend cela épuisant ? (facultatif)" , nogTeDoen: "Choisissez d'abord ce qui correspond le plus et le moins, puis indiquez les deux valeurs d'énergie. Vous pourrez alors continuer." },
+  en: { titel: "Driver-scan", intro: "For each block, pick what fits you MOST and LEAST, then set the energy.", meest: "Fits most", minst: "Fits least", energieMeest: "Energy for 'most'", energieMinst: "Energy for 'least'", blok: "Block", van: "of", vorige: "Previous", volgende: "Next", afronden: "Generate report", naam: "Name (optional)", genereren: "Generating report…", klaar: "Report downloaded", fout: "Something went wrong. Please try again.", onvolledig: "First fill in 'most', 'least' and both energy values.", toelichting: "What makes this energy-draining? (optional)" , nogTeDoen: "First pick what fits most and least, and set both energy values. Then you can continue." },
+  es: { titel: "Driver-scan", intro: "En cada bloque, elige lo que MÁS y MENOS encaja contigo, y luego indica la energía.", meest: "Encaja más", minst: "Encaja menos", energieMeest: "Energía para «más»", energieMinst: "Energía para «menos»", blok: "Bloque", van: "de", vorige: "Anterior", volgende: "Siguiente", afronden: "Generar informe", naam: "Nombre (opcional)", genereren: "Generando informe…", klaar: "Informe descargado", fout: "Algo salió mal. Inténtalo de nuevo.", onvolledig: "Primero completa «más», «menos» y ambos valores de energía.", toelichting: "¿Qué hace que esto reste energía? (opcional)" , nogTeDoen: "Elige primero lo que más y lo que menos encaja, e indica ambos valores de energía. Después podrás continuar." },
+  ru: { titel: "Driver-scan", intro: "В каждом блоке выберите, что подходит вам БОЛЬШЕ и МЕНЬШЕ всего, и укажите энергию.", meest: "Подходит больше всего", minst: "Подходит меньше всего", energieMeest: "Энергия для «больше»", energieMinst: "Энергия для «меньше»", blok: "Блок", van: "из", vorige: "Назад", volgende: "Далее", afronden: "Сформировать отчёт", naam: "Имя (необязательно)", genereren: "Формирование отчёта…", klaar: "Отчёт загружен", fout: "Что-то пошло не так. Попробуйте ещё раз.", onvolledig: "Сначала укажите «больше», «меньше» и оба значения энергии.", toelichting: "Что делает это энергозатратным? (необязательно)" , nogTeDoen: "Сначала выберите, что подходит больше и меньше всего, и укажите оба значения энергии. Затем можно продолжить." },
 };
 
 function leegAntwoord(): Answer {
@@ -145,6 +145,10 @@ export default function DriverScanAfname() {
     () => blocks.length > 0 && blocks.every((b) => blokCompleet(answers[b.stateKey])),
     [blocks, answers]
   );
+
+  // Verplicht doorklikken: het huidige blok moet af voor er een volgend blok
+  // komt. Terug gaan blijft altijd mogelijk, ook vanaf een onvolledig blok.
+  const huidigCompleet = blokCompleet(cur);
 
   const isLaatste = idx === blocks.length - 1;
 
@@ -288,19 +292,31 @@ export default function DriverScanAfname() {
           </div>
         )}
 
+        {/* Verplicht doorklikken: tonen wat er nog te doen is, geen verwijt
+            achteraf. De knop volgende blijft dicht zolang dit blok open staat. */}
+        {!huidigCompleet && (
+          <p className="mt-4 text-sm text-muted-foreground" data-testid="text-nog-te-doen">
+            {tt("nogTeDoen")}
+          </p>
+        )}
+
         {/* Navigatie */}
         <div className="flex items-center gap-3 mt-6">
           <Button variant="outline" disabled={idx === 0} onClick={() => setIdx((i) => Math.max(0, i - 1))} className="gap-1.5">
             <ArrowLeft className="h-4 w-4" /> {tt("vorige")}
           </Button>
           {!isLaatste ? (
-            <Button onClick={() => setIdx((i) => Math.min(blocks.length - 1, i + 1))} className="gap-1.5 ml-auto">
+            <Button
+              onClick={() => setIdx((i) => Math.min(blocks.length - 1, i + 1))}
+              disabled={!huidigCompleet}
+              className="gap-1.5 ml-auto"
+            >
               {tt("volgende")} <ArrowRight className="h-4 w-4" />
             </Button>
           ) : (
             <div className="ml-auto flex items-center gap-3">
               <Input value={naam} onChange={(e) => setNaam(e.target.value)} placeholder={tt("naam")} className="w-44 h-9 text-sm" />
-              <Button onClick={afronden} disabled={status === "bezig"} className="gap-1.5">
+              <Button onClick={afronden} disabled={status === "bezig" || !alleCompleet} className="gap-1.5">
                 {status === "bezig" ? <Loader2 className="h-4 w-4 animate-spin" /> : status === "klaar" ? <CheckCircle2 className="h-4 w-4" /> : <Download className="h-4 w-4" />}
                 {status === "bezig" ? tt("genereren") : status === "klaar" ? tt("klaar") : tt("afronden")}
               </Button>

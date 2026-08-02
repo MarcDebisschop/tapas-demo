@@ -47,6 +47,7 @@ import {
   verzenderVanVerzoek,
 } from "../scope-guard";
 import { getDefaultDescriptor } from "../registry";
+import { controleerAfnameVolledig } from "../volledigheid-afname";
 import { schrijfAuditLog } from "../audit-log";
 import { dashboardCodeVanToken, voornaamVanNaam } from "../dashboard-code";
 import { buildGeneratorContract } from "../scoring";
@@ -446,6 +447,23 @@ export function registerAfnameRoutes(app: Express): void {
     }
     const connection = parsed.data.answers;
     const responses = JSON.parse(a.mainResponses);
+
+    // Verplicht doorklikken, serverkant. Het scherm houdt de knop dicht, maar
+    // een scherm is te omzeilen. Een onvolledige inzending wordt hier geweigerd
+    // met dezelfde regel als het scherm gebruikt. Instrumenten waarvan de
+    // server de vragenset niet kent, gaan hier ongewijzigd doorheen.
+    const volledigheid = controleerAfnameVolledig({
+      instrumentId: a.instrumentId,
+      responses,
+      keuzes: req.body?.keuzes ?? null,
+      taal: a.taal,
+    });
+    if (!volledigheid.volledig) {
+      return res.status(400).json({
+        error: volledigheid.melding,
+        ontbreekt: volledigheid.ontbreekt,
+      });
+    }
     // Tijd per item, bewaard tijdens deel 1. Ontbreekt bij afnames van voor de
     // invoering van de tijdmeting; die krijgen dan gewoon geen kwaliteitsmelding.
     const itemTijden = leesItemTijden(a.itemTijden);
