@@ -9,8 +9,15 @@
 //      verwacht: bewaren, ophalen, verlengen, verwijderen, tellen, leegmaken en
 //      opsommen - en verlopen sessies gelden als onbestaand.
 //   3. De cookie-instellingen in server/index.ts blijven ongewijzigd (dezelfde
-//      naam, maxAge en sameSite/secure-strategie), zodat de wissel van opslag
-//      geen enkele gebruiker uitlogt.
+//      maxAge en sameSite/secure-strategie), zodat de wissel van opslag geen
+//      enkele gebruiker uitlogt. De cookienaam zelf komt sinds de
+//      doorloop-herstel (Punt C) uit bepaalSessieCookieNaam() in
+//      server/sessie-cookie.ts: __Host-tapas-sid op een gegarandeerd
+//      HTTPS-omgeving (productie, pplx.app-sandbox), en tapas-sid overal
+//      elders. Dat gedrag zelf wordt bewezen in
+//      tests/sessie-cookie-naam.test.ts; hier wordt enkel bevestigd dat
+//      server/index.ts die functie ook effectief gebruikt in plaats van
+//      opnieuw een vaste naam.
 // ---------------------------------------------------------------------------
 import { describe, it, expect, afterEach } from "vitest";
 import { readFileSync } from "node:fs";
@@ -55,7 +62,11 @@ describe("L-1: geen GPL-sessieopslag meer in het project", () => {
   });
 
   it("laat de cookie-instellingen ongewijzigd, zodat niemand uitgelogd raakt", () => {
-    expect(index).toContain('name: "__Host-tapas-sid"');
+    // De naam zelf is sinds Punt C (doorloop-herstel) conditioneel; zie
+    // tests/sessie-cookie-naam.test.ts voor dat gedrag. Hier wordt enkel
+    // bevestigd dat index.ts effectief bepaalSessieCookieNaam() gebruikt.
+    expect(index).toMatch(/import \{ bepaalSessieCookieNaam \} from "\.\/sessie-cookie"/);
+    expect(index).toMatch(/name:\s*_sessieCookieNaam/);
     expect(index).toMatch(/sameSite:\s*"auto"/);
     expect(index).toMatch(/secure:\s*"auto"/);
     expect(index).toMatch(/maxAge:\s*24 \* 60 \* 60 \* 1000/);

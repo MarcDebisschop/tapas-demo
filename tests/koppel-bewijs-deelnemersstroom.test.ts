@@ -44,7 +44,12 @@ describe("K-1: het bewijs bereikt de deelnemer via het afronden", () => {
   it("het afrondantwoord bevat de afnamerij", () => {
     const start = afnames.indexOf('app.post("/api/afnames/:id/connection"');
     expect(start).toBeGreaterThan(-1);
-    const route = afnames.slice(start, start + 9000);
+    // Venster ruim gehouden (niet krap op de route-lengte van vandaag): deze
+    // route groeide sinds Punt A/B van de doorloop-herstel (deel2-uitzondering,
+    // automatische T4Teens-rapportgeneratie), en zal dat in de toekomst weer
+    // doen. Deze test moet daarop niet stuklopen; ze bewijst enkel dat het
+    // antwoord de afnamerij bevat, niet de exacte lengte van de route.
+    const route = afnames.slice(start, start + 12000);
     expect(route).toMatch(/res\.json\(\{ afname: updated/);
   });
 
