@@ -899,13 +899,21 @@ export function scoreStudiekompas(
     profielUitgesprokenheid = round2(Math.min(Math.sqrt(variance) / 4.0, 1.0));
   }
 
-  let consistentieSignaal = "beeld_en_zekerheid_lopen_gelijk";
-  if (zelfZekerheid != null && profielUitgesprokenheid != null) {
-    if (zelfZekerheid >= 0.65 && profielUitgesprokenheid < 0.3) {
-      consistentieSignaal = "hoge_zekerheid_open_beeld";
-    } else if (zelfZekerheid <= 0.4 && profielUitgesprokenheid > 0.55) {
-      consistentieSignaal = "lage_zekerheid_uitgesproken_beeld";
-    }
+  // Motorronde punt 5, met dezelfde regel als punt 4. Dit signaal legt twee
+  // dingen naast elkaar: hoe zeker iemand zelf zegt te zijn, en hoe uitgesproken
+  // zijn beeld is. Ontbreekt een van de twee, dan viel de motor terug op
+  // "beeld_en_zekerheid_lopen_gelijk". Dat is een uitspraak over de deelnemer,
+  // en bij een lege vragenlijst is er niets om haar op te baseren. Nu meldt het
+  // signaal in dat geval dat er te weinig antwoorden zijn.
+  let consistentieSignaal: string;
+  if (zelfZekerheid == null || profielUitgesprokenheid == null) {
+    consistentieSignaal = GEEN_MEETPUNT;
+  } else if (zelfZekerheid >= 0.65 && profielUitgesprokenheid < 0.3) {
+    consistentieSignaal = "hoge_zekerheid_open_beeld";
+  } else if (zelfZekerheid <= 0.4 && profielUitgesprokenheid > 0.55) {
+    consistentieSignaal = "lage_zekerheid_uitgesproken_beeld";
+  } else {
+    consistentieSignaal = "beeld_en_zekerheid_lopen_gelijk";
   }
 
   // ── Resultaat ────────────────────────────────────────────────────────────
