@@ -645,21 +645,22 @@ function tekenCover(doc: Doc, rapport: T4SRapport, pagina: T4SPagina, opties: T4
       blok.paren.forEach((p, i) => {
         const px = MARGE + i * kolB;
         doc.font(F.dmBold).fontSize(6.8).fillColor(KLEUR.inktZacht);
-        doc.text(p.label.toUpperCase(), px, BLAD_H - 132, { width: kolB - 8, characterSpacing: 0.6, lineBreak: false });
+        doc.text(p.label.toUpperCase(), px, BLAD_H - 170, { width: kolB - 8, characterSpacing: 0.6, lineBreak: false });
         doc.font(F.dmMed).fontSize(10).fillColor(KLEUR.inkt);
         meet(doc, p.waarde, kolB - 8, "waarde op de cover");
-        doc.text(p.waarde, px, BLAD_H - 121, { width: kolB - 8, lineBreak: false });
+        doc.text(p.waarde, px, BLAD_H - 159, { width: kolB - 8, lineBreak: false });
       });
     } else if (blok.soort === "alinea") {
-      // De laatste alinea is de slotregel; die hoort onderaan bij de gegevens.
+      // De slotregel staat onder de drie gegevens en niet erboven, want zij sluit
+      // de cover af; boven de gegevens zou zij ze inleiden.
       if (blok === alineas[alineas.length - 1] && alineas.length > 1) {
-        schrijf(doc, blok.tekst, MARGE, BLAD_H - 174, TEKST_B - 40, F.dm, 8.6, KLEUR.inktZacht, 3);
+        schrijf(doc, blok.tekst, MARGE, BLAD_H - 120, TEKST_B - 40, F.dm, 8.6, KLEUR.inktZacht, 3);
       } else {
         y += schrijf(doc, blok.tekst, MARGE, y, TEKST_B - 60, F.dm, 11.4, KLEUR.inktZacht, 4.5) + 12;
       }
     }
   }
-  lijn(doc, MARGE, BLAD_H - 148, MARGE + TEKST_B, BLAD_H - 148, KLEUR.lijn);
+  lijn(doc, MARGE, BLAD_H - 186, MARGE + TEKST_B, BLAD_H - 186, KLEUR.lijn);
   doc.font(F.dm).fontSize(8).fillColor(KLEUR.inktZacht);
   doc.text(`Instrument ${rapport.instrumentVersie} · scoring ${rapport.scorerVersie}`, MARGE, BLAD_H - 76, {
     width: TEKST_B,
