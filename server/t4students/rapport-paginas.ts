@@ -63,6 +63,8 @@ const ONEPAGE_LEGENDE = [
     "kost energie.",
   "Een haakje links van twee namen betekent dat die twee zo dicht bij elkaar liggen dat ze " +
     "even sterk zijn.",
+  "Bij de drivers staat een driehoekje voor het woord: omhoog is een gaspedaal, omlaag is " +
+    "remmend, een streepje is neutraal.",
 ];
 
 const BAND_NOOT_FOCI = "TaPas-BEELD hoort hier niet bij; dat lees je apart op pagina 5.";

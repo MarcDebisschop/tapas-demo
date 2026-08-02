@@ -32,7 +32,14 @@
 
 import PDFDocument from "pdfkit";
 import { existsSync } from "node:fs";
-import { KLEUR, type T4SBlok, type T4SPagina, type T4SRapport, type T4SRij } from "./rapport-contract";
+import {
+  KLEUR,
+  type T4SBlok,
+  type T4SPagina,
+  type T4SRapport,
+  type T4SRij,
+  type T4SVorm,
+} from "./rapport-contract";
 import { F, registerFonts } from "../hdd/pdf/theme";
 
 // ── Bladmaat en marges, uit blauwdruk 3.6 ───────────────────────────────────
@@ -170,6 +177,29 @@ function tekenEnergie(doc: Doc, x: number, y: number, waarde: number | null, kle
   else vulRechthoek(doc, midden - lengte, y, lengte, BALK_H, vulkleur, 1.2);
 }
 
+/**
+ * De vorm voor het energiesaldo van een driver: een driehoek omhoog voor
+ * gaspedaal, een driehoek omlaag voor remmend, een liggend streepje voor
+ * neutraal. Vorm en niet kleur draagt de betekenis, zodat de pagina ook leesbaar
+ * blijft in zwart-wit en voor wie kleuren niet uit elkaar houdt.
+ */
+function tekenVorm(doc: Doc, x: number, y: number, vorm: T4SVorm, kleur: string): void {
+  if (vorm === "geen") return;
+  const b = 5.4;
+  const h = 4.8;
+  if (vorm === "vlak") {
+    vulRechthoek(doc, x, y + h / 2 - 0.9, b, 1.8, KLEUR.inktZacht);
+    return;
+  }
+  const omhoog = vorm === "stijgend";
+  doc.save();
+  doc.fillColor(omhoog ? kleur : KLEUR.accentDiep);
+  if (omhoog) doc.moveTo(x + b / 2, y).lineTo(x + b, y + h).lineTo(x, y + h);
+  else doc.moveTo(x, y).lineTo(x + b, y).lineTo(x + b / 2, y + h);
+  doc.closePath().fill();
+  doc.restore();
+}
+
 // ── Een rij in een rangorde ─────────────────────────────────────────────────
 
 const RIJ_H = 19;
@@ -214,9 +244,11 @@ function tekenRij(doc: Doc, rij: T4SRij, x: number, y: number, kleur: string): n
     (rij.energie != null ? "  " + getalMetTeken(rij.energie) : "");
   doc.font(F.dm).fontSize(6.8).fillColor(KLEUR.inktZacht);
   doc.text(cijfers, xWoord, midden - 7.4, { width: woordB, lineBreak: false });
+  const vormB = rij.vorm === "geen" ? 0 : 8;
+  tekenVorm(doc, xWoord, midden + 1.4, rij.vorm, kleur);
   doc.font(F.dmMed).fontSize(7.2).fillColor(KLEUR.inkt);
-  meet(doc, rij.leeswoord, woordB, "leeswoord in een rangorde");
-  doc.text(rij.leeswoord, xWoord, midden + 0.4, { width: woordB, lineBreak: false });
+  meet(doc, rij.leeswoord, woordB - vormB, "leeswoord in een rangorde");
+  doc.text(rij.leeswoord, xWoord + vormB, midden + 0.4, { width: woordB - vormB, lineBreak: false });
   return RIJ_H;
 }
 

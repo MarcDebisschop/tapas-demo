@@ -74,9 +74,14 @@ export interface T4SRij {
   evenSterk: boolean;
   /** Zijn alle antwoorden die dit construct voeden gegeven? */
   ingevuld: boolean;
-  /** Een woord dat zegt hoe herkenning en energie zich verhouden. */
+  /** Het oordeel van de motor in woorden. Nooit hier opnieuw uitgerekend. */
   leeswoord: string;
+  /** De vorm naast dat woord bij een driver, leesbaar zonder kleur. */
+  vorm: T4SVorm;
 }
+
+/** Hoe het energiesaldo van een driver er als vorm uitziet. */
+export type T4SVorm = "stijgend" | "vlak" | "dalend" | "geen";
 
 export interface T4SBand {
   nummer: number;
@@ -323,14 +328,60 @@ export function citaatVanItem(
 
 // ── De rangorde per dimensie ────────────────────────────────────────────────
 
-function leeswoordVan(herkenning: number | null, energie: number | null): string {
-  if (herkenning == null) return "";
-  if (energie == null) return herkenning >= 2 ? "sterk aanwezig" : "minder aanwezig";
-  if (herkenning >= 2 && energie >= 0.5) return "kernsterkte";
-  if (herkenning >= 2 && energie <= -0.5) return "vraagt veel van je";
-  if (herkenning <= 1 && energie >= 0.5) return "nog onbenut";
-  if (herkenning <= 1 && energie <= -0.5) return "niet jouw terrein";
-  return "in evenwicht";
+/**
+ * Het oordeelwoord wordt niet in de tekenlaag uitgerekend maar gelezen uit wat
+ * de motor al heeft bepaald.
+ *
+ * WAAROM NIET OPNIEUW REKENEN
+ * De motor leest het balanslabel van de ruwe herkenning van het anker-item; de
+ * rangorde op deze pagina staat op de geschaalde herkenning van het hele
+ * construct. Dat zijn twee verschillende getallen. Rekende het papier zelf, dan
+ * kon er rechts "kernsterkte" staan terwijl de motor "latent" zegt, en dan
+ * spreken de bijlage en de one-page elkaar tegen.
+ *
+ * WAAROM DE DRIVERS EEN EIGEN RIJTJE WOORDEN HEBBEN
+ * Kernsterkte, overbelast, onderbenut en latent gaan over een talent dat je wel
+ * of niet inzet. Een driver is geen talent maar iets wat je aandrijft, dus daar
+ * zeggen die vier het verkeerde. De motor geeft er remmend, neutraal of
+ * gaspedaal voor terug en dat is wat hier komt te staan.
+ */
+function motorlabel(resultaat: T4SResultaat, familie: string, construct: string): string {
+  if (familie === FAM_FOCI) return resultaat.foci.balanslabels[construct] ?? "";
+  if (familie === FAM_VERSNELLERS) return resultaat.versnellers.balanslabels[construct] ?? "";
+  if (familie === FAM_DRIVERS) return resultaat.drivers.energielabels[construct] ?? "";
+  return "";
+}
+
+/** De schrijfwijze op papier van de woorden die de motor teruggeeft. */
+const LEESWOORD: Record<string, string> = {
+  kernsterkte: "kernsterkte",
+  overbelast: "overbelast",
+  onderbenut: "onderbenut",
+  latent: "latent",
+  remmend: "remmend",
+  neutraal: "neutraal",
+  gaspedaal: "gaspedaal",
+  te_weinig_antwoorden: "te weinig antwoorden",
+  niet_van_toepassing: "niet gemeten",
+};
+
+/**
+ * De vorm naast het woord bij een driver, zodat het saldo ook leesbaar is
+ * zonder het woord te lezen en zonder op kleur te steunen.
+ */
+const VORM: Record<string, T4SVorm> = {
+  gaspedaal: "stijgend",
+  neutraal: "vlak",
+  remmend: "dalend",
+};
+
+function leeswoordVan(resultaat: T4SResultaat, familie: string, construct: string): string {
+  return LEESWOORD[motorlabel(resultaat, familie, construct)] ?? "";
+}
+
+function vormVan(resultaat: T4SResultaat, familie: string, construct: string): T4SVorm {
+  if (familie !== FAM_DRIVERS) return "geen";
+  return VORM[motorlabel(resultaat, familie, construct)] ?? "geen";
 }
 
 export interface T4SDimensie {
@@ -378,6 +429,7 @@ export function rangschik(
       evenSterk: false,
       ingevuld: compleet,
       leeswoord: "",
+      vorm: "geen",
     } as T4SRij;
   });
 
@@ -407,7 +459,10 @@ export function rangschik(
       buur.evenSterk = true;
     }
   });
-  for (const r of volledig) r.leeswoord = leeswoordVan(r.herkenning, r.energie);
+  for (const r of volledig) {
+    r.leeswoord = leeswoordVan(resultaat, familie, r.construct);
+    r.vorm = vormVan(resultaat, familie, r.construct);
+  }
 
   const zonder = ruw
     .filter((r) => !r.ingevuld)
