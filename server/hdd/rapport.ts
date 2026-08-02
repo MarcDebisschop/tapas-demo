@@ -23,6 +23,7 @@ import {
   TEAM_HEALTH_BANDS,
   ENERGY_BANDS,
   HDD_MIN_RESPONDENTS,
+  ledenEnergie,
 } from "./aggregatie";
 
 export type Audience = "investor" | "team";
@@ -94,6 +95,19 @@ function fmtPct(x: number): string {
   return `${Math.round(x)}/100`;
 }
 
+// Het HDD-rapport is altijd Engels. Deze zin zegt in gewone taal waarop het
+// samengestelde cijfer rust wanneer er een onderdeel ontbreekt.
+function indexBasisZin(agg: Fase2Aggregaat): string[] {
+  if (agg.indexBasis.volledig) return [];
+  const ontbreekt = agg.indexBasis.ontbrekendeDimensies.join(" and ");
+  return [
+    `Note on this figure: ${ontbreekt} could not be measured, so that part is missing from the ` +
+      "composite. The team figure therefore rests on fewer data than intended and is less solid " +
+      "than a complete figure. No middle value has been filled in: a missing measurement stays " +
+      "missing.",
+  ];
+}
+
 // ---------------------------------------------------------------------------
 // Member scorecards
 // ---------------------------------------------------------------------------
@@ -106,10 +120,12 @@ function memberCards(leden: BoardMemberInput[]): Array<{ title: string; lines: s
     const stratum = l.talent?.stratumIndicatie
       ? `Stratum ${l.talent.stratumIndicatie} (${STRATUM_TIMESPAN[l.talent.stratumIndicatie] ?? "—"}), indicative`
       : "—";
+    // Alleen energie tonen die van een instrument komt dat er echt naar vraagt.
+    const gemetenEnergie = ledenEnergie(l);
     const energy =
-      l.energy?.energie != null
-        ? `${l.energy.energie}/10${l.energy.fase != null ? `, Phase ${l.energy.fase}` : ""}`
-        : "—";
+      gemetenEnergie != null
+        ? `${gemetenEnergie}/10${l.energy?.fase != null ? `, Phase ${l.energy.fase}` : ""}`
+        : "not measured (no instrument that asks about energy)";
     const risk = l.talent?.driverRisico
       ? l.talent.driverRisico === "hoog"
         ? "elevated burnout-sensitivity"
@@ -174,7 +190,12 @@ export function bouwRapport(opts: BouwRapportOpts): RapportModel {
     headers: ["Dimension", "Source", "Score", "Band"],
     rows: [
       ["Team Health", "Lencioni (Teamscan)", fmtPct(agg.d1TeamHealth.score100), agg.d1TeamHealth.band],
-      ["Energy Sustainability", "2MINSCAN", fmtPct(agg.d2Energy.score100), agg.d2Energy.band],
+      [
+        "Energy Sustainability",
+        "Instrument that asks about energy",
+        agg.d2Energy.beschikbaar ? fmtPct(agg.d2Energy.score100) : "not measured",
+        agg.d2Energy.band,
+      ],
       ["Talent Capability", "T4P Business", fmtPct(agg.d3Talent.score100), agg.d3Talent.band],
       ["Cognitive Capacity", "Indicative Jaques", fmtPct(agg.d4Cognitive.score100), agg.d4Cognitive.band],
     ],
@@ -190,6 +211,7 @@ export function bouwRapport(opts: BouwRapportOpts): RapportModel {
           `${opts.boardLabel} in the context of ${agg.contextLabel.toLowerCase()}.`,
         `The HDD Human Capital Index is ${agg.index}/100 (${indexBand(agg.index)}). ` +
           `Recommendation: ${vLabel}.`,
+        ...indexBasisZin(agg),
       ],
       table: dimTable,
       callout: {
@@ -208,6 +230,7 @@ export function bouwRapport(opts: BouwRapportOpts): RapportModel {
         `This report reflects how ${opts.boardLabel} experiences its own collaboration, energy and talent. ` +
           `It is a development mirror, not a judgement of individuals.`,
         `Overall standing: ${vLabel} (composite ${agg.index}/100, ${indexBand(agg.index)}).`,
+        ...indexBasisZin(agg),
       ],
       table: dimTable,
     });
@@ -231,8 +254,14 @@ export function bouwRapport(opts: BouwRapportOpts): RapportModel {
       `Team Health uses the official 38-item Lencioni cut-offs: High \u2265 ${TEAM_HEALTH_BANDS.high}, ` +
         `Medium ${TEAM_HEALTH_BANDS.medium}\u2013${(TEAM_HEALTH_BANDS.high - 0.01).toFixed(2)}, ` +
         `Low \u2264 ${(TEAM_HEALTH_BANDS.medium - 0.01).toFixed(2)} on the 1\u20135 scale.`,
-      `Energy uses 2MINSCAN bands: Robust \u2265 ${ENERGY_BANDS.robust}, Watch ${ENERGY_BANDS.watch}\u2013` +
-        `${(ENERGY_BANDS.robust - 0.1).toFixed(1)}, Fragile < ${ENERGY_BANDS.watch} on 0\u201310.`,
+      `Energy uses the shared platform bands: Robust \u2265 ${ENERGY_BANDS.robust}, Watch ` +
+        `${ENERGY_BANDS.watch}\u2013${(ENERGY_BANDS.robust - 0.1).toFixed(1)}, Fragile < ` +
+        `${ENERGY_BANDS.watch} on 0\u201310. These cut-offs are a developer convention, not a ` +
+        "calibration on a norm group.",
+      "Energy is only counted when it comes from an instrument that actually asks about energy. " +
+        "The 2MINSCAN produces an energetic behaviour profile, not a figure on this 0-10 scale, so " +
+        "a 2MINSCAN intake on its own yields no energy value. That then shows as missing data.",
+      ...indexBasisZin(agg),
       "Talent Capability scores coverage and complementarity of the Strategy, Operational, " +
         "Innovation and Interrelational families plus accelerators (T4P Business).",
       `Composite weighting: Team Health ${INDEX_WEIGHTS.d1 * 100}%, Energy ${INDEX_WEIGHTS.d2 * 100}%, ` +
@@ -258,18 +287,43 @@ export function bouwRapport(opts: BouwRapportOpts): RapportModel {
     },
   });
 
-  // --- 4. Energy Sustainability (2MINSCAN) ---
-  const en = agg.d2Energy.detail as { teamMean: number; dispersion: number; phase0Count: number; n: number };
+  // --- 4. Energy Sustainability ---
+  const en = agg.d2Energy.detail as {
+    teamMean: number | null;
+    dispersion: number | null;
+    phase0Count: number;
+    n: number;
+    ontbrekend?: number;
+  };
   secties.push({
     id: "energy",
     title: "Energy Sustainability",
     audience: ["investor", "team"],
-    body: [
-      `Team energy averages ${en.teamMean}/10 (${agg.d2Energy.band}), with dispersion ${en.dispersion} ` +
-        `across ${en.n} member(s); ${en.phase0Count} member(s) at Phase 0 (fully energised).`,
-      "Energy is read as a point-in-time signal. A robust mean with low dispersion indicates a " +
-        "sustainable team rhythm; high dispersion can mask individuals carrying disproportionate load.",
-    ],
+    body: agg.d2Energy.beschikbaar
+      ? [
+          `Team energy averages ${en.teamMean}/10 (${agg.d2Energy.band}), with dispersion ${en.dispersion} ` +
+            `across ${en.n} member(s); ${en.phase0Count} member(s) at Phase 0 (fully energised).`,
+          ...(en.ontbrekend
+            ? [
+                `${en.ontbrekend} member(s) supplied no energy measurement, so this figure rests on ` +
+                  `${en.n} of ${leden.length} member(s).`,
+              ]
+            : []),
+          "Energy is read as a point-in-time signal. A robust mean with low dispersion indicates a " +
+            "sustainable team rhythm; high dispersion can mask individuals carrying disproportionate load.",
+        ]
+      : [
+          "No energy was measured for this board. Not a single member completed an instrument that " +
+            "actually asks about energy, so there is no figure to report here.",
+          "This is missing data, not a low score. Nothing has been filled in on their behalf: an " +
+            "average or a middle value would make the report look as though something had been " +
+            "measured. The energy component therefore does not count towards the overall figure, " +
+            "which consequently rests on fewer data than intended.",
+          "A 2MINSCAN intake on its own does not produce this figure. The 2MINSCAN gives an " +
+            "energetic behaviour profile (colour order and X-position), not a number on a 0-10 " +
+            "scale. To obtain an energy figure, a member has to complete an instrument that asks " +
+            "about energy per item.",
+        ],
   });
 
   // --- 5. Individual Capability Scorecards (T4P) ---
@@ -350,7 +404,11 @@ export function bouwRapport(opts: BouwRapportOpts): RapportModel {
           tl.thinFamilies.length ? `Thin talent: ${tl.thinFamilies.join(", ")}` : "Balanced talent coverage",
         ],
         [
-          agg.d2Energy.band === "Robust" ? "Robust, sustainable energy" : "Energy to monitor",
+          !agg.d2Energy.beschikbaar
+            ? "Energy not measured"
+            : agg.d2Energy.band === "Robust"
+              ? "Robust, sustainable energy"
+              : "Energy to monitor",
           tl.driverHighRiskCount > 0 ? "Burnout-sensitivity under pressure" : "Low burnout signal",
         ],
       ],

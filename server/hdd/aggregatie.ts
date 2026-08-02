@@ -6,7 +6,7 @@
  * flagship report:
  *
  *   D1 Team Health            (Lencioni, Teamscan)        — pillar averages 1–5
- *   D2 Energy Sustainability  (2MINSCAN)                  — energy 0–10 + phase
+ *   D2 Energy Sustainability  (instrument dat naar energie vraagt): 0-10
  *   D3 Talent Capability      (T4P Business)              — coverage + alignment
  *   D4 Cognitive Capacity     (indicative Jaques, T4P)    — stratum distribution
  *
@@ -20,7 +20,7 @@
  * (assembled from the source instruments at report time).
  */
 
-import { ENERGIE_GRENZEN } from "../../shared/energie-schaal";
+import { ENERGIE_GRENZEN, energieNaarTienschaal } from "../../shared/energie-schaal";
 
 // ---------------------------------------------------------------------------
 // Scientific anchors (documented, not arbitrary)
@@ -79,10 +79,42 @@ export interface MemberTeamscan {
   resultaten?: number;
 }
 
+// Instrumenten die werkelijk naar energie vragen en dus een energiewaarde op de
+// schaal 0 tot 10 kunnen opleveren. De 2MINSCAN staat hier BEWUST NIET bij: die
+// scan levert een energetisch gedragsprofiel (kleurvolgorde en X-stand) en geen
+// getal op deze schaal. Wie alleen een 2MINSCAN heeft ingevuld, heeft dus geen
+// energiewaarde, en dat hoort zichtbaar te blijven als ontbrekend gegeven.
+export const ENERGIE_INSTRUMENTEN = ["t4p-business", "t4sports"] as const;
+export type EnergieBron = (typeof ENERGIE_INSTRUMENTEN)[number];
+
 export interface MemberEnergy {
-  // 2MINSCAN: phase (0 = fully energised) and energy on 0–10.
-  fase?: number; // 0..n (lower is better)
-  energie?: number; // 0..10
+  // Het instrument dat deze energie gemeten heeft. Zonder herkomst wordt de
+  // waarde niet gebruikt: we kunnen dan niet nagaan of er echt naar energie
+  // gevraagd is.
+  bron?: string;
+  // Gemiddelde item-energie op de schaal min 2 tot plus 2, zoals de
+  // scoringsmotor die oplevert. Wordt hier omgezet met de gedeelde omzetting.
+  itemEnergie?: number;
+  // Reeds omgezette energie op de schaal 0 tot 10, als het bron-instrument die
+  // al berekend heeft met diezelfde gedeelde omzetting.
+  energie?: number;
+  // Fase uit de 2MINSCAN (0 = volledig opgeladen). Dit is GEEN energie op de
+  // schaal 0 tot 10 en telt niet mee in het energiecijfer.
+  fase?: number;
+}
+
+/**
+ * De energiewaarde van een lid op de schaal 0 tot 10, of null wanneer er geen
+ * gemeten energie is. Geeft bewust null in plaats van een middenwaarde: een
+ * terugval zou het rapport laten lezen alsof er iets gemeten is.
+ */
+export function ledenEnergie(lid: BoardMemberInput): number | null {
+  const e = lid.energy;
+  if (!e) return null;
+  if (!e.bron || !(ENERGIE_INSTRUMENTEN as readonly string[]).includes(e.bron)) return null;
+  if (typeof e.itemEnergie === "number") return energieNaarTienschaal(e.itemEnergie);
+  if (typeof e.energie === "number") return e.energie;
+  return null;
 }
 
 export interface MemberTalent {
@@ -148,7 +180,13 @@ export interface DimensionResult {
   score100: number; // normalised 0–100 (feeds composite)
   band: string; // native scientific band label
   detail: Record<string, unknown>;
+  // Is er voor deze dimensie werkelijk iets gemeten? Bij false is score100
+  // betekenisloos en telt de dimensie niet mee in de samengestelde index.
+  beschikbaar: boolean;
 }
+
+// Bandlabel voor een dimensie waarvoor niets gemeten is.
+export const NIET_GEMETEN_BAND = "Not measured";
 
 export interface CognitiveMap {
   distribution: Record<number, number>; // stratum -> count
@@ -170,6 +208,16 @@ export interface Fase2Aggregaat {
   cognitiveMap: CognitiveMap;
   index: number; // HDD Human Capital Index 0–100
   verdict: "proceed" | "conditional" | "hold-conditional" | "hold";
+  // Op welke dimensies rust het samengestelde cijfer, en welke ontbreken? Bij
+  // een ontbrekende dimensie is het gewicht ervan herverdeeld over de overige,
+  // zodat een ontbrekend gegeven geen verkapte nulscore wordt.
+  indexBasis: {
+    volledig: boolean;
+    gebruikteDimensies: string[];
+    ontbrekendeDimensies: string[];
+    // Zin in gewone taal die het rapport kan tonen.
+    toelichting: string;
+  };
   // Privacy: aggregates suppressed below minimum-N.
   minNMet: boolean;
 }
@@ -209,18 +257,44 @@ function bouwTeamHealth(leden: BoardMemberInput[]): DimensionResult {
   return {
     score100: Math.round(scale5to100(overall)),
     band: band3(overall, TEAM_HEALTH_BANDS.high, TEAM_HEALTH_BANDS.medium),
+    beschikbaar: true,
     detail: { overall, perPillar },
   };
 }
 
-// ---- D2 Energy Sustainability (2MINSCAN) ----------------------------------
+// ---- D2 Energy Sustainability ---------------------------------------------
+// Alleen energie die van een instrument komt dat er werkelijk naar vraagt telt
+// mee. Vroeger las deze functie l.energy.energie ongeacht de herkomst. Wie
+// alleen een 2MINSCAN had ingevuld, leverde dus geen enkele waarde, waarna het
+// gemiddelde van een lege lijst 0 werd: de dimensie kwam als 0 op 100 en als
+// band "Fragile" in het rapport, alsof er een slechte energie gemeten was. Dat
+// is nu een expliciet ontbrekend gegeven.
 function bouwEnergy(leden: BoardMemberInput[]): DimensionResult {
   const energies = leden
-    .map((l) => l.energy?.energie)
-    .filter((v): v is number => typeof v === "number");
+    .map((l) => ledenEnergie(l))
+    .filter((v): v is number => v !== null);
+  const phase0 = leden.filter((l) => (l.energy?.fase ?? 99) === 0).length;
+
+  if (!energies.length) {
+    return {
+      score100: 0,
+      band: NIET_GEMETEN_BAND,
+      beschikbaar: false,
+      detail: {
+        teamMean: null,
+        dispersion: null,
+        phase0Count: phase0,
+        n: 0,
+        toelichting:
+          "Geen enkel lid heeft een energiemeting van een instrument dat naar energie vraagt. " +
+          "Een 2MINSCAN-intake alleen levert geen energiecijfer op deze schaal. Deze dimensie " +
+          "telt daarom niet mee in het samengestelde cijfer.",
+      },
+    };
+  }
+
   const teamMean = round1(gemiddelde(energies));
   const dispersion = round1(stdev(energies));
-  const phase0 = leden.filter((l) => (l.energy?.fase ?? 99) === 0).length;
   let band: "Robust" | "Watch" | "Fragile";
   if (teamMean >= ENERGY_BANDS.robust && dispersion <= 1.5) band = "Robust";
   else if (teamMean >= ENERGY_BANDS.watch) band = "Watch";
@@ -228,7 +302,15 @@ function bouwEnergy(leden: BoardMemberInput[]): DimensionResult {
   return {
     score100: Math.round(Math.max(0, Math.min(100, teamMean * 10))),
     band,
-    detail: { teamMean, dispersion, phase0Count: phase0, n: energies.length },
+    beschikbaar: true,
+    detail: {
+      teamMean,
+      dispersion,
+      phase0Count: phase0,
+      n: energies.length,
+      // Hoeveel leden leverden geen bruikbare energiemeting?
+      ontbrekend: leden.length - energies.length,
+    },
   };
 }
 
@@ -267,6 +349,7 @@ function bouwTalent(leden: BoardMemberInput[]): DimensionResult {
   return {
     score100,
     band,
+    beschikbaar: true,
     detail: { coverage, coverageBands, thinFamilies: thin, driverFreq, driverHighRiskCount: driverHigh },
   };
 }
@@ -311,6 +394,7 @@ function bouwCognitive(input: Fase2Input): { dim: DimensionResult; map: Cognitiv
     dim: {
       score100,
       band: fit === "n/a" ? band3(score100, 75, 50) : fit,
+      beschikbaar: true,
       detail: { distribution, teamMaxStratum: teamMax, requiredStratum: required, fit },
     },
     map: {
@@ -337,12 +421,36 @@ export function bouwFase2Aggregaat(input: Fase2Input): Fase2Aggregaat {
   const d3 = bouwTalent(input.leden);
   const { dim: d4, map: cognitiveMap } = bouwCognitive(input);
 
-  const index = Math.round(
-    INDEX_WEIGHTS.d1 * d1.score100 +
-      INDEX_WEIGHTS.d2 * d2.score100 +
-      INDEX_WEIGHTS.d3 * d3.score100 +
-      INDEX_WEIGHTS.d4 * d4.score100,
-  );
+  // Alleen dimensies waarvoor werkelijk iets gemeten is tellen mee. Het gewicht
+  // van een ontbrekende dimensie wordt evenredig over de overige verdeeld.
+  // Vroeger telde een ontbrekende dimensie mee met score 0, wat het cijfer
+  // omlaag trok alsof er een slechte score gemeten was.
+  const dims: Array<{ sleutel: keyof typeof INDEX_WEIGHTS; naam: string; dim: DimensionResult }> = [
+    { sleutel: "d1", naam: "Team Health", dim: d1 },
+    { sleutel: "d2", naam: "Energy Sustainability", dim: d2 },
+    { sleutel: "d3", naam: "Talent Capability", dim: d3 },
+    { sleutel: "d4", naam: "Cognitive Capacity", dim: d4 },
+  ];
+  const gebruikt = dims.filter((d) => d.dim.beschikbaar);
+  const ontbrekend = dims.filter((d) => !d.dim.beschikbaar);
+  const gewichtSom = gebruikt.reduce((a, d) => a + INDEX_WEIGHTS[d.sleutel], 0);
+  const index = gewichtSom
+    ? Math.round(
+        gebruikt.reduce((a, d) => a + INDEX_WEIGHTS[d.sleutel] * d.dim.score100, 0) / gewichtSom,
+      )
+    : 0;
+
+  const indexBasis = {
+    volledig: ontbrekend.length === 0,
+    gebruikteDimensies: gebruikt.map((d) => d.naam),
+    ontbrekendeDimensies: ontbrekend.map((d) => d.naam),
+    toelichting: ontbrekend.length
+      ? `Voor ${ontbrekend.map((d) => d.naam).join(" en ")} is niets gemeten. Dat onderdeel ` +
+        "ontbreekt dus in dit cijfer. Het teamcijfer rust daardoor op minder gegevens dan " +
+        "bedoeld en is minder stevig dan een volledig cijfer. Er is geen middenwaarde " +
+        "ingevuld: een ontbrekende meting blijft ontbrekend."
+      : "Alle vier de onderdelen zijn gemeten en tellen mee in dit cijfer.",
+  };
 
   let verdict: Fase2Aggregaat["verdict"];
   if (index >= VERDICT_THRESHOLDS.proceed) verdict = "proceed";
@@ -360,6 +468,7 @@ export function bouwFase2Aggregaat(input: Fase2Input): Fase2Aggregaat {
     cognitiveMap,
     index,
     verdict,
+    indexBasis,
     minNMet,
   };
 }

@@ -163,8 +163,16 @@ export function registerHddRoutes(app: Express): void {
           resultaten: z.number().optional(),
         })
         .optional(),
+      // De herkomst is verplicht om de waarde te laten meetellen: zonder bron
+      // kunnen we niet nagaan of er werkelijk naar energie gevraagd is. Zie
+      // ENERGIE_INSTRUMENTEN in aggregatie.ts.
       energy: z
-        .object({ fase: z.number().optional(), energie: z.number().optional() })
+        .object({
+          bron: z.string().optional(),
+          itemEnergie: z.number().optional(),
+          fase: z.number().optional(),
+          energie: z.number().optional(),
+        })
         .optional(),
       talent: z
         .object({

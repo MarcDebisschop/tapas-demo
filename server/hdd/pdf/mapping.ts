@@ -24,6 +24,7 @@ import {
   Fase2Aggregaat,
   BoardMemberInput,
   CognitiveMap,
+  ledenEnergie,
 } from "../aggregatie";
 import { FlagshipInput, Audience, FlagshipMeta, FlagshipIndex, FlagshipFacts } from "./flagship";
 import { VisualData, SliderGroup, ConflictAlert, ScorecardRow, KeyPersonCard, CompPotPoint, PyramidLevel, EnergyMember, StratumRow } from "./visuals";
@@ -217,13 +218,18 @@ function buildPyramid(agg: Fase2Aggregaat): VisualData["pyramid"] {
 }
 
 function buildEnergy(agg: Fase2Aggregaat, leden: BoardMemberInput[]): VisualData["energy"] {
-  const named = leden.filter((l) => typeof l.energy?.energie === "number");
+  // Alleen leden met een energiemeting van een instrument dat er echt naar
+  // vraagt. Voorheen keek deze filter alleen of er een getal stond, ongeacht de
+  // herkomst.
+  const named = leden
+    .map((l, i) => ({ lid: l, i, waarde: ledenEnergie(l) }))
+    .filter((r): r is { lid: BoardMemberInput; i: number; waarde: number } => r.waarde !== null);
   let members: EnergyMember[];
   if (named.length >= 4) {
-    members = named.map((l, i) => ({
-      name: l.naam?.trim() ? shortName(l.naam) : `Member ${i + 1}`,
-      energy: Math.round(l.energy!.energie as number),
-      phase: `Phase ${l.energy?.fase ?? 0}`,
+    members = named.map(({ lid, i, waarde }) => ({
+      name: lid.naam?.trim() ? shortName(lid.naam) : `Member ${i + 1}`,
+      energy: Math.round(waarde),
+      phase: `Phase ${lid.energy?.fase ?? 0}`,
     }));
   } else {
     members = [
@@ -245,7 +251,7 @@ function buildEnergy(agg: Fase2Aggregaat, leden: BoardMemberInput[]): VisualData
   return {
     members,
     mean: Math.round(mean * 10) / 10,
-    meanBand: agg.d2Energy.band || "Robust",
+    meanBand: agg.d2Energy.beschikbaar ? agg.d2Energy.band : "Not measured",
     dispersion: Math.round(dispersion * 10) / 10,
   };
 }
