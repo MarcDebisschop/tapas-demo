@@ -194,28 +194,28 @@
       "Functioneel Innovatief": 2,
       "Artistiek Innovatief": 2,
       "Complexiteit/Conceptueel": 2,
-      "Systematisch/Uitvoerend": 2.5,
+      "Systematisch/Uitvoerend": 2,
       "Sociaal Interactief": 0,
       "Overdrachtelijk Interactief": 2
     },
     "sorted": [
-      "Systematisch/Uitvoerend",
       "Functioneel Innovatief",
       "Artistiek Innovatief",
       "Complexiteit/Conceptueel",
+      "Systematisch/Uitvoerend",
       "Overdrachtelijk Interactief",
       "Sociaal Interactief"
     ],
     "topGroep": [
-      "Systematisch/Uitvoerend",
       "Functioneel Innovatief",
       "Artistiek Innovatief",
       "Complexiteit/Conceptueel",
+      "Systematisch/Uitvoerend",
       "Overdrachtelijk Interactief"
     ],
     "top2": [
-      "Systematisch/Uitvoerend",
-      "Functioneel Innovatief"
+      "Functioneel Innovatief",
+      "Artistiek Innovatief"
     ],
     "balanslabels": {
       "Functioneel Innovatief": "latent",
@@ -227,10 +227,10 @@
     },
     "groepen": [
       [
-        "Systematisch/Uitvoerend",
         "Functioneel Innovatief",
         "Artistiek Innovatief",
         "Complexiteit/Conceptueel",
+        "Systematisch/Uitvoerend",
         "Overdrachtelijk Interactief"
       ],
       [
@@ -301,7 +301,7 @@
   },
   "riasec": {
     "scores": {
-      "R": 5.5,
+      "R": 5,
       "I": 7,
       "A": 5,
       "S": 5,
@@ -310,9 +310,9 @@
     },
     "details": {
       "R": {
-        "afgeleideScore": 4.5,
+        "afgeleideScore": 4,
         "bevestigingScore": 1,
-        "totaalScore": 5.5,
+        "totaalScore": 5,
         "divergentie": false,
         "confirmItem": "R1"
       },
@@ -356,14 +356,14 @@
   "studiegebieden": {
     "scores": {
       "Kunst & Cultuur": 5,
-      "Exact & ICT": 12.5,
+      "Exact & ICT": 12,
       "Gedrag & Maatschappij": 12,
       "Economie & Bedrijf": 15,
       "Taal, Communicatie & Media": 10,
       "Recht & Bestuur": 20,
-      "Techniek": 12.5,
+      "Techniek": 12,
       "Onderwijs & Opvoeding": 10,
-      "Aarde & Milieu": 12.5,
+      "Aarde & Milieu": 12,
       "Gezondheid": 12
     },
     "gesorteerd": [
@@ -377,18 +377,18 @@
       },
       {
         "naam": "Exact & ICT",
-        "score": 12.5
-      },
-      {
-        "naam": "Techniek",
-        "score": 12.5
-      },
-      {
-        "naam": "Aarde & Milieu",
-        "score": 12.5
+        "score": 12
       },
       {
         "naam": "Gedrag & Maatschappij",
+        "score": 12
+      },
+      {
+        "naam": "Techniek",
+        "score": 12
+      },
+      {
+        "naam": "Aarde & Milieu",
         "score": 12
       },
       {
@@ -419,7 +419,7 @@
       },
       {
         "naam": "Exact & ICT",
-        "score": 12.5
+        "score": 12
       }
     ]
   },
@@ -527,7 +527,7 @@
   },
   "beeldScherpte": {
     "zelfZekerheid": 0.62,
-    "profielUitgesprokenheid": 0.2,
+    "profielUitgesprokenheid": 0.19,
     "consistentieSignaal": "beeld_en_zekerheid_lopen_gelijk"
   },
   "betekenis": {

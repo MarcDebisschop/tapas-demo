@@ -202,23 +202,28 @@
   },
   "foci": {
     "scores": {
-      "Functioneel Innovatief": 4,
-      "Artistiek Innovatief": 2.5,
+      "Functioneel Innovatief": 3,
+      "Artistiek Innovatief": 2,
       "Complexiteit/Conceptueel": 2,
-      "Systematisch/Uitvoerend": 2.5,
+      "Systematisch/Uitvoerend": 2,
       "Sociaal Interactief": 1,
-      "Overdrachtelijk Interactief": -1
+      "Overdrachtelijk Interactief": 0
     },
     "sorted": [
       "Functioneel Innovatief",
       "Artistiek Innovatief",
-      "Systematisch/Uitvoerend",
       "Complexiteit/Conceptueel",
+      "Systematisch/Uitvoerend",
       "Sociaal Interactief",
       "Overdrachtelijk Interactief"
     ],
     "topGroep": [
-      "Functioneel Innovatief"
+      "Functioneel Innovatief",
+      "Artistiek Innovatief",
+      "Complexiteit/Conceptueel",
+      "Systematisch/Uitvoerend",
+      "Sociaal Interactief",
+      "Overdrachtelijk Interactief"
     ],
     "top2": [
       "Functioneel Innovatief",
@@ -234,26 +239,22 @@
     },
     "groepen": [
       [
-        "Functioneel Innovatief"
-      ],
-      [
+        "Functioneel Innovatief",
         "Artistiek Innovatief",
-        "Systematisch/Uitvoerend",
         "Complexiteit/Conceptueel",
-        "Sociaal Interactief"
-      ],
-      [
+        "Systematisch/Uitvoerend",
+        "Sociaal Interactief",
         "Overdrachtelijk Interactief"
       ]
     ]
   },
   "versnellers": {
     "scores": {
-      "Analyse": 5,
-      "Individueel ondersteunend": -1,
-      "Groepsondersteunend": 4.5,
-      "Impact": 4,
-      "Resultaat": 3.5,
+      "Analyse": 4,
+      "Individueel ondersteunend": 0,
+      "Groepsondersteunend": 4,
+      "Impact": 3,
+      "Resultaat": 3,
       "Constructief onderscheidend": 1
     },
     "rangorde": [
@@ -278,9 +279,7 @@
         "Resultaat"
       ],
       [
-        "Constructief onderscheidend"
-      ],
-      [
+        "Constructief onderscheidend",
         "Individueel ondersteunend"
       ]
     ],
@@ -310,53 +309,53 @@
   },
   "riasec": {
     "scores": {
-      "R": 8.5,
-      "I": 9,
-      "A": 4.5,
-      "S": -1,
-      "E": 9,
-      "C": 7.5
+      "R": 7,
+      "I": 8,
+      "A": 4,
+      "S": 1,
+      "E": 8,
+      "C": 7
     },
     "details": {
       "R": {
-        "afgeleideScore": 6.5,
+        "afgeleideScore": 5,
         "bevestigingScore": 2,
-        "totaalScore": 8.5,
+        "totaalScore": 7,
         "divergentie": false,
         "confirmItem": "R1"
       },
       "I": {
-        "afgeleideScore": 7,
+        "afgeleideScore": 6,
         "bevestigingScore": 2,
-        "totaalScore": 9,
+        "totaalScore": 8,
         "divergentie": false,
         "confirmItem": "R2"
       },
       "A": {
-        "afgeleideScore": 3.5,
+        "afgeleideScore": 3,
         "bevestigingScore": 1,
-        "totaalScore": 4.5,
+        "totaalScore": 4,
         "divergentie": false,
         "confirmItem": "R3"
       },
       "S": {
-        "afgeleideScore": -1,
+        "afgeleideScore": 1,
         "bevestigingScore": 0,
-        "totaalScore": -1,
+        "totaalScore": 1,
         "divergentie": false,
         "confirmItem": "R4"
       },
       "E": {
-        "afgeleideScore": 8,
+        "afgeleideScore": 7,
         "bevestigingScore": 1,
-        "totaalScore": 9,
+        "totaalScore": 8,
         "divergentie": false,
         "confirmItem": "R5"
       },
       "C": {
-        "afgeleideScore": 6.5,
+        "afgeleideScore": 6,
         "bevestigingScore": 1,
-        "totaalScore": 7.5,
+        "totaalScore": 7,
         "divergentie": false,
         "confirmItem": "R6"
       }
@@ -364,71 +363,71 @@
   },
   "studiegebieden": {
     "scores": {
-      "Kunst & Cultuur": 4.5,
-      "Exact & ICT": 17.5,
-      "Gedrag & Maatschappij": 8,
-      "Economie & Bedrijf": 16.5,
-      "Taal, Communicatie & Media": 3.5,
-      "Recht & Bestuur": 15.5,
-      "Techniek": 17.5,
-      "Onderwijs & Opvoeding": 3.5,
-      "Aarde & Milieu": 17.5,
-      "Gezondheid": 8
+      "Kunst & Cultuur": 4,
+      "Exact & ICT": 15,
+      "Gedrag & Maatschappij": 9,
+      "Economie & Bedrijf": 15,
+      "Taal, Communicatie & Media": 5,
+      "Recht & Bestuur": 16,
+      "Techniek": 15,
+      "Onderwijs & Opvoeding": 5,
+      "Aarde & Milieu": 15,
+      "Gezondheid": 9
     },
     "gesorteerd": [
       {
+        "naam": "Recht & Bestuur",
+        "score": 16
+      },
+      {
         "naam": "Exact & ICT",
-        "score": 17.5
-      },
-      {
-        "naam": "Techniek",
-        "score": 17.5
-      },
-      {
-        "naam": "Aarde & Milieu",
-        "score": 17.5
+        "score": 15
       },
       {
         "naam": "Economie & Bedrijf",
-        "score": 16.5
+        "score": 15
       },
       {
-        "naam": "Recht & Bestuur",
-        "score": 15.5
+        "naam": "Techniek",
+        "score": 15
+      },
+      {
+        "naam": "Aarde & Milieu",
+        "score": 15
       },
       {
         "naam": "Gedrag & Maatschappij",
-        "score": 8
+        "score": 9
       },
       {
         "naam": "Gezondheid",
-        "score": 8
-      },
-      {
-        "naam": "Kunst & Cultuur",
-        "score": 4.5
+        "score": 9
       },
       {
         "naam": "Taal, Communicatie & Media",
-        "score": 3.5
+        "score": 5
       },
       {
         "naam": "Onderwijs & Opvoeding",
-        "score": 3.5
+        "score": 5
+      },
+      {
+        "naam": "Kunst & Cultuur",
+        "score": 4
       }
     ],
     "top": [
       {
+        "naam": "Recht & Bestuur",
+        "score": 16
+      },
+      {
         "naam": "Exact & ICT",
-        "score": 17.5
+        "score": 15
       },
       {
-        "naam": "Techniek",
-        "score": 17.5
-      },
-      {
-        "naam": "Aarde & Milieu",
-        "score": 17.5
+        "naam": "Economie & Bedrijf",
+        "score": 15
       }
     ]
   },
@@ -534,7 +533,7 @@
   },
   "beeldScherpte": {
     "zelfZekerheid": 0.56,
-    "profielUitgesprokenheid": 0.39,
+    "profielUitgesprokenheid": 0.24,
     "consistentieSignaal": "beeld_en_zekerheid_lopen_gelijk"
   },
   "betekenis": {

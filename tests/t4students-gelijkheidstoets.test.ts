@@ -34,7 +34,8 @@ import { T4STUDENTS_INSTRUMENT } from "../server/t4students/instrument";
 // uitzondering die niets meer dekt is dus ook een fout: dan klopt de uitleg
 // niet meer met de werkelijkheid.
 //
-// DE DRIE TOEGESTANE AFWIJKINGEN, MET REDEN
+// DE ZES TOEGESTANE AFWIJKINGEN, MET REDEN
+// A tot en met C komen uit fase 1c, D tot en met F uit de motorronde.
 //
 // A. alerts.actief[].boodschap (10 velden over 6 patronen)
 //    Al bekend uit fase 1 en niet nieuw. De alertteksten staan in de motor
@@ -43,7 +44,7 @@ import { T4STUDENTS_INSTRUMENT } from "../server/t4students/instrument";
 //    vervangen door een punt of een komma. De betekenis is ongewijzigd. De
 //    letterlijke tabel staat in tests/t4students-kompas-alertteksten.test.ts.
 //
-// B. foci.balanslabels en versnellers.balanslabels (40 velden)
+// B. foci.balanslabels en versnellers.balanslabels (23 velden)
 //    Punt 7. De bronmotor legde de drempels overloadRecognitionMin (2) en
 //    underuseRecognitionMax (1) op de SOM van de herkenning over een heel
 //    construct, terwijl het waarden op de schaal van een enkel item zijn (0 tot
@@ -55,6 +56,27 @@ import { T4STUDENTS_INSTRUMENT } from "../server/t4students/instrument";
 //    Punt 8. Wie alleen een energie-antwoord gaf en geen herkenning, telde in
 //    de bron als onbeantwoord. Dat telt nu mee. Zie
 //    tests/t4students-teller-beantwoord.test.ts.
+//
+// D. energie.kaart bij D1 tot D4, D7, F7 en F8 (119 velden)
+//    Motorronde punt 1. De vijf drivers en de foci Systematisch/Uitvoerend en
+//    Sociaal Interactief hebben nu ook een energie-anker, dus die zeven items
+//    staan nu in de energiekaart en stonden er in de bron niet. Zie
+//    tests/t4students-energie-bij-drivers.test.ts.
+//
+// E. betrouwbaarheid.totaalItems (17 velden, een per patroon)
+//    Motorronde punt 1. De vragenlijst gaat van 31 naar 34 items, omdat Be
+//    Strong, Systematisch/Uitvoerend en Sociaal Interactief er met D7, F7 en F8
+//    voor het eerst een eigen vraag bij krijgen.
+//
+// F. alles wat een volgorde is of eruit volgt (1123 velden)
+//    Motorronde punt 2. De bronmotor rangschikte de foci en de versnellers op
+//    het gemengde getal van herkenning plus de helft van de gemiddelde energie.
+//    Dat gebeurt nu op de herkenning alleen. Omdat de RIASEC-letters uit
+//    dezelfde constructscores worden opgeteld, schuiven ook de letters, de tien
+//    studiegebieden, de studiestrategie, de convergentie-assen, de keerzijde en
+//    de profieluitgesprokenheid mee. Dit is veruit de grootste post; het gaat
+//    telkens om hetzelfde ene besluit. Zie
+//    tests/t4students-rangschikken-op-herkenning.test.ts.
 //
 // HOE HET BEWIJSMATERIAAL TOT STAND KWAM
 // De patronen staan in tests/t4students-gelijkheidstoets/patronen.json. De
@@ -117,6 +139,23 @@ const TOEGESTANE_AFWIJKINGEN: { reden: string; patroon: RegExp }[] = [
   {
     reden: "E. totaalItems: drie nieuwe items, 31 wordt 34 (motorronde punt 1)",
     patroon: /^[^.]+\.betrouwbaarheid\.totaalItems$/,
+  },
+  {
+    reden: "F. rangschikken gebeurt op herkenning en niet meer op het gemengde getal (motorronde punt 2)",
+    patroon: new RegExp(
+      "^[^.]+\\.(" +
+        [
+          "foci\\.(scores|sorted|topGroep|top2|groepen)",
+          "versnellers\\.(scores|rangorde|kopGroep|groepen|dominante|gedeeldMet)",
+          "convergentie",
+          "riasec\\.(scores|details)",
+          "studiegebieden",
+          "studiestrategie",
+          "keerzijde\\.(minFoci|minVersnellers)",
+          "beeldScherpte\\.profielUitgesprokenheid",
+        ].join("|") +
+        ")(\\..+)?$",
+    ),
   },
 ];
 
@@ -206,7 +245,7 @@ describe("gelijkheidstoets deel 1: tegen de originele motor, met benoemde uitzon
   });
 
   it("het aantal afwijkende velden is precies wat het verslag noemt", () => {
-    // Honderdtweeënzeventig velden over zeventien patronen. Elk getal hieronder
+    // Twaalfhonderdvijfennegentig velden over zeventien patronen. Elk getal hieronder
     // staat ook in het verslag van de motorronde; loopt het uiteen, dan klopt
     // een van de twee niet meer.
     const perUitzondering: Record<string, number> = {};
@@ -225,8 +264,9 @@ describe("gelijkheidstoets deel 1: tegen de originele motor, met benoemde uitzon
       "C. teller beantwoord: een enkel energie-antwoord telt nu mee (punt 8)": 3,
       "D. energie.kaart: de vijf drivers en twee foci hebben nu ook een anker (motorronde punt 1)": 119,
       "E. totaalItems: drie nieuwe items, 31 wordt 34 (motorronde punt 1)": 17,
+      "F. rangschikken gebeurt op herkenning en niet meer op het gemengde getal (motorronde punt 2)": 1123,
     });
-    expect(totaal).toBe(172);
+    expect(totaal).toBe(1295);
   });
 
   it("de veranderde balanslabels zijn precies de constructen met meer dan een bron", () => {

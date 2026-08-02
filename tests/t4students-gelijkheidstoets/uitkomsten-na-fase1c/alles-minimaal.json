@@ -205,12 +205,12 @@
   },
   "foci": {
     "scores": {
-      "Functioneel Innovatief": -1,
-      "Artistiek Innovatief": -1,
-      "Complexiteit/Conceptueel": -1,
-      "Systematisch/Uitvoerend": 2.5,
-      "Sociaal Interactief": 2.5,
-      "Overdrachtelijk Interactief": -1
+      "Functioneel Innovatief": 0,
+      "Artistiek Innovatief": 0,
+      "Complexiteit/Conceptueel": 0,
+      "Systematisch/Uitvoerend": 2,
+      "Sociaal Interactief": 2,
+      "Overdrachtelijk Interactief": 0
     },
     "sorted": [
       "Systematisch/Uitvoerend",
@@ -251,12 +251,12 @@
   },
   "versnellers": {
     "scores": {
-      "Analyse": -1,
-      "Individueel ondersteunend": -1,
-      "Groepsondersteunend": 0,
-      "Impact": -1,
-      "Resultaat": 1,
-      "Constructief onderscheidend": -1
+      "Analyse": 0,
+      "Individueel ondersteunend": 0,
+      "Groepsondersteunend": 1,
+      "Impact": 0,
+      "Resultaat": 2,
+      "Constructief onderscheidend": 0
     },
     "rangorde": [
       "Resultaat",
@@ -312,53 +312,53 @@
   },
   "riasec": {
     "scores": {
-      "R": 1.5,
-      "I": -2,
-      "A": -2,
-      "S": 0.5,
-      "E": 3,
-      "C": 1
+      "R": 2,
+      "I": 0,
+      "A": 0,
+      "S": 2,
+      "E": 4,
+      "C": 2
     },
     "details": {
       "R": {
-        "afgeleideScore": 1.5,
+        "afgeleideScore": 2,
         "bevestigingScore": 0,
-        "totaalScore": 1.5,
+        "totaalScore": 2,
         "divergentie": false,
         "confirmItem": "R1"
       },
       "I": {
-        "afgeleideScore": -2,
+        "afgeleideScore": 0,
         "bevestigingScore": 0,
-        "totaalScore": -2,
+        "totaalScore": 0,
         "divergentie": false,
         "confirmItem": "R2"
       },
       "A": {
-        "afgeleideScore": -2,
+        "afgeleideScore": 0,
         "bevestigingScore": 0,
-        "totaalScore": -2,
+        "totaalScore": 0,
         "divergentie": false,
         "confirmItem": "R3"
       },
       "S": {
-        "afgeleideScore": 0.5,
+        "afgeleideScore": 2,
         "bevestigingScore": 0,
-        "totaalScore": 0.5,
+        "totaalScore": 2,
         "divergentie": false,
         "confirmItem": "R4"
       },
       "E": {
-        "afgeleideScore": 3,
+        "afgeleideScore": 4,
         "bevestigingScore": 0,
-        "totaalScore": 3,
-        "divergentie": false,
+        "totaalScore": 4,
+        "divergentie": true,
         "confirmItem": "R5"
       },
       "C": {
-        "afgeleideScore": 1,
+        "afgeleideScore": 2,
         "bevestigingScore": 0,
-        "totaalScore": 1,
+        "totaalScore": 2,
         "divergentie": false,
         "confirmItem": "R6"
       }
@@ -366,71 +366,71 @@
   },
   "studiegebieden": {
     "scores": {
-      "Kunst & Cultuur": -2,
-      "Exact & ICT": -0.5,
-      "Gedrag & Maatschappij": -1.5,
-      "Economie & Bedrijf": 4,
-      "Taal, Communicatie & Media": -1.5,
-      "Recht & Bestuur": 4.5,
-      "Techniek": -0.5,
-      "Onderwijs & Opvoeding": -1.5,
-      "Aarde & Milieu": -0.5,
-      "Gezondheid": -1.5
+      "Kunst & Cultuur": 0,
+      "Exact & ICT": 2,
+      "Gedrag & Maatschappij": 2,
+      "Economie & Bedrijf": 6,
+      "Taal, Communicatie & Media": 2,
+      "Recht & Bestuur": 8,
+      "Techniek": 2,
+      "Onderwijs & Opvoeding": 2,
+      "Aarde & Milieu": 2,
+      "Gezondheid": 2
     },
     "gesorteerd": [
       {
         "naam": "Recht & Bestuur",
-        "score": 4.5
+        "score": 8
       },
       {
         "naam": "Economie & Bedrijf",
-        "score": 4
+        "score": 6
       },
       {
         "naam": "Exact & ICT",
-        "score": -0.5
-      },
-      {
-        "naam": "Techniek",
-        "score": -0.5
-      },
-      {
-        "naam": "Aarde & Milieu",
-        "score": -0.5
+        "score": 2
       },
       {
         "naam": "Gedrag & Maatschappij",
-        "score": -1.5
+        "score": 2
       },
       {
         "naam": "Taal, Communicatie & Media",
-        "score": -1.5
+        "score": 2
+      },
+      {
+        "naam": "Techniek",
+        "score": 2
       },
       {
         "naam": "Onderwijs & Opvoeding",
-        "score": -1.5
+        "score": 2
+      },
+      {
+        "naam": "Aarde & Milieu",
+        "score": 2
       },
       {
         "naam": "Gezondheid",
-        "score": -1.5
+        "score": 2
       },
       {
         "naam": "Kunst & Cultuur",
-        "score": -2
+        "score": 0
       }
     ],
     "top": [
       {
         "naam": "Recht & Bestuur",
-        "score": 4.5
+        "score": 8
       },
       {
         "naam": "Economie & Bedrijf",
-        "score": 4
+        "score": 6
       },
       {
         "naam": "Exact & ICT",
-        "score": -0.5
+        "score": 2
       }
     ]
   },
@@ -544,7 +544,7 @@
   },
   "beeldScherpte": {
     "zelfZekerheid": 0.32,
-    "profielUitgesprokenheid": 0.41,
+    "profielUitgesprokenheid": 0.24,
     "consistentieSignaal": "beeld_en_zekerheid_lopen_gelijk"
   },
   "betekenis": {

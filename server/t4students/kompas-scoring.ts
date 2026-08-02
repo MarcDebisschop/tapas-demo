@@ -452,6 +452,16 @@ export function scoreStudiekompas(
     return round2(constructs[con].recognition + avgEnergy(con) * C.energyToRecognitionFactor);
   }
 
+  // Rangschikken gebeurt op herkenning (motorronde punt 2). Het gemengde getal
+  // uit combined() staat nog wel in de uitvoer, maar het bepaalt geen volgorde,
+  // geen drempel en geen label meer. Reden: het mengsel liet energie de plaats
+  // bepalen, zodat wie zich sterk herkent maar er weinig energie uit haalt onder
+  // iemand zakte die zich nauwelijks herkent maar het wel leuk vindt. Energie
+  // weegt nog altijd even zwaar mee in het balanslabel en in de energiekaart.
+  function herkenning(con: string): number {
+    return constructs[con].recognition;
+  }
+
   // ── Energie-status per item (blauwdruk §3) ───────────────────────────────
   function energyStatus(eId: string): string {
     const ea = answers[eId];
@@ -574,11 +584,11 @@ export function scoreStudiekompas(
   const versScores: Record<string, number> = {};
   const versBalans: Record<string, string> = {};
   for (const con of versCons) {
-    versScores[con] = combined(con);
+    versScores[con] = herkenning(con);
     versBalans[con] = balanceLabel(con);
   }
   // LET OP (punt 2 uit fase 1). Hier wordt gerangschikt op de opgetelde
-  // constructscore. De blauwdruk beschrijft in punt 4 iets anders: "rankItems =
+  // herkenning van het construct. De blauwdruk beschrijft in punt 4 iets anders: "rankItems =
   // V1-V6 worden onderling gerangschikt om de dominante versneller(s) te
   // bepalen", dus een rangorde over de zes items zelf. Dat is niet hetzelfde,
   // want de zes versnellers hebben een verschillend aantal bronnen. Impact en
@@ -609,7 +619,7 @@ export function scoreStudiekompas(
   const fociScores: Record<string, number> = {};
   const fociBalans: Record<string, string> = {};
   for (const con of fociCons) {
-    fociScores[con] = combined(con);
+    fociScores[con] = herkenning(con);
     fociBalans[con] = balanceLabel(con);
   }
   const fociSorted = fociCons.slice().sort((a, b) => fociScores[b] - fociScores[a]);
@@ -622,7 +632,7 @@ export function scoreStudiekompas(
   // uitkomt, is een robuuster signaal dan een enkele hoge score.
   const famAvg: Record<string, number> = {};
   for (const fam of instrumentDef.families) {
-    const vals = fam.constructs.map((c) => combined(c));
+    const vals = fam.constructs.map((c) => herkenning(c));
     famAvg[fam.id] = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
   }
 
@@ -630,7 +640,7 @@ export function scoreStudiekompas(
   for (const [as, bronnen] of Object.entries(sm.convergenceAxes)) {
     let boven = 0;
     for (const [famId, con] of bronnen) {
-      if (combined(con) > famAvg[famId]) boven++;
+      if (herkenning(con) > famAvg[famId]) boven++;
     }
     convergentie[as] = boven >= 2 ? "bevestigd" : boven === 1 ? "indicatief" : "inactief";
   }
@@ -643,7 +653,7 @@ export function scoreStudiekompas(
   const riasecDetails: T4SResultaat["riasec"]["details"] = {};
   for (const [letter, def] of Object.entries(sm.riasecDerivation)) {
     let afgeleideScore = 0;
-    for (const bron of def.derivedFrom) afgeleideScore += combined(bron[1]);
+    for (const bron of def.derivedFrom) afgeleideScore += herkenning(bron[1]);
     const confirmAns = answers[def.confirmItem];
     const confirmScore = confirmAns != null && confirmAns.interest != null ? confirmAns.interest : 0;
     const riasecScore = round2(afgeleideScore + confirmScore);

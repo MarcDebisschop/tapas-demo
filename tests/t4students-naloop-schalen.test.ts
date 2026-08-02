@@ -32,13 +32,14 @@ import { T4STUDENTS_INSTRUMENT as I } from "../server/t4students/instrument";
 //
 // B. EEN VAN DE DRIE CONSISTENTIESIGNALEN IS PRAKTISCH ONBEREIKBAAR
 // profielUitgesprokenheid is de spreiding van de zes focusscores gedeeld door
-// 4,0 en begrensd op 1,0. De zes focusscores kunnen samen nooit een spreiding
-// boven 2,5 halen, dus de uitkomst blijft altijd onder 0,63 en de begrenzing op
-// 1,0 wordt nooit geraakt. Het signaal lage_zekerheid_uitgesproken_beeld vraagt
-// meer dan 0,55, dus meer dan 2,2 spreiding van de maximaal mogelijke 2,5. In
-// 20000 toevallige volledige invullingen kwam het geen enkele keer voor. Met de
-// hand in elkaar gezet lukt het wel, en die invulling staat hieronder, zodat
-// duidelijk is dat het geen dode code is maar een hoek van de ruimte.
+// 4,0 en begrensd op 1,0. Alle mogelijke invullingen van de zes focusitems en
+// de vier situatie-items zijn nagerekend: de hoogst haalbare waarde is 0,65,
+// dus de begrenzing op 1,0 wordt nooit geraakt. Het signaal
+// lage_zekerheid_uitgesproken_beeld vraagt meer dan 0,55 en zit daarmee in de
+// bovenste tien procent van wat er te halen valt. In 20000 toevallige volledige
+// invullingen kwam het geen enkele keer voor. Met de hand in elkaar gezet lukt
+// het wel, en die invulling staat hieronder, zodat duidelijk is dat het geen
+// dode code is maar een hoek van de ruimte.
 //
 // C. BIJ NUL ANTWOORDEN NOEMT DE MOTOR TOCH CONSTRUCTEN
 // Wie niets invult, krijgt overal nul, en de rangordes sorteren dan op de
@@ -50,6 +51,28 @@ import { T4STUDENTS_INSTRUMENT as I } from "../server/t4students/instrument";
 // ---------------------------------------------------------------------------
 
 const sm = I.scoringMap;
+
+/**
+ * De scherpst mogelijke invulling van het focusbeeld, gevonden door alle
+ * combinaties van de zes focusitems (elk 0 of 3) en de vier situatie-items door
+ * de motor te halen. P1 op B en de twee schuiven op nul zetten de zelfzekerheid
+ * zo laag mogelijk, want het signaal vraagt allebei tegelijk.
+ */
+const SCHERPST_MOGELIJKE_BEELD = {
+  F1: { recognition: 0 },
+  F2: { recognition: 0 },
+  F3: { recognition: 0 },
+  F6: { recognition: 0 },
+  F7: { recognition: 3 },
+  F8: { recognition: 3 },
+  D5: { choice: "b" },
+  D6: { choice: "a" },
+  F4: { choice: "a" },
+  F5: { choice: "a" },
+  P1: { choice: "B" },
+  P2: { value: 0 },
+  I1: { value: 0 },
+};
 
 describe("naloop A: de RIASEC-drempels liggen op ongelijke sommen", () => {
   it("de drempels zijn vaste getallen in code, niet in de constanten", () => {
@@ -97,13 +120,17 @@ describe("naloop A: de RIASEC-drempels liggen op ongelijke sommen", () => {
 
 describe("naloop B: het derde consistentiesignaal is praktisch onbereikbaar", () => {
   it("de begrenzing op 1,0 wordt nooit geraakt", () => {
-    // De zes focusscores lopen van min 1 tot hoogstens 4, en met zes waarden in
-    // dat bereik is 2,5 de grootst mogelijke spreiding. Gedeeld door 4,0 geeft
-    // dat 0,625 als absolute bovengrens.
+    // De zes focusscores zijn herkenningsscores (motorronde punt 2). Ze lopen
+    // van 0 tot hoogstens 6, maar niet alle zes tegelijk: alleen Sociaal
+    // Interactief haalt 6 en alleen Systematisch/Uitvoerend haalt 5, en dan
+    // uitsluitend bij situatiekeuzes die de andere vier op nul laten. Alle
+    // mogelijke combinaties van de zes focusitems en de vier situatie-items zijn
+    // nagerekend; hieronder staat de scherpste die eruit kwam.
     const foci = I.families.find((f) => f.id === "Talent-foci")!.constructs;
     expect(foci).toHaveLength(6);
-    const grootsteSpreiding = 2.5;
-    expect(grootsteSpreiding / 4.0).toBeLessThan(1.0);
+    const scherpst = scoreStudiekompas(I, SCHERPST_MOGELIJKE_BEELD, null, "nl");
+    expect(scherpst.beeldScherpte.profielUitgesprokenheid).toBe(0.65);
+    expect(scherpst.beeldScherpte.profielUitgesprokenheid!).toBeLessThan(1.0);
   });
 
   it("een gewoon uitgesproken profiel haalt de grens van 0,55 niet", () => {
@@ -124,21 +151,17 @@ describe("naloop B: het derde consistentiesignaal is praktisch onbereikbaar", ()
   });
 
   it("het signaal is wel bereikbaar, maar alleen in een uiterste hoek", () => {
-    // Pas met de energie er maximaal bij, drie foci op hun top en drie eronder,
-    // en de zelfzekerheid op haar laagst, komt het signaal eruit.
-    const a = {
-      F1: { recognition: 3, energy: 2 },
-      F2: { recognition: 3, energy: 2 },
-      F3: { recognition: 3, energy: 2 },
-      F6: { recognition: 0, energy: -2 },
-      F4: { choice: "b" },
-      F5: { choice: "b" },
-      P1: { choice: "B" },
-      P2: { value: 0 },
-      I1: { value: 0 },
-    };
-    const r = scoreStudiekompas(I, a, null, "nl");
-    expect(r.beeldScherpte.profielUitgesprokenheid).toBe(0.57);
+    // De twee foci met het grootste bereik helemaal boven, de vier andere op
+    // nul, en de zelfzekerheid op haar laagst. Dan pas komt het signaal eruit.
+    const r = scoreStudiekompas(I, SCHERPST_MOGELIJKE_BEELD, null, "nl");
+    expect(r.foci.scores).toEqual({
+      "Functioneel Innovatief": 0,
+      "Artistiek Innovatief": 0,
+      "Complexiteit/Conceptueel": 0,
+      "Systematisch/Uitvoerend": 5,
+      "Sociaal Interactief": 6,
+      "Overdrachtelijk Interactief": 0,
+    });
     expect(r.beeldScherpte.zelfZekerheid).toBe(0.14);
     expect(r.beeldScherpte.consistentieSignaal).toBe("lage_zekerheid_uitgesproken_beeld");
   });
