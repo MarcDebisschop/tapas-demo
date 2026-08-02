@@ -15,6 +15,11 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { scoreModule } from "../server/t4sports/module-scoring";
 import { ITEM_ENERGIE_MAX, ITEM_ENERGIE_MIN } from "../shared/energie-schaal";
+import { buildT4SportsContract, type Responses } from "../server/t4sports/scoring";
+import { hydrateInstrument } from "../server/instrument";
+import t4sportsJson from "../server/data/t4sports.json";
+
+const t4sportsInstrument = hydrateInstrument(t4sportsJson);
 
 const WORTEL = join(__dirname, "..");
 const lees = (p: string) => readFileSync(join(WORTEL, p), "utf-8");
@@ -71,6 +76,68 @@ describe("T4Sports module 2, normlabel bij een perfecte invulling", () => {
     const eerste = resultaat.schalen.find((s) => s.id === "challenge_skill")!;
     expect(eerste.gemiddelde).toBe(5);
     expect(eerste.normLabel).toBe("Diepe flow");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Punt 2: T4Sports consistentie, een overgeslagen vraag mag niets verschuiven
+// ---------------------------------------------------------------------------
+describe("T4Sports consistentie bij een overgeslagen vraag", () => {
+  // De blokken B0 tot en met B9 vragen energie per gekozen item, B10 en verder
+  // vragen energie voor het hele blok. Precies op die overgang loopt het mis
+  // zodra de gefilterde antwoordlijst op positie aan de blokken wordt gekoppeld.
+  const ITEM_BLOKKEN = 10;
+  const AANTAL_BLOKKEN = t4sportsInstrument.blocks.length;
+
+  function volledigeAntwoorden(): Responses {
+    const responses: Responses = {};
+    t4sportsInstrument.blocks.forEach((blok, idx) => {
+      const items = blok.items;
+      responses["B" + idx] =
+        idx < ITEM_BLOKKEN
+          ? {
+              most: items[0].id,
+              least: items[1].id,
+              itemEnergy: { most: 1, least: -1 },
+              blockEnergy: null,
+            }
+          : {
+              most: items[0].id,
+              least: items[1].id,
+              itemEnergy: { most: null, least: null },
+              blockEnergy: 1,
+            };
+    });
+    return responses;
+  }
+
+  const contractVoor = (responses: Responses) =>
+    buildT4SportsContract({
+      respondentCode: "TEST-B2",
+      name: "Testdeelnemer",
+      baselineEnergy: 5,
+      responses,
+      connection: { q1: 3, q2: 3, q3: 3, q4: 3 },
+    });
+
+  it("telt bij een volledige invulling alle 34 blokken mee", () => {
+    expect(AANTAL_BLOKKEN).toBe(34);
+    expect(contractVoor(volledigeAntwoorden()).sections.meta.consistency.score).toBe(100);
+  });
+
+  it("geeft dezelfde consistentie ongeacht welk blok wordt overgeslagen", () => {
+    // Welk enkel blok ook ontbreekt, er blijven evenveel geldige antwoorden
+    // over. De consistentie hoort dus in alle gevallen gelijk te zijn. Op de
+    // oude code gaf een overgeslagen blok uit het begin 97 en een overgeslagen
+    // blok verderop 98, omdat de gefilterde lijst een blok opschoof en het
+    // eerste blok met blokenergie tegen een blok met item-energie werd gelegd.
+    const scores = new Map<string, number>();
+    for (const teMissen of ["B0", "B4", "B9", "B10", "B20", "B33"]) {
+      const responses = volledigeAntwoorden();
+      delete responses[teMissen];
+      scores.set(teMissen, contractVoor(responses).sections.meta.consistency.score);
+    }
+    expect([...new Set(scores.values())]).toEqual([98]);
   });
 });
 
