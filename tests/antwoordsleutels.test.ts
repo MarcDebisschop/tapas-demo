@@ -116,9 +116,14 @@ describe("T4Teens - de weg van een antwoord van invulscherm tot scoring", () => 
     const contract = buildT4TeensContract({ ...deelnemer, responses: antwoorden });
 
     expect(contract.sections.main.meta.completedItems).toBe(0);
-    expect(contract.sections.main.meta.averageScore).toBe(0);
     expect(contract.sections.main.meta.batterij).toBeNull();
-    expect(contract.sections.main.familyRows.every((r) => r.avgEnergy === 0)).toBe(true);
+    // Deze twee regels verwachtten eerder de waarde 0. Dat legde juist de fout
+    // vast die deze opdracht herstelt: nul antwoorden leverde een gemiddelde
+    // van 0 op, en 0 is op deze schaal het midden en dus een echt oordeel.
+    // Wat deze test wil aantonen (er komt geen enkel antwoord aan) blijft
+    // overeind in de regel completedItems hierboven.
+    expect(contract.sections.main.meta.averageScore).toBeNull();
+    expect(contract.sections.main.familyRows.every((r) => r.avgEnergy === null)).toBe(true);
   });
 
   it("met de omzetting landt elk antwoord op het item waarvoor het gegeven is", async () => {

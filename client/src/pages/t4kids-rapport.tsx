@@ -42,6 +42,7 @@ import {
   AFSLUITER_GRADIENT,
 } from "@/pages/t4kids/palette";
 import { analyseerWoorden } from "@/pages/t4kids/woordanalyse";
+import { bouwKruisanalyse } from "@/pages/t4kids/kruisanalyse";
 
 // ── Contract-vorm (enkel wat dit rapport nodig heeft) ─────────────────────────
 interface ReiskaartItem { focus: string; activiteit: string; keuzes: number }
@@ -79,6 +80,7 @@ interface ExacteStelling {
   id: string;
   tekst: string;
   soort: "Sterkte" | "Driver";
+  mapping: string;
   gekozenWaarde: number;
   gekozenWoord: string;
 }
@@ -93,7 +95,8 @@ interface ExacteAntwoorden {
 interface ConstructRow {
   construct: string;
   family: string;
-  avgEnergy: number;
+  // null als niet alle vragen van dit construct beantwoord zijn.
+  avgEnergy: number | null;
   net: number;
   shown: number;
 }
@@ -108,7 +111,7 @@ interface T4KidsContract {
         gekozenArchetypen: number;
         completedStellingen: number;
         totalStellingen: number;
-        autonomie: { intrinsiek: number; extrinsiek: number; balansLabel: string };
+        autonomie: { intrinsiek: number | null; extrinsiek: number | null; balansLabel: string };
       };
       constructRows: ConstructRow[];
     };
@@ -249,22 +252,17 @@ export default function T4KidsRapport() {
   const rows = data?.sections.main.constructRows ?? [];
   const naam = voornaam(data?.participant.name ?? "");
 
-  const versnellerData = useMemo(
-    () =>
-      rows
-        .filter((r) => r.family === "Sterkte")
-        .map((r) => ({ label: r.construct, waarde: Number(r.avgEnergy.toFixed(2)) }))
-        .sort((a, b) => b.waarde - a.waarde),
-    [rows],
-  );
-  const driverData = useMemo(
-    () =>
-      rows
-        .filter((r) => r.family === "Driver")
-        .map((r) => ({ label: r.construct, waarde: Number(r.avgEnergy.toFixed(2)) }))
-        .sort((a, b) => b.waarde - a.waarde),
-    [rows],
-  );
+  // Een construct waarvan niet alle stellingen beantwoord zijn heeft geen
+  // gemiddelde en hoort dus ook geen staafje in de grafiek te krijgen: een
+  // staafje van nul zou als "bijna nooit" gelezen worden.
+  const staafjes = (family: string) =>
+    rows
+      .filter((r) => r.family === family && typeof r.avgEnergy === "number")
+      .map((r) => ({ label: r.construct, waarde: Number((r.avgEnergy as number).toFixed(2)) }))
+      .sort((a, b) => b.waarde - a.waarde);
+
+  const versnellerData = useMemo(() => staafjes("Sterkte"), [rows]);
+  const driverData = useMemo(() => staafjes("Driver"), [rows]);
   const focusData = useMemo(
     () =>
       (exact?.focusTally ?? [])
@@ -273,100 +271,10 @@ export default function T4KidsRapport() {
     [exact],
   );
 
-  // ── Deel 5 — cross-eiland-analyse (client-side afgeleid uit contractdata) ────
-  // Versterkingen (signalen die samenvallen) + "verwonderlijke dingen om samen
-  // te bespreken" (zachte spanning). Nooit "tegenstrijdig"; robuust bij lege data.
-  const analyse = useMemo(() => {
-    const res = {
-      versterkingen: [] as string[],
-      verwonderlijk: [] as string[],
-      ouder: "",
-    };
-    if (!exact) return res;
-
-    const tally = [...(exact.focusTally ?? [])]
-      .filter((f) => f.keuzes > 0)
-      .sort((a, b) => b.keuzes - a.keuzes);
-    const archs = exact.archetypen ?? [];
-    const top3 = exact.top3 ?? [];
-    const stellingen = exact.stellingen ?? [];
-    const archFocus = new Set(archs.map((a) => a.focus));
-    const dom = tally[0];
-    const kleineAct = (s: string) => (s ? s.charAt(0).toLowerCase() + s.slice(1) : s);
-
-    // A. Versterkingen / bevestigingen
-    if (dom && archs.length > 0) {
-      const passend = archs.filter((a) => a.focus === dom.focus);
-      if (passend.length > 0) {
-        const namen = passend.slice(0, 2).map((a) => a.naam).join(" en ");
-        res.versterkingen.push(
-          `Op Eiland 1 koos je vaak voor ${kleineAct(dom.activiteit)}, en op Eiland 2 koos je figuren als ${namen} die daar prachtig bij passen. Dat versterkt elkaar — een duidelijk signaal van waar jouw energie zit. 💪`,
-        );
-      }
-    }
-    const sterkeSterktes = stellingen.filter((s) => s.soort === "Sterkte" && s.gekozenWaarde >= 2);
-    if (sterkeSterktes.length > 0 && dom) {
-      const woorden = sterkeSterktes.slice(0, 2).map((s) => `“${s.gekozenWoord}”`).join(" en ");
-      res.versterkingen.push(
-        `Je liet op Eiland 3 ook zien dat ${woorden} vaak bij jou past. Zulke krachten helpen je om met ${kleineAct(dom.activiteit)} nog verder te groeien.`,
-      );
-    }
-
-    // B. Verwonderlijke dingen die fijn zijn om samen te bespreken
-    if (dom && archs.length > 0 && !archFocus.has(dom.focus)) {
-      const yArch = archs[0]!;
-      res.verwonderlijk.push(
-        `Je koos op Eiland 1 vaak voor ${kleineAct(dom.activiteit)}, maar bij de figuren viel je meer op ${yArch.naam}. Dat is niet gek — misschien speelt het ene vooral thuis, en het andere vooral op school? Fijn om er samen eens over te praten: wanneer voelt ${naam} zich het meest zichzelf?`,
-      );
-    } else if (dom && archs.length > 0 && top3.length > 0) {
-      const topArch =
-        archs.find((a) => a.topRang === 1) ??
-        archs.find((a) => top3.some((t) => t.id === a.id));
-      if (topArch && topArch.focus !== dom.focus) {
-        res.verwonderlijk.push(
-          `Je reisde op Eiland 1 het vaakst naar ${kleineAct(dom.activiteit)}, maar bij je top koos je voor ${topArch.naam}. Twee mooie kanten van jou! Wanneer komt elk van beide het sterkst naar boven — thuis, op school of bij vrienden?`,
-        );
-      }
-    }
-    const sterkeDrijf = stellingen.filter((s) => s.soort === "Driver" && s.gekozenWaarde >= 2);
-    if (sterkeDrijf.length > 0) {
-      res.verwonderlijk.push(
-        `Je liet zien dat je dingen graag héél goed wil doen. Dat is een mooie kracht — én soms best spannend. Wat helpt jou als iets even niet lukt?`,
-      );
-    }
-
-    // Warme fallbacks als er geen duidelijke divergentie/versterking is.
-    if (res.versterkingen.length === 0) {
-      res.versterkingen.push(
-        `Over de eilanden heen zie je telkens stukjes van dezelfde ${naam} terugkomen. Zoek samen naar wat op elk eiland het meest opviel.`,
-      );
-    }
-    if (res.verwonderlijk.length === 0) {
-      res.verwonderlijk.push(
-        `De eilanden vertellen een verrassend consistent verhaal — mooi! Bespreek samen wat ${naam} het meest verraste.`,
-      );
-    }
-
-    // Ouder-verdieping — context-druk iets explicieter, als uitnodiging.
-    const ouderStukken: string[] = [];
-    if (dom && archs.length > 0 && !archFocus.has(dom.focus)) {
-      ouderStukken.push(
-        `Er is een lichte spanning tussen de sterke interesse in “${dom.activiteit}” (Eiland 1) en de gekozen figuren (Eiland 2). Dat kan wijzen op een verschil in context — thuis versus school — of tussen wat ${naam} leuk vindt en waar hij/zij zich (nog) toe durft rekenen.`,
-      );
-    }
-    if (sterkeDrijf.length > 0) {
-      ouderStukken.push(
-        `De antwoorden op Eiland 3 tonen een merkbare driver (bijvoorbeeld iets heel goed willen doen of anderen willen plezieren). Zulke drivers zijn krachtig én kunnen extrinsieke druk meebrengen — de moeite waard om er zonder oordeel over door te vragen.`,
-      );
-    }
-    if (ouderStukken.length === 0) {
-      ouderStukken.push(
-        `De signalen over de drie eilanden liggen mooi in lijn met elkaar. Dat maakt het gesprek met ${naam} eenvoudiger: bevestig wat je ziet en vraag door op wat hem/haar zelf het meest verraste.`,
-      );
-    }
-    res.ouder = ouderStukken.join(" ");
-    return res;
-  }, [exact, naam]);
+  // ── Deel 5: cross-eiland-analyse ─────────────────────────────────────────
+  // De logica staat in @/pages/t4kids/kruisanalyse zodat de zinnen die een
+  // kind te lezen krijgt, zonder browser getest kunnen worden.
+  const analyse = useMemo(() => bouwKruisanalyse(exact, naam), [exact, naam]);
 
   // ── "De onzichtbare laag" — de eigen woorden van het kind serieus nemen ──────
   // Puur afgeleid uit de reeds aanwezige `waarom`-teksten. Robuust bij lege data.
@@ -662,9 +570,18 @@ export default function T4KidsRapport() {
             <h3 className="text-lg font-bold text-teal-900">Zelf willen of samen willen?</h3>
             <p className="mt-2 text-[15px] text-slate-700">
               Soms doe je iets <strong>omdat je het zelf leuk of belangrijk vindt</strong>, soms
-              <strong> omdat je anderen blij wil maken</strong>. Bij jou lijkt het nu{" "}
-              <strong>{meta.autonomie.balansLabel}</strong> te zijn. Dat is een mooi startpunt voor een gesprek —
-              geen eindoordeel.
+              <strong> omdat je anderen blij wil maken</strong>.{" "}
+              {meta.autonomie.balansLabel === "te weinig antwoorden" ? (
+                <>
+                  Je hebt hier nog niet alle vragen beantwoord, dus we zeggen er nu nog niets over.
+                  Vul je ze later aan, dan zie je het hier verschijnen.
+                </>
+              ) : (
+                <>
+                  Bij jou lijkt het nu <strong>{meta.autonomie.balansLabel}</strong> te zijn. Dat is
+                  een mooi startpunt voor een gesprek, geen eindoordeel.
+                </>
+              )}
             </p>
           </div>
 

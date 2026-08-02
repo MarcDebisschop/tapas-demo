@@ -168,12 +168,15 @@ export function registerFinancieelRoutes(app: Express): void {
         // statistieken nooit als focus meetellen.
         if (isTalentFocusConstruct(r)) {
           fociSom[r.construct] = (fociSom[r.construct] ?? 0) + r.net;
-          (fociEnergie[r.construct] ??= []).push(r.avgEnergy);
+          // Een construct zonder gemiddelde (te weinig antwoorden) telt niet
+          // mee in het organisatiegemiddelde; anders zou een ontbrekend
+          // antwoord daar alsnog als getal binnenkomen.
+          if (typeof r.avgEnergy === "number") (fociEnergie[r.construct] ??= []).push(r.avgEnergy);
         } else if (r.family === "Talent-versnellers") {
           versnSom[r.construct] = (versnSom[r.construct] ?? 0) + r.net;
         } else if (r.family === "Drivers") {
           driverSom[r.construct] = (driverSom[r.construct] ?? 0) + r.net;
-          (driverEnergie[r.construct] ??= []).push(r.avgEnergy);
+          if (typeof r.avgEnergy === "number") (driverEnergie[r.construct] ??= []).push(r.avgEnergy);
         }
       }
       if (typeof meta.normalizedQuestionnaireEnergy === "number") energieVragenlijst.push(meta.normalizedQuestionnaireEnergy);
