@@ -7,7 +7,8 @@
 // renderT4TeensHtml(inhoud): string             (zelfstandige, nette HTML).
 //
 // VASTE T4Teens-sectiestructuur (identiek voor elke invuller), gevuld uit het
-// T4Teens-scoringscontract (buildT4TeensContract, leeftijd 16-21). Dit haalt
+// T4Teens-scoringscontract (buildT4TeensContract). De doelgroepgrens staat in
+// shared/doelgroep-leeftijd.ts en wordt hier niet overgeschreven. Dit haalt
 // T4Teens uit de generieke fallback: een eigen, herkenbare "Vonk"-layout i.p.v.
 // het korte generieke rapport. "Drivers" (Taibi Kahler) blijft altijd "drivers".
 //
@@ -19,6 +20,7 @@
 
 import type { RapportInhoud, RapportSectie } from "../rapportgenerator";
 import { T4TEENS_FAMILIES } from "./scoring";
+import { T4TEENS_LEEFTIJDSTEKST } from "@shared/doelgroep-leeftijd";
 
 interface ConstructRowLike {
   construct: string;
@@ -210,7 +212,7 @@ export function bouwT4TeensRapport(contract: any): RapportInhoud {
     variant: "kompas",
     taal: "nl",
     titel: "T4Teens — Ontdek jouw Vonk",
-    ondertitel: "Jouw talent-, energie- en gedragsprofiel (16-21 jaar)",
+    ondertitel: `Jouw talent-, energie- en gedragsprofiel (${T4TEENS_LEEFTIJDSTEKST})`,
     respondent: {
       naam: p.name ?? "Onbekend",
       code: p.respondentCode ?? "—",

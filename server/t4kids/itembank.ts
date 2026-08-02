@@ -8,8 +8,40 @@
 //
 // Hybride meetmodel — 3 modules ("eilanden"):
 //   Module 1  Ontdekkingsreis   → beeld-forced-choice interesseparen (6 talent-foci)
-//   Module 2  Archetypen-galerij → 28 gecureerde archetypen (gebalanceerd over 6 foci)
+//   Module 2  Archetypen-galerij → 28 gecureerde archetypen over 6 foci
 //   Module 3  Zo-ben-ik-nu       → 4-punts woordschaal (sterktes + drivers)
+//
+// DE FOCI ZIJN NIET GELIJK BEDEELD
+// Hier stond dat de archetypen gelijk over de zes foci verdeeld zouden zijn.
+// Dat is niet zo, en de telling staat hieronder bij de lijsten zelf. Module 2
+// verdeelt 28 archetypen als 5-5-5-5-4-4: Overdracht-gericht en
+// Artistiek-Creatief hebben er elk een minder dan de vier andere. Module 1
+// verdeelt 32 keuzekanten als 6-6-5-5-5-5: Abstraherend en Sociaal-gericht
+// komen er juist een keer vaker in voor.
+//
+// Beide modules tellen op in dezelfde teller (scoring.ts telt per gekozen kant
+// en per gekozen archetype een punt op bij focusPicks). Het hoogst haalbare
+// aantal punten verschilt daardoor per focus: 11 voor Abstraherend en
+// Sociaal-gericht, 10 voor Doelgericht-Creatief en Uitvoerend, 9 voor
+// Overdracht-gericht en Artistiek-Creatief.
+//
+// WAT DAT BETEKENT VOOR HET VERGELIJKEN VAN SCORES
+// De focusscores zijn rauwe tellingen en worden niet omgerekend naar het aantal
+// kansen dat een focus kreeg. Twee foci naast elkaar leggen is dus niet
+// helemaal eerlijk: een kind dat even sterk naar Artistiek-Creatief neigt als
+// naar Abstraherend, kan op Abstraherend toch hoger uitkomen omdat daar meer te
+// kiezen viel. Het verschil is klein (hoogstens twee punten op een
+// bovengrens van elf, ongeveer een vijfde) maar het is er, en het werkt altijd
+// in dezelfde richting. Bij een kind dat dicht bij elkaar liggende foci heeft,
+// kan het de volgorde van de top bepalen.
+//
+// Dit is BEWUST NIET opgelost door items bij te maken: welke archetypen een
+// kind voorgelegd krijgt, is een inhoudelijke keuze en geen technische. Wie het
+// wil rechttrekken heeft twee wegen: twee archetypen toevoegen zodat elke focus
+// er vijf heeft en twee interesseparen herschikken, of de telling in scoring.ts
+// delen door het aantal kansen per focus. Het eerste raakt de vragenlijst, het
+// tweede raakt bestaande scores. Beide vragen een beslissing van de
+// opdrachtgever; tot dan staat hier wat er werkelijk gemeten wordt.
 //
 // De interne mapping (focus / versneller / driver) is METADATA voor de scoring
 // en wordt NOOIT aan het kind getoond. Dit bestand bevat geen I/O en geen
@@ -76,7 +108,9 @@ export const T4KIDS_INTERESSE_PAREN: InteressePaar[] = [
   { id: "T4K-I-16", links: { tekst: "Een spannend verhaal vertellen", focus: "Overdracht-gericht" }, rechts: { tekst: "Fantaseren over nieuwe ideeën", focus: "Doelgericht-Creatief" } },
 ];
 
-// ─── Module 2 — Archetypen-galerij (28 gecureerd, gebalanceerd) ───────────────
+// ─── Module 2 — Archetypen-galerij (28 gecureerd, verdeeld als 5-5-5-5-4-4) ───
+// De twee laatste foci hebben er elk een minder; zie de kop van dit bestand
+// voor wat dat betekent voor het vergelijken van scores.
 export interface Archetype {
   id: string; // T4K-A-NN
   naam: string; // kindvriendelijke naam

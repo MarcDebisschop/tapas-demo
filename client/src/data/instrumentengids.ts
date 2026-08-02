@@ -21,6 +21,9 @@
 // overschrijven via /api/gids (server/gids-manager.ts). Deze file is de DEFAULT.
 // =============================================================================
 
+import { T4TEENS_LEEFTIJDSTEKST } from "@shared/doelgroep-leeftijd";
+import { TWOMINSCAN_PAGINATEKST, TWOMINSCAN_TALENTEKST_VOLUIT } from "@shared/twominscan-rapport";
+
 export type Orientatie = "business" | "education" | "beide" | "sport";
 
 export interface GidsStart {
@@ -103,7 +106,7 @@ export const INSTRUMENTENGIDS: GidsInstrument[] = [
     doelgroep: "Professionals die hun energetisch gedragsprofiel in een werkcontext willen kennen.",
     start: { label: "Start de 2MinScan", route: "/2minscan", direct: true },
     rapportTeaser:
-      "Een uitgewerkt 15-pagina \"Energetisch Gedragsprofiel\"-rapport, beschikbaar in 5 talen (NL/FR/EN/ES/RU).",
+      `Een uitgewerkt "Energetisch Gedragsprofiel"-rapport van ${TWOMINSCAN_PAGINATEKST}, beschikbaar in ${TWOMINSCAN_TALENTEKST_VOLUIT}.`,
     icoon: "Zap",
   },
   {
@@ -239,11 +242,11 @@ export const INSTRUMENTENGIDS: GidsInstrument[] = [
       "Waar liggen mijn talenten als jongere? Welke studierichting past bij wie ik ben? Wat geeft mij energie op school en daarbuiten?",
     gebruik:
       "Voor studiekeuzebegeleiding, talentherkenning in het secundair, preventie van studiedropout en ouder-kindgesprekken over richting.",
-    doelgroep: "Jongeren 13–17 jaar, CLB-begeleiders, schoolcoaches.",
+    doelgroep: `Jongeren ${T4TEENS_LEEFTIJDSTEKST}, CLB-begeleiders, schoolcoaches.`,
     start: { label: "Ontdek T4Teens", route: "/studie/leerlingen", direct: false },
     rapportTeaser:
       "Een T4Teens talentkaart in jongerentaal, met studierichtingssuggesties op basis van de talent-foci.",
-    leeftijdsfocus: "13–17 jaar",
+    leeftijdsfocus: T4TEENS_LEEFTIJDSTEKST,
     icoon: "Backpack",
   },
   {

@@ -10,15 +10,19 @@
 // Beleidskeuze van TaPasCity (verwerkingsverantwoordelijke, Wijnegem):
 //   - T4Kids (doelgroep 10-13) is per definitie (deels) onder de drempel:
 //     ouderlijke toestemming is ALTIJD verplicht.
-//   - T4Teens (doelgroep 13-17): vanaf 13 mag de jongere zelf toestemmen, maar
-//     onder de 16 eisen we bijkomend een ouderlijke bevestiging als extra
-//     waarborg. Vanaf 16 mag de jongere zelfstandig toestemmen.
+//   - T4Teens: vanaf 13 mag de jongere zelf toestemmen, maar onder de 16 eisen
+//     we bijkomend een ouderlijke bevestiging als extra waarborg. Vanaf 16 mag
+//     de jongere zelfstandig toestemmen. De doelgroepgrens zelf staat niet
+//     hier maar in shared/doelgroep-leeftijd.ts, samen met de teksten die
+//     diezelfde grens aan de gebruiker tonen.
 //   - Leeftijd wordt bewaard als grove band (dataminimalisatie), nooit als
 //     geboortedatum.
 //
-// Deze module is bewust vrij van afhankelijkheden zodat zowel de client
+// Deze module is bewust vrij van externe afhankelijkheden zodat zowel de client
 // (leeftijdspoort in de UI) als de server (afdwinging) dezelfde regels gebruikt.
 // ---------------------------------------------------------------------------
+
+import { T4TEENS_BAND_JONGER, T4TEENS_BAND_OUDER } from "./doelgroep-leeftijd";
 
 // Grove leeftijdsbanden. Bewust geen geboortejaar of geboortedatum: een band is
 // voldoende om de juiste toestemmingsroute te kiezen (dataminimalisatie).
@@ -33,16 +37,30 @@ export const MINDERJARIGE_INSTRUMENTEN = ["t4teens", "t4kids"] as const;
 // Banden die onder de 16 vallen en dus een ouderlijke bevestiging vereisen.
 const BANDEN_ONDER_16: readonly Leeftijdsband[] = ["10-12", "13-15"];
 
+export function isGeldigeLeeftijdsband(x: unknown): x is Leeftijdsband {
+  return typeof x === "string" && (LEEFTIJDSBANDEN as readonly string[]).includes(x);
+}
+
+// De banden van T4Teens worden hier niet opgeschreven maar overgenomen uit de
+// doelgroepgrens, zodat de grens die de poort afdwingt en de grens die in de
+// teksten staat niet uit elkaar kunnen lopen. Wijkt de afleiding af van de
+// banden hierboven, dan valt dat meteen bij het laden op in plaats van dat er
+// stilzwijgend een band wegvalt en jongeren geweigerd worden.
+function alsBand(afgeleid: string): Leeftijdsband {
+  if (!isGeldigeLeeftijdsband(afgeleid)) {
+    throw new Error(
+      `De leeftijdsband "${afgeleid}" volgt uit de doelgroepgrens maar staat niet in LEEFTIJDSBANDEN.`,
+    );
+  }
+  return afgeleid;
+}
+
 // Welke banden zijn zinvol per instrument. Buiten deze banden weigeren we de
 // afname met een nette melding in plaats van door te gaan met ongeldige data.
 const TOEGESTANE_BANDEN: Record<string, readonly Leeftijdsband[]> = {
   t4kids: ["10-12", "13-15"],
-  t4teens: ["13-15", "16-17"],
+  t4teens: [alsBand(T4TEENS_BAND_JONGER), alsBand(T4TEENS_BAND_OUDER)],
 };
-
-export function isGeldigeLeeftijdsband(x: unknown): x is Leeftijdsband {
-  return typeof x === "string" && (LEEFTIJDSBANDEN as readonly string[]).includes(x);
-}
 
 // Geldt de leeftijdspoort voor dit instrument?
 export function isMinderjarigInstrument(instrumentId?: string | null): boolean {

@@ -1,13 +1,18 @@
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { STANDAARD_TAAL, type Taal } from "../shared/talen";
+import { T4TEENS_LEEFTIJDSTEKST } from "../shared/doelgroep-leeftijd";
+import { TWOMINSCAN_PAGINATEKST, TWOMINSCAN_TALENTEKST } from "../shared/twominscan-rapport";
 import {
   type Instrument,
   type Vertaalbaar,
   hydrateInstrument,
   clientInstrumentVan,
+  huidigeInhoudsVersie,
 } from "./instrument";
+import { inhoudsVersie } from "./instrument-inhoudsversie";
 import t4sportsJson from "./data/t4sports.json";
+import t4sportsModulesJson from "./data/t4sports-modules.json";
 import {
   ONDERBOUWING_T4PROFESSIONAL,
   type InstrumentOnderbouwing,
@@ -82,6 +87,12 @@ export interface InstrumentDescriptor {
   instrumentId: string;
   flowType: FlowType;
   name: string;
+  // Waar het gezaghebbende versienummer staat: in het databestand van het
+  // instrument zelf, en nergens anders. Het register neemt dat nummer over en
+  // hangt er waar mogelijk een vingerafdruk over de inhoud achter
+  // ("2.0.0+i3f9a2c17"); het schrijft nooit een eigen nummer. Instrumenten
+  // zonder databestand houden bij afspraak "1.0.0". Zie
+  // tests/registerversies-sluiten-aan.test.ts.
   version: string;
   description: string;
   // Is dit het standaard-instrument dat het platform toont waar (nog) geen
@@ -148,7 +159,13 @@ function bouwRegistry(): Map<string, InstrumentDescriptor> {
     instrumentId: inst.instrumentId,
     flowType: "individual",
     name: inst.name,
-    version: inst.version,
+    // Geen vaste tekst maar een afgeleide waarde: het nummer wordt bij elke
+    // uitlezing opnieuw uit de inhoud van de vragenlijst gerekend, inclusief de
+    // tekstwijzigingen die beheerders via het vraagbeheer opslaan. Zo kan het
+    // register nooit een nummer tonen dat bij een andere vragenlijst hoort.
+    get version() {
+      return huidigeInhoudsVersie();
+    },
     description: inst.description,
     isDefault: true,
     instrument: inst,
@@ -335,7 +352,11 @@ function bouwRegistry(): Map<string, InstrumentDescriptor> {
     instrumentId: "t4sports",
     flowType: "individual",
     name: "T4Sports — Mental Talent Profiel",
-    version: "1.0.0",
+    // Het gezaghebbende nummer staat in server/data/t4sports.json en nergens
+    // anders. Hier stond eerder de vaste tekst "1.0.0" terwijl het databestand
+    // al op 2.0.0 zat; het databestand beschrijft de werkelijke inhoud, want
+    // dat is het bestand dat hieronder ook echt geladen wordt.
+    version: inhoudsVersie(t4sportsJson),
     description:
       "Psychometrisch mental talent profiel voor atleten: drivers, talent-foci en " +
       "talent-versnellers in sporttaal. Basis voor mental coaching op maat.",
@@ -354,7 +375,9 @@ function bouwRegistry(): Map<string, InstrumentDescriptor> {
     instrumentId: "t4sports-m1",
     flowType: "individual",
     name: "T4Sports M1 — ACSI-28",
-    version: "1.0.0",
+    // Gezaghebbend nummer: server/data/t4sports-modules.json. De drie modules
+    // delen dat ene nummer, want ze staan in dat ene bestand.
+    version: t4sportsModulesJson.version,
     description:
       "Module 1: Athletic Coping Skills Inventory (28 items, 7 subschalen). " +
       "Meet mentale copingvaardigheden van atleten (Smith et al., 1995).",
@@ -364,17 +387,21 @@ function bouwRegistry(): Map<string, InstrumentDescriptor> {
 
   // T4Sports M2 — DFS-2/FSS-2 module (Flow State Scale).
   // -------------------------------------------------------------------------
-  // Optionele psychometrische module: 18 items, 6 dimensies, flow-beleving.
+  // Optionele psychometrische module: 18 items, 9 dimensies, flow-beleving.
+  // Geteld in server/data/t4sports-modules.json: negen schalen van elk twee
+  // items. Alle negen worden gescoord en alle negen komen in het rapport, dus
+  // er is geen deel dat stilzwijgend wegvalt.
   // Aparte credit-kost bovenop het basisinstrument T4Sports.
   // -------------------------------------------------------------------------
   map.set("t4sports-m2", {
     instrumentId: "t4sports-m2",
     flowType: "individual",
     name: "T4Sports M2 — DFS-2/FSS-2",
-    version: "1.0.0",
+    version: t4sportsModulesJson.version,
     description:
-      "Module 2: Dispositional Flow Scale-2 / Flow State Scale-2 (18 items, 6 dimensies). " +
-      "Meet flow-beleving in sport (Jackson & Eklund, 2002).",
+      "Module 2: Dispositional Flow Scale-2 / Flow State Scale-2 (18 items, 9 dimensies " +
+      "van elk 2 items). Alle negen dimensies worden gescoord en getoond in het " +
+      "rapport. Meet flow-beleving in sport (Jackson & Eklund, 2002).",
     isDefault: false,
     creditCost: 1,
   });
@@ -388,7 +415,7 @@ function bouwRegistry(): Map<string, InstrumentDescriptor> {
     instrumentId: "t4sports-m3",
     flowType: "individual",
     name: "T4Sports M3 — AIMS-7",
-    version: "1.0.0",
+    version: t4sportsModulesJson.version,
     description:
       "Module 3: Athletic Identity Measurement Scale (7 items, 7-puntsschaal). " +
       "Meet mate van atletische identiteit (Brewer et al., 1993).",
@@ -396,7 +423,8 @@ function bouwRegistry(): Map<string, InstrumentDescriptor> {
     creditCost: 1,
   });
 
-  // T4Teens — individueel instrument voor jongeren (13-17 jaar).
+  // T4Teens — individueel instrument voor jongeren. De doelgroepgrens komt uit
+  // shared/doelgroep-leeftijd.ts en staat hier bewust niet als eigen getal.
   //
   // T4Teens is een op maat gemaakte variant van het T4P-profiel, ontwikkeld
   // voor jongeren in het voortgezet onderwijs. De inhoud (vragenlijst, blokken,
@@ -410,7 +438,7 @@ function bouwRegistry(): Map<string, InstrumentDescriptor> {
     name: "T4Teens",
     version: "1.0.0",
     description:
-      "Individueel TaPas-profiel voor jongeren (13-17 jaar): ontdek je talent, " +
+      `Individueel TaPas-profiel voor jongeren (${T4TEENS_LEEFTIJDSTEKST}): ontdek je talent, ` +
       "energie en gedragspatroon in een doelgroepspecifieke vragenlijst en rapport.",
     isDefault: false,
     creditCost: 1,
@@ -469,8 +497,10 @@ function bouwRegistry(): Map<string, InstrumentDescriptor> {
     flowType: "individual",
     name: "2MinScan",
     version: "1.0.0",
+    // Het aantal pagina's en het aantal talen komen uit
+    // shared/twominscan-rapport.ts en staan hier bewust niet als eigen getal.
     description:
-      "Energetisch gedragsprofiel in professionele context - 15-paginarapport, 5 talen.",
+      `Energetisch gedragsprofiel in professionele context - rapport van ${TWOMINSCAN_PAGINATEKST}, ${TWOMINSCAN_TALENTEKST}.`,
     isDefault: false,
     creditCost: 0,
     publiekZichtbaar: true,

@@ -13,7 +13,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { readFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 // Dit bestand maakt echte tellerregels aan voor de factuurnummering. Zou dat in
 // de gedeelde data.db gebeuren, dan schrijven twee testbestanden tegelijk in
@@ -250,11 +250,26 @@ describe("C-1 instrumentenaanbod", () => {
 // eerdere rondes telkens opnieuw insloop; daarom een test die ze afdwingt.
 // ---------------------------------------------------------------------------
 describe("Terminologie: altijd driver(s)", () => {
-  it("gebruikt het verboden woord nergens in de broncode", () => {
+  // Ronde C, punt 5. Deze test keek eerder enkel in server, client/src, shared
+  // en script. Daardoor kon het woord ongemerkt blijven staan in de
+  // vertaalbestanden buiten die mappen, in losse HTML-pagina's onder
+  // client/public en in de documentatie in de hoofdmap. De zoekopdracht loopt nu
+  // over de hele boom.
+  //
+  // Twee soorten bestanden zijn uitgezonderd, en enkel deze twee:
+  //   - de testbestanden die het woord noemen om het te kunnen verbieden;
+  //   - client/public/assets, waar een oude, meegecommitte bundel staat. Die
+  //     bundel is bouwresultaat en geen broncode: de bron waaruit hij ooit
+  //     gemaakt is, is intussen verbeterd. Hij wordt door geen enkele pagina
+  //     ingeladen (client/index.html wijst naar een verse bundel) en verdwijnt
+  //     bij de eerstvolgende opruiming van meegecommitte bouwbestanden.
+  it("gebruikt het verboden woord nergens, in geen enkele taal", () => {
     const { execSync } = require("node:child_process") as typeof import("node:child_process");
     const uitvoer = execSync(
-      'grep -ril "drijfve" server client/src shared script || true',
-      { encoding: "utf8" },
+      'grep -rilI "drijfve" . ' +
+        "--exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist " +
+        "--exclude-dir=assets --exclude-dir=tests || true",
+      { encoding: "utf8", cwd: resolve(__dirname, "..") },
     ).trim();
     expect(uitvoer, `verboden term gevonden in:\n${uitvoer}`).toBe("");
   });
