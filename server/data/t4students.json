@@ -1,0 +1,1565 @@
+{
+  "instrumentId": "t4students",
+  "version": "1.0.0",
+  "name": "T4Students",
+  "language": "nl",
+  "description": "Studie- en loopbaankompas voor jongvolwassenen (17-25+): 31 stellingen leiden tot TaPas-BEELD, energiebeeld, zes talentfoci, zes talent-versnellers, driverprofiel, een uit de TaPas-data afgeleid en bevestigd RIASEC-vermoeden gekoppeld aan de 10 studiegebieden, en - als USP - de persoonlijke studiestrategie. Uit één meting worden twee rapporten gerenderd: een Basis-rapport (zelfinzicht) en een Verdiepingsrapport (begeleid keuzeadvies).",
+  "responseScales": {
+    "recognition": {
+      "type": "ordinal",
+      "min": 0,
+      "max": 3,
+      "options": [
+        {
+          "value": 0,
+          "label": {
+            "nl": "Niet ik",
+            "fr": "Pas moi",
+            "en": "Not me"
+          }
+        },
+        {
+          "value": 1,
+          "label": {
+            "nl": "Soms wel",
+            "fr": "Parfois",
+            "en": "Sometimes"
+          }
+        },
+        {
+          "value": 2,
+          "label": {
+            "nl": "Vaak ik",
+            "fr": "Souvent moi",
+            "en": "Often me"
+          }
+        },
+        {
+          "value": 3,
+          "label": {
+            "nl": "Helemaal ik",
+            "fr": "Tout à fait moi",
+            "en": "Totally me"
+          }
+        }
+      ]
+    },
+    "energy": {
+      "type": "ordinal",
+      "min": -2,
+      "max": 2,
+      "options": [
+        {
+          "value": -2,
+          "label": {
+            "nl": "Kost me veel energie",
+            "fr": "Me prend beaucoup d'énergie",
+            "en": "Drains me a lot"
+          }
+        },
+        {
+          "value": -1,
+          "label": {
+            "nl": "Kost me energie",
+            "fr": "Me prend de l'énergie",
+            "en": "Drains me"
+          }
+        },
+        {
+          "value": 0,
+          "label": {
+            "nl": "Maakt niet veel uit",
+            "fr": "Ça ne change pas grand-chose",
+            "en": "Makes little difference"
+          }
+        },
+        {
+          "value": 1,
+          "label": {
+            "nl": "Geeft me energie",
+            "fr": "Me donne de l'énergie",
+            "en": "Energizes me"
+          }
+        },
+        {
+          "value": 2,
+          "label": {
+            "nl": "Geeft me veel energie",
+            "fr": "Me donne beaucoup d'énergie",
+            "en": "Energizes me a lot"
+          }
+        }
+      ]
+    },
+    "interest": {
+      "type": "ordinal",
+      "min": 0,
+      "max": 2,
+      "options": [
+        {
+          "value": 0,
+          "label": {
+            "nl": "Nee, niets voor mij",
+            "fr": "Non, ce n'est pas pour moi",
+            "en": "No, not for me"
+          }
+        },
+        {
+          "value": 1,
+          "label": {
+            "nl": "Een beetje",
+            "fr": "Un peu",
+            "en": "A little"
+          }
+        },
+        {
+          "value": 2,
+          "label": {
+            "nl": "Ja, dit trekt me aan",
+            "fr": "Oui, cela m'attire",
+            "en": "Yes, this appeals to me"
+          }
+        }
+      ]
+    },
+    "battery0to10": {
+      "type": "numeric",
+      "min": 0,
+      "max": 10,
+      "label": {
+        "nl": "Hoe vol zit je batterij?",
+        "fr": "À quel point ta batterie est-elle pleine ?",
+        "en": "How full is your battery?"
+      }
+    },
+    "clarity0to10": {
+      "type": "numeric",
+      "min": 0,
+      "max": 10,
+      "label": {
+        "nl": "Hoe duidelijk is je richting?",
+        "fr": "À quel point ta direction est-elle claire ?",
+        "en": "How clear is your direction?"
+      }
+    }
+  },
+  "families": [
+    {
+      "id": "TaPas-BEELD",
+      "label": "TaPas-BEELD (Inner Why)",
+      "energyMode": "item",
+      "constructs": [
+        "Helderheid/zingeving",
+        "Energie-status"
+      ]
+    },
+    {
+      "id": "Drivers",
+      "label": "Drivers (jouw motor)",
+      "energyMode": "item",
+      "constructs": [
+        "Be Perfect",
+        "Please Others",
+        "Try Hard",
+        "Hurry Up",
+        "Be Strong"
+      ]
+    },
+    {
+      "id": "Talent-versnellers",
+      "label": "Talent-versnellers",
+      "energyMode": "item",
+      "constructs": [
+        "Analyse",
+        "Individueel ondersteunend",
+        "Groepsondersteunend",
+        "Impact",
+        "Resultaat",
+        "Constructief onderscheidend"
+      ]
+    },
+    {
+      "id": "Talent-foci",
+      "label": "Talent-foci",
+      "energyMode": "item",
+      "constructs": [
+        "Functioneel Innovatief",
+        "Artistiek Innovatief",
+        "Complexiteit/Conceptueel",
+        "Systematisch/Uitvoerend",
+        "Sociaal Interactief",
+        "Overdrachtelijk Interactief"
+      ]
+    },
+    {
+      "id": "Interesse",
+      "label": "Interesse (RIASEC-bevestiging)",
+      "energyMode": "item",
+      "constructs": [
+        "Realistisch",
+        "Investigative",
+        "Artistiek",
+        "Sociaal",
+        "Ondernemend",
+        "Conventioneel"
+      ]
+    }
+  ],
+  "sections": [
+    {
+      "sectionId": "main",
+      "title": "T4Students",
+      "type": "sequential-recognition",
+      "instructions": {
+        "nl": "Lees elke zin rustig. Geef telkens aan in welke mate dit jou is, en of het je energie geeft of kost. Er zijn geen foute antwoorden; dit is een momentopname, geen oordeel.",
+        "fr": "Lis chaque phrase tranquillement. Indique chaque fois à quel point cela te ressemble, et si cela te donne ou te prend de l'énergie. Il n'y a pas de mauvaises réponses ; ceci est un instantané, pas un jugement.",
+        "en": "Read each statement calmly. Each time, indicate how much it is like you, and whether it gives or drains your energy. There are no wrong answers; this is a snapshot, not a judgement."
+      },
+      "itemCount": 31,
+      "items": [
+        {
+          "id": "I1",
+          "family": "Energie",
+          "construct": "Energie-ijkpunt",
+          "itemType": "battery",
+          "scale": "battery0to10",
+          "text": {
+            "nl": "Hoe vol zit je batterij vandaag? Zet de schuif op de plek waar jij je nu voelt.",
+            "fr": "À quel point ta batterie est-elle pleine aujourd'hui ? Place le curseur là où tu te sens en ce moment.",
+            "en": "How full is your battery today? Set the slider to where you feel right now."
+          }
+        },
+        {
+          "id": "BE1",
+          "family": "TaPas-BEELD",
+          "construct": "Helderheid/zingeving",
+          "itemType": "recognition+energy",
+          "scale": "recognition",
+          "energyScale": "energy",
+          "text": {
+            "nl": "Ik heb een duidelijk beeld van waar ik goed in ben en wat ik wil.",
+            "fr": "J'ai une image claire de ce en quoi je suis bon et de ce que je veux.",
+            "en": "I have a clear picture of what I'm good at and what I want."
+          },
+          "sourceItems": [
+            "E.4"
+          ]
+        },
+        {
+          "id": "BE2",
+          "family": "TaPas-BEELD",
+          "construct": "Energie-status",
+          "itemType": "recognition+energy",
+          "scale": "recognition",
+          "energyScale": "energy",
+          "text": {
+            "nl": "Ik blijf graag trouw aan wie ik ben en maak van daaruit mijn keuzes.",
+            "fr": "J'aime rester fidèle à qui je suis et faire mes choix à partir de là.",
+            "en": "I like to stay true to who I am and make my choices from there."
+          },
+          "sourceItems": [
+            "E.8"
+          ]
+        },
+        {
+          "id": "D1",
+          "family": "Drivers",
+          "construct": "Be Perfect",
+          "itemType": "recognition",
+          "scale": "recognition",
+          "text": {
+            "nl": "Ik werk dingen graag tot in de puntjes af, zodat het echt klopt.",
+            "fr": "J'aime peaufiner les choses dans les moindres détails, pour que ce soit vraiment juste.",
+            "en": "I like to finish things down to the last detail, so it's truly right."
+          },
+          "sourceItems": [
+            "2.1"
+          ]
+        },
+        {
+          "id": "D2",
+          "family": "Drivers",
+          "construct": "Please Others",
+          "itemType": "recognition",
+          "scale": "recognition",
+          "text": {
+            "nl": "Ik vind het belangrijk om het de mensen om me heen naar hun zin te maken.",
+            "fr": "Je trouve important de faire plaisir aux personnes qui m'entourent.",
+            "en": "I find it important to please the people around me."
+          },
+          "sourceItems": [
+            "5.1"
+          ]
+        },
+        {
+          "id": "D3",
+          "family": "Drivers",
+          "construct": "Try Hard",
+          "itemType": "recognition",
+          "scale": "recognition",
+          "text": {
+            "nl": "Voor iemand die ik echt waardeer, doe ik er alles aan om te slagen.",
+            "fr": "Pour quelqu'un que j'apprécie vraiment, je fais tout pour réussir.",
+            "en": "For someone I truly value, I'll do everything to succeed."
+          },
+          "sourceItems": [
+            "4.2"
+          ]
+        },
+        {
+          "id": "D4",
+          "family": "Drivers",
+          "construct": "Hurry Up",
+          "itemType": "recognition",
+          "scale": "recognition",
+          "text": {
+            "nl": "Terwijl ik bezig ben denk ik vaak: tijd is kostbaar.",
+            "fr": "Pendant que je travaille, je pense souvent : le temps est précieux.",
+            "en": "While I'm busy, I often think: time is precious."
+          },
+          "sourceItems": [
+            "3.2"
+          ]
+        },
+        {
+          "id": "D5",
+          "family": "Drivers",
+          "construct": "Be Strong",
+          "itemType": "sjt",
+          "text": {
+            "nl": "Stel: een groepsopdracht loopt vast. Wat doe je het liefst?",
+            "fr": "Imagine : un travail de groupe est bloqué. Que préfères-tu faire ?",
+            "en": "Imagine: a group assignment gets stuck. What do you prefer to do?"
+          },
+          "options": [
+            {
+              "key": "a",
+              "text": {
+                "nl": "Ik neem zelf de verantwoordelijkheid en zorg dat het opgelost raakt.",
+                "fr": "Je prends moi-même la responsabilité et je veille à ce que ce soit résolu.",
+                "en": "I take responsibility myself and make sure it gets solved."
+              },
+              "loads": [
+                {
+                  "construct": "Be Strong",
+                  "family": "Drivers",
+                  "weight": 2
+                }
+              ]
+            },
+            {
+              "key": "b",
+              "text": {
+                "nl": "Ik regel het grotendeels zelf en trek het op gang.",
+                "fr": "Je gère cela en grande partie moi-même et je lance la dynamique.",
+                "en": "I handle it largely myself and get it moving."
+              },
+              "loads": [
+                {
+                  "construct": "Please Others",
+                  "family": "Drivers",
+                  "weight": 2
+                },
+                {
+                  "construct": "Groepsondersteunend",
+                  "family": "Talent-versnellers",
+                  "weight": 1
+                },
+                {
+                  "construct": "Sociaal Interactief",
+                  "family": "Talent-foci",
+                  "weight": 1
+                }
+              ]
+            }
+          ],
+          "sourceItems": [
+            "1.1",
+            "1.3"
+          ]
+        },
+        {
+          "id": "D6",
+          "family": "Drivers",
+          "construct": "Be Strong",
+          "itemType": "sjt",
+          "text": {
+            "nl": "Stel: het zit je emotioneel hoog. Wat herken je het meest?",
+            "fr": "Imagine : quelque chose te touche émotionnellement. Qu'est-ce qui te correspond le plus ?",
+            "en": "Imagine: something affects you emotionally. What do you recognize most?"
+          },
+          "options": [
+            {
+              "key": "a",
+              "text": {
+                "nl": "Anderen merken het meestal niet aan mij.",
+                "fr": "En général, les autres ne le remarquent pas chez moi.",
+                "en": "Others usually don't notice it in me."
+              },
+              "loads": [
+                {
+                  "construct": "Be Strong",
+                  "family": "Drivers",
+                  "weight": 2
+                },
+                {
+                  "construct": "Be Perfect",
+                  "family": "Drivers",
+                  "weight": 1
+                }
+              ]
+            },
+            {
+              "key": "b",
+              "text": {
+                "nl": "Ik voel me eigenlijk zelden echt geraakt.",
+                "fr": "En fait, je me sens rarement vraiment touché.",
+                "en": "I actually rarely feel truly affected."
+              },
+              "loads": [
+                {
+                  "construct": "Hurry Up",
+                  "family": "Drivers",
+                  "weight": 2
+                }
+              ]
+            }
+          ],
+          "sourceItems": [
+            "1.7",
+            "1.6"
+          ]
+        },
+        {
+          "id": "V1",
+          "family": "Talent-versnellers",
+          "construct": "Analyse",
+          "itemType": "recognition+energy",
+          "scale": "recognition",
+          "energyScale": "energy",
+          "text": {
+            "nl": "Ik heb een sterk analytisch inzicht: ik wil eerst snappen hoe iets in elkaar zit.",
+            "fr": "J'ai un fort sens analytique : je veux d'abord comprendre comment les choses fonctionnent.",
+            "en": "I have strong analytical insight: I want to first understand how something works."
+          },
+          "sourceItems": [
+            "a.2"
+          ]
+        },
+        {
+          "id": "V2",
+          "family": "Talent-versnellers",
+          "construct": "Individueel ondersteunend",
+          "itemType": "recognition+energy",
+          "scale": "recognition",
+          "energyScale": "energy",
+          "text": {
+            "nl": "Ik kan goed met iemand praten over dingen die voor die persoon moeilijk liggen.",
+            "fr": "Je sais bien parler avec quelqu'un de choses qui sont difficiles pour cette personne.",
+            "en": "I'm good at talking with someone about things that are difficult for them."
+          },
+          "sourceItems": [
+            "b.2"
+          ]
+        },
+        {
+          "id": "V3",
+          "family": "Talent-versnellers",
+          "construct": "Groepsondersteunend",
+          "itemType": "recognition+energy",
+          "scale": "recognition",
+          "energyScale": "energy",
+          "text": {
+            "nl": "Ik krijg de verschillen in een groep goed op één lijn rond een gezamenlijk doel.",
+            "fr": "J'arrive bien à aligner les différences au sein d'un groupe autour d'un objectif commun.",
+            "en": "I'm good at aligning the differences in a group around a shared goal."
+          },
+          "sourceItems": [
+            "d.9"
+          ]
+        },
+        {
+          "id": "V4",
+          "family": "Talent-versnellers",
+          "construct": "Impact",
+          "itemType": "recognition+energy",
+          "scale": "recognition",
+          "energyScale": "energy",
+          "text": {
+            "nl": "Anderen zeggen dat ik mensen makkelijk in beweging krijg om iets te doen.",
+            "fr": "Les autres disent que j'arrive facilement à mettre les gens en mouvement pour faire quelque chose.",
+            "en": "Others say I easily get people moving to do something."
+          },
+          "sourceItems": [
+            "e.1"
+          ]
+        },
+        {
+          "id": "V5",
+          "family": "Talent-versnellers",
+          "construct": "Resultaat",
+          "itemType": "recognition+energy",
+          "scale": "recognition",
+          "energyScale": "energy",
+          "text": {
+            "nl": "Ik blijf gefocust op het resultaat dat ik wil halen.",
+            "fr": "Je reste concentré sur le résultat que je veux atteindre.",
+            "en": "I stay focused on the result I want to achieve."
+          },
+          "sourceItems": [
+            "f.5"
+          ]
+        },
+        {
+          "id": "V6",
+          "family": "Talent-versnellers",
+          "construct": "Constructief onderscheidend",
+          "itemType": "recognition+energy",
+          "scale": "recognition",
+          "energyScale": "energy",
+          "text": {
+            "nl": "Ik denk goed vooruit over wat er nog moet gebeuren.",
+            "fr": "J'anticipe bien ce qui reste à faire.",
+            "en": "I think ahead well about what still needs to be done."
+          },
+          "sourceItems": [
+            "c.1"
+          ]
+        },
+        {
+          "id": "F1",
+          "family": "Talent-foci",
+          "construct": "Functioneel Innovatief",
+          "itemType": "recognition+energy",
+          "scale": "recognition",
+          "energyScale": "energy",
+          "text": {
+            "nl": "Ik vind vaak een nieuwe oplossing of een idee waar anderen door geïnspireerd raken.",
+            "fr": "Je trouve souvent une nouvelle solution ou une idée qui inspire les autres.",
+            "en": "I often find a new solution or idea that inspires others."
+          },
+          "sourceItems": [
+            "D.1"
+          ]
+        },
+        {
+          "id": "F2",
+          "family": "Talent-foci",
+          "construct": "Artistiek Innovatief",
+          "itemType": "recognition+energy",
+          "scale": "recognition",
+          "energyScale": "energy",
+          "text": {
+            "nl": "Ik ben goed in het verbeelden van dingen, met woorden, beeld, geluid, materialen of beweging.",
+            "fr": "Je suis doué pour imaginer les choses, avec des mots, des images, du son, des matériaux ou du mouvement.",
+            "en": "I'm good at imagining things, with words, images, sound, materials or movement."
+          },
+          "sourceItems": [
+            "F.1"
+          ]
+        },
+        {
+          "id": "F3",
+          "family": "Talent-foci",
+          "construct": "Complexiteit/Conceptueel",
+          "itemType": "recognition+energy",
+          "scale": "recognition",
+          "energyScale": "energy",
+          "text": {
+            "nl": "Ook in een ingewikkelde situatie blijf ik het geheel overzien.",
+            "fr": "Même dans une situation complexe, je garde une vue d'ensemble.",
+            "en": "Even in a complex situation, I keep an overview of the whole."
+          },
+          "sourceItems": [
+            "C.6"
+          ]
+        },
+        {
+          "id": "F4",
+          "family": "Talent-foci",
+          "construct": "Systematisch/Uitvoerend",
+          "itemType": "sjt",
+          "text": {
+            "nl": "Stel: iets moet stap voor stap en nauwgezet worden uitgevoerd. Hoe sta je daar tegenover?",
+            "fr": "Imagine : quelque chose doit être exécuté étape par étape et avec minutie. Comment l'abordes-tu ?",
+            "en": "Imagine: something must be carried out step by step and meticulously. How do you feel about that?"
+          },
+          "options": [
+            {
+              "key": "a",
+              "text": {
+                "nl": "Prima. Ik zie het als een uitdaging om het op te lossen en breng het stap voor stap tot uitvoering.",
+                "fr": "Très bien. J'y vois un défi à relever et je le mets en œuvre étape par étape.",
+                "en": "Fine. I see it as a challenge to solve and carry it out step by step."
+              },
+              "loads": [
+                {
+                  "construct": "Systematisch/Uitvoerend",
+                  "family": "Talent-foci",
+                  "weight": 2
+                },
+                {
+                  "construct": "Resultaat",
+                  "family": "Talent-versnellers",
+                  "weight": 1
+                }
+              ],
+              "energyValue": 1
+            },
+            {
+              "key": "b",
+              "text": {
+                "nl": "Ik voer het graag uit zoals afgesproken, tot iedereen tevreden is.",
+                "fr": "J'aime l'exécuter comme convenu, jusqu'à ce que tout le monde soit satisfait.",
+                "en": "I like to carry it out as agreed, until everyone is satisfied."
+              },
+              "loads": [
+                {
+                  "construct": "Systematisch/Uitvoerend",
+                  "family": "Talent-foci",
+                  "weight": 0
+                }
+              ],
+              "energyValue": -1
+            }
+          ],
+          "sourceItems": [
+            "B.2",
+            "B.8"
+          ]
+        },
+        {
+          "id": "F5",
+          "family": "Talent-foci",
+          "construct": "Sociaal Interactief",
+          "itemType": "sjt",
+          "text": {
+            "nl": "Stel: je mag kiezen om iets alleen of samen met anderen aan te pakken. Wat trekt je meer?",
+            "fr": "Imagine : tu peux choisir d'aborder quelque chose seul ou avec d'autres. Qu'est-ce qui t'attire le plus ?",
+            "en": "Imagine: you can choose to tackle something alone or together with others. What appeals to you more?"
+          },
+          "options": [
+            {
+              "key": "a",
+              "text": {
+                "nl": "Samen: ik ben sterk als ik in een team werk.",
+                "fr": "Ensemble : je suis fort quand je travaille en équipe.",
+                "en": "Together: I'm strong when I work in a team."
+              },
+              "loads": [
+                {
+                  "construct": "Sociaal Interactief",
+                  "family": "Talent-foci",
+                  "weight": 2
+                },
+                {
+                  "construct": "Please Others",
+                  "family": "Drivers",
+                  "weight": 1
+                },
+                {
+                  "construct": "Groepsondersteunend",
+                  "family": "Talent-versnellers",
+                  "weight": 1
+                }
+              ],
+              "energyValue": 1
+            },
+            {
+              "key": "b",
+              "text": {
+                "nl": "Met aandacht voor de ander: ik voel goed aan wat er bij anderen speelt.",
+                "fr": "Avec attention pour l'autre : je perçois bien ce qui se passe chez les autres.",
+                "en": "With attention to others: I sense well what's going on with other people."
+              },
+              "loads": [
+                {
+                  "construct": "Be Strong",
+                  "family": "Drivers",
+                  "weight": 1
+                },
+                {
+                  "construct": "Analyse",
+                  "family": "Talent-versnellers",
+                  "weight": 1
+                }
+              ],
+              "energyValue": 0
+            }
+          ],
+          "sourceItems": [
+            "A.4",
+            "A.1"
+          ]
+        },
+        {
+          "id": "F6",
+          "family": "Talent-foci",
+          "construct": "Overdrachtelijk Interactief",
+          "itemType": "recognition+energy",
+          "scale": "recognition",
+          "energyScale": "energy",
+          "text": {
+            "nl": "Ik kan goed uitleggen wat ik weet aan anderen.",
+            "fr": "Je sais bien expliquer aux autres ce que je sais.",
+            "en": "I'm good at explaining what I know to others."
+          },
+          "sourceItems": [
+            "G.1"
+          ]
+        },
+        {
+          "id": "R1",
+          "family": "Interesse",
+          "construct": "Realistisch",
+          "itemType": "interest",
+          "scale": "interest",
+          "text": {
+            "nl": "Iets maken, bouwen, herstellen of met techniek en materialen werken trekt me aan.",
+            "fr": "Fabriquer, construire, réparer ou travailler avec la technique et les matériaux m'attire.",
+            "en": "Making, building, repairing or working with technology and materials appeals to me."
+          },
+          "sourceItems": [
+            "T.3",
+            "T.16",
+            "T.27"
+          ]
+        },
+        {
+          "id": "R2",
+          "family": "Interesse",
+          "construct": "Investigative",
+          "itemType": "interest",
+          "scale": "interest",
+          "text": {
+            "nl": "Uitzoeken hoe iets werkt, onderzoeken, analyseren, rekenen, daar geniet ik van.",
+            "fr": "Découvrir comment quelque chose fonctionne, rechercher, analyser, calculer, j'aime ça.",
+            "en": "Figuring out how something works, investigating, analyzing, calculating, I enjoy that."
+          },
+          "sourceItems": [
+            "T.15",
+            "T.17",
+            "T.22",
+            "T.4"
+          ]
+        },
+        {
+          "id": "R3",
+          "family": "Interesse",
+          "construct": "Artistiek",
+          "itemType": "interest",
+          "scale": "interest",
+          "text": {
+            "nl": "Iets creatiefs of vormgevends doen, schrijven, ontwerpen, beeld, geluid of beweging.",
+            "fr": "Faire quelque chose de créatif ou de formel, écrire, concevoir, image, son ou mouvement.",
+            "en": "Doing something creative or design-oriented, writing, designing, image, sound or movement."
+          },
+          "sourceItems": [
+            "T.19",
+            "T.20",
+            "T.21",
+            "T.25"
+          ]
+        },
+        {
+          "id": "R4",
+          "family": "Interesse",
+          "construct": "Sociaal",
+          "itemType": "interest",
+          "scale": "interest",
+          "text": {
+            "nl": "Met en voor mensen werken, begeleiden, helpen, lesgeven of verzorgen.",
+            "fr": "Travailler avec et pour les gens, accompagner, aider, enseigner ou prendre soin.",
+            "en": "Working with and for people, guiding, helping, teaching or caring."
+          },
+          "sourceItems": [
+            "T.13",
+            "T.14",
+            "T.24",
+            "T.28",
+            "T.30"
+          ]
+        },
+        {
+          "id": "R5",
+          "family": "Interesse",
+          "construct": "Ondernemend",
+          "itemType": "interest",
+          "scale": "interest",
+          "text": {
+            "nl": "De leiding nemen, overtuigen, onderhandelen of zelf iets opzetten.",
+            "fr": "Prendre les rênes, convaincre, négocier ou créer quelque chose soi-même.",
+            "en": "Taking the lead, persuading, negotiating or setting something up yourself."
+          },
+          "sourceItems": [
+            "T.5",
+            "T.12",
+            "T.23"
+          ]
+        },
+        {
+          "id": "R6",
+          "family": "Interesse",
+          "construct": "Conventioneel",
+          "itemType": "interest",
+          "scale": "interest",
+          "text": {
+            "nl": "Orde, overzicht en nauwkeurigheid, plannen, structureren en dingen kloppend houden.",
+            "fr": "Ordre, vue d'ensemble et précision, planifier, structurer et garder les choses cohérentes.",
+            "en": "Order, overview and accuracy, planning, structuring and keeping things consistent."
+          }
+        },
+        {
+          "id": "P1",
+          "family": "Profiel",
+          "construct": "Profielselectie",
+          "itemType": "profile-select",
+          "text": {
+            "nl": "Waar sta je nu in je keuze?",
+            "fr": "Où en es-tu dans ton choix actuellement ?",
+            "en": "Where do you stand in your choice right now?"
+          },
+          "options": [
+            {
+              "key": "A",
+              "text": {
+                "nl": "Ik moet nog kiezen wat ik ga studeren.",
+                "fr": "Je dois encore choisir ce que je vais étudier.",
+                "en": "I still have to choose what to study."
+              }
+            },
+            {
+              "key": "B",
+              "text": {
+                "nl": "Ik studeer, maar het loopt vast of ik twijfel of dit het juiste is.",
+                "fr": "J'étudie, mais ça bloque ou je doute que ce soit le bon choix.",
+                "en": "I'm studying, but it's stuck or I doubt whether this is right."
+              }
+            },
+            {
+              "key": "C",
+              "text": {
+                "nl": "Ik studeer (master) en kijk naar de beroepspraktijk daarna.",
+                "fr": "J'étudie (master) et je regarde vers la pratique professionnelle qui suivra.",
+                "en": "I'm studying (master's) and looking ahead to professional practice afterwards."
+              }
+            }
+          ]
+        },
+        {
+          "id": "P2",
+          "family": "Profiel",
+          "construct": "Profielkern",
+          "dependsOn": "P1",
+          "variants": {
+            "A": {
+              "itemType": "profile-scale",
+              "scale": "clarity0to10",
+              "text": {
+                "nl": "Hoe duidelijk is je studierichting op dit moment? (0 = geen idee, 10 = volledig zeker)",
+                "fr": "À quel point ton orientation d'études est-elle claire en ce moment ? (0 = aucune idée, 10 = totalement sûr)",
+                "en": "How clear is your study direction at this moment? (0 = no idea, 10 = completely sure)"
+              }
+            },
+            "B": {
+              "itemType": "profile-choice",
+              "text": {
+                "nl": "Wat knelt op dit moment het meest?",
+                "fr": "Qu'est-ce qui pose le plus problème en ce moment ?",
+                "en": "What's the biggest sticking point right now?"
+              },
+              "options": [
+                {
+                  "key": "inhoud",
+                  "text": {
+                    "nl": "De inhoud van de opleiding past niet bij me.",
+                    "fr": "Le contenu de la formation ne me convient pas.",
+                    "en": "The content of the programme doesn't suit me."
+                  }
+                },
+                {
+                  "key": "manier",
+                  "text": {
+                    "nl": "De manier van studeren of het systeem werkt niet voor me.",
+                    "fr": "La manière d'étudier ou le système ne me convient pas.",
+                    "en": "The way of studying or the system doesn't work for me."
+                  }
+                },
+                {
+                  "key": "omgeving",
+                  "text": {
+                    "nl": "De omgeving: aansluiting, motivatie, omstandigheden.",
+                    "fr": "L'environnement : intégration, motivation, circonstances.",
+                    "en": "The environment: fit, motivation, circumstances."
+                  }
+                }
+              ]
+            },
+            "C": {
+              "itemType": "profile-choice",
+              "text": {
+                "nl": "Welke beroepsrol binnen je vakgebied spreekt je het meest aan?",
+                "fr": "Quel rôle professionnel dans ton domaine t'attire le plus ?",
+                "en": "Which professional role within your field appeals to you most?"
+              },
+              "options": [
+                {
+                  "key": "analyse",
+                  "text": {
+                    "nl": "Analyse en advies (onderzoek, strategie, consulting).",
+                    "fr": "Analyse et conseil (recherche, stratégie, consulting).",
+                    "en": "Analysis and advice (research, strategy, consulting)."
+                  }
+                },
+                {
+                  "key": "leiding",
+                  "text": {
+                    "nl": "Leiding en ondernemen (management, projecten, eigen zaak).",
+                    "fr": "Direction et entrepreneuriat (management, projets, entreprise propre).",
+                    "en": "Leadership and entrepreneurship (management, projects, own business)."
+                  }
+                },
+                {
+                  "key": "creatie",
+                  "text": {
+                    "nl": "Creatie en ontwerp (innovatie, productontwikkeling).",
+                    "fr": "Création et conception (innovation, développement de produits).",
+                    "en": "Creation and design (innovation, product development)."
+                  }
+                },
+                {
+                  "key": "mensen",
+                  "text": {
+                    "nl": "Mensen en organisatie (HR, coaching, opleiding).",
+                    "fr": "Personnes et organisation (RH, coaching, formation).",
+                    "en": "People and organization (HR, coaching, training)."
+                  }
+                },
+                {
+                  "key": "uitvoering",
+                  "text": {
+                    "nl": "Uitvoering en beheer (operations, financiën, control).",
+                    "fr": "Exécution et gestion (opérations, finances, contrôle).",
+                    "en": "Execution and management (operations, finance, control)."
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "S1",
+          "family": "Studiecontext",
+          "construct": "Studeerstijl",
+          "itemType": "context-choice",
+          "text": {
+            "nl": "Hoe pak je studeren of een grote opdracht het liefst aan?",
+            "fr": "Comment préfères-tu aborder tes études ou une grande tâche ?",
+            "en": "How do you prefer to tackle studying or a big assignment?"
+          },
+          "options": [
+            {
+              "key": "overzicht",
+              "text": {
+                "nl": "Eerst het grote overzicht, dan de details.",
+                "fr": "D'abord la vue d'ensemble, puis les détails.",
+                "en": "First the big picture, then the details."
+              },
+              "loads": [
+                {
+                  "construct": "Resultaat",
+                  "family": "Talent-versnellers",
+                  "weight": 1
+                }
+              ]
+            },
+            {
+              "key": "stapsgewijs",
+              "text": {
+                "nl": "Stap voor stap, van onderdeel naar geheel.",
+                "fr": "Étape par étape, de la partie vers le tout.",
+                "en": "Step by step, from part to whole."
+              },
+              "loads": [
+                {
+                  "construct": "Analyse",
+                  "family": "Talent-versnellers",
+                  "weight": 1
+                }
+              ]
+            },
+            {
+              "key": "dialoog",
+              "text": {
+                "nl": "In dialoog: samen, met uitleg en feedback.",
+                "fr": "En dialogue : ensemble, avec explications et retours.",
+                "en": "In dialogue: together, with explanation and feedback."
+              },
+              "loads": [
+                {
+                  "construct": "Individueel ondersteunend",
+                  "family": "Talent-versnellers",
+                  "weight": 1
+                }
+              ]
+            },
+            {
+              "key": "structuur",
+              "text": {
+                "nl": "Met een vaste planning en duidelijke structuur.",
+                "fr": "Avec un planning fixe et une structure claire.",
+                "en": "With a fixed plan and clear structure."
+              },
+              "loads": [
+                {
+                  "construct": "Groepsondersteunend",
+                  "family": "Talent-versnellers",
+                  "weight": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "B1",
+          "family": "Betekenis",
+          "construct": "Betekenisspoor",
+          "itemType": "meaning",
+          "scale": "meaning",
+          "text": {
+            "nl": "Waar zou jij iets willen betekenen, voor anderen of voor de wereld?",
+            "fr": "Où aimerais-tu faire une différence, pour les autres ou pour le monde ?",
+            "en": "Where would you like to make a difference, for others or for the world?"
+          },
+          "options": [
+            {
+              "key": "mensen",
+              "text": {
+                "nl": "Voor mensen dicht bij me",
+                "fr": "Pour les personnes proches de moi",
+                "en": "For people close to me"
+              }
+            },
+            {
+              "key": "samenleving",
+              "text": {
+                "nl": "Voor de samenleving",
+                "fr": "Pour la société",
+                "en": "For society"
+              }
+            },
+            {
+              "key": "natuur",
+              "text": {
+                "nl": "Voor de natuur en de planeet",
+                "fr": "Pour la nature et la planète",
+                "en": "For nature and the planet"
+              }
+            },
+            {
+              "key": "maken",
+              "text": {
+                "nl": "Door iets waardevols of nuttigs te maken",
+                "fr": "En créant quelque chose de précieux ou d'utile",
+                "en": "By making something valuable or useful"
+              }
+            },
+            {
+              "key": "kennis",
+              "text": {
+                "nl": "Door kennis, onderzoek en ontdekking",
+                "fr": "Par la connaissance, la recherche et la découverte",
+                "en": "Through knowledge, research and discovery"
+              }
+            }
+          ],
+          "sourceItems": [
+            "E.2",
+            "E.3"
+          ]
+        }
+      ]
+    }
+  ],
+  "identity": {
+    "required": [
+      "respondentCode",
+      "name"
+    ],
+    "optional": [
+      "leeftijd",
+      "opleiding",
+      "instelling",
+      "taal"
+    ]
+  },
+  "scoringMap": {
+    "scorerVersion": "t4students-1.0.0",
+    "constants": {
+      "sjtWeight": 2,
+      "energyToRecognitionFactor": 0.5,
+      "overloadRecognitionMin": 2,
+      "underuseRecognitionMax": 1,
+      "voorlopigDrempel": 20,
+      "driverDoorslagFactor": 2,
+      "beeldNietInEnergieDrempel": 0,
+      "leastCharacteristicCount": 2,
+      "tieMargin": 1.0
+    },
+    "beeldItems": {
+      "BE1": "Helderheid/zingeving",
+      "BE2": "Energie-status"
+    },
+    "recognitionItems": {
+      "D1": "Be Perfect",
+      "D2": "Please Others",
+      "D3": "Try Hard",
+      "D4": "Hurry Up",
+      "V1": "Analyse",
+      "V2": "Individueel ondersteunend",
+      "V3": "Groepsondersteunend",
+      "V4": "Impact",
+      "V5": "Resultaat",
+      "V6": "Constructief onderscheidend",
+      "F1": "Functioneel Innovatief",
+      "F2": "Artistiek Innovatief",
+      "F3": "Complexiteit/Conceptueel",
+      "F6": "Overdrachtelijk Interactief"
+    },
+    "energyItems": [
+      "BE1",
+      "BE2",
+      "V1",
+      "V2",
+      "V3",
+      "V4",
+      "V5",
+      "V6",
+      "F1",
+      "F2",
+      "F3",
+      "F6"
+    ],
+    "sjtItems": [
+      "D5",
+      "D6",
+      "F4",
+      "F5"
+    ],
+    "interestItems": {
+      "R1": "Realistisch",
+      "R2": "Investigative",
+      "R3": "Artistiek",
+      "R4": "Sociaal",
+      "R5": "Ondernemend",
+      "R6": "Conventioneel"
+    },
+    "rankItems": [
+      "V1",
+      "V2",
+      "V3",
+      "V4",
+      "V5",
+      "V6"
+    ],
+    "convergenceAxes": {
+      "onderzoekend": [
+        [
+          "Talent-foci",
+          "Complexiteit/Conceptueel"
+        ],
+        [
+          "Talent-versnellers",
+          "Analyse"
+        ],
+        [
+          "Interesse",
+          "Investigative"
+        ]
+      ],
+      "dialogisch": [
+        [
+          "Talent-foci",
+          "Overdrachtelijk Interactief"
+        ],
+        [
+          "Talent-versnellers",
+          "Individueel ondersteunend"
+        ],
+        [
+          "Interesse",
+          "Sociaal"
+        ]
+      ],
+      "creatief": [
+        [
+          "Talent-foci",
+          "Artistiek Innovatief"
+        ],
+        [
+          "Talent-versnellers",
+          "Constructief onderscheidend"
+        ],
+        [
+          "Interesse",
+          "Artistiek"
+        ]
+      ],
+      "samenwerk": [
+        [
+          "Talent-foci",
+          "Sociaal Interactief"
+        ],
+        [
+          "Talent-versnellers",
+          "Groepsondersteunend"
+        ],
+        [
+          "Interesse",
+          "Sociaal"
+        ]
+      ],
+      "praktisch": [
+        [
+          "Talent-foci",
+          "Functioneel Innovatief"
+        ],
+        [
+          "Talent-foci",
+          "Systematisch/Uitvoerend"
+        ],
+        [
+          "Interesse",
+          "Realistisch"
+        ]
+      ],
+      "structuur": [
+        [
+          "Interesse",
+          "Conventioneel"
+        ],
+        [
+          "Talent-versnellers",
+          "Groepsondersteunend"
+        ],
+        [
+          "Drivers",
+          "Be Perfect"
+        ]
+      ],
+      "ondernemend": [
+        [
+          "Interesse",
+          "Ondernemend"
+        ],
+        [
+          "Talent-versnellers",
+          "Impact"
+        ],
+        [
+          "Drivers",
+          "Hurry Up"
+        ]
+      ]
+    },
+    "riasecDerivation": {
+      "R": {
+        "derivedFrom": [
+          [
+            "Talent-foci",
+            "Functioneel Innovatief"
+          ],
+          [
+            "Talent-foci",
+            "Systematisch/Uitvoerend"
+          ]
+        ],
+        "confirmItem": "R1"
+      },
+      "I": {
+        "derivedFrom": [
+          [
+            "Talent-foci",
+            "Complexiteit/Conceptueel"
+          ],
+          [
+            "Talent-versnellers",
+            "Analyse"
+          ]
+        ],
+        "confirmItem": "R2"
+      },
+      "A": {
+        "derivedFrom": [
+          [
+            "Talent-foci",
+            "Artistiek Innovatief"
+          ],
+          [
+            "Talent-versnellers",
+            "Constructief onderscheidend"
+          ]
+        ],
+        "confirmItem": "R3"
+      },
+      "S": {
+        "derivedFrom": [
+          [
+            "Talent-foci",
+            "Sociaal Interactief"
+          ],
+          [
+            "Talent-foci",
+            "Overdrachtelijk Interactief"
+          ],
+          [
+            "Talent-versnellers",
+            "Individueel ondersteunend"
+          ]
+        ],
+        "confirmItem": "R4"
+      },
+      "E": {
+        "derivedFrom": [
+          [
+            "Talent-versnellers",
+            "Impact"
+          ],
+          [
+            "Drivers",
+            "Hurry Up"
+          ],
+          [
+            "Drivers",
+            "Be Strong"
+          ]
+        ],
+        "confirmItem": "R5"
+      },
+      "C": {
+        "derivedFrom": [
+          [
+            "Talent-versnellers",
+            "Groepsondersteunend"
+          ],
+          [
+            "Drivers",
+            "Be Perfect"
+          ]
+        ],
+        "confirmItem": "R6"
+      }
+    },
+    "tenStudyFields": {
+      "Kunst & Cultuur": [
+        "A"
+      ],
+      "Exact & ICT": [
+        "I",
+        "R"
+      ],
+      "Gedrag & Maatschappij": [
+        "S",
+        "I"
+      ],
+      "Economie & Bedrijf": [
+        "E",
+        "C"
+      ],
+      "Taal, Communicatie & Media": [
+        "A",
+        "S"
+      ],
+      "Recht & Bestuur": [
+        "E",
+        "C",
+        "S"
+      ],
+      "Techniek": [
+        "R",
+        "I"
+      ],
+      "Onderwijs & Opvoeding": [
+        "S",
+        "A"
+      ],
+      "Aarde & Milieu": [
+        "I",
+        "R"
+      ],
+      "Gezondheid": [
+        "S",
+        "I"
+      ]
+    },
+    "studyStrategy": {
+      "Resultaat": {
+        "strategie": "top-down vanuit het eindbeeld",
+        "belofte": "begin bij hoe het eindresultaat eruit moet zien en werk terug"
+      },
+      "Analyse": {
+        "strategie": "bottom-up vanuit de onderdelen",
+        "belofte": "begin bij de bouwstenen en doorgrond eerst hoe het in elkaar zit"
+      },
+      "Individueel ondersteunend": {
+        "strategie": "sociaal-dialogisch (één op één)",
+        "belofte": "leer in dialoog, leg het aan iemand uit, bespreek het samen"
+      },
+      "Groepsondersteunend": {
+        "strategie": "structuurgestuurd in groep",
+        "belofte": "breng eerst orde, overzicht en planning aan, het liefst samen"
+      },
+      "Impact": {
+        "strategie": "betekenisgestuurd",
+        "belofte": "verbind de stof met waarom het ertoe doet voor jou"
+      },
+      "Constructief onderscheidend": {
+        "strategie": "herstructurerend",
+        "belofte": "maak er je eigen versie van; herordenen en hertekenen mag"
+      }
+    },
+    "leastCharacteristic": {
+      "dimensions": [
+        "Talent-foci",
+        "Talent-versnellers",
+        "Drivers"
+      ],
+      "framing": "nuance, geen tekort: wat je minst kenmerkt maakt je beeld scherper"
+    },
+    "profileAnchor": {
+      "selectItem": "P1",
+      "p2Item": "P2",
+      "A": {
+        "focus": "verkenningskaart",
+        "tone": "verkennend, aanmoedigend"
+      },
+      "B": {
+        "focus": "mismatch-duiding + alternatieven",
+        "tone": "wise feedback, niet-veroordelend",
+        "mismatchItem": "P2",
+        "mismatchKeys": [
+          "inhoud",
+          "manier",
+          "omgeving"
+        ]
+      },
+      "C": {
+        "focus": "beroepsrol-vertaling",
+        "tone": "professioneel, Engelstalig standaard",
+        "roleItem": "P2"
+      }
+    },
+    "licenseRender": {
+      "flag": "license",
+      "values": [
+        "basis",
+        "verdieping"
+      ],
+      "sections": {
+        "0_onthaal": [
+          "basis",
+          "verdieping"
+        ],
+        "1_beeld": [
+          "basis",
+          "verdieping"
+        ],
+        "2_energie": [
+          "basis",
+          "verdieping"
+        ],
+        "3_drie_dimensies": [
+          "basis",
+          "verdieping"
+        ],
+        "4_foci": [
+          "basis",
+          "verdieping"
+        ],
+        "5_versnellers": [
+          "basis",
+          "verdieping"
+        ],
+        "6_drivers": [
+          "basis",
+          "verdieping"
+        ],
+        "7_studiestrategie": [
+          "basis",
+          "verdieping"
+        ],
+        "8_richtingen": [
+          "verdieping"
+        ],
+        "9_keerzijde": [
+          "verdieping"
+        ],
+        "10_contextafstemming": [
+          "verdieping"
+        ],
+        "11_valkuil_checklist": [
+          "verdieping"
+        ],
+        "12_profielspecifiek": [
+          "basis",
+          "verdieping"
+        ],
+        "13_betekenisspoor": [
+          "basis",
+          "verdieping"
+        ],
+        "14_volgende_stap": [
+          "basis",
+          "verdieping"
+        ]
+      },
+      "depthVariants": {
+        "6_drivers": {
+          "basis": "benoemd",
+          "verdieping": "toegepast"
+        },
+        "7_studiestrategie": {
+          "basis": "kernlijn",
+          "verdieping": "volledig"
+        },
+        "12_profielspecifiek": {
+          "basis": "erkenning",
+          "verdieping": "volledig"
+        },
+        "1_beeld": {
+          "basis": "beschrijvend",
+          "verdieping": "betekenis+groei"
+        }
+      }
+    },
+    "alertOverride": {
+      "alwaysInBasis": true,
+      "alwaysToHuman": true,
+      "triggers": [
+        {
+          "id": "beeld_niet_in_energie",
+          "rule": "BE2 energie-anker <= beeldNietInEnergieDrempel",
+          "meaning": "TaPas-BEELD zit niet in energie - centrale alarmbel (vooral profiel B)"
+        },
+        {
+          "id": "profiel_B_vastloper",
+          "rule": "P1 == 'B'",
+          "meaning": "heroriëntatie/vastloper - welzijnskritisch, altijd menselijke opvolging"
+        },
+        {
+          "id": "lage_batterij",
+          "rule": "I1 <= 3",
+          "meaning": "zeer lage energie bij aanvang - rapport in zachte toon + mensverwijzing"
+        },
+        {
+          "id": "voorlopig_profiel",
+          "rule": "totaalsignaal < voorlopigDrempel",
+          "meaning": "te weinig signaal voor een stabiel beeld - expliciet als voorlopig labelen"
+        }
+      ]
+    }
+  },
+  "multilingual": true,
+  "translationStatus": "nl-only",
+  "license": "verdieping"
+}
