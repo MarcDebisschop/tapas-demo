@@ -1,0 +1,30 @@
+{
+  "bron": "geschreven door de bouwer van het rapport, nog niet nagelezen door de opdrachtgever",
+  "waarom_hier": "Deze teksten staan in een databestand en niet in code, zodat de constructnamen maar op een plaats als sleutel voorkomen en tests/t4students-geen-vertaaltabel.test.ts ze kan nakijken.",
+  "interesse": {
+    "sleutel": "de constructnaam van het interessegebied zoals die in server/data/t4students.json staat",
+    "teksten": {
+      "Realistisch": "Je wordt aangetrokken door werk waarin je iets vastpakt, bedient of maakt, en waar je aan het eind kunt zien wat er af is.",
+      "Investigative": "Je wordt aangetrokken door uitzoeken hoe iets werkelijk in elkaar zit, met onderzoek, meten en redeneren als de gewone gang van zaken.",
+      "Artistiek": "Je wordt aangetrokken door werk waarin vorm, beeld, taal of geluid ertoe doen en waarin je een eigen handschrift mag hebben.",
+      "Sociaal": "Je wordt aangetrokken door werk met mensen, waarin begeleiden, uitleggen of verzorgen de kern van de zaak is en niet de bijzaak.",
+      "Ondernemend": "Je wordt aangetrokken door werk waarin je iets op gang brengt, mensen meekrijgt en waarin risico nemen bij het vak hoort.",
+      "Conventioneel": "Je wordt aangetrokken door werk met een heldere ordening, waarin nauwkeurigheid en overzicht waarde hebben en niets zoekraakt."
+    }
+  },
+  "studiegebieden": {
+    "sleutel": "de gebiedsnaam zoals die in scoringMap.tenStudyFields staat",
+    "teksten": {
+      "Kunst & Cultuur": "richtingen waarin je zelf vorm geeft en waarin je werk beoordeeld wordt op wat het teweegbrengt",
+      "Exact & ICT": "richtingen waarin je uitzoekt, rekent en bouwt, en waarin een oplossing aantoonbaar moet werken",
+      "Gedrag & Maatschappij": "richtingen waarin je mensen en samenlevingen onderzoekt en begrijpt voor je erover oordeelt",
+      "Economie & Bedrijf": "richtingen waarin je organiseert, afweegt en verantwoordt wat iets oplevert en wat het kost",
+      "Taal, Communicatie & Media": "richtingen waarin je betekenis overbrengt en waarin de vorm van de boodschap het werk is",
+      "Recht & Bestuur": "richtingen waarin regels, rechten en verhoudingen het materiaal zijn waarmee je werkt",
+      "Techniek": "richtingen waarin je ontwerpt en maakt, en waarin het resultaat het in de praktijk moet houden",
+      "Onderwijs & Opvoeding": "richtingen waarin je anderen iets leert en waarin je merkt of het is overgekomen",
+      "Aarde & Milieu": "richtingen waarin je natuurlijke systemen onderzoekt en waarin geduldig meten het vak is",
+      "Gezondheid": "richtingen waarin je zorgt en behandelt, en waarin zorgvuldigheid direct gevolgen heeft"
+    }
+  }
+}
