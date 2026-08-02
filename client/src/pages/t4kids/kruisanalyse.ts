@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// client/src/pages/t4kids/kruisanalyse.ts — de cross-eiland-analyse.
+// client/src/pages/t4kids/kruisanalyse.ts: de cross-eiland-analyse.
 //
 // Dit stond eerder als een useMemo midden in t4kids-rapport.tsx. Het is hier
 // losgemaakt zodat de zinnen die een kind te lezen krijgt, getest kunnen

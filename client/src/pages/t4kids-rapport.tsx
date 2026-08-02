@@ -271,7 +271,7 @@ export default function T4KidsRapport() {
     [exact],
   );
 
-  // ── Deel 5 — cross-eiland-analyse ────────────────────────────────────────
+  // ── Deel 5: cross-eiland-analyse ─────────────────────────────────────────
   // De logica staat in @/pages/t4kids/kruisanalyse zodat de zinnen die een
   // kind te lezen krijgt, zonder browser getest kunnen worden.
   const analyse = useMemo(() => bouwKruisanalyse(exact, naam), [exact, naam]);
