@@ -463,8 +463,61 @@ export function scoreStudiekompas(
     return groepen;
   }
 
+  /**
+   * Het item met de energie-anker dat bij dit construct hoort, of null.
+   *
+   * Blauwdruk TABEL 1 noemt ze met naam: een energie-anker staat "bij BE +
+   * alle V + F1/F2/F3/F6". Dat zijn er twaalf, en het instrument bevat er
+   * precies twaalf. Blauwdruk 4 zegt erbij waarom F4 en F5 ontbreken: die twee
+   * foci worden via een situatie-item gemeten, niet via herkenning plus energie.
+   */
+  const ankerItemVanConstruct: Record<string, string> = {};
+  for (const eItemId of sm.energyItems) {
+    const con = itemById[eItemId].construct;
+    if (con) ankerItemVanConstruct[con] = eItemId;
+  }
+
+  /**
+   * Het balanslabel per construct (herstel van punt 7 uit fase 1).
+   *
+   * WAT HIER MIS GING
+   * overloadRecognitionMin (2) en underuseRecognitionMax (1) zijn waarden op de
+   * schaal van EEN antwoord: 0 is "dit ben ik niet", 3 is "dit ben ik helemaal".
+   * De blauwdruk past ze in TABEL 2 dan ook per item toe, op het item met de
+   * energie-anker. De motor legde ze echter naast de OPTELSOM van alles wat aan
+   * een construct bijdraagt. Die som ligt niet op die schaal: Groepsondersteunend
+   * verzamelt vier bijdragen en loopt tot 6 op, terwijl Impact er een heeft en
+   * niet boven 3 komt. Een deelnemer die bij V3 "kenmerkt me nauwelijks" (1)
+   * invulde en daarbij "geeft me energie", kreeg door drie situatieladingen van
+   * elk 1 een som van 4 en las "kernsterkte", terwijl zijn eigen antwoord op
+   * onderbenutting wees.
+   *
+   * WAAROM NIET HET GEMIDDELDE
+   * Delen door het aantal bijdragen brengt de som wel terug op 0 tot 3, maar
+   * middelt dan een zelfbeoordeling (0 tot 3) met situatieladingen (1 of 2).
+   * Dat zijn geen vergelijkbare grootheden: wie bij V3 een 3 invult en drie
+   * ladingen van 1 oppikt, zakt naar gemiddeld 1.5 en heet dan niet kenmerkend,
+   * terwijl hij "dit ben ik helemaal" antwoordde. Ook dat is dus fout.
+   *
+   * WAT ER NU GEBEURT
+   * We nemen de herkenning van het anker-item zelf, precies de grootheid
+   * waarvoor de drempels gemaakt zijn. Daarmee komt dit label overeen met
+   * energie.kaart, dat dezelfde matrix al per item toepaste en wel klopte.
+   * De som blijft ongemoeid: constructScores.recognition, combined en alle
+   * rangordes rekenen verder zoals voorheen.
+   *
+   * VOORGELEGD, NIET ZELF BESLIST
+   * Systematisch/Uitvoerend en Sociaal Interactief hebben geen energie-anker.
+   * De blauwdruk geeft voor die twee geen matrix. We verzinnen er geen en
+   * geven "niet_van_toepassing" terug in plaats van "latent", omdat "latent"
+   * een uitspraak over de deelnemer is en hier alleen een meting ontbreekt.
+   * Zie het verslag bij fase 1c.
+   */
   function balanceLabel(con: string): string {
-    const rec = constructs[con].recognition;
+    const ankerItem = ankerItemVanConstruct[con];
+    if (!ankerItem) return "niet_van_toepassing";
+    const a = answers[ankerItem];
+    const rec = a != null && a.recognition != null ? a.recognition : 0;
     const en = avgEnergy(con);
     if (rec >= C.overloadRecognitionMin && en >= 1) return "kernsterkte";
     if (rec >= C.overloadRecognitionMin && en <= -1) return "overbelast";
