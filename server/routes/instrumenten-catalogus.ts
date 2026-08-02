@@ -12,6 +12,7 @@
 
 import type { Express } from "express";
 import { instrumentSamenvattingen, publiekeInstrumenten } from "../registry";
+import { T4TEENS_LEEFTIJDSTEKST } from "@shared/doelgroep-leeftijd";
 
 // Statische verrijking: beschrijving, doelgroep, use case en outcome per instrument.
 // Keys = instrumentId uit de registry.
@@ -105,7 +106,7 @@ const VERRIJKING: Record<string, {
     emoji: "🌹",
   },
   "t4teens": {
-    doelgroep: "Jongeren 14-18 jaar, CLB-begeleiders, schoolcoaches",
+    doelgroep: `Jongeren ${T4TEENS_LEEFTIJDSTEKST}, CLB-begeleiders, schoolcoaches`,
     useCases: [
       "Studiekeuze-begeleiding",
       "Talentherkenning in het secundair onderwijs",

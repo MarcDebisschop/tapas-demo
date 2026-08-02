@@ -1,6 +1,7 @@
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { STANDAARD_TAAL, type Taal } from "../shared/talen";
+import { T4TEENS_LEEFTIJDSTEKST } from "../shared/doelgroep-leeftijd";
 import {
   type Instrument,
   type Vertaalbaar,
@@ -421,7 +422,8 @@ function bouwRegistry(): Map<string, InstrumentDescriptor> {
     creditCost: 1,
   });
 
-  // T4Teens — individueel instrument voor jongeren (13-17 jaar).
+  // T4Teens — individueel instrument voor jongeren. De doelgroepgrens komt uit
+  // shared/doelgroep-leeftijd.ts en staat hier bewust niet als eigen getal.
   //
   // T4Teens is een op maat gemaakte variant van het T4P-profiel, ontwikkeld
   // voor jongeren in het voortgezet onderwijs. De inhoud (vragenlijst, blokken,
@@ -435,7 +437,7 @@ function bouwRegistry(): Map<string, InstrumentDescriptor> {
     name: "T4Teens",
     version: "1.0.0",
     description:
-      "Individueel TaPas-profiel voor jongeren (13-17 jaar): ontdek je talent, " +
+      `Individueel TaPas-profiel voor jongeren (${T4TEENS_LEEFTIJDSTEKST}): ontdek je talent, ` +
       "energie en gedragspatroon in een doelgroepspecifieke vragenlijst en rapport.",
     isDefault: false,
     creditCost: 1,

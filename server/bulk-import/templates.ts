@@ -11,6 +11,8 @@
 // kolomkoppen.
 // =============================================================================
 
+import { T4TEENS_LEEFTIJDSTEKST } from "@shared/doelgroep-leeftijd";
+
 export interface VeldDef {
   // De exacte kolomkop zoals die in de Excel/CSV moet staan (mens-leesbaar NL).
   kolom: string;
@@ -73,7 +75,7 @@ export const TEMPLATES: Record<string, InstrumentTemplate> = {
   },
   t4teens: {
     instrumentId: "t4teens",
-    titel: "T4Teens (13-17 jaar)",
+    titel: `T4Teens (${T4TEENS_LEEFTIJDSTEKST})`,
     instructie:
       "Talentprofiel voor jongeren. Voor minderjarigen zijn naam én e-mail van " +
       "de ouder/voogd VERPLICHT (ouderlijke toestemming).",

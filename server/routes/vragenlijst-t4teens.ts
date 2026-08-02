@@ -16,6 +16,7 @@
 import type { Express } from "express";
 import { getOverridesMap } from "../question-manager";
 import { normaliseerTaal, STANDAARD_TAAL } from "@shared/i18n";
+import { T4TEENS_LEEFTIJDSTEKST_VOLUIT } from "@shared/doelgroep-leeftijd";
 
 // ─── T4Teens items definitie (1-op-1 copy van question-manager) ──────────────
 // Gedupliceerd zodat dit bestand onafhankelijk te testen is.
@@ -84,7 +85,7 @@ function buildT4TeensClientInstrument(taal: string) {
     instrumentId: "tapas-t4teens",
     name: "T4Teens — Vonk-instrument",
     language: taal,
-    description: "Ontdek je talent, energie en gedragspatroon. Voor jongeren van 16 tot 21 jaar.",
+    description: `Ontdek je talent, energie en gedragspatroon. Voor jongeren van ${T4TEENS_LEEFTIJDSTEKST_VOLUIT}.`,
     responseScales: {
       energy: {
         type: "ordinal",

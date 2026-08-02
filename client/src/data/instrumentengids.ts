@@ -21,6 +21,8 @@
 // overschrijven via /api/gids (server/gids-manager.ts). Deze file is de DEFAULT.
 // =============================================================================
 
+import { T4TEENS_LEEFTIJDSTEKST } from "@shared/doelgroep-leeftijd";
+
 export type Orientatie = "business" | "education" | "beide" | "sport";
 
 export interface GidsStart {
@@ -239,11 +241,11 @@ export const INSTRUMENTENGIDS: GidsInstrument[] = [
       "Waar liggen mijn talenten als jongere? Welke studierichting past bij wie ik ben? Wat geeft mij energie op school en daarbuiten?",
     gebruik:
       "Voor studiekeuzebegeleiding, talentherkenning in het secundair, preventie van studiedropout en ouder-kindgesprekken over richting.",
-    doelgroep: "Jongeren 13–17 jaar, CLB-begeleiders, schoolcoaches.",
+    doelgroep: `Jongeren ${T4TEENS_LEEFTIJDSTEKST}, CLB-begeleiders, schoolcoaches.`,
     start: { label: "Ontdek T4Teens", route: "/studie/leerlingen", direct: false },
     rapportTeaser:
       "Een T4Teens talentkaart in jongerentaal, met studierichtingssuggesties op basis van de talent-foci.",
-    leeftijdsfocus: "13–17 jaar",
+    leeftijdsfocus: T4TEENS_LEEFTIJDSTEKST,
     icoon: "Backpack",
   },
   {
