@@ -52,6 +52,7 @@ import { dashboardCodeVanToken, voornaamVanNaam } from "../dashboard-code";
 import { buildGeneratorContract } from "../scoring";
 import { buildT4StudentsContract } from "../t4students/scoring";
 import { buildT4TeensContract } from "../t4teens/scoring";
+import { naarItemSleutels } from "../t4teens/antwoordsleutels";
 import { buildT4KidsContract } from "../t4kids/scoring";
 import { z } from "zod";
 import { isDemoModus } from "../demomodus";
@@ -494,6 +495,12 @@ export function registerAfnameRoutes(app: Express): void {
     } else if (a.instrumentId === "t4teens") {
       // T4Teens: eigen itembank + eigen scoringscontract (instrumentId "t4teens"),
       // zodat de registry de T4Teens-generator kiest i.p.v. de generieke fallback.
+      //
+      // Het invulscherm bewaart antwoorden onder bloksleutels (B0, B1, ...), de
+      // scoring zoekt ze op met itemsleutels (T4T-...). Hier, op de enige plek
+      // waar bewaarde antwoorden de scoring in gaan, zetten we die sleutels om.
+      // De opgeslagen antwoorden zelf blijven ongewijzigd, zodat ook eerder
+      // ingevulde afnames gewoon scoorbaar blijven.
       contract = buildT4TeensContract({
         respondentCode: a.respondentCode,
         name: a.name,
@@ -501,7 +508,7 @@ export function registerAfnameRoutes(app: Express): void {
         role: a.role,
         consentScope: a.consentScope,
         consentTimestamp: a.consentTimestamp,
-        responses,
+        responses: naarItemSleutels(responses),
         taal: a.taal,
       });
     } else {

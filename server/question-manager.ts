@@ -310,7 +310,7 @@ function laadDriverScanItems(): VraagItem[] {
 /**
  * T4Students / Studiekompas — oriënterende studiekeuze voor jongeren.
  * Structuur: talentfoci (4) × 2 items + drivers (5) × 2 items + versnellers (6) × 2 items
- *            + motivatielagen (intrinsiek/extrinsiek) + 2 open vragen = 36 items.
+ *            + motivatielaag (3 intrinsiek + 2 extrinsiek) + 2 open vragen = 37 items.
  * Geen apart JSON-bestand — definities zijn normatief vastgelegd.
  * family = domein (foci / drivers / versnellers / motivatie)
  */

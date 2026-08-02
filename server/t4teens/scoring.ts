@@ -8,8 +8,9 @@
 //
 // WAAROM EEN EIGEN ADAPTER
 // De gedeelde server/scoring.ts hardcodeert op de T4P-blocks; T4Teens heeft een
-// eigen itembank (24 items, agreement-schaal -2..+2, domeinen Energie/Drivers/
-// Talent-versnellers/Talent-foci/Interesse/Betekenis). Mirror van t4students/
+// eigen itembank (25 items: 1 batterij-momentopname + 24 talentitems;
+// agreement-schaal -2..+2, domeinen Energie/Drivers/Talent-versnellers/
+// Talent-foci/Interesse/Betekenis). Mirror van t4students/
 // scoring.ts zodat de registry-entry "t4teens" een correct, instrument-eigen
 // contract krijgt i.p.v. de generieke fallback.
 //
