@@ -29,12 +29,25 @@ interface ConstructRowLike {
   least: number;
   net: number;
   shown: number;
-  avgEnergy: number;
+  beantwoord?: number;
+  avgEnergy: number | null;
   mostItems?: string[];
 }
 
 function num(x: unknown, fallback = 0): number {
   return typeof x === "number" && isFinite(x) ? x : fallback;
+}
+
+// Wat er in de tabel staat waar anders een score en een oordeel stonden. Een
+// construct waarvoor niet alle vragen beantwoord zijn, krijgt geen van beide.
+const GEEN_SCORE = "niet ingevuld";
+const GEEN_LABEL = "te weinig antwoorden";
+
+// Een construct is pas te duiden als al zijn vragen beantwoord zijn. Zolang er
+// geen geijkte ondergrens is vastgelegd, is dit de veilige grens: een oordeel
+// mag nooit op minder informatie steunen dan het suggereert.
+function volledig(r: ConstructRowLike): boolean {
+  return r.shown > 0 && num(r.beantwoord, 0) >= r.shown && typeof r.avgEnergy === "number";
 }
 
 // Duidingslabel voor een gemiddelde item-score op -2..+2 (jongeren-toon).
@@ -46,10 +59,23 @@ function scoreLabel(avg: number): string {
   return "niet echt herkenbaar";
 }
 
+// De cel met de score en de cel met het oordeel, voor één tabelrij.
+function scoreCel(r: ConstructRowLike): string | number {
+  return volledig(r) ? num(r.avgEnergy) : GEEN_SCORE;
+}
+function labelCel(r: ConstructRowLike): string {
+  return volledig(r) ? scoreLabel(num(r.avgEnergy)) : GEEN_LABEL;
+}
+
+// Onvolledige constructen zakken naar onder: ze hebben geen score om op te
+// sorteren en horen niet tussen de geduide constructen te staan.
 function clustersVan(rows: ConstructRowLike[], family: string): ConstructRowLike[] {
   return rows
     .filter((r) => r.family === family)
-    .sort((a, b) => num(b.avgEnergy) - num(a.avgEnergy));
+    .sort((a, b) => {
+      if (volledig(a) !== volledig(b)) return volledig(a) ? -1 : 1;
+      return num(b.avgEnergy) - num(a.avgEnergy);
+    });
 }
 
 function lijst(namen: string[]): string {
@@ -104,103 +130,122 @@ export function bouwT4TeensRapport(contract: any): RapportInhoud {
   });
 
   // 3. Drivers (Kahler) — met rem/gaspedaal-duiding. Label blijft "drivers".
-  const topDrivers = drivers.filter((r) => num(r.avgEnergy) > 0).slice(0, 2);
-  const remDrivers = [...drivers].filter((r) => num(r.avgEnergy) < 0);
+  // Enkel volledig beantwoorde drivers worden geduid; de kolom "Werking"
+  // gebruikt dezelfde grenzen als de tekst erboven, zodat tabel en tekst niet
+  // langer een tegengestelde uitspraak over hetzelfde getal kunnen doen.
+  const geduideDrivers = drivers.filter(volledig);
+  const topDrivers = geduideDrivers.filter((r) => num(r.avgEnergy) > 0).slice(0, 2);
+  const remDrivers = geduideDrivers.filter((r) => num(r.avgEnergy) < 0);
+  const werking = (r: ConstructRowLike): string => {
+    if (!volledig(r)) return GEEN_LABEL;
+    const a = num(r.avgEnergy);
+    return a > 0 ? "eerder gaspedaal" : a < 0 ? "eerder rem" : "in evenwicht";
+  };
   secties.push({
     kop: "Drivers — patronen die je aansturen",
     paragrafen: [
       "Drivers zijn onbewuste, aangeleerde patronen (naar Taibi Kahler) die je gedrag kunnen sturen, " +
         "vooral onder druk. Ze zijn niet goed of slecht: soms werken ze als gaspedaal (ze geven je energie " +
         "en richting), soms als rem (ze vragen aandacht en kunnen je tegenhouden).",
-      topDrivers.length
-        ? "Bij jou komen vooral " +
-          lijst(topDrivers.map((r) => r.construct)) +
-          " naar voren. Die werken voor jou vaak als gaspedaal. Let op het moment waarop ze te sterk gaan " +
-          "duwen (bv. alles perfect willen of jezelf wegcijferen)."
-        : "Er sprong geen enkele driver er duidelijk uit — je patronen zijn redelijk in balans.",
-      remDrivers.length
-        ? "Deze herken je minder of ervaar je eerder als rem: " +
-          lijst(remDrivers.map((r) => r.construct)) +
-          ". Dat zijn geen zwaktes, maar plekken waar wat bewuste aandacht je kan helpen."
-        : "Geen enkele driver werkte duidelijk als rem voor jou.",
+      ...(geduideDrivers.length
+        ? [
+            topDrivers.length
+              ? "Bij jou komen vooral " +
+                lijst(topDrivers.map((r) => r.construct)) +
+                " naar voren. Die werken voor jou vaak als gaspedaal. Let op het moment waarop ze te sterk gaan " +
+                "duwen (bv. alles perfect willen of jezelf wegcijferen)."
+              : "Er sprong geen enkele driver er duidelijk uit — je patronen zijn redelijk in balans.",
+            remDrivers.length
+              ? "Deze herken je minder of ervaar je eerder als rem: " +
+                lijst(remDrivers.map((r) => r.construct)) +
+                ". Dat zijn geen zwaktes, maar plekken waar wat bewuste aandacht je kan helpen."
+              : "Geen enkele driver werkte duidelijk als rem voor jou.",
+          ]
+        : ["Er zijn nog te weinig antwoorden om je drivers te duiden."]),
     ],
     tabel: drivers.length
       ? {
           kolommen: ["Driver", "Gemiddelde score", "Werking"],
-          rijen: drivers.map((r) => [
-            r.construct,
-            num(r.avgEnergy),
-            num(r.avgEnergy) >= 0 ? "eerder gaspedaal" : "eerder rem",
-          ]),
+          rijen: drivers.map((r) => [r.construct, scoreCel(r), werking(r)]),
         }
       : undefined,
   });
 
-  // 4. Talent-versnellers.
+  // 4, 5 en 6. Talent-versnellers, talent-foci en interesses. Alleen volledig
+  // beantwoorde constructen worden opgesomd en geduid; is er geen enkele, dan
+  // valt de vangnetzin in plaats van een opsomming.
+  const herkendeIn = (rijen: ConstructRowLike[]): string[] =>
+    rijen.filter(volledig).filter((r) => num(r.avgEnergy) > 0).map((r) => r.construct);
+
+  const versnellersHerkend = herkendeIn(versnellers);
   secties.push({
     kop: "Talent-versnellers — hoe jij je talent inzet",
     paragrafen: [
-      versnellers.length
-        ? "Talent-versnellers laten zien hoe jouw talent het best tot z'n recht komt. Jij herkent vooral: " +
-          lijst(versnellers.filter((r) => num(r.avgEnergy) > 0).map((r) => r.construct)) +
-          "."
+      versnellers.some(volledig)
+        ? "Talent-versnellers laten zien hoe jouw talent het best tot z'n recht komt. " +
+          (versnellersHerkend.length
+            ? "Jij herkent vooral: " + lijst(versnellersHerkend) + "."
+            : "Geen van de versnellers die je invulde, herkende je duidelijk in jezelf.")
         : "Er zijn nog te weinig antwoorden om je talent-versnellers te duiden.",
     ],
     tabel: versnellers.length
       ? {
           kolommen: ["Versneller", "Gemiddelde score", "Herkenbaarheid"],
-          rijen: versnellers.map((r) => [r.construct, num(r.avgEnergy), scoreLabel(num(r.avgEnergy))]),
+          rijen: versnellers.map((r) => [r.construct, scoreCel(r), labelCel(r)]),
         }
       : undefined,
   });
 
-  // 5. Talent-foci — waar je energie naartoe stroomt.
+  const fociHerkend = herkendeIn(foci);
   secties.push({
     kop: "Talent-foci — waar je energie naartoe gaat",
     paragrafen: [
-      foci.length
-        ? "Je talent-foci beschrijven het soort werk waar je van nature energie van krijgt. Jouw sterkst " +
-          "herkende foci zijn: " +
-          lijst(foci.filter((r) => num(r.avgEnergy) > 0).map((r) => r.construct)) +
-          "."
+      foci.some(volledig)
+        ? "Je talent-foci beschrijven het soort werk waar je van nature energie van krijgt. " +
+          (fociHerkend.length
+            ? "Jouw sterkst herkende foci zijn: " + lijst(fociHerkend) + "."
+            : "Geen van de foci die je invulde, sprong er voor jou duidelijk uit.")
         : "Er zijn nog te weinig antwoorden om je talent-foci te duiden.",
     ],
     tabel: foci.length
       ? {
           kolommen: ["Talent-focus", "Gemiddelde score", "Herkenbaarheid"],
-          rijen: foci.map((r) => [r.construct, num(r.avgEnergy), scoreLabel(num(r.avgEnergy))]),
+          rijen: foci.map((r) => [r.construct, scoreCel(r), labelCel(r)]),
         }
       : undefined,
   });
 
-  // 6. Interesse (RIASEC).
+  const interesseHerkend = herkendeIn(interesse);
   secties.push({
     kop: "Interesses — wat je aantrekt",
     paragrafen: [
-      interesse.length
+      interesse.some(volledig)
         ? "Deze interessegebieden (gebaseerd op het RIASEC-model) laten zien welk soort activiteiten je " +
-          "aantrekken. Jij voelt je vooral aangetrokken tot: " +
-          lijst(interesse.filter((r) => num(r.avgEnergy) > 0).map((r) => r.construct)) +
-          ". Dit kan een aanwijzing zijn voor studie- of werkrichtingen die bij je passen — een startpunt, " +
-          "geen voorschrift."
+          "aantrekken. " +
+          (interesseHerkend.length
+            ? "Jij voelt je vooral aangetrokken tot: " +
+              lijst(interesseHerkend) +
+              ". Dit kan een aanwijzing zijn voor studie- of werkrichtingen die bij je passen — een startpunt, " +
+              "geen voorschrift."
+            : "Geen van de interessegebieden die je invulde, trok je duidelijk aan.")
         : "Er zijn nog te weinig antwoorden om je interesses te duiden.",
     ],
     tabel: interesse.length
       ? {
           kolommen: ["Interessegebied", "Gemiddelde score", "Herkenbaarheid"],
-          rijen: interesse.map((r) => [r.construct, num(r.avgEnergy), scoreLabel(num(r.avgEnergy))]),
+          rijen: interesse.map((r) => [r.construct, scoreCel(r), labelCel(r)]),
         }
       : undefined,
   });
 
   // 7. Betekenis.
-  const betekenisScore = betekenis.length ? num(betekenis[0].avgEnergy) : null;
+  const betekenisRij = betekenis.find(volledig) ?? null;
   secties.push({
     kop: "Betekenis — waar je iets wil betekenen",
     paragrafen: [
-      betekenisScore !== null
+      betekenisRij
         ? "Iets betekenen voor anderen of voor de wereld is voor jou " +
-          scoreLabel(betekenisScore) +
+          scoreLabel(num(betekenisRij.avgEnergy)) +
           ". Nadenken over waar jij het verschil wil maken, geeft richting aan je keuzes."
         : "Er zijn nog te weinig antwoorden om je gevoel voor betekenis te duiden.",
       "Neem deze inzichten mee in een gesprek met iemand die je vertrouwt — een coach, leerkracht of " +

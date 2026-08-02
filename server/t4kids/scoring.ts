@@ -106,6 +106,12 @@ export interface T4KidsExacteAntwoorden {
 
 type StellingSoort = (typeof T4KIDS_STELLINGEN)[number]["soort"];
 
+export type T4KidsBalansLabel =
+  | "eerder autonoom"
+  | "eerder extern"
+  | "in evenwicht"
+  | "te weinig antwoorden";
+
 export interface T4KidsMainMeta {
   completedInteresse: number;
   totalInteresse: number;
@@ -113,10 +119,26 @@ export interface T4KidsMainMeta {
   completedStellingen: number;
   totalStellingen: number;
   autonomie: {
-    intrinsiek: number;
-    extrinsiek: number;
-    balansLabel: "eerder autonoom" | "eerder extern" | "in evenwicht";
+    // null zolang niet alle stellingen van die groep beantwoord zijn. Op deze
+    // woordschaal is 0 niet het midden maar de bodem ("bijna nooit"), dus een
+    // overgeslagen stelling die als 0 meetelt, verschuift het label echt.
+    intrinsiek: number | null;
+    extrinsiek: number | null;
+    balansLabel: T4KidsBalansLabel;
   };
+}
+
+// Zelfde vorm als ConstructRow, met `beantwoord` naast `shown` en een
+// gemiddelde dat null is zolang niet alle stellingen van het construct
+// beantwoord zijn. Lokaal gehouden zodat de gedeelde ConstructRow ongemoeid
+// blijft.
+export interface T4KidsConstructRow extends Omit<ConstructRow, "avgEnergy"> {
+  beantwoord: number;
+  avgEnergy: number | null;
+}
+
+export interface T4KidsFamilyRow extends Omit<FamilyRow, "avgEnergy"> {
+  avgEnergy: number | null;
 }
 
 export interface T4KidsContract {
@@ -134,8 +156,8 @@ export interface T4KidsContract {
   sections: {
     main: {
       meta: T4KidsMainMeta;
-      constructRows: ConstructRow[];
-      familyRows: FamilyRow[];
+      constructRows: T4KidsConstructRow[];
+      familyRows: T4KidsFamilyRow[];
     };
     rapport: {
       kind: T4KidsRapportKind;
@@ -241,9 +263,27 @@ export function buildT4KidsContract(opts: BuildT4KidsOpts): T4KidsContract {
   let completedStellingen = 0;
   const totalStellingen = T4KIDS_STELLINGEN.length;
 
+  // Hoeveel stellingen elk construct en elke autonomiegroep in totaal heeft.
+  // Zonder dit is een overgeslagen stelling niet te onderscheiden van een
+  // construct dat er gewoon minder heeft.
+  const totaalPerMapping: Record<string, number> = {};
+  let totaalIntrinsiek = 0;
+  let totaalExtrinsiek = 0;
+  for (const s of T4KIDS_STELLINGEN) {
+    totaalPerMapping[s.mapping] = (totaalPerMapping[s.mapping] ?? 0) + 1;
+    if (s.autonomie === "intrinsiek") totaalIntrinsiek += 1;
+    else if (s.autonomie === "extrinsiek") totaalExtrinsiek += 1;
+  }
+
   for (const s of T4KIDS_STELLINGEN) {
     const score = schaalScore(responses[s.id]);
-    if (score === null) continue;
+    // Een niet beantwoorde stelling wordt overgeslagen en komt dus nergens als
+    // getal in de berekening; de teller `beantwoord` legt vast dat ze ontbreekt.
+    if (score === null) {
+      if (s.soort === "Sterkte") versnellerScores[s.mapping] ??= [];
+      else driverScores[s.mapping] ??= [];
+      continue;
+    }
     completedStellingen += 1;
     if (s.soort === "Sterkte") {
       (versnellerScores[s.mapping] ??= []).push(score);
@@ -255,14 +295,25 @@ export function buildT4KidsContract(opts: BuildT4KidsOpts): T4KidsContract {
   }
 
   const gem = (xs: number[]) => (xs.length ? round2(xs.reduce((a, b) => a + b, 0) / xs.length) : 0);
-  const intrinsiek = gem(intrinsiekScores);
-  const extrinsiek = gem(extrinsiekScores);
-  let balansLabel: T4KidsMainMeta["autonomie"]["balansLabel"] = "in evenwicht";
-  if (round2(intrinsiek - extrinsiek) >= 0.5) balansLabel = "eerder autonoom";
-  else if (round2(extrinsiek - intrinsiek) >= 0.5) balansLabel = "eerder extern";
+  // Een gemiddelde dat pas bestaat als alle stellingen van de groep er zijn.
+  const volledigGem = (xs: number[], totaal: number): number | null =>
+    totaal > 0 && xs.length >= totaal ? gem(xs) : null;
+
+  const intrinsiek = volledigGem(intrinsiekScores, totaalIntrinsiek);
+  const extrinsiek = volledigGem(extrinsiekScores, totaalExtrinsiek);
+  let balansLabel: T4KidsBalansLabel;
+  if (intrinsiek === null || extrinsiek === null) {
+    balansLabel = "te weinig antwoorden";
+  } else if (round2(intrinsiek - extrinsiek) >= 0.5) {
+    balansLabel = "eerder autonoom";
+  } else if (round2(extrinsiek - intrinsiek) >= 0.5) {
+    balansLabel = "eerder extern";
+  } else {
+    balansLabel = "in evenwicht";
+  }
 
   // ── constructRows / familyRows (zelfde vorm als buildT4StudentsContract) ─
-  const constructRows: ConstructRow[] = [];
+  const constructRows: T4KidsConstructRow[] = [];
   for (const focus of T4KIDS_FOCI) {
     const n = focusPicks[focus];
     constructRows.push({
@@ -272,51 +323,54 @@ export function buildT4KidsContract(opts: BuildT4KidsOpts): T4KidsContract {
       least: 0,
       net: n,
       shown: totalInteresse,
-      avgEnergy: 0,
+      beantwoord: completedInteresse,
+      avgEnergy: null,
       energySource: "keuze",
       mostItems: n > 0 ? [FOCUS_ACTIVITEIT[focus]] : [],
       toelichtingen: [],
     });
   }
-  for (const [versneller, scores] of Object.entries(versnellerScores)) {
-    constructRows.push({
-      construct: versneller,
-      family: "Sterkte",
+  const stellingRij = (
+    construct: string,
+    family: "Sterkte" | "Driver",
+    scores: number[],
+  ): T4KidsConstructRow => {
+    const totaal = totaalPerMapping[construct] ?? scores.length;
+    return {
+      construct,
+      family,
       most: scores.filter((s) => s >= 2).length,
       least: scores.filter((s) => s <= 1).length,
       net: scores.filter((s) => s >= 2).length - scores.filter((s) => s <= 1).length,
-      shown: scores.length,
-      avgEnergy: gem(scores),
+      shown: totaal,
+      beantwoord: scores.length,
+      avgEnergy: volledigGem(scores, totaal),
       energySource: scores.length ? "item" : "geen",
       mostItems: [],
       toelichtingen: [],
-    });
+    };
+  };
+  for (const [versneller, scores] of Object.entries(versnellerScores)) {
+    constructRows.push(stellingRij(versneller, "Sterkte", scores));
   }
   for (const [driver, scores] of Object.entries(driverScores)) {
-    constructRows.push({
-      construct: driver,
-      family: "Driver",
-      most: scores.filter((s) => s >= 2).length,
-      least: scores.filter((s) => s <= 1).length,
-      net: scores.filter((s) => s >= 2).length - scores.filter((s) => s <= 1).length,
-      shown: scores.length,
-      avgEnergy: gem(scores),
-      energySource: scores.length ? "item" : "geen",
-      mostItems: [],
-      toelichtingen: [],
-    });
+    constructRows.push(stellingRij(driver, "Driver", scores));
   }
 
-  const totalPicks = Object.values(focusPicks).reduce((a, b) => a + b, 0) || 1;
-  const familyRows: FamilyRow[] = [
+  // Het totaal aantal kleurkeuzes is een telling, geen deler: nul keuzes moet
+  // ook nul blijven en mag niet op 1 worden gezet.
+  const totalPicks = Object.values(focusPicks).reduce((a, b) => a + b, 0);
+  const alleSterkteScores = Object.values(versnellerScores).flat();
+  const alleDriverScores = Object.values(driverScores).flat();
+  const familyRows: T4KidsFamilyRow[] = [
     { family: "Interesse", avgEnergy: round2(totalPicks) },
     {
       family: "Sterkte",
-      avgEnergy: gem(Object.values(versnellerScores).flat()),
+      avgEnergy: alleSterkteScores.length ? gem(alleSterkteScores) : null,
     },
     {
       family: "Driver",
-      avgEnergy: gem(Object.values(driverScores).flat()),
+      avgEnergy: alleDriverScores.length ? gem(alleDriverScores) : null,
     },
   ];
 

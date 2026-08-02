@@ -93,7 +93,8 @@ interface ExacteAntwoorden {
 interface ConstructRow {
   construct: string;
   family: string;
-  avgEnergy: number;
+  // null als niet alle vragen van dit construct beantwoord zijn.
+  avgEnergy: number | null;
   net: number;
   shown: number;
 }
@@ -108,7 +109,7 @@ interface T4KidsContract {
         gekozenArchetypen: number;
         completedStellingen: number;
         totalStellingen: number;
-        autonomie: { intrinsiek: number; extrinsiek: number; balansLabel: string };
+        autonomie: { intrinsiek: number | null; extrinsiek: number | null; balansLabel: string };
       };
       constructRows: ConstructRow[];
     };
@@ -249,22 +250,17 @@ export default function T4KidsRapport() {
   const rows = data?.sections.main.constructRows ?? [];
   const naam = voornaam(data?.participant.name ?? "");
 
-  const versnellerData = useMemo(
-    () =>
-      rows
-        .filter((r) => r.family === "Sterkte")
-        .map((r) => ({ label: r.construct, waarde: Number(r.avgEnergy.toFixed(2)) }))
-        .sort((a, b) => b.waarde - a.waarde),
-    [rows],
-  );
-  const driverData = useMemo(
-    () =>
-      rows
-        .filter((r) => r.family === "Driver")
-        .map((r) => ({ label: r.construct, waarde: Number(r.avgEnergy.toFixed(2)) }))
-        .sort((a, b) => b.waarde - a.waarde),
-    [rows],
-  );
+  // Een construct waarvan niet alle stellingen beantwoord zijn heeft geen
+  // gemiddelde en hoort dus ook geen staafje in de grafiek te krijgen: een
+  // staafje van nul zou als "bijna nooit" gelezen worden.
+  const staafjes = (family: string) =>
+    rows
+      .filter((r) => r.family === family && typeof r.avgEnergy === "number")
+      .map((r) => ({ label: r.construct, waarde: Number((r.avgEnergy as number).toFixed(2)) }))
+      .sort((a, b) => b.waarde - a.waarde);
+
+  const versnellerData = useMemo(() => staafjes("Sterkte"), [rows]);
+  const driverData = useMemo(() => staafjes("Driver"), [rows]);
   const focusData = useMemo(
     () =>
       (exact?.focusTally ?? [])
@@ -662,9 +658,18 @@ export default function T4KidsRapport() {
             <h3 className="text-lg font-bold text-teal-900">Zelf willen of samen willen?</h3>
             <p className="mt-2 text-[15px] text-slate-700">
               Soms doe je iets <strong>omdat je het zelf leuk of belangrijk vindt</strong>, soms
-              <strong> omdat je anderen blij wil maken</strong>. Bij jou lijkt het nu{" "}
-              <strong>{meta.autonomie.balansLabel}</strong> te zijn. Dat is een mooi startpunt voor een gesprek —
-              geen eindoordeel.
+              <strong> omdat je anderen blij wil maken</strong>.{" "}
+              {meta.autonomie.balansLabel === "te weinig antwoorden" ? (
+                <>
+                  Je hebt hier nog niet alle vragen beantwoord, dus we zeggen er nu nog niets over.
+                  Vul je ze later aan, dan zie je het hier verschijnen.
+                </>
+              ) : (
+                <>
+                  Bij jou lijkt het nu <strong>{meta.autonomie.balansLabel}</strong> te zijn. Dat is
+                  een mooi startpunt voor een gesprek, geen eindoordeel.
+                </>
+              )}
             </p>
           </div>
 

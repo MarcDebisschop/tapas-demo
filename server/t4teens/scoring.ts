@@ -61,8 +61,23 @@ function scoreVan(raw: unknown): number | null {
 export interface T4TeensMainMeta {
   completedItems: number;
   totalItems: number;
-  averageScore: number;
+  // null zolang er geen enkel antwoord is: een gemiddelde over nul antwoorden
+  // bestaat niet, en 0 is op deze schaal het midden en dus een echt oordeel.
+  averageScore: number | null;
   batterij: number | null;
+}
+
+// Zelfde vorm als ConstructRow, met twee toevoegingen die het rapport nodig
+// heeft om een niet gegeven antwoord van een gegeven antwoord te onderscheiden:
+// `beantwoord` naast `shown`, en een gemiddelde dat null is als er niets is
+// ingevuld. Lokaal gehouden zodat de gedeelde ConstructRow ongemoeid blijft.
+export interface T4TeensConstructRow extends Omit<ConstructRow, "avgEnergy"> {
+  beantwoord: number;
+  avgEnergy: number | null;
+}
+
+export interface T4TeensFamilyRow extends Omit<FamilyRow, "avgEnergy"> {
+  avgEnergy: number | null;
 }
 
 export interface T4TeensContract {
@@ -80,8 +95,8 @@ export interface T4TeensContract {
   sections: {
     main: {
       meta: T4TeensMainMeta;
-      constructRows: ConstructRow[];
-      familyRows: FamilyRow[];
+      constructRows: T4TeensConstructRow[];
+      familyRows: T4TeensFamilyRow[];
     };
   };
 }
@@ -153,27 +168,29 @@ export function buildT4TeensContract(opts: BuildT4TeensOpts): T4TeensContract {
     }
   }
 
-  const constructRows: ConstructRow[] = Object.entries(clusters).map(([construct, v]) => ({
+  const gemiddelde = (xs: number[]): number | null =>
+    xs.length ? round2(xs.reduce((a, b) => a + b, 0) / xs.length) : null;
+
+  const constructRows: T4TeensConstructRow[] = Object.entries(clusters).map(([construct, v]) => ({
     construct,
     family: v.family,
     most: v.most,
     least: v.least,
     net: v.most - v.least,
     shown: v.shown,
-    avgEnergy: v.scores.length ? round2(v.scores.reduce((a, b) => a + b, 0) / v.scores.length) : 0,
+    beantwoord: v.scores.length,
+    avgEnergy: gemiddelde(v.scores),
     energySource: v.scores.length ? "item" : "geen",
     mostItems: v.mostItems,
     toelichtingen: [],
   }));
 
-  const familyRows: FamilyRow[] = Object.entries(familyScores).map(([family, scores]) => ({
+  const familyRows: T4TeensFamilyRow[] = Object.entries(familyScores).map(([family, scores]) => ({
     family,
-    avgEnergy: scores.length ? round2(scores.reduce((a, b) => a + b, 0) / scores.length) : 0,
+    avgEnergy: gemiddelde(scores),
   }));
 
-  const averageScore = alleScores.length
-    ? round2(alleScores.reduce((a, b) => a + b, 0) / alleScores.length)
-    : 0;
+  const averageScore = gemiddelde(alleScores);
 
   return {
     contractVersion: "1.0.0",
