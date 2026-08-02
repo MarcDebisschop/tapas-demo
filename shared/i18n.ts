@@ -386,13 +386,6 @@ export const STRINGS = {
   // --- Verplicht doorklikken: vriendelijke meldingen, geen verwijt ---
   // Een deelnemer die nog niets gekozen heeft, hoort te lezen wat er nog te
   // doen is, niet dat hij iets fout deed.
-  nog_te_beantwoorden: {
-    nl: "Kies eerst een antwoord, dan kun je verder.",
-    fr: "Choisissez d'abord une réponse, puis vous pourrez continuer.",
-    en: "Pick an answer first, then you can continue.",
-    es: "Elige primero una respuesta y luego podrás continuar.",
-    ru: "Сначала выберите ответ, затем можно продолжить.",
-  },
   schaal_nog_te_zetten: {
     nl: "Zet de regelaar op de plek die bij jou past.",
     fr: "Placez le curseur là où cela vous correspond.",
