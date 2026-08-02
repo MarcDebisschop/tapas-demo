@@ -218,6 +218,10 @@ export function buildT4KidsContract(opts: BuildT4KidsOpts): T4KidsContract {
   const naam = voornaamVan(opts.name);
 
   // ── Module 1 — interesse focus-tally ────────────────────────────────────
+  // Dit is de teller van Eiland 1 en alleen van Eiland 1. Het bijschrift boven
+  // de reiskaart zegt tegen het kind dat de tegels uit Eiland 1 komen, dus mag
+  // hier niets anders bij opgeteld worden. Het signaal uit Eiland 2 wordt apart
+  // geteld in `archetypeFocusPicks` hieronder.
   const focusPicks: Record<Focus, number> = {
     "Abstraherend": 0,
     "Doelgericht-Creatief": 0,
@@ -237,6 +241,14 @@ export function buildT4KidsContract(opts: BuildT4KidsOpts): T4KidsContract {
   }
 
   // ── Module 2 — gekozen archetypen (+ secundair focus-signaal) ───────────
+  const archetypeFocusPicks: Record<Focus, number> = {
+    "Abstraherend": 0,
+    "Doelgericht-Creatief": 0,
+    "Sociaal-gericht": 0,
+    "Uitvoerend": 0,
+    "Overdracht-gericht": 0,
+    "Artistiek-Creatief": 0,
+  };
   const archIn = Array.isArray(keuzes.archetypen) ? keuzes.archetypen : [];
   const gekozenArchetypen: T4KidsArchetypeKeuze[] = [];
   for (const keuze of archIn) {
@@ -248,7 +260,7 @@ export function buildT4KidsContract(opts: BuildT4KidsOpts): T4KidsContract {
       focus: a.focus,
       waarom: typeof keuze.waarom === "string" ? keuze.waarom.trim() : "",
     });
-    focusPicks[a.focus] += 1; // secundair signaal, zelfde eenheid als picks
+    archetypeFocusPicks[a.focus] += 1; // secundair signaal, apart van Eiland 1
   }
   const top3Ids = Array.isArray(keuzes.top3) ? keuzes.top3.slice(0, 3) : [];
   const topArchetypen = top3Ids
@@ -375,15 +387,25 @@ export function buildT4KidsContract(opts: BuildT4KidsOpts): T4KidsContract {
   ];
 
   // ── Rapport — kinddeel ───────────────────────────────────────────────────
+  // De reiskaart en de sterzinnen erboven staan onder het bijschrift over
+  // Eiland 1 en tellen dus alleen Eiland 1. De verkenzinnen en de
+  // combinatiezinnen verderop gaan over interesse in het algemeen en houden,
+  // zoals voordien, rekening met allebei de eilanden.
   const fociGesorteerd = [...T4KIDS_FOCI].sort((a, b) => focusPicks[b] - focusPicks[a]);
-  const sterksteFoci = fociGesorteerd.filter((f) => focusPicks[f] > 0).slice(0, 3);
+  const eiland1Foci = fociGesorteerd.filter((f) => focusPicks[f] > 0).slice(0, 3);
+
+  const samenPicks = (f: Focus) => focusPicks[f] + archetypeFocusPicks[f];
+  const sterksteFoci = [...T4KIDS_FOCI]
+    .sort((a, b) => samenPicks(b) - samenPicks(a))
+    .filter((f) => samenPicks(f) > 0)
+    .slice(0, 3);
 
   const reiskaart = fociGesorteerd.map((f) => ({
     focus: f,
     activiteit: FOCUS_ACTIVITEIT[f],
     keuzes: focusPicks[f],
   }));
-  const energieVan = sterksteFoci.map((f) => `Je koos vaak dingen waarbij je ${FOCUS_ACTIVITEIT[f]}.`);
+  const energieVan = eiland1Foci.map((f) => `Je koos vaak dingen waarbij je ${FOCUS_ACTIVITEIT[f]}.`);
 
   // Sterktes als gedrag (procesgericht, "je gaf blijk van..."), enkel de sterkste.
   const versnellerGedrag: Record<string, string> = {
@@ -467,21 +489,12 @@ export function buildT4KidsContract(opts: BuildT4KidsOpts): T4KidsContract {
   const woordVan = (w: number) =>
     T4KIDS_WOORDSCHAAL.find((x) => x.waarde === w)?.label ?? String(w);
 
-  const interesseFocusPicks: Record<Focus, number> = {
-    "Abstraherend": 0,
-    "Doelgericht-Creatief": 0,
-    "Sociaal-gericht": 0,
-    "Uitvoerend": 0,
-    "Overdracht-gericht": 0,
-    "Artistiek-Creatief": 0,
-  };
   const exacteInteresses: T4KidsExacteInteresse[] = [];
   for (const paar of T4KIDS_INTERESSE_PAREN) {
     const kant = interesseKant(responses[paar.id]);
     if (!kant) continue;
     const gekozen = kant === "links" ? paar.links : paar.rechts;
     const ander = kant === "links" ? paar.rechts : paar.links;
-    interesseFocusPicks[gekozen.focus] += 1;
     exacteInteresses.push({
       id: paar.id,
       gekozenKant: kant,
@@ -490,8 +503,10 @@ export function buildT4KidsContract(opts: BuildT4KidsOpts): T4KidsContract {
       focus: gekozen.focus,
     });
   }
+  // Dezelfde teller als de reiskaart, zodat de staafgrafiek en de tegels op
+  // pagina een nooit meer een ander getal voor dezelfde kleur kunnen tonen.
   const focusTally: T4KidsFocusTally[] = T4KIDS_FOCI
-    .map((f) => ({ focus: f, activiteit: FOCUS_ACTIVITEIT[f], keuzes: interesseFocusPicks[f] }))
+    .map((f) => ({ focus: f, activiteit: FOCUS_ACTIVITEIT[f], keuzes: focusPicks[f] }))
     .sort((a, b) => b.keuzes - a.keuzes);
 
   const topRangById = new Map<string, number>();
