@@ -22,6 +22,7 @@
 // =============================================================================
 
 import { T4TEENS_LEEFTIJDSTEKST } from "@shared/doelgroep-leeftijd";
+import { TWOMINSCAN_PAGINATEKST, TWOMINSCAN_TALENTEKST_VOLUIT } from "@shared/twominscan-rapport";
 
 export type Orientatie = "business" | "education" | "beide" | "sport";
 
@@ -105,7 +106,7 @@ export const INSTRUMENTENGIDS: GidsInstrument[] = [
     doelgroep: "Professionals die hun energetisch gedragsprofiel in een werkcontext willen kennen.",
     start: { label: "Start de 2MinScan", route: "/2minscan", direct: true },
     rapportTeaser:
-      "Een uitgewerkt 15-pagina \"Energetisch Gedragsprofiel\"-rapport, beschikbaar in 5 talen (NL/FR/EN/ES/RU).",
+      `Een uitgewerkt "Energetisch Gedragsprofiel"-rapport van ${TWOMINSCAN_PAGINATEKST}, beschikbaar in ${TWOMINSCAN_TALENTEKST_VOLUIT}.`,
     icoon: "Zap",
   },
   {

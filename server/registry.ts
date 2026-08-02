@@ -2,6 +2,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { STANDAARD_TAAL, type Taal } from "../shared/talen";
 import { T4TEENS_LEEFTIJDSTEKST } from "../shared/doelgroep-leeftijd";
+import { TWOMINSCAN_PAGINATEKST, TWOMINSCAN_TALENTEKST } from "../shared/twominscan-rapport";
 import {
   type Instrument,
   type Vertaalbaar,
@@ -496,8 +497,10 @@ function bouwRegistry(): Map<string, InstrumentDescriptor> {
     flowType: "individual",
     name: "2MinScan",
     version: "1.0.0",
+    // Het aantal pagina's en het aantal talen komen uit
+    // shared/twominscan-rapport.ts en staan hier bewust niet als eigen getal.
     description:
-      "Energetisch gedragsprofiel in professionele context - 15-paginarapport, 5 talen.",
+      `Energetisch gedragsprofiel in professionele context - rapport van ${TWOMINSCAN_PAGINATEKST}, ${TWOMINSCAN_TALENTEKST}.`,
     isDefault: false,
     creditCost: 0,
     publiekZichtbaar: true,

@@ -13,6 +13,11 @@
 import type { Express } from "express";
 import { instrumentSamenvattingen, publiekeInstrumenten } from "../registry";
 import { T4TEENS_LEEFTIJDSTEKST } from "@shared/doelgroep-leeftijd";
+import {
+  TWOMINSCAN_PAGINATEKST,
+  TWOMINSCAN_TALENTEKST,
+  TWOMINSCAN_TALENTEKST_VOLUIT,
+} from "@shared/twominscan-rapport";
 
 // Statische verrijking: beschrijving, doelgroep, use case en outcome per instrument.
 // Keys = instrumentId uit de registry.
@@ -168,8 +173,8 @@ const VERRIJKING: Record<string, {
       "Meertalige afname en rapportage binnen één team",
     ],
     outcome:
-      "Energetisch gedragsprofiel in professionele context: een uitgewerkt 15-pagina \"Energetisch Gedragsprofiel\"-rapport in 5 talen (NL/FR/EN/ES/RU).",
-    rapport: "Energetisch Gedragsprofiel PDF (15 pagina's, 5 talen)",
+      `Energetisch gedragsprofiel in professionele context: een uitgewerkt "Energetisch Gedragsprofiel"-rapport van ${TWOMINSCAN_PAGINATEKST} in ${TWOMINSCAN_TALENTEKST_VOLUIT}.`,
+    rapport: `Energetisch Gedragsprofiel PDF (${TWOMINSCAN_PAGINATEKST}, ${TWOMINSCAN_TALENTEKST})`,
     emoji: "⚡",
   },
   // Driver-scan — 5 Kahler-drivers via forced-choice (individueel)
