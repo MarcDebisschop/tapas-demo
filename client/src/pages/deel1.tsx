@@ -12,6 +12,7 @@ import { apiRequest } from "@/lib/queryClient";
 import type { ClientInstrument, ClientBlock, AnswerState, BlockAnswer, EnergyOption, Afname, ItemTijden } from "@/lib/types";
 import { ChevronLeft, ChevronRight, ThumbsUp, ThumbsDown, Check, CheckCircle2 } from "lucide-react";
 import { maakVertaler, normaliseerTaal, STANDAARD_TAAL, publiekeFamilie } from "@shared/i18n";
+import { blokAntwoordVolledig, isWaarderingsblok } from "@shared/verplicht-antwoorden";
 
 function emptyAnswer(): BlockAnswer {
   return { most: null, least: null, itemEnergy: { most: null, least: null }, blockEnergy: null, toelichting: null };
@@ -131,10 +132,17 @@ export default function Deel1() {
   const minEnergie = energyOptions.length ? Math.min(...energyOptions.map((o) => o.value)) : 0;
   const isEnergieKostend = (v: number | null | undefined) =>
     v !== null && v !== undefined && (v < 0 || v === minEnergie);
+  // Een blok met één uitspraak wordt gewaardeerd, niet gerangschikt: "meest" en
+  // "minst" hebben daar geen betekenis.
+  const waarderingsblok = block ? isWaarderingsblok(block) : false;
+  // Eén schaal voor het hele blok, of een aparte schaal voor de meest- en de
+  // minst-keuze. Bij één uitspraak is er maar één schaal, wat het blok verder
+  // ook over zichzelf zegt: er valt geen tweede keuze te waarderen.
+  const eenSchaalVoorHetBlok = waarderingsblok || block?.energyMode === "block";
   const isDriverBlok = block?.family === "Drivers";
   const toonToelichting =
     isDriverBlok &&
-    (block?.energyMode === "block"
+    (eenSchaalVoorHetBlok
       ? isEnergieKostend(cur.blockEnergy)
       : isEnergieKostend(cur.itemEnergy.most) || isEnergieKostend(cur.itemEnergy.least));
   const toelichtingLabel = TOELICHTING_LABELS[taal] ?? TOELICHTING_LABELS.nl;
@@ -162,13 +170,7 @@ export default function Deel1() {
     let firstIncomplete = -1;
     for (let i = 0; i < bl.length; i++) {
       const b = bl[i]!;
-      const a = parsed[`B${b.blockIndex}`];
-      const compleet =
-        !!a && !!a.most && !!a.least &&
-        (b.energyMode === "block"
-          ? a.blockEnergy != null
-          : a.itemEnergy?.most != null && a.itemEnergy?.least != null);
-      if (!compleet) { firstIncomplete = i; break; }
+      if (!blokAntwoordVolledig(b, parsed[`B${b.blockIndex}`])) { firstIncomplete = i; break; }
     }
     setIdx(firstIncomplete === -1 ? bl.length - 1 : firstIncomplete);
   }, [afname, inst]);
@@ -246,21 +248,15 @@ export default function Deel1() {
     update({ least: cur.least === pos ? null : pos, most });
   }
 
-  // Validatie van het huidige blok.
-  const blockComplete = useMemo(() => {
-    if (!block) return false;
-    if (!cur.most || !cur.least) return false;
-    if (block.energyMode === "block") {
-      return cur.blockEnergy !== null;
-    }
-    // item-energy: energie voor most én least gekozen item.
-    return cur.itemEnergy.most !== null && cur.itemEnergy.least !== null;
-  }, [block, cur]);
+  // Validatie van het huidige blok. De regel zelf staat in
+  // shared/verplicht-antwoorden.ts, zodat het scherm en de server niet uit
+  // elkaar kunnen lopen over wat een blok vraagt.
+  const blockComplete = useMemo(
+    () => (block ? blokAntwoordVolledig(block, cur) : false),
+    [block, cur],
+  );
 
-  const answeredCount = Object.keys(answers).filter((k) => {
-    const a = answers[k];
-    return a && a.most && a.least;
-  }).length;
+  const answeredCount = blocks.filter((b) => blokAntwoordVolledig(b, answers[`B${b.blockIndex}`])).length;
 
   async function finishDeel1() {
     setSubmitting(true);
@@ -280,6 +276,10 @@ export default function Deel1() {
   const ontbreekt = useMemo(() => {
     if (!block) return [] as string[];
     const m: string[] = [];
+    if (waarderingsblok) {
+      if (cur.blockEnergy === null) m.push(t("ontbreekt_waardering"));
+      return m;
+    }
     if (!cur.most) m.push(t("ontbreekt_meest"));
     if (!cur.least) m.push(t("ontbreekt_minst"));
     if (block.energyMode === "block") {
@@ -368,7 +368,9 @@ export default function Deel1() {
 
         <Card>
           <CardContent className="p-5 sm:p-6">
-            <p className="text-sm text-muted-foreground">{t("deel1_instructie")}</p>
+            <p className="text-sm text-muted-foreground">
+              {t(waarderingsblok ? "deel1_instructie_waardering" : "deel1_instructie")}
+            </p>
 
             <div className="mt-4 space-y-3">
               {block.items.map((it) => {
@@ -387,6 +389,7 @@ export default function Deel1() {
                     data-testid={`item-${it.pos}`}
                   >
                     <p className="text-sm text-foreground">{it.text}</p>
+                    {!waarderingsblok && (
                     <div className="mt-3 flex gap-2">
                       <button
                         onClick={() => setMost(it.pos)}
@@ -407,6 +410,7 @@ export default function Deel1() {
                         <ThumbsDown className="h-3.5 w-3.5" /> {t("deel1_minst")}
                       </button>
                     </div>
+                    )}
                   </div>
                 );
               })}
@@ -414,9 +418,11 @@ export default function Deel1() {
 
             {/* Energie-bevraging */}
             <div className="mt-6 space-y-4 rounded-lg border border-border bg-muted/30 p-4">
-              {block.energyMode === "block" ? (
+              {eenSchaalVoorHetBlok ? (
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-foreground">{t("energie_thema_vraag")}</p>
+                  <p className="text-sm font-medium text-foreground">
+                    {t(waarderingsblok ? "deel1_waardering_vraag" : "energie_thema_vraag")}
+                  </p>
                   <EnergyRow
                     options={energyOptions}
                     value={cur.blockEnergy}

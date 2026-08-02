@@ -383,6 +383,30 @@ export const STRINGS = {
   ontbreekt_energie_blok: { nl: "geef de energie aan", fr: "indiquez l'énergie", en: "indicate the energy", es: "indica la energía", ru: "укажите энергию" },
   ontbreekt_energie_meest: { nl: "energie bij 'Meest'", fr: "énergie pour « Le plus »", en: "energy for 'Most'", es: "energía para «Más»", ru: "энергия для «Больше всего»" },
   ontbreekt_energie_minst: { nl: "energie bij 'Minst'", fr: "énergie pour « Le moins »", en: "energy for 'Least'", es: "energía para «Menos»", ru: "энергия для «Меньше всего»" },
+  // --- Blok met één uitspraak: waarderen in plaats van rangschikken ---
+  // Waar een blok maar één uitspraak draagt, valt er niets te kiezen tussen
+  // uitspraken. De deelnemer geeft dan aan hoe sterk die ene uitspraak past.
+  deel1_instructie_waardering: {
+    nl: "Geef aan in welke mate deze uitspraak bij je past.",
+    fr: "Indiquez dans quelle mesure cette affirmation vous correspond.",
+    en: "Indicate how much this statement fits you.",
+    es: "Indica en qué medida esta afirmación te describe.",
+    ru: "Укажите, насколько это утверждение вам подходит.",
+  },
+  deel1_waardering_vraag: {
+    nl: "In welke mate past deze uitspraak bij jou?",
+    fr: "Dans quelle mesure cette affirmation vous correspond-elle ?",
+    en: "How much does this statement fit you?",
+    es: "¿En qué medida te describe esta afirmación?",
+    ru: "Насколько это утверждение вам подходит?",
+  },
+  ontbreekt_waardering: {
+    nl: "geef aan in welke mate het past",
+    fr: "indiquez dans quelle mesure cela correspond",
+    en: "indicate how much it fits",
+    es: "indica en qué medida encaja",
+    ru: "укажите, насколько это подходит",
+  },
   // --- Verplicht doorklikken: vriendelijke meldingen, geen verwijt ---
   // Een deelnemer die nog niets gekozen heeft, hoort te lezen wat er nog te
   // doen is, niet dat hij iets fout deed.

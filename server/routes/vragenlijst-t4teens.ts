@@ -71,7 +71,10 @@ function buildT4TeensClientInstrument(taal: string) {
       blockIndex: idx,
       stateKey: `B${idx}`,
       family: item.domein,
-      energyMode: "item" as const,
+      // Eén uitspraak per blok, dus één waardering voor dat blok. "item" zou
+      // een aparte energie voor een meest- en een minst-keuze beloven, en die
+      // keuzes zijn bij één uitspraak niet te maken.
+      energyMode: "block" as const,
       items: [
         {
           pos: "A",
