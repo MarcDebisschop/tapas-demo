@@ -13,6 +13,7 @@ import type { ClientInstrument, ClientBlock, AnswerState, BlockAnswer, EnergyOpt
 import { ChevronLeft, ChevronRight, ThumbsUp, ThumbsDown, Check, CheckCircle2 } from "lucide-react";
 import { maakVertaler, normaliseerTaal, STANDAARD_TAAL, publiekeFamilie } from "@shared/i18n";
 import { blokAntwoordVolledig, isWaarderingsblok } from "@shared/verplicht-antwoorden";
+import { bewijsSleutel } from "@/pages/klaar";
 
 function emptyAnswer(): BlockAnswer {
   return { most: null, least: null, itemEnergy: { most: null, least: null }, blockEnergy: null, toelichting: null };
@@ -265,6 +266,27 @@ export default function Deel1() {
         responses: answers,
         tijden: huidigeTijden(),
       });
+      // T4Teens heeft geen eigen deel 2: de vier organisatieverbondenheids-
+      // vragen van het T4P Business Kompas ('is je job correct verloond?')
+      // horen niet bij een jongere. Zie bevindingen-punt-a-instrumentkaart.md.
+      // In plaats van naar /deel2 te gaan (dat toont altijd de T4P-vragen,
+      // ongeacht instrument) rondt T4Teens hier meteen af: dezelfde
+      // /connection-route, maar zonder q1-q4, wat de server nu toestaat voor
+      // instrumenten zonder eigen deel 2.
+      if (isT4Teens) {
+        const res = await apiRequest("POST", `/api/afnames/${id}/connection`, {});
+        try {
+          const uitkomst = await res.json();
+          const code = uitkomst?.afname?.bezitsToken;
+          if (typeof code === "string" && code) {
+            window.sessionStorage.setItem(bewijsSleutel(id), code);
+          }
+        } catch {
+          // Mislukt bewaren mag het afronden nooit blokkeren.
+        }
+        navigate(`/afname/${id}/klaar`);
+        return;
+      }
       navigate(`/afname/${id}/deel2`);
     } catch (e: any) {
       toast({ title: t("fout_opslaan_titel"), description: String(e.message ?? e), variant: "destructive" });
