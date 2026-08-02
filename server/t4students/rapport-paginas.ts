@@ -447,12 +447,14 @@ export function bouwT4StudentsRapport(
   );
 
   // ── 6. Jouw energie vandaag ───────────────────────────────────────────────
-  const bronnen = resultaat.energie.bronnen
-    .map((id) => items[id]?.construct)
-    .filter((c): c is string => !!c);
-  const lekken = resultaat.energie.lekken
-    .map((id) => items[id]?.construct)
-    .filter((c): c is string => !!c);
+  // energie.bronnen en energie.lekken dragen constructnamen, geen item-id's.
+  // Alleen de drie families die het rapport rangschikt komen hier op papier;
+  // TaPas-BEELD wordt apart gelezen en zou zichzelf anders nog eens herhalen.
+  const drieFamilies = new Set(
+    inst.families.filter((f) => [FAM_FOCI, FAM_VERSNELLERS, FAM_DRIVERS].includes(f.id)).flatMap((f) => f.constructs),
+  );
+  const bronnen = resultaat.energie.bronnen.filter((c) => drieFamilies.has(c));
+  const lekken = resultaat.energie.lekken.filter((c) => drieFamilies.has(c));
   paginas.push(
     pagina(
       6,
