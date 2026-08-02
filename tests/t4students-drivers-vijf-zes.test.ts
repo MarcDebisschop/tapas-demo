@@ -31,7 +31,7 @@ const items = I.sections.find((s) => s.sectionId === "main")!.items;
 const driverFam = I.families.find((f) => f.id === "Drivers")!;
 
 describe("punt 5: zes driver-items meten vijf drivers, en dat is zo bedoeld", () => {
-  it("de familie noemt vijf drivers en bevat zes items", () => {
+  it("de familie noemt vijf drivers en bevat zeven items", () => {
     expect(driverFam.constructs).toEqual([
       "Be Perfect",
       "Please Others",
@@ -39,20 +39,24 @@ describe("punt 5: zes driver-items meten vijf drivers, en dat is zo bedoeld", ()
       "Hurry Up",
       "Be Strong",
     ]);
+    // D7 is er in de motorronde bij gekomen. Be Strong werd tot dan alleen via
+    // de twee situatie-items gemeten en had als enige driver geen eigen vraag,
+    // dus ook geen plaats om een energie-anker aan te hangen.
     const driverItems = items.filter((i) => i.family === "Drivers");
-    expect(driverItems.map((i) => i.id)).toEqual(["D1", "D2", "D3", "D4", "D5", "D6"]);
+    expect(driverItems.map((i) => i.id)).toEqual(["D1", "D2", "D3", "D4", "D5", "D6", "D7"]);
   });
 
-  it("D1 tot en met D4 zijn herkenningsitems met elk een eigen driver", () => {
+  it("D1 tot en met D4 en D7 meten elk een eigen driver, met herkenning en energie", () => {
     const verwacht: Record<string, string> = {
       D1: "Be Perfect",
       D2: "Please Others",
       D3: "Try Hard",
       D4: "Hurry Up",
+      D7: "Be Strong",
     };
     for (const [id, con] of Object.entries(verwacht)) {
       const it = items.find((i) => i.id === id)!;
-      expect(it.itemType, `${id} hoort een herkenningsitem te zijn`).toBe("recognition");
+      expect(it.itemType, `${id} hoort herkenning en energie te meten`).toBe("recognition+energy");
       expect(it.construct).toBe(con);
     }
   });

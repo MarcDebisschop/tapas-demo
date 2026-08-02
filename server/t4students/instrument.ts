@@ -21,7 +21,7 @@
 // WAT ER UIT DE BRON KOMT
 // De bron is de zelfstandige browsertoepassing van T4Students (het bestand
 // instrument-data.js, dat een object aan window.T4S_INSTRUMENT toewijst). Alle
-// 31 items, de vijf responsschalen, de volledige scoringMap met haar constanten
+// 34 items, de vijf responsschalen, de volledige scoringMap met haar constanten
 // en de drie talen zijn ongewijzigd overgenomen. Geen enkel getal is aangeraakt.
 //
 // EEN OPENSTAAND PUNT UIT DE BRON
@@ -190,7 +190,7 @@ export interface T4SScoringMap {
 /** Het volledige instrument, precies zoals het in het databestand staat. */
 export const T4STUDENTS_INSTRUMENT = definitie as unknown as T4SInstrument;
 
-/** De sectie waar alle 31 items in zitten. */
+/** De sectie waar alle 34 items in zitten. */
 export function t4studentsItems(): T4SItem[] {
   const main = T4STUDENTS_INSTRUMENT.sections.find((s) => s.sectionId === "main");
   return main ? main.items : [];

@@ -8,10 +8,10 @@ import { T4STUDENTS_INSTRUMENT as I } from "../server/t4students/instrument";
 // WAT FASE 1 VERMOEDDE, EN WAT DE METING ERVAN MAAKTE
 // In fase 1 viel op dat de energie-ankers de teller niet ophogen, en het
 // vermoeden was dat de teller daardoor te laag uitkomt. Nagemeten klopt dat
-// vermoeden niet. Twaalf items dragen een energie-anker, en alle twaalf worden
+// vermoeden niet. Negentien items dragen een energie-anker, en alle negentien worden
 // al geteld via hun eigen herkenningsantwoord. Bij een volledig ingevulde
-// vragenlijst staat de teller op 31 van 31: precies goed. Zou de motor de
-// ankers apart meetellen, dan kwam er 43 van 31 uit, en dat is dubbeltellen.
+// vragenlijst staat de teller op 34 van 34: precies goed. Zou de motor de
+// ankers apart meetellen, dan kwam er 53 van 34 uit, en dat is dubbeltellen.
 //
 // WAT ER WEL MIS WAS
 // Een item met een energie-anker heeft twee schuiven: een voor "kenmerkt dit
@@ -90,7 +90,7 @@ describe("punt 8: de teller telt wat een deelnemer werkelijk beantwoordde", () =
     }
   });
 
-  it("een volledig ingevulde vragenlijst blijft op 31 van 31 staan", () => {
+  it("een volledig ingevulde vragenlijst staat op 34 van 34", () => {
     // Dit is de tegenproef tegen dubbeltellen. De reparatie mag hier niets
     // veranderen: het stond al goed.
     const items = I.sections.find((s) => s.sectionId === "main")!.items;
@@ -102,8 +102,8 @@ describe("punt 8: de teller telt wat een deelnemer werkelijk beantwoordde", () =
       else alles[it.id] = { value: 5 };
     }
     const r = scoreStudiekompas(I, alles, null, "nl");
-    expect(r.betrouwbaarheid.totaalItems).toBe(31);
-    expect(r.betrouwbaarheid.beantwoord).toBe(31);
+    expect(r.betrouwbaarheid.totaalItems).toBe(34);
+    expect(r.betrouwbaarheid.beantwoord).toBe(34);
   });
 
   it("de telling die het voorlopig-signaal stuurt blijft ongemoeid", () => {

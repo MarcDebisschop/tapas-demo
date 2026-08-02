@@ -16,15 +16,19 @@ import { T4STUDENTS_INSTRUMENT as I } from "../server/t4students/instrument";
 // A. DE RIASEC-DREMPELS LIGGEN OP EEN SOM MET ONGELIJK BEREIK
 // De motor noemt een letter "afgeleid hoog" bij een score boven 3 en "afgeleid
 // laag" bij 1 of minder. Die score is een som van twee of drie
-// construct-scores, en die sommen hebben heel verschillende bereiken: R komt
-// tot 7, E tot 15. Drie is voor R bijna de helft van het bereik en voor E een
-// vijfde. Gemeten over 20000 toevallige volledige invullingen haalt E de grens
-// in 93,7 procent van de gevallen en R in 38,0 procent; omgekeerd geldt "laag"
-// bij R in 27,4 procent en bij E in 0,3 procent. Het scherpst zichtbaar bij wie
-// elke stelling voluit herkent: vijf letters komen dan boven de grens uit en
-// Realistisch als enige niet. De divergentienuance is daardoor niet
-// vergelijkbaar tussen de letters. De blauwdruk noemt de nuance wel (§6) maar
-// noemt geen enkel getal, dus hier is niets uitgevoerd.
+// construct-scores, en die sommen hebben heel verschillende bereiken. Gemeten
+// over 20000 toevallige volledige invullingen komt A niet hoger dan 8 en E tot
+// 16. Drie is voor A ruim een derde van het bereik en voor E minder dan een
+// vijfde. In diezelfde reeks haalt E de grens in 96,8 procent van de gevallen
+// en A in 43,0 procent; omgekeerd geldt "laag" bij A in 20,2 procent en bij E
+// in 0,3 procent. De divergentienuance is daardoor niet vergelijkbaar tussen de
+// letters. De blauwdruk noemt de nuance wel (§6) maar noemt geen enkel getal,
+// dus hier is niets uitgevoerd.
+//
+// De scheefheid is in de motorronde wel kleiner geworden. Zolang Systematisch/
+// Uitvoerend geen eigen herkenningsitem had, bleef Realistisch als enige letter
+// onder de grens, ook bij wie elke stelling voluit herkende. Met F7 erbij haalt
+// Realistisch die grens nu wel. Het verschil in bereik tussen de letters blijft.
 //
 // B. EEN VAN DE DRIE CONSISTENTIESIGNALEN IS PRAKTISCH ONBEREIKBAAR
 // profielUitgesprokenheid is de spreiding van de zes focusscores gedeeld door
@@ -63,7 +67,7 @@ describe("naloop A: de RIASEC-drempels liggen op ongelijke sommen", () => {
     expect(bronnen).toEqual({ R: 2, I: 2, A: 2, S: 3, E: 3, C: 2 });
   });
 
-  it("wie elke stelling voluit herkent, haalt de grens bij vijf letters wel en bij Realistisch niet", () => {
+  it("wie elke stelling voluit herkent, haalt de grens nu bij alle zes de letters", () => {
     // De scherpste invulling die er is: elke herkenningsstelling op 3, dus
     // "kenmerkt me helemaal". Dan hangt het verschil tussen de letters niet meer
     // van de deelnemer af maar alleen nog van het aantal bronnen en hun bereik.
@@ -73,13 +77,21 @@ describe("naloop A: de RIASEC-drempels liggen op ongelijke sommen", () => {
     }
     const r = scoreStudiekompas(I, a, null, "nl");
     const afg = (l: string) => r.riasec.details[l].afgeleideScore;
-    expect([afg("I"), afg("A"), afg("S"), afg("E"), afg("C")]).toEqual([6, 6, 6, 6, 6]);
-    // R blijft op 3 en blijft daarmee als enige onder de grens van "meer dan 3".
-    // Oorzaak: R leunt mede op Systematisch/Uitvoerend, en dat construct heeft
-    // geen eigen herkenningsitem, alleen ladingen uit situatiekeuzes.
-    expect(afg("R")).toBe(3);
-    expect(r.riasec.details.R.afgeleideScore > 3).toBe(false);
-    expect(r.riasec.details.E.afgeleideScore > 3).toBe(true);
+
+    // Realistisch stond hier voor de motorronde op 3 en bleef als enige onder de
+    // grens van "meer dan 3", omdat het mede op Systematisch/Uitvoerend leunt en
+    // dat construct toen alleen ladingen uit situatiekeuzes kreeg. Met F7 erbij
+    // telt de eigen herkenning van de deelnemer wel mee en komt R op 6.
+    expect(afg("R")).toBe(6);
+    for (const l of ["R", "I", "A", "S", "E", "C"]) {
+      expect(afg(l) > 3, `${l} hoort de grens te halen`).toBe(true);
+    }
+
+    // Wat blijft, is het ongelijke bereik. S en E leunen op drie constructen en
+    // komen op 9, de vier andere op twee constructen en blijven op 6. Dezelfde
+    // deelnemer, dezelfde antwoorden, en toch anderhalf keer zo veel.
+    expect([afg("I"), afg("A"), afg("C")]).toEqual([6, 6, 6]);
+    expect([afg("S"), afg("E")]).toEqual([9, 9]);
   });
 });
 

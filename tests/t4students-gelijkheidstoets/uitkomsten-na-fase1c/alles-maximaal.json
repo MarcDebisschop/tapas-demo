@@ -14,6 +14,11 @@
     "kaart": {
       "BE1": "kernsterkte",
       "BE2": "kernsterkte",
+      "D1": "neutraal",
+      "D2": "neutraal",
+      "D3": "neutraal",
+      "D4": "neutraal",
+      "D7": "neutraal",
       "V1": "kernsterkte",
       "V2": "kernsterkte",
       "V3": "kernsterkte",
@@ -23,7 +28,9 @@
       "F1": "kernsterkte",
       "F2": "kernsterkte",
       "F3": "kernsterkte",
-      "F6": "kernsterkte"
+      "F6": "kernsterkte",
+      "F7": "neutraal",
+      "F8": "neutraal"
     },
     "bronnen": [
       "Helderheid/zingeving",
@@ -226,8 +233,8 @@
       "Functioneel Innovatief": "kernsterkte",
       "Artistiek Innovatief": "kernsterkte",
       "Complexiteit/Conceptueel": "kernsterkte",
-      "Systematisch/Uitvoerend": "niet_van_toepassing",
-      "Sociaal Interactief": "niet_van_toepassing",
+      "Systematisch/Uitvoerend": "latent",
+      "Sociaal Interactief": "latent",
       "Overdrachtelijk Interactief": "kernsterkte"
     },
     "groepen": [
@@ -520,7 +527,7 @@
   },
   "betrouwbaarheid": {
     "beantwoord": 31,
-    "totaalItems": 31,
+    "totaalItems": 34,
     "totaalSignaal": 27,
     "voorlopigDrempel": 20,
     "voorlopig": false

@@ -14,6 +14,11 @@
     "kaart": {
       "BE1": "neutraal",
       "BE2": "neutraal",
+      "D1": "neutraal",
+      "D2": "neutraal",
+      "D3": "neutraal",
+      "D4": "neutraal",
+      "D7": "neutraal",
       "V1": "neutraal",
       "V2": "kernsterkte",
       "V3": "kernsterkte",
@@ -23,7 +28,9 @@
       "F1": "neutraal",
       "F2": "neutraal",
       "F3": "neutraal",
-      "F6": "kernsterkte"
+      "F6": "kernsterkte",
+      "F7": "neutraal",
+      "F8": "neutraal"
     },
     "bronnen": [
       "Individueel ondersteunend",
@@ -221,8 +228,8 @@
       "Functioneel Innovatief": "latent",
       "Artistiek Innovatief": "latent",
       "Complexiteit/Conceptueel": "latent",
-      "Systematisch/Uitvoerend": "niet_van_toepassing",
-      "Sociaal Interactief": "niet_van_toepassing",
+      "Systematisch/Uitvoerend": "latent",
+      "Sociaal Interactief": "latent",
       "Overdrachtelijk Interactief": "kernsterkte"
     },
     "groepen": [
@@ -512,7 +519,7 @@
   },
   "betrouwbaarheid": {
     "beantwoord": 31,
-    "totaalItems": 31,
+    "totaalItems": 34,
     "totaalSignaal": 27,
     "voorlopigDrempel": 20,
     "voorlopig": false

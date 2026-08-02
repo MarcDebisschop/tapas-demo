@@ -110,6 +110,14 @@ const TOEGESTANE_AFWIJKINGEN: { reden: string; patroon: RegExp }[] = [
     reden: "C. teller beantwoord: een enkel energie-antwoord telt nu mee (punt 8)",
     patroon: /^[^.]+\.betrouwbaarheid\.beantwoord$/,
   },
+  {
+    reden: "D. energie.kaart: de vijf drivers en twee foci hebben nu ook een anker (motorronde punt 1)",
+    patroon: /^[^.]+\.energie\.kaart\.(D1|D2|D3|D4|D7|F7|F8)$/,
+  },
+  {
+    reden: "E. totaalItems: drie nieuwe items, 31 wordt 34 (motorronde punt 1)",
+    patroon: /^[^.]+\.betrouwbaarheid\.totaalItems$/,
+  },
 ];
 
 /** Elk pad waarop twee uitvoerbomen van elkaar verschillen. */
@@ -198,9 +206,9 @@ describe("gelijkheidstoets deel 1: tegen de originele motor, met benoemde uitzon
   });
 
   it("het aantal afwijkende velden is precies wat het verslag noemt", () => {
-    // Drieënvijftig velden over zeventien patronen. Elk getal hieronder staat
-    // ook in het verslag van fase 1c; loopt het uiteen, dan klopt een van de
-    // twee niet meer.
+    // Honderdtweeënzeventig velden over zeventien patronen. Elk getal hieronder
+    // staat ook in het verslag van de motorronde; loopt het uiteen, dan klopt
+    // een van de twee niet meer.
     const perUitzondering: Record<string, number> = {};
     for (const u of TOEGESTANE_AFWIJKINGEN) perUitzondering[u.reden] = 0;
     let totaal = 0;
@@ -213,10 +221,12 @@ describe("gelijkheidstoets deel 1: tegen de originele motor, met benoemde uitzon
     }
     expect(perUitzondering).toEqual({
       "A. alertteksten: lang streepje vervangen, betekenis ongewijzigd (fase 1)": 10,
-      "B. balanslabels: drempels weer op de itemschaal beoordeeld (punt 7)": 40,
+      "B. balanslabels: drempels weer op de itemschaal beoordeeld (punt 7)": 23,
       "C. teller beantwoord: een enkel energie-antwoord telt nu mee (punt 8)": 3,
+      "D. energie.kaart: de vijf drivers en twee foci hebben nu ook een anker (motorronde punt 1)": 119,
+      "E. totaalItems: drie nieuwe items, 31 wordt 34 (motorronde punt 1)": 17,
     });
-    expect(totaal).toBe(53);
+    expect(totaal).toBe(172);
   });
 
   it("de veranderde balanslabels zijn precies de constructen met meer dan een bron", () => {

@@ -130,26 +130,21 @@ describe("punt 7: de grenzen van het balanslabel horen op de itemschaal", () => 
     }
   });
 
-  it("de twee foci zonder energie-anker krijgen geen verzonnen label", () => {
-    // Blauwdruk 4: "F4 en F5 via SJT, de overige via herkenning+energie."
-    // Voor die twee bestaat de matrix van TABEL 2 dus niet. Ze kregen eerder
-    // "latent" te lezen, wat klinkt als een bevinding over de deelnemer
-    // terwijl er in werkelijkheid niets gemeten is. Dit is in het verslag
-    // voorgelegd, niet op eigen houtje ingevuld.
+  it("nu elke focus een anker heeft, is geen enkel label meer onbepaald", () => {
+    // Tot de motorronde hadden Systematisch/Uitvoerend en Sociaal Interactief
+    // geen energie-anker en gaven zij "niet_van_toepassing" terug: de matrix
+    // van TABEL 2 bestond voor hen niet. Zij hebben er nu een, F7 en F8, dus
+    // die uitkomst hoort nergens meer te vallen.
     const r = scoreStudiekompas(
       I,
       { F4: { choice: "a" }, F5: { choice: "a" }, D5: { choice: "b" } },
       null,
       "nl",
     );
-    expect(r.foci.balanslabels["Systematisch/Uitvoerend"]).toBe("niet_van_toepassing");
-    expect(r.foci.balanslabels["Sociaal Interactief"]).toBe("niet_van_toepassing");
-
-    // De tien constructen die wel een anker hebben, houden een echt label.
-    const metAnker = ["Analyse", "Impact", "Functioneel Innovatief", "Overdrachtelijk Interactief"];
-    for (const con of metAnker) {
-      const label = r.versnellers.balanslabels[con] || r.foci.balanslabels[con];
-      expect(label, `${con} hoort wel een label te krijgen`).not.toBe("niet_van_toepassing");
+    const alle = { ...r.foci.balanslabels, ...r.versnellers.balanslabels };
+    expect(Object.keys(alle).length).toBe(12);
+    for (const [con, label] of Object.entries(alle)) {
+      expect(label, `${con} hoort een echt label te krijgen`).not.toBe("niet_van_toepassing");
     }
   });
 });

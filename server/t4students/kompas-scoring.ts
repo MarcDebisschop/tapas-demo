@@ -10,7 +10,7 @@
 // Naast dit bestand staat server/t4students/scoring.ts. Dat is de oudere
 // aanpak, die rekent op de itembank van 37 items in server/question-manager.ts
 // en die vandaag door de afnameroute gebruikt wordt. Die blijft ongewijzigd
-// staan. Deze motor hoort bij het studiekompas van 31 items uit
+// staan. Deze motor hoort bij het studiekompas van 34 items uit
 // server/data/t4students.json. Welke van de twee het platform uiteindelijk
 // gebruikt, is een beslissing voor een latere fase.
 //
@@ -257,9 +257,9 @@ const ALERT_BOODSCHAPPEN: Record<string, Record<T4STaal, string>> = {
 // talentsignaal.
 const SIGNAALDRAGENDE_ITEMS = [
   "I1", "BE1", "BE2",
-  "D1", "D2", "D3", "D4", "D5", "D6",
+  "D1", "D2", "D3", "D4", "D5", "D6", "D7",
   "V1", "V2", "V3", "V4", "V5", "V6",
-  "F1", "F2", "F3", "F4", "F5", "F6",
+  "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8",
   "R1", "R2", "R3", "R4", "R5", "R6",
 ];
 

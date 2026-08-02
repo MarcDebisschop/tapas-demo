@@ -265,8 +265,9 @@
           "id": "D1",
           "family": "Drivers",
           "construct": "Be Perfect",
-          "itemType": "recognition",
+          "itemType": "recognition+energy",
           "scale": "recognition",
+          "energyScale": "energy",
           "text": {
             "nl": "Ik werk dingen graag tot in de puntjes af, zodat het echt klopt.",
             "fr": "J'aime peaufiner les choses dans les moindres détails, pour que ce soit vraiment juste.",
@@ -280,8 +281,9 @@
           "id": "D2",
           "family": "Drivers",
           "construct": "Please Others",
-          "itemType": "recognition",
+          "itemType": "recognition+energy",
           "scale": "recognition",
+          "energyScale": "energy",
           "text": {
             "nl": "Ik vind het belangrijk om het de mensen om me heen naar hun zin te maken.",
             "fr": "Je trouve important de faire plaisir aux personnes qui m'entourent.",
@@ -295,8 +297,9 @@
           "id": "D3",
           "family": "Drivers",
           "construct": "Try Hard",
-          "itemType": "recognition",
+          "itemType": "recognition+energy",
           "scale": "recognition",
+          "energyScale": "energy",
           "text": {
             "nl": "Voor iemand die ik echt waardeer, doe ik er alles aan om te slagen.",
             "fr": "Pour quelqu'un que j'apprécie vraiment, je fais tout pour réussir.",
@@ -310,8 +313,9 @@
           "id": "D4",
           "family": "Drivers",
           "construct": "Hurry Up",
-          "itemType": "recognition",
+          "itemType": "recognition+energy",
           "scale": "recognition",
+          "energyScale": "energy",
           "text": {
             "nl": "Terwijl ik bezig ben denk ik vaak: tijd is kostbaar.",
             "fr": "Pendant que je travaille, je pense souvent : le temps est précieux.",
@@ -429,6 +433,20 @@
             "1.7",
             "1.6"
           ]
+        },
+        {
+          "id": "D7",
+          "family": "Drivers",
+          "construct": "Be Strong",
+          "itemType": "recognition+energy",
+          "scale": "recognition",
+          "energyScale": "energy",
+          "text": {
+            "nl": "Ik hou me sterk en los het liefst zelf op wat me bezighoudt.",
+            "fr": "",
+            "en": ""
+          },
+          "sourceItems": []
         },
         {
           "id": "V1",
@@ -707,6 +725,34 @@
           "sourceItems": [
             "G.1"
           ]
+        },
+        {
+          "id": "F7",
+          "family": "Talent-foci",
+          "construct": "Systematisch/Uitvoerend",
+          "itemType": "recognition+energy",
+          "scale": "recognition",
+          "energyScale": "energy",
+          "text": {
+            "nl": "Ik werk graag stap voor stap en zorgvuldig af wat ik begonnen ben.",
+            "fr": "",
+            "en": ""
+          },
+          "sourceItems": []
+        },
+        {
+          "id": "F8",
+          "family": "Talent-foci",
+          "construct": "Sociaal Interactief",
+          "itemType": "recognition+energy",
+          "scale": "recognition",
+          "energyScale": "energy",
+          "text": {
+            "nl": "Ik voel me op mijn plaats wanneer ik met anderen samenwerk.",
+            "fr": "",
+            "en": ""
+          },
+          "sourceItems": []
         },
         {
           "id": "R1",
@@ -1115,6 +1161,7 @@
       "D2": "Please Others",
       "D3": "Try Hard",
       "D4": "Hurry Up",
+      "D7": "Be Strong",
       "V1": "Analyse",
       "V2": "Individueel ondersteunend",
       "V3": "Groepsondersteunend",
@@ -1124,11 +1171,18 @@
       "F1": "Functioneel Innovatief",
       "F2": "Artistiek Innovatief",
       "F3": "Complexiteit/Conceptueel",
-      "F6": "Overdrachtelijk Interactief"
+      "F6": "Overdrachtelijk Interactief",
+      "F7": "Systematisch/Uitvoerend",
+      "F8": "Sociaal Interactief"
     },
     "energyItems": [
       "BE1",
       "BE2",
+      "D1",
+      "D2",
+      "D3",
+      "D4",
+      "D7",
       "V1",
       "V2",
       "V3",
@@ -1138,7 +1192,9 @@
       "F1",
       "F2",
       "F3",
-      "F6"
+      "F6",
+      "F7",
+      "F8"
     ],
     "sjtItems": [
       "D5",

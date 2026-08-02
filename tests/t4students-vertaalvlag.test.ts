@@ -74,12 +74,24 @@ describe("punt 9: de vertaalvlag spreekt de inhoud tegen", () => {
     expect(I.language).toBe("nl");
   });
 
-  it("alle vertaalbare teksten zijn in alle drie de talen gevuld", () => {
+  it("alle overgezette teksten staan in drie talen, de drie nieuwe alleen in het Nederlands", () => {
+    // De drie energie-items die in de motorronde zijn bijgemaakt (D7, F7 en F8)
+    // dragen met opzet een lege Franse en Engelse tekst. Er is niets vertaald
+    // en niets geraden: de Nederlandse vraagtekst moet eerst door de
+    // opdrachtgever nagelezen worden, en pas daarna heeft vertalen zin.
     const { totaal, gevuld } = telVertaalbareVelden();
-    expect(totaal).toBe(76);
-    expect(gevuld.nl).toBe(76);
+    expect(totaal).toBe(79);
+    expect(gevuld.nl).toBe(79);
     expect(gevuld.fr).toBe(76);
     expect(gevuld.en).toBe(76);
+  });
+
+  it("precies de drie nieuwe energie-items missen Frans en Engels", () => {
+    const main = I.sections.find((s) => s.sectionId === "main")!;
+    const leeg = main.items
+      .filter((i) => i.text != null && (!i.text.fr?.trim() || !i.text.en?.trim()))
+      .map((i) => i.id);
+    expect(leeg).toEqual(["D7", "F7", "F8"]);
   });
 
   it("de motor levert vandaag gewoon Frans en Engels, ongeacht de vlag", () => {
