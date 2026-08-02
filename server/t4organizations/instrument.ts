@@ -1,7 +1,7 @@
 /**
  * TaPas 4 Organizations — instrumentdefinitie.
  * ------------------------------------------------------------------
- * Server-antwoord voor GET /api/t4o/instrument. Bevat de 57 productie-items
+ * Server-antwoord voor GET /api/t4o/instrument. Bevat de 56 productie-items
  * (LETTERLIJK overgenomen uit _t4o-spec/T4O-ITEMBANK-definitief.md — de door
  * Marc aangeleverde autoritatieve vragenbron), de response-schalen, de
  * choiceSets en de schermvolgorde (sections).
@@ -141,7 +141,7 @@ const D = {
   handtekening: "waardecreatie-handtekening",
 };
 
-// ---- De 57 productie-items --------------------------------------------------
+// ---- De 56 productie-items (nulmeting + i1 t/m i55) -------------------------
 const items: T4OItem[] = [
   // Nulmeting energie (battery0-10)
   {

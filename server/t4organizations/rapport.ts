@@ -6,7 +6,7 @@ import type { T4OSessie } from "./schema";
  * ------------------------------------------------------------------
  * renderT4ORapport() bouwt het volledige organisatierapport als
  * zelfstandige HTML-pagina, dynamisch gevuld met de berekende scores.
- * De kop-/tekststructuur volgt het demo-rapport (14 secties). Stijl:
+ * De kop-/tekststructuur volgt het demo-rapport (13 secties). Stijl:
  * navy accenten (#16384a), goud accent, serif koppen, KPI-cards en
  * staafbalken via inline HTML/CSS — geen externe libraries.
  */

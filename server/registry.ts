@@ -202,6 +202,44 @@ function bouwRegistry(): Map<string, InstrumentDescriptor> {
   });
 
   // -------------------------------------------------------------------------
+  // TaPas 4 Organizations (T4O): collaboratieve organisatiescan in drie ringen.
+  //
+  // Het instrument was volledig gebouwd (server/t4organizations/) en bereikbaar
+  // via /api/t4o/... en de instrumentengids, maar stond niet in de registry.
+  // Daardoor had het geen creditkost, geen versie en geen beschrijving in het
+  // centrale register en sloegen catalogus en tarievenoverzicht het over.
+  //
+  // Identificator: "t4o". Dat is de identificator die routes, bulk-import,
+  // excel-sjablonen en de instrumentengids al gebruiken. De beheeromgeving voor
+  // vragen kent het instrument onder de eigen sleutel "tapas-t4organizations";
+  // die blijft staan, want dat is de sleutel waarmee tekstwijzigingen en
+  // auditregels in de databank zijn opgeslagen.
+  //
+  // version: het instrumentbestand bevat geen versienummer. "1.0.0" volgt de
+  // lijn van alle andere descriptors in dit register.
+  //
+  // creditCost: NIET BEVESTIGD. Nergens in de code staat een creditkost voor
+  // T4O. De waarde hieronder is overgenomen van de TaPas Teamscan, het meest
+  // vergelijkbare geregistreerde instrument (ook collaboratief, ook per sessie
+  // met meerdere invullers). Dit is een voorlopige waarde die de opdrachtgever
+  // nog moet bevestigen.
+  // -------------------------------------------------------------------------
+  const t4oKost = Number(process.env.T4O_SESSIE_CREDITS ?? teamscanKost);
+  map.set("t4o", {
+    instrumentId: "t4o",
+    flowType: "collaborative",
+    name: "TaPas 4 Organizations",
+    version: "1.0.0",
+    description:
+      "Collaboratieve organisatiescan in drie ringen (leiding, medewerkers en " +
+      "externe stakeholders), samengevoegd tot één organisatie-talentprofiel met " +
+      "identiteitskern, energieprofiel en spanningsvelden tussen de ringen.",
+    isDefault: false,
+    creditCost: t4oKost,
+    publiekZichtbaar: true,
+  });
+
+  // -------------------------------------------------------------------------
   // Human Due Diligence (HDD) — Fase: vlaggenschip-traject (journey).
   //
   // HDD is GEEN vierde meetinstrument maar een orkestrator: het stuurt in twee

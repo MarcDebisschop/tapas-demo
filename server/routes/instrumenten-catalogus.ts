@@ -77,6 +77,20 @@ const VERRIJKING: Record<string, {
     rapport: "Executive rapport + boardpresentatie",
     emoji: "🏛️",
   },
+  // T4O: organisatiescan in drie ringen (collaboratief)
+  "t4o": {
+    doelgroep: "Organisaties, directieteams, organisatiecoaches en -adviseurs",
+    useCases: [
+      "De identiteit en het vermogen van een organisatie bespreekbaar maken",
+      "Spanningsvelden tussen leiding, medewerkers en buitenwereld zichtbaar maken",
+      "Nulmeting van de energie in de organisatie",
+      "Gerichte organisatieontwikkeling sturen",
+    ],
+    outcome:
+      "Een organisatierapport met identiteitskern, energie- en vermogensprofiel, spanningsvelden tussen de drie ringen en concrete ontwikkelaanbevelingen.",
+    rapport: "T4O Organisatierapport (HTML en PDF)",
+    emoji: "🏢",
+  },
   "impact-roos": {
     doelgroep: "360°-feedback trajecten, teamleiders, HR",
     useCases: [
