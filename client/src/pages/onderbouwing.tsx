@@ -1,9 +1,12 @@
 // ---------------------------------------------------------------------------
 // onderbouwing.tsx — PUBLIEKE pagina "Onderbouwing & validatie"
 //   Route: /onderbouwing (buiten AdminLoginGate — vrij toegankelijk)
-//   Toont de wetenschappelijke onderbouwing van het TaPas-instrumentarium:
-//   vertrouwensbanner met kerncijfers + publieke rapporten (preview/download)
-//   + "op aanvraag"-documenten. Interne stukken worden hier NIET getoond.
+//   De kerncijfers in de banner komen uit de validatiestudie van
+//   Tapas4Students en gelden alleen voor dat instrument. Dat staat ook zo op
+//   de pagina zelf; de pagina gaat dus niet over "het TaPas-instrumentarium"
+//   als geheel. T4Professional heeft eronder zijn eigen blok. Verder:
+//   publieke rapporten (preview/download) + "op aanvraag"-documenten. Interne
+//   stukken worden hier NIET getoond.
 //
 //   Meertalig (NL/FR/EN) via maakVertaler; content uit shared/i18n.ts.
 // ---------------------------------------------------------------------------
