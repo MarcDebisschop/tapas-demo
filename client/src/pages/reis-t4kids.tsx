@@ -3,7 +3,9 @@
 //
 // De kindvriendelijke belevings-UX voor T4Kids (10-13 jaar): een echte
 // ontdekkingsreis langs drie eilanden (= de 3 modules van het instrument).
-// Geen scores, geen tijdsdruk, vrije eilandvolgorde, "sla over"/"stop"-opties.
+// Geen scores, geen tijdsdruk, vrije eilandvolgorde, pauzeren mag altijd. Een
+// eiland wordt pas afgesloten als elke vraag van dat eiland beantwoord is; zo
+// krijgt het kind nooit een boekje met een onverklaarbaar gat erin.
 //
 // Deze route (/reis/:id) staat volledig los van het generieke deel1-pad; enkel
 // afnames met instrumentId "t4kids" landen hier (via deelnemer.tsx). De reis
@@ -324,7 +326,20 @@ export default function ReisT4Kids() {
     };
   }, [badge]);
 
+  // Verplicht doorklikken, kindvriendelijk. Een eiland is pas af als er op elke
+  // vraag van dat eiland een keuze staat. Terug naar de kaart mag altijd, en
+  // een eiland dat nog open staat kan gewoon later verder ingevuld worden.
+  function eilandKlaar(nr: number): boolean {
+    if (nr === 1) return !!m1 && m1.paren.every((paar) => !!interesse[paar.id]);
+    if (nr === 2) return !!m2 && top3.length === m2.topN;
+    if (nr === 3) return !!m3 && m3.stellingen.every((st) => schaal[st.id] !== undefined);
+    return false;
+  }
+
+  const alleEilandenKlaar = eilandKlaar(1) && eilandKlaar(2) && eilandKlaar(3);
+
   function markeerVoltooid(nr: number) {
+    if (!eilandKlaar(nr)) return;
     setVoltooid((prev) => new Set(prev).add(nr));
     setBadge(nr);
   }
@@ -463,8 +478,9 @@ export default function ReisT4Kids() {
               <p className="mx-auto mt-3 max-w-xl text-[17px] text-slate-200">
                 Ik ben <strong className="text-cyan-300">Tappie</strong>, jouw reisgids! Je gaat op reis langs{" "}
                 <strong>drie eilanden</strong>. Op elk eiland kies je gewoon wat het best bij jou past. Er zijn{" "}
-                <strong>geen foute antwoorden</strong>, en je mag altijd iets overslaan of stoppen. Je bepaalt
-                zelf welk eiland je eerst bezoekt.
+                <strong>geen foute antwoorden</strong>, en je mag altijd pauzeren en later verder doen. Je
+                bepaalt zelf welk eiland je eerst bezoekt. Op elk eiland vul je alles in, dan is je boekje
+                straks helemaal compleet.
               </p>
               {/* Leeftijdspoort (AVG art. 8): zonder leeftijdsband en ouderlijke
                   toestemming op de afname gaat de reis niet verder. De server
@@ -575,17 +591,20 @@ export default function ReisT4Kids() {
               <Button
                 size="lg"
                 className={
-                  voltooid.size > 0
+                  alleEilandenKlaar
                     ? "bg-orange-500 text-lg font-bold text-white hover:bg-orange-400"
-                    : "border-2 border-white/30 bg-transparent text-lg text-white hover:bg-white/10"
+                    : "border-2 border-white/30 bg-transparent text-lg text-white hover:bg-white/10 disabled:opacity-60"
                 }
                 onClick={() => setFase("afronden")}
+                disabled={!alleEilandenKlaar}
                 data-testid="button-rond-af"
               >
                 Rond mijn reis af 🏁
               </Button>
               <p className="mt-2 text-xs text-slate-300">
-                Je mag afronden wanneer je wil — ook als je niet alle eilanden bezocht hebt.
+                {alleEilandenKlaar
+                  ? "Alle eilanden zijn bezocht. Je boekje staat klaar!"
+                  : "Bezoek eerst alle drie de eilanden. Daarna kun je je reis afronden. Je mag altijd pauzeren en later verder doen."}
               </p>
             </div>
           </motion.div>
@@ -630,7 +649,13 @@ export default function ReisT4Kids() {
                 </motion.div>
               ))}
             </div>
-            <IslandFooter accent={themaVan(1).accent} onKaart={() => setFase("kaart")} onKlaar={() => markeerVoltooid(1)} />
+            <IslandFooter
+              accent={themaVan(1).accent}
+              onKaart={() => setFase("kaart")}
+              onKlaar={() => markeerVoltooid(1)}
+              klaarOmAfTeSluiten={eilandKlaar(1)}
+              nogTeDoen={`Kies bij elk paar wat je het liefst doet. Je hebt er nog ${m1.paren.length - Object.keys(interesse).length} te gaan.`}
+            />
           </IslandShell>
         )}
 
@@ -747,6 +772,12 @@ export default function ReisT4Kids() {
               onKaart={() => setFase("kaart")}
               onKlaar={() => markeerVoltooid(2)}
               hint="Klaar met kiezen? Sluit dit eiland af met de knop hieronder ✓."
+              klaarOmAfTeSluiten={eilandKlaar(2)}
+              nogTeDoen={
+                gekozen.length === 0
+                  ? "Tik eerst de figuren aan die bij jou passen."
+                  : `Duid nu je top ${m2.topN} aan. Je hebt er ${top3.length} van de ${m2.topN} gekozen.`
+              }
             />
           </IslandShell>
         )}
@@ -789,7 +820,13 @@ export default function ReisT4Kids() {
                 </motion.div>
               ))}
             </div>
-            <IslandFooter accent={themaVan(3).accent} onKaart={() => setFase("kaart")} onKlaar={() => markeerVoltooid(3)} />
+            <IslandFooter
+              accent={themaVan(3).accent}
+              onKaart={() => setFase("kaart")}
+              onKlaar={() => markeerVoltooid(3)}
+              klaarOmAfTeSluiten={eilandKlaar(3)}
+              nogTeDoen={`Kies bij elke zin wat het best bij jou past. Je hebt er nog ${m3.stellingen.length - Object.keys(schaal).length} te gaan.`}
+            />
           </IslandShell>
         )}
 
@@ -884,16 +921,30 @@ function IslandFooter({
   onKaart,
   onKlaar,
   hint,
+  klaarOmAfTeSluiten,
+  nogTeDoen,
 }: {
   accent: string;
   onKaart: () => void;
   onKlaar: () => void;
   hint?: string;
+  /** Staat elke vraag van dit eiland ingevuld? Zo niet blijft de knop dicht. */
+  klaarOmAfTeSluiten: boolean;
+  /** Wat het kind nog te doen heeft. Vriendelijk, nooit een verwijt. */
+  nogTeDoen: string;
 }) {
   return (
     <div className="mt-8">
       {hint && (
         <p className="mb-3 text-center text-[15px] font-medium text-white">{hint}</p>
+      )}
+      {!klaarOmAfTeSluiten && (
+        <p
+          className="mb-3 text-center text-[15px] font-medium text-white"
+          data-testid="text-nog-te-doen"
+        >
+          {nogTeDoen}
+        </p>
       )}
       <div className="flex flex-col-reverse items-center gap-3 sm:flex-row sm:justify-between">
         <button
@@ -907,8 +958,9 @@ function IslandFooter({
         <Button
           size="lg"
           style={{ backgroundColor: accent }}
-          className="w-full px-8 py-6 text-lg font-black text-white shadow-lg ring-2 ring-white/30 hover:opacity-90 sm:w-auto"
+          className="w-full px-8 py-6 text-lg font-black text-white shadow-lg ring-2 ring-white/30 hover:opacity-90 disabled:opacity-50 sm:w-auto"
           onClick={onKlaar}
+          disabled={!klaarOmAfTeSluiten}
           data-testid="button-eiland-klaar"
         >
           Klaar met dit eiland ✓
