@@ -193,12 +193,6 @@ function tekenRij(doc: Doc, rij: T4SRij, x: number, y: number, kleur: string): n
   const woordB = TEKST_B - (xWoord - x);
   const midden = y + RIJ_H / 2;
 
-  if (rij.evenSterk) {
-    doc.save().lineWidth(1).strokeColor(KLEUR.accent);
-    doc.moveTo(x - 7, y + 2).lineTo(x - 9.5, y + 2).lineTo(x - 9.5, y + RIJ_H - 2).lineTo(x - 7, y + RIJ_H - 2).stroke();
-    doc.restore();
-  }
-
   doc.font(F.dmBold).fontSize(8.4).fillColor(rij.ingevuld ? kleur : KLEUR.inktZacht);
   doc.text(rij.rang == null ? "-" : String(rij.rang), x, midden - 4.4, { width: KOL_RANG - 4, lineBreak: false });
 
@@ -224,6 +218,28 @@ function tekenRij(doc: Doc, rij: T4SRij, x: number, y: number, kleur: string): n
   meet(doc, rij.leeswoord, woordB, "leeswoord in een rangorde");
   doc.text(rij.leeswoord, xWoord, midden + 0.4, { width: woordB, lineBreak: false });
   return RIJ_H;
+}
+
+/**
+ * De haak links van twee of meer namen die even sterk zijn. Een haak per groep,
+ * zodat het er niet uitziet als losse tekens naast elke naam apart.
+ */
+function tekenHaken(doc: Doc, rijen: T4SRij[], x: number, y: number): void {
+  let i = 0;
+  while (i < rijen.length) {
+    if (!rijen[i].evenSterk) {
+      i++;
+      continue;
+    }
+    let eind = i;
+    while (eind + 1 < rijen.length && rijen[eind + 1].evenSterk) eind++;
+    const top = y + i * RIJ_H + 3;
+    const bodem = y + (eind + 1) * RIJ_H - 3;
+    doc.save().lineWidth(0.9).strokeColor(KLEUR.accent);
+    doc.moveTo(x - 6, top).lineTo(x - 9, top).lineTo(x - 9, bodem).lineTo(x - 6, bodem).stroke();
+    doc.restore();
+    i = eind + 1;
+  }
 }
 
 function hoogteRijen(rijen: T4SRij[]): number {
@@ -292,8 +308,15 @@ function blokHoogte(doc: Doc, blok: T4SBlok): number {
     }
     case "kader":
       return hoogteVan(doc, blok.tekst, F.dm, 9, TEKST_B - 32, 3.2) + 40;
-    case "paren":
-      return blok.paren.length * 21 + 6;
+    case "paren": {
+      const kolB = (TEKST_B - 12) / 2;
+      let h = 0;
+      for (let i = 0; i < blok.paren.length; i += 2) {
+        const rij = blok.paren.slice(i, i + 2);
+        h += Math.max(...rij.map((p) => hoogteVan(doc, p.waarde, F.dmMed, 10.5, kolB - 28, 2))) + 34;
+      }
+      return h + 4;
+    }
     case "vragen": {
       let h = 16;
       for (const v of blok.vragen) h += hoogteVan(doc, v, F.dmMed, 9.2, TEKST_B - 16, 2.6) + 26;
@@ -342,6 +365,7 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
         }
         yy += tekenRijkoppen(doc, x, yy) - 11;
         yy += 11;
+        tekenHaken(doc, band.rijen, x, yy);
         for (const rij of band.rijen) yy += tekenRij(doc, rij, x, yy, band.kleur);
         yy += 3;
         lijn(doc, x, yy, x + TEKST_B, yy, KLEUR.lijn);
@@ -354,6 +378,7 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
     case "rangtabel": {
       let yy = y;
       yy += tekenRijkoppen(doc, x, yy);
+      tekenHaken(doc, blok.rijen, x, yy);
       for (const rij of blok.rijen) yy += tekenRij(doc, rij, x, yy, blok.kleur);
       yy += 8;
       for (const r of blok.naschrift) yy += schrijf(doc, r, x, yy, TEKST_B, F.dm, 8.2, KLEUR.inktZacht, 2.8) + 5;
@@ -488,16 +513,23 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
       return totaal + 6;
     }
     case "paren": {
+      const kolB = (TEKST_B - 12) / 2;
       let yy = y;
-      for (const p of blok.paren) {
-        doc.font(F.dmBold).fontSize(6.8).fillColor(KLEUR.inktZacht);
-        doc.text(p.label.toUpperCase(), x, yy, { width: 150, characterSpacing: 0.6, lineBreak: false });
-        doc.font(F.dmMed).fontSize(10).fillColor(KLEUR.inkt);
-        meet(doc, p.waarde, TEKST_B, "waarde in een paar");
-        doc.text(p.waarde, x, yy + 8.5, { width: TEKST_B, lineBreak: false });
-        yy += 21;
+      for (let i = 0; i < blok.paren.length; i += 2) {
+        const rij = blok.paren.slice(i, i + 2);
+        const kaartH = Math.max(...rij.map((p) => hoogteVan(doc, p.waarde, F.dmMed, 10.5, kolB - 28, 2))) + 30;
+        rij.forEach((p, k) => {
+          const kx = x + k * (kolB + 12);
+          vulRechthoek(doc, kx, yy, kolB, kaartH, KLEUR.kaart, 3);
+          doc.save().lineWidth(0.5).strokeColor(KLEUR.lijn).roundedRect(kx, yy, kolB, kaartH, 3).stroke().restore();
+          vulRechthoek(doc, kx, yy, 2.4, kaartH, KLEUR.oker, 1.2);
+          doc.font(F.dmBold).fontSize(6.6).fillColor(KLEUR.inktZacht);
+          doc.text(p.label.toUpperCase(), kx + 14, yy + 9, { width: kolB - 24, characterSpacing: 0.6, lineBreak: false });
+          schrijf(doc, p.waarde, kx + 14, yy + 19, kolB - 28, F.dmMed, 10.5, KLEUR.inkt, 2);
+        });
+        yy += kaartH + 8;
       }
-      return yy - y + 6;
+      return yy - y + 4;
     }
     case "vragen": {
       let yy = y + kapitalen(doc, blok.kop, x, y, 7, KLEUR.accentDiep) + 4;
@@ -563,7 +595,7 @@ function tekenCover(doc: Doc, rapport: T4SRapport, pagina: T4SPagina, opties: T4
   }
   vulRechthoek(doc, 0, beeldH, BLAD_B, 6, KLEUR.accent);
 
-  let y = beeldH + 54;
+  let y = beeldH + 76;
   kapitalen(doc, pagina.ondertitel, MARGE, y, 8.2, KLEUR.accentDiep);
   y += 22;
   doc.font(F.dmBold).fontSize(38).fillColor(KLEUR.inkt);
@@ -574,6 +606,7 @@ function tekenCover(doc: Doc, rapport: T4SRapport, pagina: T4SPagina, opties: T4
   doc.text(rapport.naam, MARGE, y, { width: TEKST_B, lineBreak: false });
   y += 30;
 
+  const alineas = pagina.blokken.filter((b) => b.soort === "alinea");
   for (const blok of pagina.blokken) {
     if (blok.soort === "paren") {
       const kolB = TEKST_B / 3;
@@ -586,7 +619,12 @@ function tekenCover(doc: Doc, rapport: T4SRapport, pagina: T4SPagina, opties: T4
         doc.text(p.waarde, px, BLAD_H - 121, { width: kolB - 8, lineBreak: false });
       });
     } else if (blok.soort === "alinea") {
-      y += schrijf(doc, blok.tekst, MARGE, y, TEKST_B - 60, F.dm, 10.6, KLEUR.inktZacht, 4) + 12;
+      // De laatste alinea is de slotregel; die hoort onderaan bij de gegevens.
+      if (blok === alineas[alineas.length - 1] && alineas.length > 1) {
+        schrijf(doc, blok.tekst, MARGE, BLAD_H - 174, TEKST_B - 40, F.dm, 8.6, KLEUR.inktZacht, 3);
+      } else {
+        y += schrijf(doc, blok.tekst, MARGE, y, TEKST_B - 60, F.dm, 11.4, KLEUR.inktZacht, 4.5) + 12;
+      }
     }
   }
   lijn(doc, MARGE, BLAD_H - 148, MARGE + TEKST_B, BLAD_H - 148, KLEUR.lijn);

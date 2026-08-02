@@ -94,6 +94,11 @@ function batterijZin(b: number | null): string {
   );
 }
 
+/** Enkelvoud of meervoud van staan, zodat een opsomming van twee namen klopt. */
+function staan(aantal: number): string {
+  return aantal === 1 ? "staat" : "staan";
+}
+
 function pagina(nr: number, blokken: T4SBlok[], ondertitel: string): T4SPagina {
   const plan = PAGINAPLAN.find((p) => p.nr === nr);
   return {
@@ -560,7 +565,9 @@ export function bouwT4StudentsRapport(
   for (const b of dimensieBladen) {
     const rijen = b.dim.gerangschikt;
     const drieHoog = rijen.slice(0, 3);
-    const drieLaag = rijen.slice(-3).reverse();
+    // In rangorde, net als op het blad met de drie sterkste. Anders leest de ene
+    // bladzijde van boven naar onder en de andere van onder naar boven.
+    const drieLaag = rijen.slice(-3);
     const naschriftDim = b.dim.zonderOordeel.map(
       (r) =>
         `Van ${r.construct} is nog niet alles ingevuld. Daarom staat er geen score bij en geen plaats ` +
@@ -887,9 +894,8 @@ export function bouwT4StudentsRapport(
     const laag = posities.filter((p) => p.rang >= p.totaal - 1);
     if (hoog.length > 0 && laag.length > 0) {
       spanningen.push(
-        `${lijst(hoog.map((p) => p.con))} staat bij jou hoog terwijl ${lijst(laag.map((p) => p.con))} ` +
-          `laag staat, en die horen normaal bij elkaar. Dat is geen fout. Het betekent dat je dit op ` +
-          `jouw eigen manier invult, en dat is precies het soort ding om over te praten.`,
+        `${lijst(hoog.map((p) => p.con))} ${staan(hoog.length)} bij jou hoog terwijl ` +
+          `${lijst(laag.map((p) => p.con))} laag ${staan(laag.length)}, en die horen normaal bij elkaar.`,
       );
     }
   }
@@ -902,6 +908,11 @@ export function bouwT4StudentsRapport(
       );
     }
   }
+  const spanningSlot =
+    spanningen.length > 0
+      ? "Dat is geen fout. Het betekent dat je die onderdelen op jouw eigen manier invult, en dat is " +
+        "precies het soort ding om samen te bekijken."
+      : "";
   if (spanningen.length === 0) {
     spanningen.push(
       "In jouw antwoorden zit geen uitgesproken spanning tussen de onderdelen. De drie lagen wijzen " +
@@ -919,6 +930,7 @@ export function bouwT4StudentsRapport(
             "niet volgen zoals je zou verwachten. Dat is nieuwsgierig bedoeld en niet verontrustend.",
         },
         { soort: "opsomming", kop: null, punten: spanningen },
+        ...(spanningSlot ? ([{ soort: "alinea", tekst: spanningSlot }] as T4SBlok[]) : []),
         {
           soort: "alinea",
           tekst:
@@ -933,16 +945,19 @@ export function bouwT4StudentsRapport(
 
   // ── 22. Aandachtspunten ───────────────────────────────────────────────────
   const aandacht: string[] = [];
-  for (const d of drivers.gerangschikt.slice(0, 2)) {
+  const kopDrivers = drivers.gerangschikt.slice(0, 2);
+  if (kopDrivers.length > 0) {
     aandacht.push(
-      `${d.construct} staat bij jou op plaats ${d.rang}. Vraag: waar merk jij dat dit patroon je ` +
-        `verder helpt, en waar merk je dat het je vasthoudt?`,
+      `${lijst(kopDrivers.map((d) => d.construct))} ${staan(kopDrivers.length)} bovenaan je drivers. ` +
+        `Vraag: waar merk jij dat dit je verder helpt, en waar merk je dat het je vasthoudt?`,
     );
   }
-  for (const v of versnellers.gerangschikt.slice(-2)) {
+  const staartVersnellers = versnellers.gerangschikt.slice(-2);
+  if (staartVersnellers.length > 0) {
     aandacht.push(
-      `${v.construct} staat bij jou onderaan. Vraag: kom je in je studie situaties tegen waarin dit ` +
-        `wel van je gevraagd wordt, en hoe los je dat nu op?`,
+      `${lijst(staartVersnellers.map((v) => v.construct))} ${staan(staartVersnellers.length)} onderaan. ` +
+        `Vraag: kom je in je studie situaties tegen waarin dit wel van je gevraagd wordt, en hoe los ` +
+        `je dat nu op?`,
     );
   }
   if (foci.gerangschikt.length > 0) {
