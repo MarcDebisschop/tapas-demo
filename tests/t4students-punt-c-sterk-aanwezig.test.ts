@@ -16,6 +16,11 @@ import type { T4SPagina } from "../server/t4students/rapport-contract";
 // voorkomen dat de student ze twee keer leest), controleert deze test de zin
 // op de nieuwe plaats. De bewaakte berekening zelf verandert niet.
 //
+// OPMAAKHERSTEL-2, PUNT 5: het "citaat"-blok is vervangen door het nieuwe,
+// rustigere "zinvlak". De vindplaats in deze test is verlegd naar
+// "zinvlak"; de bewaakte berekening (welke bouwstenen genoemd worden)
+// verandert niet.
+//
 // Het gewone voorbeeldprofiel (VOORBEELDAFNAME) heeft altijd hoogstens twee
 // gelijke hoogste aandelen en heeft nooit een lege groep sterk aanwezig,
 // dus deze test bouwt twee eigen antwoordsets die de twee gevallen uit punt
@@ -74,9 +79,9 @@ describe("In één zin en Wat je hier zocht putten uit de groep sterk aanwezig (
     };
     const rapport = bouw(antwoorden);
     const blad = vindEenZin(rapport.paginas);
-    const citaat = blad.blokken.find((b) => b.soort === "citaat") as { regels: { vraag: string }[] } | undefined;
-    expect(citaat, "geen citaatvlak op het slothoofdstuk gevonden").toBeDefined();
-    const eersteZin = citaat!.regels[0].vraag;
+    const zinvlak = blad.blokken.find((b) => b.soort === "zinvlak") as { tekst: string } | undefined;
+    expect(zinvlak, "geen zinvlak op het slothoofdstuk gevonden").toBeDefined();
+    const eersteZin = zinvlak!.tekst;
     // Precies twee van de drie bouwstenen worden benoemd in de samenvattende
     // zin zelf (de bouwstenen komen uit rapportteksten.json en zijn geen
     // constructnamen, dus dit controleert de echte D1-zin, niet toevallig

@@ -588,43 +588,52 @@ function eenZinOmMeeTeNemenBlokken(
 ): T4SBlok[] {
   const blokken: T4SBlok[] = [{ soort: "alinea", tekst: H_TOELICHTING }];
 
-  // Onderdeel a: het citaatvlak toont de grote samenvattende zin. Sinds het
+  // Onderdeel a: het zinvlak toont de grote samenvattende zin. Sinds het
   // opmaakherstel van 2026-08-03 (punt 2) staat deze zin alleen nog hier, niet
   // meer ook op het blad "Wat vlot gaat en wat energie kost" (vroeger "In één
   // zin"): dezelfde tekst op twee plaatsen liet de student hetzelfde twee
   // keer lezen. berekenZinBlokken is dezelfde, ongewijzigde berekening als
   // voorheen (alleen aanwezig als er genoeg is ingevuld om de zin te bouwen).
+  //
+  // Opmaakherstel-2, punt 5: het vlak droeg voorheen een opschriftje, een kop
+  // én een decoratief aanhalingsteken tegelijk, wat te veel was voor de
+  // rustigste kaart van het blad en onnodig plaats kostte (het slothoofdstuk
+  // liep daardoor door op een tweede, bijna lege pagina). Het is nu "zinvlak":
+  // alleen de zin zelf, gecentreerd, schuin en tussen aanhalingstekens, zonder
+  // opschrift en zonder kop. De eventuele gelijkspel- en
+  // middenveld-toelichtingen en de vaste slotregel horen inhoudelijk bij de
+  // zin en worden, zonder de tekst zelf te wijzigen, samengevoegd tot één
+  // kleine regel in de voetnoot/labelgrootte ("kleinschrift") vlak onder het
+  // zinvlak.
   const zinBlokken = berekenZinBlokken(resultaat, foci, versnellers, interesse);
   const eersteZin = zinBlokken[0];
   if (eersteZin && eersteZin.soort === "alinea" && eersteZin.tekst !== D_TE_WEINIG) {
-    blokken.push({
-      soort: "citaat",
-      opschrift: "JOUW ZIN",
-      kop: "Wat je antwoorden samen zeggen",
-      kleur: KLEUR.teal,
-      regels: [{ vraag: eersteZin.tekst, herkenning: null, energie: null }],
-    });
+    blokken.push({ soort: "zinvlak", tekst: eersteZin.tekst });
     // De eventuele gelijkspel- en middenveld-toelichtingen (herstelronde 2,
-    // punt C) horen inhoudelijk bij de zin: zonder hen lijkt de zin een
-    // volledige uitspraak, terwijl ze eigenlijk op een gelijkspel of een
-    // terugval op het middenveld berust. zinBlokken bevat ze, in dezelfde
-    // volgorde als voorheen op het blad "In één zin", als alle blokken na de
-    // eerste zin en voor de vaste slotregel (de laatste van de reeks).
+    // punt C) plus de vaste slotregel (D_SLOTREGEL) horen inhoudelijk bij de
+    // zin. zinBlokken bevat de toelichtingen, in dezelfde volgorde als
+    // voorheen op het blad "In één zin", als alle blokken na de eerste zin en
+    // voor de vaste slotregel (de laatste van de reeks). Opmaakherstel-2,
+    // punt 5: in plaats van elk als een eigen alinea te tonen, worden ze hier
+    // samengevoegd tot één kleine regel; de letterlijke tekst van elke zin
+    // blijft ongewijzigd, enkel de weergave (kleiner, op één regel na elkaar)
+    // verandert.
+    const toelichtingZinnen: string[] = [];
     for (let i = 1; i < zinBlokken.length - 1; i++) {
-      blokken.push(zinBlokken[i]);
+      const b = zinBlokken[i];
+      if (b.soort === "alinea") toelichtingZinnen.push(b.tekst);
     }
-    // De vaste slotregel die relativeert wat de zin wel en niet betekent,
-    // hoort inhoudelijk bij de zin en blijft daarom zichtbaar, meteen na het
-    // citaatvlak en de eventuele toelichtingen. Dezelfde letterlijke tekst
-    // als voorheen op het blad "In één zin" (nu "Wat vlot gaat en wat energie
-    // kost"), niet opnieuw geformuleerd.
-    blokken.push({ soort: "alinea", tekst: D_SLOTREGEL });
+    toelichtingZinnen.push(D_SLOTREGEL);
+    blokken.push({ soort: "kleinschrift", tekst: toelichtingZinnen.join(" ") });
   }
 
   // Onderdeel b: de kaart "WAT AL STERK IS", op het construct met het
   // hoogste aandeel uit de groep sterk aanwezig van de talent-foci (dezelfde
   // berekening als op de bladen met de talent-foci zelf). Leeg, dus
-  // weggelaten, als die groep niets opleverde.
+  // weggelaten, als die groep niets opleverde. Herstelronde-2, laatste punt:
+  // de gewone omschrijving naast de naam van het construct ontbrak; die
+  // stond in de oorspronkelijke opdracht en staat er nu weer bij, net als op
+  // de andere bladen met een construct als kop.
   const sterkFoci = sterksteUitGroep(foci);
   if (sterkFoci.constructen.length > 0) {
     const construct = sterkFoci.constructen[0].construct;
@@ -632,6 +641,7 @@ function eenZinOmMeeTeNemenBlokken(
       soort: "kaartvlak",
       opschrift: "WAT AL STERK IS",
       kop: construct,
+      omschrijving: sterkFoci.constructen[0].omschrijving,
       tekst: duidingVan(construct),
     });
   }
@@ -1103,10 +1113,14 @@ export function bouwT4StudentsRapport(
     },
   ];
   if (p0Tekst.length > 0) {
+    // Opmaakherstel-2, punt 3: het opschriftje herhaalde de hoofdstuktitel
+    // ("Dit hoopte je te vinden") woordelijk en zei dus niets extra. Het
+    // opschriftje benoemt nu het soort blok ("jouw eigen woorden"), en de
+    // kop die hetzelfde zei, is weggelaten.
     hoopteBlokken.push({
       soort: "kader",
-      opschrift: "DIT HOOPTE JE TE VINDEN",
-      kop: "Jouw eigen woorden",
+      opschrift: "JOUW EIGEN WOORDEN",
+      kop: "",
       kleur: KLEUR.teal,
       tekst: p0Tekst,
     });
@@ -1757,12 +1771,15 @@ export function bouwT4StudentsRapport(
             "Dit is het enige onderdeel van de vragenlijst dat over richting gaat in plaats van over " +
             "eigenschappen. Niet wat je kunt, maar waar je het voor zou willen inzetten.",
         },
+        // Opmaakherstel-2, punt 3: het opschriftje herhaalde de hoofdstuktitel
+        // ("Waar jij iets wilt betekenen") woordelijk. Het opschriftje benoemt
+        // nu het soort blok in plaats van het onderwerp van het hoofdstuk.
         ...(b1
           ? ([
               {
                 soort: "citaat",
-                opschrift: "WAAR JIJ IETS WILT BETEKENEN",
-                kop: "Jouw eigen antwoord",
+                opschrift: "JOUW EIGEN ANTWOORD",
+                kop: "",
                 kleur: KLEUR.accent,
                 regels: [b1],
               },

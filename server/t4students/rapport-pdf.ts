@@ -414,14 +414,31 @@ function blokHoogte(doc: Doc, blok: T4SBlok): number {
     }
     case "kader":
       // Ingreep 3: 12 punten extra voor de eigen kopregel boven de tekst, en
-      // 8 punten extra ademruimte na de kaart (punt 4).
+      // ademruimte na de kaart (punt 4). Opmaakherstel-2, punt 2: de afstand
+      // tussen kop en tekst is vergroot (lucht), dus de hoogte groeit mee.
+      // Herstel, punt 5: de onderste witruimte is met 4 punten verkleind
+      // (60 in plaats van 64) zodat het slothoofdstuk dichter bij één blad
+      // komt; de lucht tussen kop en tekst zelf blijft ongemoeid.
       return hoogteVan(doc, blok.tekst, F.dm, 9, TEKST_B - 32, 3.2) + 60;
     case "kaartvlak": {
       // Contactregel telt als een extra regel met een eigen regelafstand.
+      // Opmaakherstel-2, punt 2: hoogte groeit mee met de extra lucht tussen
+      // kop en tekst. Onderdeel E2 (herstel, punt 5): een eventuele
+      // omschrijving naast de kop kost een extra regel. De onderste
+      // witruimte is, net als bij "kader", met 4 punten verkleind.
       let h = hoogteVan(doc, blok.tekst, F.dm, 9, TEKST_B - 32, 3.2) + 60;
       if (blok.contactregel) h += 16;
+      if (blok.omschrijving) h += 12;
       return h;
     }
+    case "zinvlak":
+      // Opmaakherstel-2, punt 5: alleen de zin, gecentreerd, in een ingetogen
+      // vlak zonder opschrift en zonder kop. Zuinige marge boven en onder,
+      // zodat het slothoofdstuk op één blad past (zie tekenBlok hieronder).
+      return hoogteVan(doc, blok.tekst, F.dm, 11.5, TEKST_B - 90, 5) + 18 + 6;
+    case "kleinschrift":
+      // Opmaakherstel-2, punt 5: één kleine regel in de voetnoot/labelgrootte.
+      return hoogteVan(doc, blok.tekst, F.dm, 7.6, TEKST_B, 2.6) + 4;
     case "paren": {
       const kolB = (TEKST_B - 12) / 2;
       let h = 0;
@@ -565,51 +582,48 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
       return totaal + 14;
     }
     case "citaat": {
-      // Ingreep 3: het opschriftje staat los boven de kop, net als bij
-      // "kader". Het vak zelf blijft het lichte, warme vlak (okerZacht); de
-      // balk, het opschriftje en het aanhalingsteken volgen voortaan de
-      // kleur van het blok zelf (blok.kleur) in plaats van altijd oker: oker
-      // is voorbehouden aan nuance en keerzijde, niet aan elk citaat.
+      // Opmaakherstel-2: "citaat" is het INGETOGEN VLAK (warme lichte tint,
+      // KLEUR.okerZacht), zonder balk aan de linkerrand en zonder het
+      // decoratieve grote aanhalingsteken van voorheen. Wat de student zelf
+      // invulde (r.herkenning) springt er nu uit als een citaat: schuin
+      // gezet en tussen aanhalingstekens, zoals in het referentiebeeld.
       const kopKleur = blok.kleur === KLEUR.oker ? KLEUR.okerDiep : blok.kleur;
-      let h = 32;
+      let h = 30;
       for (const r of blok.regels) {
         h += hoogteVan(doc, r.vraag, F.dm, 9.4, TEKST_B - 44, 2.8) + 4;
         if (r.herkenning !== null) {
-          h += hoogteVan(doc, r.herkenning || "", F.dmMed, 8.5, TEKST_B - 124, 1.5) + 3;
+          h += hoogteVan(doc, `\u201C${r.herkenning || ""}\u201D`, F.dmMed, 8.5, TEKST_B - 124, 1.5) + 3;
         }
         if (r.energie) h += 11;
         if (r !== blok.regels[blok.regels.length - 1]) h += 5;
       }
       vulRechthoek(doc, x, y, TEKST_B, h, KLEUR.okerZacht, 3);
-      vulRechthoek(doc, x, y, 2.2, h, blok.kleur, 1.1);
       kapitalen(doc, blok.opschrift, x + 16, y + 9, 6.8, kopKleur);
       doc.font(F.dmBold).fontSize(10.5).fillColor(KLEUR.inkt);
-      doc.text(blok.kop, x + 16, y + 21, { width: TEKST_B - 32, lineBreak: false });
-      doc.font(F.dmBold).fontSize(20).fillColor(blok.kleur);
-      doc.text("“", x + 12, y + 29, { width: 20, lineBreak: false });
-      let yy = y + 34;
+      doc.text(blok.kop, x + 16, y + 24, { width: TEKST_B - 32, lineBreak: false });
+      let yy = y + 40;
       blok.regels.forEach((r, i) => {
         const vh = hoogteVan(doc, r.vraag, F.dm, 9.4, TEKST_B - 44, 2.8);
         doc.font(F.dm).fontSize(9.4).fillColor(KLEUR.inkt);
-        doc.text(r.vraag, x + 30, yy, { width: TEKST_B - 44, lineGap: 2.8, oblique: SCHUIN });
+        doc.text(r.vraag, x + 16, yy, { width: TEKST_B - 32, lineGap: 2.8, oblique: SCHUIN });
         yy += vh + 4;
         // Staat herkenning op null, dan is dit geen letterlijk antwoord op een
         // vraag maar een samengestelde zin (zoals op het slothoofdstuk); dan
         // blijft het label "Jouw antwoord:" weg.
         if (r.herkenning !== null) {
           doc.font(F.dmBold).fontSize(8.5).fillColor(KLEUR.inktZacht);
-          doc.text("Jouw antwoord:", x + 30, yy, { width: 78, lineBreak: false });
-          yy += schrijf(doc, r.herkenning || "", x + 110, yy, TEKST_B - 124, F.dmMed, 8.5, KLEUR.inkt, 1.5) + 3;
+          doc.text("Jouw antwoord:", x + 16, yy, { width: 78, lineBreak: false });
+          yy += schrijf(doc, `\u201C${r.herkenning || ""}\u201D`, x + 96, yy, TEKST_B - 112, F.dmMed, 8.5, KLEUR.inkt, 1.5, true) + 3;
         }
         if (r.energie) {
           doc.font(F.dmBold).fontSize(8.5).fillColor(KLEUR.inktZacht);
-          doc.text("En dat:", x + 30, yy, { width: 78, lineBreak: false });
+          doc.text("En dat:", x + 16, yy, { width: 78, lineBreak: false });
           doc.font(F.dmMed).fontSize(8.5).fillColor(KLEUR.inkt);
-          doc.text(r.energie, x + 110, yy, { width: TEKST_B - 124, lineBreak: false });
+          doc.text(r.energie, x + 96, yy, { width: TEKST_B - 112, lineBreak: false });
           yy += 11;
         }
         if (i < blok.regels.length - 1) {
-          lijn(doc, x + 30, yy, x + TEKST_B - 16, yy, KLEUR.lijn);
+          lijn(doc, x + 16, yy, x + TEKST_B - 16, yy, KLEUR.lijn);
           yy += 5;
         }
       });
@@ -664,45 +678,76 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
       return yy - y + 6;
     }
     case "kader": {
-      // Ingreep 3: het opschriftje (klein, kapitalen) staat los boven de
-      // echte kop (groter, gewone hoofdletters/kleine letters). Voorheen
-      // droeg blok.kop alleen het opschriftje; nu draagt opschrift dat, en
-      // kop is de eigenlijke titel van de kaart.
+      // Opmaakherstel-2: "kader" is de UITLEGKAART: altijd WIT (KLEUR.kaart),
+      // met een gekleurde balk aan de linkerrand. Het opschriftje (klein,
+      // kapitalen) staat los boven de echte kop (groter, gewone
+      // hoofdletters/kleine letters). Punt 2: er zit nu duidelijke lucht
+      // tussen de kop en de eerste tekstregel (18 punten in plaats van 14),
+      // en een iets kleinere afstand tussen het opschriftje en de kop.
       const kopKleur = blok.kleur === KLEUR.oker ? KLEUR.okerDiep : blok.kleur;
       const h = hoogteVan(doc, blok.tekst, F.dm, 9, TEKST_B - 32, 3.2);
       const totaal = h + 48;
-      vulRechthoek(doc, x, y, TEKST_B, totaal, KLEUR.papier2, 3);
+      vulRechthoek(doc, x, y, TEKST_B, totaal, KLEUR.kaart, 3);
+      doc.save().lineWidth(0.5).strokeColor(KLEUR.lijn).roundedRect(x, y, TEKST_B, totaal, 3).stroke().restore();
       vulRechthoek(doc, x, y, 2.6, totaal, blok.kleur, 1.3);
       kapitalen(doc, blok.opschrift, x + 16, y + 10, 6.8, kopKleur);
       doc.font(F.dmBold).fontSize(11.5).fillColor(KLEUR.inkt);
       doc.text(blok.kop, x + 16, y + 22, { width: TEKST_B - 32, lineBreak: false });
-      schrijf(doc, blok.tekst, x + 16, y + 36, TEKST_B - 32, F.dm, 9, KLEUR.inkt, 3.2);
+      schrijf(doc, blok.tekst, x + 16, y + 40, TEKST_B - 32, F.dm, 9, KLEUR.inkt, 3.2);
       // Ingreep 3, punt 4: acht punten extra ademruimte na de kaart.
       return totaal + 14;
     }
     case "kaartvlak": {
-      // Ingreep 3, punt 3: de tweede kaartsoort. Een licht warm vlak zonder
-      // gekleurde balk aan de linkerrand, voor wat de student zelf zei of
-      // voor een samenvattende gedachte. Dezelfde zachte ronde hoeken als de
-      // andere kaarten, geen balk. Het opschriftje kleurt oker alleen als de
-      // aanroeper dat expliciet meegeeft (een nuance); anders accentDiep, een
-      // neutrale kleur die al elders in het rapport voorkomt.
+      // Ingreep 3, punt 3, contrast hersteld in Opmaakherstel-2: de tweede
+      // kaartsoort, het INGETOGEN VLAK. Altijd de warme lichte tint
+      // (KLEUR.okerZacht), zonder gekleurde balk aan de linkerrand, voor wat
+      // de student zelf zei of voor een samenvattende gedachte. Dezelfde
+      // zachte ronde hoeken als de uitlegkaart, geen balk. Het opschriftje
+      // kleurt oker alleen als de aanroeper dat expliciet meegeeft (een
+      // nuance); anders accentDiep, een neutrale kleur die al elders in het
+      // rapport voorkomt. Punt 2: dezelfde extra lucht tussen kop en tekst
+      // als bij de uitlegkaart. Herstel, punt 5: een optionele omschrijving
+      // (voor een constructnaam als kop) krijgt een eigen kleine regel
+      // tussen de kop en de hoofdtekst, net als in de rangordes.
       const opschriftKleur = blok.kleur === KLEUR.oker ? KLEUR.okerDiep : blok.kleur ?? KLEUR.accentDiep;
+      const omschrijvingH = blok.omschrijving ? 12 : 0;
       const tekstH = hoogteVan(doc, blok.tekst, F.dm, 9, TEKST_B - 32, 3.2);
       const contactH = blok.contactregel ? 16 : 0;
-      const totaal = tekstH + contactH + 48;
+      const totaal = tekstH + contactH + omschrijvingH + 48;
       vulRechthoek(doc, x, y, TEKST_B, totaal, KLEUR.okerZacht, 3);
       kapitalen(doc, blok.opschrift, x + 16, y + 10, 6.8, opschriftKleur);
       doc.font(F.dmBold).fontSize(11.5).fillColor(KLEUR.inkt);
       doc.text(blok.kop, x + 16, y + 22, { width: TEKST_B - 32, lineBreak: false });
-      schrijf(doc, blok.tekst, x + 16, y + 36, TEKST_B - 32, F.dm, 9, KLEUR.inkt, 3.2);
+      if (blok.omschrijving) {
+        doc.font(F.dm).fontSize(7.6).fillColor(KLEUR.inktZacht);
+        doc.text(blok.omschrijving, x + 16, y + 35.5, { width: TEKST_B - 32, lineBreak: false });
+      }
+      schrijf(doc, blok.tekst, x + 16, y + 40 + omschrijvingH, TEKST_B - 32, F.dm, 9, KLEUR.inkt, 3.2);
       if (blok.contactregel) {
         doc.font(F.dmBold).fontSize(9).fillColor(KLEUR.accent);
-        doc.text(blok.contactregel, x + 16, y + 36 + tekstH + 8, { width: TEKST_B - 32, lineBreak: false });
+        doc.text(blok.contactregel, x + 16, y + 40 + omschrijvingH + tekstH + 8, { width: TEKST_B - 32, lineBreak: false });
       }
       // Ingreep 3, punt 4: acht punten extra ademruimte na de kaart.
       return totaal + 14;
     }
+    case "zinvlak": {
+      // Opmaakherstel-2, punt 5: het rustigste vlak. Alleen de zin,
+      // gecentreerd, schuin gezet, tussen aanhalingstekens, in de warme
+      // lichte tint, zonder opschrift, zonder kop en zonder balk. Herstel,
+      // punt 5, slotafweging: de marges zijn zuinig gehouden zodat het
+      // slothoofdstuk op één blad past, zonder de zin zelf kleiner te maken.
+      const tekst = `\u201C${blok.tekst}\u201D`;
+      const h = hoogteVan(doc, tekst, F.dm, 11.5, TEKST_B - 90, 5);
+      const totaal = h + 18;
+      vulRechthoek(doc, x, y, TEKST_B, totaal, KLEUR.okerZacht, 4);
+      doc.font(F.dmMed).fontSize(11.5).fillColor(KLEUR.inkt);
+      doc.text(tekst, x + 45, y + 9, { width: TEKST_B - 90, lineGap: 5, align: "center", oblique: SCHUIN });
+      return totaal + 6;
+    }
+    case "kleinschrift":
+      // Opmaakherstel-2, punt 5: één kleine regel in de voetnoot/labelgrootte,
+      // gebruikt om meerdere losse verklarende zinnen compact samen te tonen.
+      return schrijf(doc, blok.tekst, x, y, TEKST_B, F.dm, 7.6, KLEUR.inktZacht, 2.6) + 4;
     case "paren": {
       const kolB = (TEKST_B - 12) / 2;
       let yy = y;

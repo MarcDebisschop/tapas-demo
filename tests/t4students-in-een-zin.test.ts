@@ -24,6 +24,11 @@ import rapportteksten from "../server/data/t4students-rapportteksten.json";
 // citaatvlak van het slothoofdstuk); alleen de vindplaats is aangepast, niet
 // de bewaakte tekst zelf. De tests over D2 ("Wat nu al sterk is") blijven
 // ongewijzigd op het eigen blad.
+//
+// OPMAAKHERSTEL-2, PUNT 5: het "citaat"-blok is op het slothoofdstuk
+// vervangen door het nieuwe, rustigere "zinvlak" (geen opschrift, geen kop,
+// alleen de zin zelf). De vindplaats in deze test is daarom verlegd naar
+// "zinvlak"; de bewaakte tekst zelf verandert niet.
 // ---------------------------------------------------------------------------
 
 function bouw(antwoorden: Record<string, unknown>) {
@@ -46,11 +51,11 @@ function vindSlot(paginas: T4SPagina[]): T4SPagina | undefined {
   return paginas.find((p) => /een zin om mee te nemen/i.test(p.titel));
 }
 
-/** De letterlijke tekst van de D1-zin uit het citaatvlak van het slothoofdstuk. */
+/** De letterlijke tekst van de D1-zin uit het zinvlak van het slothoofdstuk. */
 function vindZinUitSlot(paginas: T4SPagina[]): string {
   const slot = vindSlot(paginas);
-  const citaat = slot?.blokken.find((b) => b.soort === "citaat") as { regels: { vraag: string }[] } | undefined;
-  return citaat?.regels[0]?.vraag ?? "";
+  const zinvlak = slot?.blokken.find((b) => b.soort === "zinvlak") as { tekst: string } | undefined;
+  return zinvlak?.tekst ?? "";
 }
 
 function alleTeksten(p: T4SPagina): string {
@@ -95,7 +100,7 @@ describe("het slothoofdstuk toont de vaste zin uit bouwstenen in zijn citaatvlak
     expect(tekst).toContain("hij vat je niet samen als persoon");
   });
 
-  it("toont geen citaatvlak met de zin, wanneer het beeld voorlopig is (te weinig ingevuld)", () => {
+  it("toont geen zinvlak met de zin, wanneer het beeld voorlopig is (te weinig ingevuld)", () => {
     const resultaat = scoreStudiekompas(I, {}, null, "nl");
     const rapport = bouwT4StudentsRapport(I, resultaat, {}, "verdieping", {
       naam: "Test",
@@ -105,11 +110,11 @@ describe("het slothoofdstuk toont de vaste zin uit bouwstenen in zijn citaatvlak
     });
     expect(resultaat.betrouwbaarheid.voorlopig).toBe(true);
     const slot = vindSlot(rapport.paginas)!;
-    const citaat = slot.blokken.find((b) => b.soort === "citaat");
+    const zinvlak = slot.blokken.find((b) => b.soort === "zinvlak");
     // Bij te weinig ingevuld levert berekenZinBlokken de vaste
-    // te-weinig-alinea op, geen bruikbare zin; het citaatvlak op het
+    // te-weinig-alinea op, geen bruikbare zin; het zinvlak op het
     // slothoofdstuk verschijnt dan niet (zie eenZinOmMeeTeNemenBlokken).
-    expect(citaat, "citaatvlak had niet mogen verschijnen zonder genoeg antwoorden").toBeUndefined();
+    expect(zinvlak, "zinvlak had niet mogen verschijnen zonder genoeg antwoorden").toBeUndefined();
   });
 
   it("toont het blok Wat nu al sterk is met constructen die het label kernsterkte dragen", () => {

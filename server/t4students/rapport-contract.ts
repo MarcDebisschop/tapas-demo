@@ -151,23 +151,40 @@ export type T4SBlok =
       kleur: string;
       duiding: string;
     }
+  /**
+   * Opmaakherstel-2 van de opdracht "Herstelronde opmaak": "citaat" is het
+   * ingetogen vlak, altijd in de warme lichte tint en zonder balk. Het toont
+   * wat de student zelf zei: het antwoord (T4SCitaatRegel.herkenning) komt
+   * schuin en tussen aanhalingstekens op het papier, precies zoals in het
+   * referentiebeeld.
+   */
   | { soort: "citaat"; kop: string; opschrift: string; kleur: string; regels: T4SCitaatRegel[] }
   | { soort: "batterij"; waarde: number | null; zin: string }
   | { soort: "kolommen"; kopLinks: string; kopRechts: string; links: T4SCitaatRegel[]; rechts: T4SCitaatRegel[] }
   | { soort: "opsomming"; kop: string | null; punten: string[] }
+  /**
+   * Opmaakherstel-2: "kader" is de UITLEGKAART. Achtergrond altijd wit
+   * (KLEUR.kaart), met een gekleurde balk aan de linkerrand. Hierin staat
+   * alles wat het rapport uitlegt of duidt, nooit wat de student zelf zei.
+   */
   | { soort: "kader"; opschrift: string; kop: string; tekst: string; kleur: string }
   /**
-   * Ingreep 3 van de opdracht "Slotnoot en opmaak": de tweede kaartsoort, een
-   * licht warm vlak zonder gekleurde balk aan de linkerrand. Bedoeld voor wat
-   * de student zelf zei of voor een samenvattende gedachte, ter afwisseling
-   * met de balkkaarten ("kader", "citaat", "constructblok") die uitleg geven.
-   * Draagt, net als de balkkaarten, een verplicht opschriftje in kleine
-   * kapitalen boven de kop. Het opschriftje kleurt standaard inkt, niet oker:
-   * oker blijft voorbehouden aan nuance en keerzijde. Alleen waar dit vlak
-   * zelf een nuance is (bijvoorbeeld een aandachtspunt in de eigen woorden
-   * van de student), geeft de aanroeper kleur: KLEUR.oker mee. Het optionele
-   * veld contactregel tekent, zoals op de dankkaart van het slothoofdstuk,
-   * een losse laatste regel onder de hoofdtekst in de accentkleur.
+   * Ingreep 3 van de opdracht "Slotnoot en opmaak", contrast hersteld in
+   * Opmaakherstel-2: de tweede kaartsoort, het INGETOGEN VLAK. Achtergrond
+   * altijd de warme lichte tint (KLEUR.okerZacht), zonder gekleurde balk aan
+   * de linkerrand. Bedoeld voor wat de student zelf zei of voor een
+   * samenvattende gedachte, ter afwisseling met de uitlegkaarten ("kader",
+   * en "citaat" hierboven, die beide uitleg geven). Draagt, net als de
+   * uitlegkaart, een verplicht opschriftje in kleine kapitalen boven de kop.
+   * Het opschriftje kleurt standaard inkt, niet oker: oker blijft
+   * voorbehouden aan nuance en keerzijde. Alleen waar dit vlak zelf een
+   * nuance is (bijvoorbeeld een aandachtspunt in de eigen woorden van de
+   * student), geeft de aanroeper kleur: KLEUR.oker mee. Het optionele veld
+   * contactregel tekent, zoals op de dankkaart van het slothoofdstuk, een
+   * losse laatste regel onder de hoofdtekst in de accentkleur. Het optionele
+   * veld omschrijving toont, net als in de rangordes en de constructblokken,
+   * de gewone toelichting naast een constructnaam wanneer de kop een
+   * constructnaam is.
    */
   | {
       soort: "kaartvlak";
@@ -176,7 +193,27 @@ export type T4SBlok =
       tekst: string;
       kleur?: string;
       contactregel?: string;
+      omschrijving?: string;
     }
+  /**
+   * Opmaakherstel-2, punt 5: het rustigste, meest ingetogen vlak van alle
+   * kaartsoorten. Toont uitsluitend een zin, gecentreerd, schuin gezet en
+   * tussen aanhalingstekens, in de warme lichte tint, zonder balk, zonder
+   * opschriftje en zonder kop. Gebruikt voor de grote samenvattende zin op
+   * het slothoofdstuk "Een zin om mee te nemen": in het referentiebeeld is
+   * dat het rustigste en mooiste vlak, en het spaart de ruimte uit die
+   * eerder ging naar een opschrift, een kop én een decoratief
+   * aanhalingsteken tegelijk.
+   */
+  | { soort: "zinvlak"; tekst: string }
+  /**
+   * Opmaakherstel-2, punt 5: een enkele, kleine regel in de tekstgrootte van
+   * voetnoten en labels. Gebruikt om twee of meer losse verklarende zinnen
+   * samen te voegen tot één compacte regel, zonder de tekst zelf te
+   * wijzigen (de aanroeper voegt de zinnen samen, dit blok tekent ze enkel
+   * kleiner dan een gewone alinea).
+   */
+  | { soort: "kleinschrift"; tekst: string }
   | { soort: "paren"; paren: { label: string; waarde: string }[] }
   | { soort: "vragen"; kop: string; vragen: string[] }
   | { soort: "ruimte"; hoogte: number };

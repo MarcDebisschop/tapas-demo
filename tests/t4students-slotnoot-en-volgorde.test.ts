@@ -107,7 +107,13 @@ describe("ingreep 2: het nieuwe slothoofdstuk Een zin om mee te nemen", () => {
     expect(slot.ondertitel).toBe("Jouw profiel, samengevat in één beweging.");
   });
 
-  it("het citaatvlak toont de grote samenvattende zin, en die zin staat nergens anders meer in het rapport", () => {
+  // Opmaakherstel-2, punt 5: het citaatvlak van weleer (opschrift, kop én
+  // decoratief aanhalingsteken) is vervangen door het nieuwe, rustigere
+  // "zinvlak" (alleen de zin, gecentreerd, schuin en tussen
+  // aanhalingstekens, zonder opschrift en zonder kop). De vindplaats in deze
+  // test is verlegd van "citaat" naar "zinvlak"; de bewaakte tekst (de
+  // samenvattende zin zelf, en dat ze nergens anders voorkomt) is ongewijzigd.
+  it("het zinvlak toont de grote samenvattende zin, en die zin staat nergens anders meer in het rapport", () => {
     const resultaat = scoreStudiekompas(I, VOORBEELDAFNAME.antwoorden, null, "nl");
     const rapport = bouwT4StudentsRapport(I, resultaat, VOORBEELDAFNAME.antwoorden, "verdieping", {
       naam: VOORBEELDAFNAME.naam,
@@ -116,11 +122,11 @@ describe("ingreep 2: het nieuwe slothoofdstuk Een zin om mee te nemen", () => {
       instrumentVersie: I.version,
     });
     const slot = vindSlot(rapport.paginas);
-    const citaatBlok = slot.blokken.find((b) => b.soort === "citaat") as
-      | (T4SBlok & { soort: "citaat" })
+    const zinvlakBlok = slot.blokken.find((b) => b.soort === "zinvlak") as
+      | (T4SBlok & { soort: "zinvlak" })
       | undefined;
-    expect(citaatBlok, "geen citaatvlak op het slothoofdstuk").toBeDefined();
-    const citaatTekst = citaatBlok!.regels[0]?.vraag ?? "";
+    expect(zinvlakBlok, "geen zinvlak op het slothoofdstuk").toBeDefined();
+    const citaatTekst = zinvlakBlok!.tekst ?? "";
     expect(citaatTekst.length).toBeGreaterThan(0);
     // De zin bevat de sterkste bouwsteen van de talent-focus (rechtstreeks uit
     // de motor, niet hertypt), net als vroeger op het blad In één zin.

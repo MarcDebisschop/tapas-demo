@@ -21,6 +21,14 @@ import type { T4SPagina } from "../server/t4students/rapport-contract";
 // voorkomen dat de student ze twee keer leest), vindt deze test de zin op de
 // nieuwe plaats. De bewaakte tekst zelf verandert niet.
 //
+// OPMAAKHERSTEL-2, PUNT 5: het "citaat"-blok van weleer is vervangen door het
+// nieuwe, rustigere "zinvlak" (geen opschrift, geen kop, alleen de zin,
+// gecentreerd en schuin tussen aanhalingstekens): een citaatvlak met een
+// opschrift, een kop én een decoratief aanhalingsteken tegelijk was te veel
+// voor de rustigste kaart van het blad. De vindplaats in deze test is
+// daarom verlegd naar "zinvlak"; de bewaakte tekst (de grammaticale
+// controle op de samenvattende zin) is ongewijzigd.
+//
 // Het voorbeeldprofiel (VOORBEELDAFNAME) heeft een echt gelijkspel op rang 1
 // tussen Artistiek en Sociaal in het interesse-onderdeel (R3 en R4 staan
 // allebei op het maximum), dus deze test gebruikt geen verzonnen data.
@@ -29,9 +37,9 @@ import type { T4SPagina } from "../server/t4students/rapport-contract";
 function vindZin(paginas: T4SPagina[]): string {
   const slot = paginas.find((p) => /een zin om mee te nemen/i.test(p.titel));
   expect(slot, "geen slothoofdstuk Een zin om mee te nemen gevonden").toBeDefined();
-  const citaat = (slot!.blokken as any[]).find((b) => b.soort === "citaat");
-  expect(citaat, "geen citaatvlak op het slothoofdstuk gevonden").toBeDefined();
-  return citaat.regels[0].vraag as string;
+  const zinvlak = (slot!.blokken as any[]).find((b) => b.soort === "zinvlak");
+  expect(zinvlak, "geen zinvlak op het slothoofdstuk gevonden").toBeDefined();
+  return zinvlak.tekst as string;
 }
 
 describe("de samenvattende zin in het citaatvlak van het slothoofdstuk blijft grammaticaal correct bij een gelijkspel", () => {
