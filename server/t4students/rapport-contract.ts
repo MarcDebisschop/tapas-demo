@@ -79,6 +79,17 @@ export interface T4SRij {
   omschrijving: string;
   /** Leeg wanneer het construct niet volledig is ingevuld. */
   rang: number | null;
+  /**
+   * Herstelronde 2, punt B. Vervangt de genummerde plaats door een van de
+   * drie groepen, op basis van het aandeel (herkenning / 3): sterk aanwezig
+   * (aandeel 2 tot en met 3), middenveld (aandeel 1 tot onder 2), minder
+   * aanwezig (aandeel onder 1). Leeg wanneer het construct niet volledig is
+   * ingevuld. Het veld rang hierboven blijft intern bestaan zolang niet elke
+   * lezer is omgebouwd, maar wordt niet meer aan de student getoond: een
+   * genummerde plaats van 1 tot 6 suggereert een nauwkeurigheid die dit
+   * aantal vragen niet kan dragen.
+   */
+  groep: "sterk aanwezig" | "middenveld" | "minder aanwezig" | null;
   /** Herkenning op de schaal 0 tot 3 die de student zelf zag. */
   herkenning: number | null;
   /**
@@ -453,6 +464,7 @@ export function rangschik(
       construct: con,
       omschrijving: omschrijvingVan(con),
       rang: null as number | null,
+      groep: null as "sterk aanwezig" | "middenveld" | "minder aanwezig" | null,
       herkenning: geschaald,
       energie: energieCompleet && score ? score.avgEnergy : null,
       evenSterk: false,
@@ -487,13 +499,23 @@ export function rangschik(
     });
 
   // Blauwdruk 3.4 regel 1: precies gelijk krijgt hetzelfde nummer, het
-  // volgende nummer wordt overgeslagen. "Gelijk" is hier de ruwe motorscore,
-  // niet het afgeronde cijfer: dat is precies het verschil dat deze
-  // herstelronde rechtzet.
+  // volgende nummer wordt overgeslagen.
+  //
+  // HERIJKING, HERSTELRONDE 2 PUNT A/B
+  // Vroeger was "gelijk" hier de ruwe motorscore (_ruweScore). Dat klopte
+  // zolang de motor zelf ook op de ruwe som rangschikte: beide lagen hielden
+  // elkaar in de pas. Sinds punt A rangschikt de motor op het aandeel van
+  // het haalbare, en dan is de ruwe som geen eerlijke gelijkheidsmaatstaf
+  // meer. Twee constructen met een andere voeding kunnen toevallig hetzelfde
+  // ruwe getal halen (het voorbeeld uit de opdracht: Be Strong en Be Perfect
+  // stonden beide op ruw 3, maar dat is 3 van 8 tegenover 3 van 4) zonder dat
+  // hun aandeel ook maar in de buurt van elkaar komt. "Gelijk" is daarom nu
+  // het geschaalde cijfer (r.herkenning, dat is aandeel maal 3), dezelfde
+  // maatstaf als de rangorde zelf, voor elke familie inclusief TaPas-BEELD.
   let vorigeScore: number | null | undefined = undefined;
   let vorigeRang = 0;
   volledig.forEach((r, i) => {
-    const maatstaf = motorRij ? r._ruweScore : r.herkenning;
+    const maatstaf = r.herkenning;
     if (vorigeScore !== undefined && maatstaf === vorigeScore) r.rang = vorigeRang;
     else {
       r.rang = i + 1;
@@ -502,13 +524,13 @@ export function rangschik(
     }
   });
   // Regel 2: binnen de marge maar niet gelijk, dan visueel samengenomen. De
-  // marge werkt op dezelfde maatstaf als de rangorde zelf: de ruwe motorscore
-  // wanneer die er is, anders de geschaalde herkenning (alleen TaPas-BEELD).
+  // marge werkt op dezelfde maatstaf als de rangorde zelf en als de gelijk-
+  // detectie hierboven: het geschaalde cijfer.
   volledig.forEach((r, i) => {
     const buur = volledig[i + 1];
     if (!buur) return;
-    const eigen = motorRij ? r._ruweScore : r.herkenning;
-    const naast = motorRij ? buur._ruweScore : buur.herkenning;
+    const eigen = r.herkenning;
+    const naast = buur.herkenning;
     if (eigen == null || naast == null) return;
     const verschil = Math.abs(eigen - naast);
     if (verschil > 0 && verschil <= marge) {
@@ -519,6 +541,17 @@ export function rangschik(
   for (const r of volledig) {
     r.leeswoord = leeswoordVan(resultaat, familie, r.construct);
     r.vorm = vormVan(resultaat, familie, r.construct);
+  }
+
+  // Herstelronde 2, punt B: de groep vervangt het plaatsnummer dat een
+  // student ziet. De grens ligt op de derden van de antwoordschaal van 0 tot
+  // 3, dus rechtstreeks op het geschaalde herkenningscijfer hierboven (dat is
+  // het aandeel maal 3). Sterk aanwezig loopt van 2 tot en met 3, middenveld
+  // van 1 tot onder 2, minder aanwezig blijft onder 1. Alleen ingevulde
+  // constructen krijgen een groep; hun herkenning is dan altijd een getal.
+  for (const r of volledig) {
+    const h = r.herkenning as number;
+    r.groep = h >= 2 ? "sterk aanwezig" : h >= 1 ? "middenveld" : "minder aanwezig";
   }
 
   // Gevolg dat opgevangen moet worden (herstelronde, punt 1): twee constructen
