@@ -82,11 +82,13 @@ describe("het blad Wat je hier zocht bestaat en staat vlak voor de bronpagina's"
     });
     const blad = vindBlad(rapport.paginas)!;
     const tekst = alleTeksten(blad);
-    // Rechtstreeks uit het instrument gehaald, niet hertypt: de twee sterkste
-    // foci van het voorbeeldprofiel zijn Overdrachtelijk Interactief en
-    // Sociaal Interactief (zie server/t4students/rapport-voorbeeld.ts).
-    expect(tekst).toContain("Overdrachtelijk Interactief");
+    // De twee sterkste foci komen rechtstreeks uit de rekenmotor, nooit
+    // hertypt: resultaat.foci.sorted is de enige bron van deze volgorde
+    // (herstelronde, punt 1). Voor het voorbeeldprofiel zijn dat Sociaal
+    // Interactief en Systematisch/Uitvoerend.
+    expect(resultaat.foci.sorted.slice(0, 2)).toEqual(["Sociaal Interactief", "Systematisch/Uitvoerend"]);
     expect(tekst).toContain("Sociaal Interactief");
+    expect(tekst).toContain("Systematisch/Uitvoerend");
   });
 
   it("nooit de suggestie wekken dat de vraag van de student beantwoord is", () => {

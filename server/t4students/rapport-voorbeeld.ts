@@ -65,9 +65,14 @@ const ANTWOORDEN: T4SAntwoorden = {
   V5: { recognition: 2, energy: 0 },
   V6: { recognition: 1, energy: -1 },
 
-  // Talent-foci. Overdrachtelijk Interactief en Sociaal Interactief bovenaan.
-  // Artistiek Innovatief is het onbenutte vermogen: lage herkenning, hoge
-  // energie. Complexiteit/Conceptueel staat onderaan.
+  // Talent-foci. De rangorde volgt de ruwe motorscore (herstelronde punt 1),
+  // niet de geschaalde herkenning: Sociaal Interactief en
+  // Systematisch/Uitvoerend staan met deze antwoorden bovenaan, ook al heeft
+  // Overdrachtelijk Interactief hierna een hoger geschaald cijfer, want die
+  // twee constructen hebben elk maar drie herkenningsitems terwijl Sociaal
+  // Interactief en Systematisch/Uitvoerend er meer hebben. Artistiek
+  // Innovatief is het onbenutte vermogen: lage herkenning, hoge energie.
+  // Complexiteit/Conceptueel staat onderaan.
   F1: { recognition: 2, energy: 1 },
   F2: { recognition: 1, energy: 2 },
   F3: { recognition: 1, energy: 0 },

@@ -352,13 +352,29 @@ const D_TE_WEINIG =
   "Er is nog te weinig ingevuld om deze zin te bouwen. De losse onderdelen hiervóór in dit rapport " +
   "blijven wel staan; alleen deze samenvattende zin niet.";
 
-/** Kiest de bouwsteen (of, bij gelijkspel, beide verbonden met "en") op rang 1 van een dimensie. */
-function d1Bouwsteen(dim: T4SDimensie, tabel: Record<string, string>): { zin: string; gelijkspel: boolean } {
+/**
+ * Kiest de bouwsteen (of, bij gelijkspel, beide) op rang 1 van een dimensie.
+ *
+ * Twee gelijk geëindigde bouwstenen worden verbonden met " en ", behalve
+ * wanneer minstens een van de twee zelf al het woord "en" bevat (zoals
+ * "vorm, beeld en taal"): dan geeft een derde "en" een onleesbare zin met
+ * drie keer hetzelfde voegwoord. In dat geval komt er een komma in de
+ * plaats, gevolgd door het optionele herhaalwoord dat in de buitenste zin
+ * voor deze bouwsteen staat (bijvoorbeeld "over" bij het interesse-onderdeel:
+ * "...gaat over vorm, beeld en taal, en over mensen...") (herstelronde, punt 4).
+ */
+function d1Bouwsteen(
+  dim: T4SDimensie,
+  tabel: Record<string, string>,
+  herhaalwoord?: string,
+): { zin: string; gelijkspel: boolean } {
   const eerste = dim.gerangschikt.filter((r) => r.rang === 1);
   if (eerste.length === 0) return { zin: "", gelijkspel: false };
   if (eerste.length === 1) return { zin: tabel[eerste[0].construct] || "", gelijkspel: false };
   const teksten = eerste.map((r) => tabel[r.construct]).filter((t): t is string => Boolean(t));
-  return { zin: teksten.join(" en "), gelijkspel: true };
+  const heeftEigenEn = teksten.some((t) => / en /.test(t));
+  const koppelwoord = heeftEigenEn ? `, en ${herhaalwoord ? herhaalwoord + " " : ""}` : " en ";
+  return { zin: teksten.join(koppelwoord), gelijkspel: true };
 }
 
 function eenZinBlokken(
@@ -372,7 +388,7 @@ function eenZinBlokken(
   }
   const focusB = d1Bouwsteen(foci, D1_TALENTFOCUS);
   const versnellerB = d1Bouwsteen(versnellers, D1_VERSNELLER);
-  const interesseB = d1Bouwsteen(interesse, D1_INTERESSE);
+  const interesseB = d1Bouwsteen(interesse, D1_INTERESSE, "over");
   if (!focusB.zin || !versnellerB.zin || !interesseB.zin) {
     return [{ soort: "alinea", tekst: D_TE_WEINIG }];
   }
@@ -403,14 +419,14 @@ function eenZinBlokken(
     blokken.push({
       soort: "opsomming",
       kop: "Wat nu al sterk is",
-      punten: kernsterktes.map((r) => `${r.construct}. ${r.omschrijving}`.trim()),
+      punten: kernsterktes.map((r) => `${r.construct}: ${r.omschrijving}`.trim()),
     });
   }
   if (latentOnderbenut.length > 0) {
     blokken.push({
       soort: "opsomming",
       kop: "Wat sterker kan worden",
-      punten: latentOnderbenut.map((r) => `${r.construct}. ${r.omschrijving}`.trim()),
+      punten: latentOnderbenut.map((r) => `${r.construct}: ${r.omschrijving}`.trim()),
     });
   }
   return blokken;
@@ -447,9 +463,9 @@ function watJeHierZochtBlokken(
   const topVersneller = versnellers.gerangschikt.find((r) => r.rang === 1);
   const topInteresse = interesse.gerangschikt.find((r) => r.rang === 1);
   const punten: string[] = [];
-  for (const r of topFoci) punten.push(`${r.construct}. ${r.omschrijving}`.trim());
-  if (topVersneller) punten.push(`${topVersneller.construct}. ${topVersneller.omschrijving}`.trim());
-  if (topInteresse) punten.push(`${topInteresse.construct}. ${topInteresse.omschrijving}`.trim());
+  for (const r of topFoci) punten.push(`${r.construct}: ${r.omschrijving}`.trim());
+  if (topVersneller) punten.push(`${topVersneller.construct}: ${topVersneller.omschrijving}`.trim());
+  if (topInteresse) punten.push(`${topInteresse.construct}: ${topInteresse.omschrijving}`.trim());
   if (punten.length > 0) {
     blokken.push({ soort: "opsomming", kop: "Wat je antwoorden het duidelijkst laten zien", punten });
   }
@@ -510,14 +526,28 @@ function voorWieMeeleestSlotBlokken(): T4SBlok[] {
 
 // ── Onderdeel G: het blad "Waarop dit rapport gebouwd is" ─────────────────
 //
-// De veertien verwijzingen hieronder komen letterlijk uit
+// De meeste verwijzingen hieronder komen letterlijk uit
 // bronnen-geverifieerd.md, veld "Volledige correcte verwijzing (APA)" en
 // "Werkende URL", zoals besloten in bronnenbesluit.md. Niets is hier
 // herschreven; alleen de sterretjes van de opmaak en de schuine strepen rond
 // tijdschriftnamen zijn weggehaald, en er staan geen lange liggende
-// streepjes in. De verwijzing naar Deci en Ryan (2000, Psychological
-// Inquiry) staat hier in dezelfde vorm als bij het motivatieprofiel; er
-// staat geen tweede vorm van dezelfde auteurs naast.
+// streepjes in.
+//
+// DECI EN RYAN: INLINE VORM EN VOLLEDIGE VERWIJZINGEN, HERSTELD
+// De inline vorm bij het motivatieblok is "Deci en Ryan (1985, 2000)", gelijk
+// aan de oude rapportweg in server/t4students/rapport.ts. Daarom staan hier,
+// naast de twee verwijzingen uit 2000 en de verwijzing uit 2020, ook de twee
+// verwijzingen uit 1985 en 2017 die de oude weg al gebruikte. Beide jaartallen
+// uit de inline vorm (1985 en 2000) hebben zo een volledige verwijzing hier;
+// 2017 hoort bij hetzelfde boek als 1985 en staat er bewust naast, zoals in
+// de oude weg. Herstelronde, punt 2.
+//
+// De verwijzing Ryan en Deci (2000, American Psychologist) staat hier met een
+// komma na "R. M.", letterlijk zoals in de oude rapportweg, in plaats van
+// zonder komma zoals in bronnen-geverifieerd.md. De feiten (titel, tijdschrift,
+// deel, bladzijden, DOI) zijn ongewijzigd en blijven de geverifieerde feiten;
+// alleen de komma is aangepast zodat beide rapportwegen precies dezelfde
+// tekst tonen, wat de opdracht voor deze herstelronde uitdrukkelijk vraagt.
 const G_INTRO =
   "Dit rapport is geen test met goede of foute antwoorden. Het geeft geordend weer wat jij over " +
   "jezelf hebt aangegeven. De onderdelen die het meet en de manier waarop het erover schrijft, " +
@@ -535,12 +565,14 @@ const G_CONSTRUCTEN_EN_INHOUD: string[] = [
   "Nauta, M. M. (2010). The development, evolution, and status of Holland's theory of vocational " +
     "personalities: Reflections and future directions for counseling psychology. Journal of Counseling " +
     "Psychology, 57(1), 11 tot 22. https://doi.org/10.1037/a0018213",
+  "Deci, E. L., en Ryan, R. M. (1985). Intrinsic Motivation and Self-Determination in Human Behavior. New York: Plenum Press.",
   "Deci, E. L. en Ryan, R. M. (2000). The \"what\" and \"why\" of goal pursuits: Human needs and " +
     "the self-determination of behavior. Psychological Inquiry, 11(4), 227 tot 268. " +
     "https://doi.org/10.1207/S15327965PLI1104_01",
-  "Ryan, R. M. en Deci, E. L. (2000). Self-determination theory and the facilitation of intrinsic " +
+  "Ryan, R. M., en Deci, E. L. (2000). Self-determination theory and the facilitation of intrinsic " +
     "motivation, social development, and well-being. American Psychologist, 55(1), 68 tot 78. " +
     "https://doi.org/10.1037/0003-066X.55.1.68",
+  "Ryan, R. M., en Deci, E. L. (2017). Self-Determination Theory: Basic Psychological Needs in Motivation, Development, and Wellness. New York: Guilford Press.",
   "Ryan, R. M. en Deci, E. L. (2020). Intrinsic and extrinsic motivation from a self-determination " +
     "theory perspective: Definitions, theory, practices, and future directions. Contemporary " +
     "Educational Psychology, 61, artikel 101860. https://doi.org/10.1016/j.cedpsych.2020.101860",
@@ -616,7 +648,7 @@ function motivatieBlokken(resultaat: T4SResultaat): T4SBlok[] {
     {
       soort: "alinea",
       tekst:
-        "Volgens de zelfdeterminatietheorie van Deci en Ryan (2000, 2020) komt motivatie uit twee soorten " +
+        "Volgens de zelfdeterminatietheorie van Deci en Ryan (1985, 2000) komt motivatie uit twee soorten " +
         "bronnen. Intrinsiek wil zeggen dat de motivatie van binnenuit komt: uit autonomie (zelf kunnen " +
         "kiezen), competentie (voelen dat je bijleert) en verbondenheid (je verbonden voelen met anderen). " +
         "Extrinsiek wil zeggen dat de motivatie van buitenaf komt: uit erkenning (waardering, punten, " +
@@ -1065,6 +1097,7 @@ export function bouwT4StudentsRapport(
         omschrijving: r.omschrijving,
         rang: r.rang,
         herkenning: r.herkenning,
+        weergavePrecisie: r.weergavePrecisie,
         energie: r.energie,
         ingevuld: r.ingevuld,
         kleur: b.dim.kleur,
@@ -1105,6 +1138,7 @@ export function bouwT4StudentsRapport(
         omschrijving: r.omschrijving,
         rang: r.rang,
         herkenning: r.herkenning,
+        weergavePrecisie: r.weergavePrecisie,
         energie: r.energie,
         ingevuld: r.ingevuld,
         kleur: b.dim.kleur,
@@ -1255,7 +1289,7 @@ export function bouwT4StudentsRapport(
   ];
   for (const r of interesse.gerangschikt.slice(0, 3)) {
     const tekst = INTERESSE_DUIDING[r.construct];
-    if (tekst) interesseBlokken.push({ soort: "alinea", tekst: `${r.construct}. ${tekst}` });
+    if (tekst) interesseBlokken.push({ soort: "alinea", tekst: `${r.construct}: ${tekst}` });
   }
   const r1 = interesse.gerangschikt[0] ? zwaarsteItemVan(inst, interesse.gerangschikt[0].construct) : null;
   if (r1) {

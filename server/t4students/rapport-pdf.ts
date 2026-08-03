@@ -112,6 +112,15 @@ function getal1(x: number): string {
   return x.toFixed(1).replace(".", ",");
 }
 
+/**
+ * Toont herkenning met het aantal decimalen dat de rangorde nodig heeft
+ * (T4SRij.weergavePrecisie / T4SBlok constructblok.weergavePrecisie). Zie
+ * server/t4students/rapport-contract.ts, wijsPrecisieToe.
+ */
+function getalMetPrecisie(x: number, precisie: 1 | 2): string {
+  return x.toFixed(precisie).replace(".", ",");
+}
+
 function getalMetTeken(x: number): string {
   const s = getal1(Math.abs(x));
   if (x > 0.049) return "+" + s;
@@ -249,7 +258,7 @@ function tekenRij(doc: Doc, rij: T4SRij, x: number, y: number, kleur: string): n
   tekenEnergie(doc, xEner, midden - BALK_H / 2, rij.energie, kleur);
 
   const cijfers =
-    (rij.herkenning != null ? getal1(rij.herkenning) : "") +
+    (rij.herkenning != null ? getalMetPrecisie(rij.herkenning, rij.weergavePrecisie) : "") +
     (rij.energie != null ? "  " + getalMetTeken(rij.energie) : "");
   doc.font(F.dm).fontSize(6.8).fillColor(KLEUR.inktZacht);
   doc.text(cijfers, xWoord, midden - 7.4, { width: woordB, lineBreak: false });
@@ -454,10 +463,12 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
         tekenHerkenning(doc, xHerk, y + 12, blok.herkenning, blok.kleur);
         tekenEnergie(doc, xHerk + HERK_B + KOL_GAT, y + 12, blok.energie, blok.kleur);
         doc.font(F.dm).fontSize(6.6).fillColor(KLEUR.inktZacht);
-        doc.text("HERKENNING " + (blok.herkenning != null ? getal1(blok.herkenning) : ""), xHerk, y + 22.5, {
-          width: HERK_B,
-          lineBreak: false,
-        });
+        doc.text(
+          "HERKENNING " + (blok.herkenning != null ? getalMetPrecisie(blok.herkenning, blok.weergavePrecisie) : ""),
+          xHerk,
+          y + 22.5,
+          { width: HERK_B, lineBreak: false },
+        );
         doc.text(
           "ENERGIE " + (blok.energie != null ? getalMetTeken(blok.energie) : ""),
           xHerk + HERK_B + KOL_GAT,

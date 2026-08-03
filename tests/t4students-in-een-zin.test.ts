@@ -4,6 +4,7 @@ import { scoreStudiekompas } from "../server/t4students/kompas-scoring";
 import { bouwT4StudentsRapport } from "../server/t4students/rapport-paginas";
 import { VOORBEELDAFNAME } from "../server/t4students/rapport-voorbeeld";
 import type { T4SPagina } from "../server/t4students/rapport-contract";
+import rapportteksten from "../server/data/t4students-rapportteksten.json";
 
 // ---------------------------------------------------------------------------
 // Onderdeel D van de opdracht "Studiekompas persoonlijk maken".
@@ -48,11 +49,19 @@ describe("het blad In één zin bouwt een vaste zin uit bouwstenen", () => {
   });
 
   it("bevat de bouwsteen van de sterkste talent-focus, versneller en interessegebied", () => {
+    const resultaat = scoreStudiekompas(I, VOORBEELDAFNAME.antwoorden, null, "nl");
     const rapport = bouw(VOORBEELDAFNAME.antwoorden as unknown as Record<string, unknown>);
     const blad = vindBlad(rapport.paginas)!;
     const tekst = alleTeksten(blad).toLowerCase();
-    // Sterkste focus in het voorbeeld: Overdrachtelijk Interactief.
-    expect(tekst).toContain("iets kunt uitleggen zodat een ander het begrijpt");
+    // De sterkste focus komt rechtstreeks uit de motor (resultaat.foci.sorted,
+    // herstelronde punt 1), niet hertypt: voor het voorbeeldprofiel is dat
+    // Sociaal Interactief.
+    const sterksteFocus = resultaat.foci.sorted[0];
+    expect(sterksteFocus).toBe("Sociaal Interactief");
+    const bouwsteen = (
+      rapportteksten as { eenZinTalentfocus: { teksten: Record<string, string> } }
+    ).eenZinTalentfocus.teksten[sterksteFocus];
+    expect(tekst).toContain(bouwsteen.toLowerCase());
   });
 
   it("bevat de vaste regel dat de zin niet de hele persoon samenvat", () => {

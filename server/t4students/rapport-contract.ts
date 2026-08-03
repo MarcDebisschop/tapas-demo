@@ -71,6 +71,15 @@ export interface T4SRij {
   rang: number | null;
   /** Herkenning op de schaal 0 tot 3 die de student zelf zag. */
   herkenning: number | null;
+  /**
+   * Aantal decimalen waarmee herkenning getoond moet worden. Normaal 1. Wordt
+   * 2 wanneer dit construct en zijn buur anders hetzelfde afgeronde cijfer
+   * zouden tonen terwijl hun rang verschilt (herstelronde, punt 1): de
+   * rangorde komt altijd van de motor, nooit van dit cijfer, dus het cijfer
+   * moet dan zelf iets scherper getoond worden om zichzelf niet tegen te
+   * spreken.
+   */
+  weergavePrecisie: 1 | 2;
   /** Energie op de schaal min twee tot plus twee, of leeg. */
   energie: number | null;
   /** Staat dit construct binnen de marge van zijn buur? */
@@ -114,6 +123,8 @@ export type T4SBlok =
       omschrijving: string;
       rang: number | null;
       herkenning: number | null;
+      /** Zie T4SRij.weergavePrecisie: normaal 1, soms 2 om de rangorde niet tegen te spreken. */
+      weergavePrecisie: 1 | 2;
       energie: number | null;
       ingevuld: boolean;
       kleur: string;
@@ -466,8 +477,26 @@ export interface T4SDimensie {
 }
 
 /**
- * Zet een familie om in een rangorde op geschaalde herkenning, met de regels
- * uit blauwdruk 3.4 voor gelijke stand en 3.5 voor een construct zonder oordeel.
+ * De rangorde die de rekenmotor zelf voor deze familie al heeft bepaald, op de
+ * ruwe, ongeschaalde herkenning. Dit is de enige bron van de volgorde op
+ * papier (herstelronde, punt 1). Voor TaPas-BEELD bestaat er geen motorlijst,
+ * want die familie wordt nooit als rangorde getoond; daar geeft deze functie
+ * null terug en valt rangschik terug op de geschaalde herkenning, alleen om
+ * die twee constructen naast elkaar te kunnen zetten.
+ */
+function motorVolgorde(resultaat: T4SResultaat, familie: string): string[] | null {
+  if (familie === FAM_FOCI) return resultaat.foci.sorted;
+  if (familie === FAM_VERSNELLERS) return resultaat.versnellers.rangorde;
+  if (familie === FAM_DRIVERS) return resultaat.drivers.sorted;
+  if (familie === FAM_INTERESSE) return resultaat.interesse.sorted;
+  return null;
+}
+
+/**
+ * Zet een familie om in een rangorde. De volgorde zelf komt letterlijk van de
+ * rekenmotor (motorVolgorde hierboven); het herschaalde cijfer van 0 tot 3 is
+ * uitsluitend voor de weergave en bepaalt nooit meer de plaats. Zie
+ * bevinding-punt1-meetronde.md voor de meting die aan deze functie voorafging.
  */
 export function rangschik(
   inst: T4SInstrument,
@@ -480,15 +509,22 @@ export function rangschik(
   const fam = inst.families.find((f) => f.id === familie);
   const constructen = fam ? fam.constructs : [];
   const marge = inst.scoringMap.constants.tieMargin;
+  const motorRij = motorVolgorde(resultaat, familie);
 
   const ruw = constructen.map((con) => {
     const v = voeding[con] || { herkenningsItems: [], energieItems: [], maxHerkenning: 0 };
     const compleet =
       v.herkenningsItems.length > 0 && v.herkenningsItems.every((id) => isBeantwoord(items[id], antwoorden));
     const score = resultaat.constructScores[con];
+    // De ruwe motorscore stuurt de rangorde; nooit het geschaalde cijfer.
+    const ruweScore = compleet && score ? score.recognition : null;
+    // Op twee decimalen berekend, zodat wijsPrecisieToe hierna een echt tweede
+    // decimaal kan tonen in plaats van een tweede keer dezelfde afronding.
+    // Bij een decimaal weergavePrecisie wordt dit getal verderop afgerond op
+    // een decimaal; de rangorde zelf leest dit getal nooit.
     const geschaald =
       compleet && v.maxHerkenning > 0 && score
-        ? Math.round(((score.recognition / v.maxHerkenning) * 3 + Number.EPSILON) * 10) / 10
+        ? Math.round(((score.recognition / v.maxHerkenning) * 3 + Number.EPSILON) * 100) / 100
         : null;
     const energieCompleet =
       v.energieItems.length > 0 && v.energieItems.every((id) => antwoorden[id]?.energy != null);
@@ -502,30 +538,58 @@ export function rangschik(
       ingevuld: compleet,
       leeswoord: "",
       vorm: "geen",
-    } as T4SRij;
+      weergavePrecisie: 1,
+      // Hulpveld, alleen binnen deze functie gebruikt: de ruwe score waarop de
+      // motor rangschikt.
+      _ruweScore: ruweScore,
+    } as T4SRij & { _ruweScore: number | null };
   });
+
+  // De volgorde komt letterlijk van de motor als die voor deze familie
+  // bestaat. Constructen die de motor niet kent (zou hier niet mogen
+  // voorkomen) belanden achteraan, op naam, zodat er nooit iets verdwijnt.
+  const motorPlaats = new Map<string, number>();
+  if (motorRij) motorRij.forEach((con, i) => motorPlaats.set(con, i));
 
   const volledig = ruw
     .filter((r) => r.ingevuld)
-    .sort((a, b) => (b.herkenning as number) - (a.herkenning as number) || a.construct.localeCompare(b.construct, "nl"));
+    .sort((a, b) => {
+      if (motorRij) {
+        const pa = motorPlaats.has(a.construct) ? motorPlaats.get(a.construct)! : Number.MAX_SAFE_INTEGER;
+        const pb = motorPlaats.has(b.construct) ? motorPlaats.get(b.construct)! : Number.MAX_SAFE_INTEGER;
+        if (pa !== pb) return pa - pb;
+        return a.construct.localeCompare(b.construct, "nl");
+      }
+      // Alleen TaPas-BEELD komt hier terecht: geen motorrangorde beschikbaar,
+      // dus de geschaalde herkenning is de enige overgebleven maat.
+      return (b.herkenning as number) - (a.herkenning as number) || a.construct.localeCompare(b.construct, "nl");
+    });
 
-  // Blauwdruk 3.4 regel 1: precies gelijk krijgt hetzelfde nummer, het volgende
-  // nummer wordt overgeslagen.
-  let vorigeScore: number | null = null;
+  // Blauwdruk 3.4 regel 1: precies gelijk krijgt hetzelfde nummer, het
+  // volgende nummer wordt overgeslagen. "Gelijk" is hier de ruwe motorscore,
+  // niet het afgeronde cijfer: dat is precies het verschil dat deze
+  // herstelronde rechtzet.
+  let vorigeScore: number | null | undefined = undefined;
   let vorigeRang = 0;
   volledig.forEach((r, i) => {
-    if (vorigeScore != null && r.herkenning === vorigeScore) r.rang = vorigeRang;
+    const maatstaf = motorRij ? r._ruweScore : r.herkenning;
+    if (vorigeScore !== undefined && maatstaf === vorigeScore) r.rang = vorigeRang;
     else {
       r.rang = i + 1;
       vorigeRang = i + 1;
-      vorigeScore = r.herkenning;
+      vorigeScore = maatstaf;
     }
   });
-  // Regel 2: binnen de marge maar niet gelijk, dan visueel samengenomen.
+  // Regel 2: binnen de marge maar niet gelijk, dan visueel samengenomen. De
+  // marge werkt op dezelfde maatstaf als de rangorde zelf: de ruwe motorscore
+  // wanneer die er is, anders de geschaalde herkenning (alleen TaPas-BEELD).
   volledig.forEach((r, i) => {
     const buur = volledig[i + 1];
     if (!buur) return;
-    const verschil = Math.abs((r.herkenning as number) - (buur.herkenning as number));
+    const eigen = motorRij ? r._ruweScore : r.herkenning;
+    const naast = motorRij ? buur._ruweScore : buur.herkenning;
+    if (eigen == null || naast == null) return;
+    const verschil = Math.abs(eigen - naast);
     if (verschil > 0 && verschil <= marge) {
       r.evenSterk = true;
       buur.evenSterk = true;
@@ -535,6 +599,13 @@ export function rangschik(
     r.leeswoord = leeswoordVan(resultaat, familie, r.construct);
     r.vorm = vormVan(resultaat, familie, r.construct);
   }
+
+  // Gevolg dat opgevangen moet worden (herstelronde, punt 1): twee constructen
+  // kunnen nu naast elkaar staan met een verschillende rang maar hetzelfde
+  // afgeronde cijfer, omdat de rangorde niet meer van dat cijfer afhangt. Wie
+  // dat zo laat staan, toont een cijfer dat zijn eigen volgorde tegenspreekt.
+  // Daarom krijgt zo'n paar hier, en alleen dan, een extra decimaal.
+  wijsPrecisieToe(volledig, motorRij != null);
 
   const zonder = ruw
     .filter((r) => !r.ingevuld)
@@ -549,6 +620,29 @@ export function rangschik(
   };
 }
 
+/**
+ * Bepaalt per rij hoeveel decimalen de weergave nodig heeft. Standaard een
+ * decimaal. Zodra twee opeenvolgende rijen met een verschillende rang op een
+ * decimaal hetzelfde cijfer zouden tonen, krijgen beide een extra decimaal:
+ * herkenning ligt al op twee decimalen berekend, dus dat tweede decimaal
+ * bestaat en hoeft nergens geschat te worden. Een echt gelijkspel (dezelfde
+ * rang) toont bewust hetzelfde cijfer en blijft op een decimaal staan.
+ */
+function wijsPrecisieToe(volledig: (T4SRij & { _ruweScore: number | null })[], heeftMotorVolgorde: boolean): void {
+  if (!heeftMotorVolgorde) return;
+  const opEenDecimaal = (x: number): number => Math.round(x * 10) / 10;
+  for (let i = 0; i < volledig.length - 1; i++) {
+    const a = volledig[i];
+    const b = volledig[i + 1];
+    if (a.rang === b.rang) continue;
+    if (a.herkenning == null || b.herkenning == null) continue;
+    if (opEenDecimaal(a.herkenning) === opEenDecimaal(b.herkenning)) {
+      a.weergavePrecisie = 2;
+      b.weergavePrecisie = 2;
+    }
+  }
+}
+
 // ── Kleine hulpjes voor tekst ───────────────────────────────────────────────
 
 function lijst(namen: string[]): string {
@@ -561,6 +655,16 @@ function getal1(x: number): string {
   return x.toFixed(1).replace(".", ",");
 }
 
+/**
+ * Toont herkenning met het aantal decimalen dat de rangorde nodig heeft (zie
+ * T4SRij.weergavePrecisie). Normaal een decimaal, zoals getal1; twee decimalen
+ * alleen als anders twee constructen met een verschillende rang hetzelfde
+ * cijfer zouden tonen.
+ */
+function getalMetPrecisie(x: number, precisie: 1 | 2): string {
+  return x.toFixed(precisie).replace(".", ",");
+}
+
 function getalMetTeken(x: number): string {
   const s = getal1(Math.abs(x));
   if (x > 0.049) return "+" + s;
@@ -568,7 +672,7 @@ function getalMetTeken(x: number): string {
   return "0,0";
 }
 
-export { getal1, getalMetTeken, lijst, kleurVanFamilie };
+export { getal1, getalMetPrecisie, getalMetTeken, lijst, kleurVanFamilie };
 
 // ── Het paginaplan uit blauwdruk 5.1 ────────────────────────────────────────
 
