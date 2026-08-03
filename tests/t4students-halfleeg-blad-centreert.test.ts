@@ -132,3 +132,37 @@ describe("het exacte startpunt van de inhoud op een blad", () => {
     expect(start).toBe(kopEindY);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Centrering begrenzen: bij een heel kort hoofdstuk slaat de centrering door.
+// De kop komt dan los van zijn inhoud te staan doordat het echte midden van
+// het blad ver onder de kop ligt. De extra ruimte die berekenInhoudStart
+// boven de inhoud zet, mag daarom nooit meer zijn dan vijfenzeventig punten:
+// is het echte midden verder naar onder, dan zakt de inhoud niet verder dan
+// die vijfenzeventig punten onder haar normale plaats (INHOUD_TOP/kopEindY).
+// Een kort hoofdstuk moet nog steeds enige extra ruimte krijgen (de
+// centrering blijft dus bestaan, ze slaat alleen niet meer door).
+// ---------------------------------------------------------------------------
+describe("de verticale centrering wordt begrensd op vijfenzeventig punten extra ruimte", () => {
+  it("bij een heel kort hoofdstuk is de extra ruimte boven de inhoud nooit meer dan 75 punten", async () => {
+    const { berekenInhoudStart } = (await import("../server/t4students/rapport-pdf")) as unknown as {
+      berekenInhoudStart: (inhoudHoogte: number, kopEindY: number, isVervolg: boolean) => number;
+    };
+    const kopEindY = 150;
+    // Een heel korte alinea: de beschikbare hoogte is ongeveer 630 punten, dus
+    // zonder begrenzing zou de inhoud tot ver voorbij het midden zakken.
+    const heelKleineInhoud = 20;
+    const start = berekenInhoudStart(heelKleineInhoud, kopEindY, false);
+    expect(start - kopEindY).toBeLessThanOrEqual(75);
+  });
+
+  it("een kort hoofdstuk krijgt nog steeds enige extra ruimte (de centrering blijft bestaan)", async () => {
+    const { berekenInhoudStart } = (await import("../server/t4students/rapport-pdf")) as unknown as {
+      berekenInhoudStart: (inhoudHoogte: number, kopEindY: number, isVervolg: boolean) => number;
+    };
+    const kopEindY = 150;
+    const heelKleineInhoud = 20;
+    const start = berekenInhoudStart(heelKleineInhoud, kopEindY, false);
+    expect(start).toBeGreaterThan(kopEindY);
+  });
+});

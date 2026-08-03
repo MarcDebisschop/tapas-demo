@@ -910,19 +910,33 @@ function tekenCover(doc: Doc, rapport: T4SRapport, pagina: T4SPagina, opties: T4
 // zou anders raar losstaand in het midden van het vervolgblad komen te staan.
 const HALFLEEG_DREMPEL = 0.55;
 
+// Centrering begrenzen: bij een heel kort hoofdstuk ligt het echte midden van
+// het blad zo ver naar onder dat de kop los van zijn inhoud komt te staan
+// (een leeg bovenblad met de kop helemaal alleen, en de inhoud pas ver onder
+// het midden). Dat leest slechter dan de oorspronkelijke lege ruimte
+// onderaan. Daarom wordt de extra ruimte die de centrering boven de inhoud
+// zet, begrensd op ten hoogste dit aantal punten: ligt het echte midden
+// verder naar onder, dan zakt de inhoud niet verder dan deze grens onder
+// haar normale plaats. Zo blijft er zichtbaar rust boven de inhoud, maar
+// blijft de kop bij zijn inhoud horen.
+const MAX_EXTRA_RUIMTE_BOVEN = 75;
+
 /**
  * Berekent waar de inhoud van een blad moet beginnen. Bij een vervolgblad of
  * bij inhoud die de drempel haalt, is dat gewoon het einde van de kop
  * (ongewijzigd). Is de inhoud korter dan de drempel van de beschikbare
- * hoogte, dan komt het beginpunt zo veel lager te staan dat de inhoud precies
- * verticaal gecentreerd staat tussen de kop en de bodem.
+ * hoogte, dan komt het beginpunt lager te staan, zodat de inhoud richting het
+ * midden tussen de kop en de bodem opschuift; de verschuiving zelf wordt
+ * begrensd op MAX_EXTRA_RUIMTE_BOVEN punten, zodat de centrering niet
+ * doorslaat en de kop bij zijn inhoud blijft horen.
  */
 export function berekenInhoudStart(inhoudHoogte: number, kopEindY: number, isVervolg: boolean): number {
   if (isVervolg) return kopEindY;
   const beschikbaar = BODEM - kopEindY;
   if (beschikbaar <= 0 || inhoudHoogte >= beschikbaar * HALFLEEG_DREMPEL) return kopEindY;
   const overschot = beschikbaar - inhoudHoogte;
-  return kopEindY + overschot / 2;
+  const extraRuimte = Math.min(overschot / 2, MAX_EXTRA_RUIMTE_BOVEN);
+  return kopEindY + extraRuimte;
 }
 
 /**

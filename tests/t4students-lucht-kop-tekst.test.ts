@@ -90,4 +90,19 @@ describe("lucht tussen de kop van een kaart en de tekst eronder", () => {
     const kopTekstAfstand = yOffsetVan(code, "blok.tekst") - kopY;
     expect(kopY - opschriftY).toBeLessThan(kopTekstAfstand);
   });
+
+  // De dankkaart op het slotblad is van het soort "kaartvlak" (het getinte
+  // vlak), terwijl de uitlegkaarten van het soort "kader" zijn (het witte
+  // vlak). Deze test legt vast dat de afstand tussen de kop en de eerste
+  // tekstregel in beide bloksoorten precies even groot is, zodat de eerste
+  // tekstregel in een getint vlak niet dichter tegen de kop plakt dan in een
+  // wit vlak.
+  it("de afstand tussen kop en tekst is in het getinte vlak (kaartvlak) even groot als in het witte vlak (kader)", () => {
+    const bron = leesTekenaar();
+    const kaderCode = pakCase(bron, "kader");
+    const kaartvlakCode = pakCase(bron, "kaartvlak");
+    const kaderAfstand = yOffsetVan(kaderCode, "blok.tekst") - yOffsetVan(kaderCode, "blok.kop");
+    const kaartvlakAfstand = yOffsetVan(kaartvlakCode, "blok.tekst") - yOffsetVan(kaartvlakCode, "blok.kop");
+    expect(kaartvlakAfstand).toBe(kaderAfstand);
+  });
 });
