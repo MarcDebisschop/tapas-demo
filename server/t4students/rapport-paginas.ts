@@ -40,6 +40,8 @@ import {
   rangschik,
   beantwoordPerFamilie,
   voedingPerConstruct,
+  sterksteUitGroep,
+  groepeerOpAandeel,
   type T4SBand,
   type T4SBlok,
   type T4SCitaatRegel,
@@ -47,6 +49,7 @@ import {
   type T4SLicentie,
   type T4SPagina,
   type T4SRapport,
+  type T4SRij,
 } from "./rapport-contract";
 
 // ── Vaste teksten uit de blauwdruk, letterlijk ──────────────────────────────
@@ -389,8 +392,17 @@ const D2_UITLEG =
   "iets in jezelf herkent en hoeveel energie het je geeft. Daarom kan iets hoog in je rangorde staan " +
   "en toch in het tweede lijstje verschijnen.";
 
+// Herstelronde 2, punt C: telwoorden tot en met zes, want een familie telt
+// hoogstens zes constructen. Alleen nodig om te melden hoeveel constructen
+// even sterk uitkwamen; het getal zelf komt altijd uit de lengte van een
+// array die de motor teruggeeft, nooit uit een schatting.
+const TELWOORDEN = ["nul", "een", "twee", "drie", "vier", "vijf", "zes"];
+
 /**
- * Kiest de bouwsteen (of, bij gelijkspel, beide) op rang 1 van een dimensie.
+ * Kiest de bouwsteen (of, bij een gelijkspel, twee) uit de groep sterk
+ * aanwezig van een dimensie (herstelronde 2, punt C: niet langer rang 1 van
+ * de motor, maar het hoogste aandeel binnen de groep), met terugval op het
+ * middenveld wanneer sterk aanwezig leeg is.
  *
  * Twee gelijk geëindigde bouwstenen worden verbonden met " en ", behalve
  * wanneer minstens een van de twee zelf al het woord "en" bevat (zoals
@@ -404,14 +416,16 @@ function d1Bouwsteen(
   dim: T4SDimensie,
   tabel: Record<string, string>,
   herhaalwoord?: string,
-): { zin: string; gelijkspel: boolean } {
-  const eerste = dim.gerangschikt.filter((r) => r.rang === 1);
-  if (eerste.length === 0) return { zin: "", gelijkspel: false };
-  if (eerste.length === 1) return { zin: tabel[eerste[0].construct] || "", gelijkspel: false };
-  const teksten = eerste.map((r) => tabel[r.construct]).filter((t): t is string => Boolean(t));
+): { zin: string; gelijkspel: boolean; aantalGelijk: number; uitMiddenveld: boolean } {
+  const { constructen, aantalGelijk, uitMiddenveld } = sterksteUitGroep(dim);
+  if (constructen.length === 0) return { zin: "", gelijkspel: false, aantalGelijk: 0, uitMiddenveld: false };
+  if (constructen.length === 1) {
+    return { zin: tabel[constructen[0].construct] || "", gelijkspel: false, aantalGelijk, uitMiddenveld };
+  }
+  const teksten = constructen.map((r) => tabel[r.construct]).filter((t): t is string => Boolean(t));
   const heeftEigenEn = teksten.some((t) => / en /.test(t));
   const koppelwoord = heeftEigenEn ? `, en ${herhaalwoord ? herhaalwoord + " " : ""}` : " en ";
-  return { zin: teksten.join(koppelwoord), gelijkspel: true };
+  return { zin: teksten.join(koppelwoord), gelijkspel: true, aantalGelijk, uitMiddenveld };
 }
 
 function eenZinBlokken(
@@ -433,14 +447,45 @@ function eenZinBlokken(
     `Jij komt het sterkst tot je recht waar je ${focusB.zin}, waar je ${versnellerB.zin}, en waar het ` +
     `gaat over ${interesseB.zin}.`;
   const blokken: T4SBlok[] = [{ soort: "alinea", tekst: zin }];
-  const gelijkspelZinnen: string[] = [];
-  if (focusB.gelijkspel) gelijkspelZinnen.push("je talent-foci");
-  if (versnellerB.gelijkspel) gelijkspelZinnen.push("je talent-versnellers");
-  if (interesseB.gelijkspel) gelijkspelZinnen.push("je interesse");
-  if (gelijkspelZinnen.length > 0) {
+  // Herstelronde 2, punt C: bij precies twee gelijk op het hoogste aandeel
+  // blijft de bestaande gelijkspel-zin gelden. Staan er meer dan twee gelijk,
+  // dan benoemt d1Bouwsteen er hierboven maar twee (anders wordt de zin
+  // onleesbaar) en meldt deze zin apart hoeveel het er in werkelijkheid waren.
+  const tweeGelijk: string[] = [];
+  const meerGelijk: { onderdeel: string; aantal: number }[] = [];
+  for (const [onderdeel, b] of [
+    ["je talent-foci", focusB],
+    ["je talent-versnellers", versnellerB],
+    ["je interesse", interesseB],
+  ] as [string, typeof focusB][]) {
+    if (!b.gelijkspel) continue;
+    if (b.aantalGelijk > 2) meerGelijk.push({ onderdeel, aantal: b.aantalGelijk });
+    else tweeGelijk.push(onderdeel);
+  }
+  if (tweeGelijk.length > 0) {
     blokken.push({
       soort: "alinea",
-      tekst: `Bij ${gelijkspelZinnen.join(" en ")} kwamen twee onderdelen even sterk naar voren.`,
+      tekst: `Bij ${tweeGelijk.join(" en ")} kwamen twee onderdelen even sterk naar voren.`,
+    });
+  }
+  for (const { onderdeel, aantal } of meerGelijk) {
+    blokken.push({
+      soort: "alinea",
+      tekst: `Bij ${onderdeel} kwamen ${TELWOORDEN[aantal] ?? aantal} onderdelen even sterk naar voren; hierboven staan er twee van.`,
+    });
+  }
+  // Herstelronde 2, punt C: als een van de drie onderdelen uit het middenveld
+  // komt (de groep sterk aanwezig was daar leeg), is dat zelf een uitkomst.
+  const uitMiddenveldOnderdelen: string[] = [];
+  if (focusB.uitMiddenveld) uitMiddenveldOnderdelen.push("je talent-foci");
+  if (versnellerB.uitMiddenveld) uitMiddenveldOnderdelen.push("je talent-versnellers");
+  if (interesseB.uitMiddenveld) uitMiddenveldOnderdelen.push("je interesse");
+  if (uitMiddenveldOnderdelen.length > 0) {
+    blokken.push({
+      soort: "alinea",
+      tekst:
+        `Bij ${uitMiddenveldOnderdelen.join(" en ")} kwam niets in dit beeld sterk uitkomen; ` +
+        "deze zin gebruikt daarom het hoogste aandeel uit het middenveld. Ook dat is een uitkomst.",
     });
   }
   blokken.push({ soort: "alinea", tekst: D_SLOTREGEL });
@@ -487,6 +532,25 @@ const WAT_JE_HIER_ZOCHT_SLOT =
   "Dit rapport beantwoordt je eigen vraag niet rechtstreeks. Het legt ernaast wat uit je antwoorden " +
   "naar voren komt. Wat je daarmee doet, beslis jij.";
 
+// Herstelronde 2, punt C: de twee talent-foci hier komen niet meer uit rang 1
+// en 2 van de motor, maar uit de groep sterk aanwezig: de eerste twee rijen
+// op aandeel binnen die groep (of, als sterk aanwezig leeg is, binnen het
+// middenveld). Net als bij het blad "In een zin" geldt bij een gelijkspel op
+// de tweede plaats dat er een zin bijkomt die zegt hoeveel er even sterk
+// uitkwamen; die keuze staat verderop in het blok.
+function topTweeUitGroep(dim: T4SDimensie): { rijen: T4SRij[]; aantalGelijkOpTweede: number; uitMiddenveld: boolean } {
+  const groepen = groepeerOpAandeel(dim.gerangschikt);
+  const sterk = groepen.find((g) => g.titel === "sterk aanwezig");
+  const bron = sterk ?? groepen.find((g) => g.titel === "middenveld");
+  if (!bron || bron.rijen.length === 0) return { rijen: [], aantalGelijkOpTweede: 0, uitMiddenveld: false };
+  const rijen = bron.rijen.slice(0, 2);
+  // Bij een gelijkspel op de tweede plaats (meer rijen delen het aandeel van
+  // de op-een-na-hoogste rij dan er getoond worden), meldt de aanroeper dat.
+  const tweedeAandeel = rijen.length >= 2 ? rijen[1].herkenning : null;
+  const aantalGelijkOpTweede = tweedeAandeel == null ? 0 : bron.rijen.filter((r) => r.herkenning === tweedeAandeel).length;
+  return { rijen, aantalGelijkOpTweede, uitMiddenveld: bron.titel === "middenveld" };
+}
+
 function watJeHierZochtBlokken(
   p0Tekst: string,
   foci: T4SDimensie,
@@ -504,15 +568,46 @@ function watJeHierZochtBlokken(
   if (p0Tekst.length > 0) {
     blokken.push({ soort: "kader", kop: "JOUW VRAAG, NOG EENS", kleur: KLEUR.teal, tekst: p0Tekst });
   }
-  const topFoci = foci.gerangschikt.filter((r) => r.rang === 1 || r.rang === 2).slice(0, 2);
-  const topVersneller = versnellers.gerangschikt.find((r) => r.rang === 1);
-  const topInteresse = interesse.gerangschikt.find((r) => r.rang === 1);
+  const topFoci = topTweeUitGroep(foci);
+  const topVersneller = sterksteUitGroep(versnellers);
+  const topInteresse = sterksteUitGroep(interesse);
   const punten: string[] = [];
-  for (const r of topFoci) punten.push(`${r.construct}: ${r.omschrijving}`.trim());
-  if (topVersneller) punten.push(`${topVersneller.construct}: ${topVersneller.omschrijving}`.trim());
-  if (topInteresse) punten.push(`${topInteresse.construct}: ${topInteresse.omschrijving}`.trim());
+  for (const r of topFoci.rijen) punten.push(`${r.construct}: ${r.omschrijving}`.trim());
+  for (const r of topVersneller.constructen) punten.push(`${r.construct}: ${r.omschrijving}`.trim());
+  for (const r of topInteresse.constructen) punten.push(`${r.construct}: ${r.omschrijving}`.trim());
   if (punten.length > 0) {
     blokken.push({ soort: "opsomming", kop: "Wat je antwoorden het duidelijkst laten zien", punten });
+  }
+  // Herstelronde 2, punt C: dezelfde twee gevallen als bij "In een zin".
+  const uitMiddenveldOnderdelen: string[] = [];
+  if (topFoci.uitMiddenveld) uitMiddenveldOnderdelen.push("je talent-foci");
+  if (topVersneller.uitMiddenveld) uitMiddenveldOnderdelen.push("je talent-versnellers");
+  if (topInteresse.uitMiddenveld) uitMiddenveldOnderdelen.push("je interesse");
+  if (uitMiddenveldOnderdelen.length > 0) {
+    blokken.push({
+      soort: "alinea",
+      tekst:
+        `Bij ${uitMiddenveldOnderdelen.join(" en ")} kwam niets in dit beeld sterk uitkomen; ` +
+        "hierboven staat daarom het hoogste aandeel uit het middenveld. Ook dat is een uitkomst.",
+    });
+  }
+  if (topFoci.aantalGelijkOpTweede > 1) {
+    blokken.push({
+      soort: "alinea",
+      tekst: `Op de tweede plaats bij je talent-foci kwamen ${TELWOORDEN[topFoci.aantalGelijkOpTweede] ?? topFoci.aantalGelijkOpTweede} onderdelen even sterk naar voren; hierboven staat er een van.`,
+    });
+  }
+  if (topVersneller.aantalGelijk > 2) {
+    blokken.push({
+      soort: "alinea",
+      tekst: `Bij je talent-versnellers kwamen ${TELWOORDEN[topVersneller.aantalGelijk] ?? topVersneller.aantalGelijk} onderdelen even sterk naar voren; hierboven staan er twee van.`,
+    });
+  }
+  if (topInteresse.aantalGelijk > 2) {
+    blokken.push({
+      soort: "alinea",
+      tekst: `Bij je interesse kwamen ${TELWOORDEN[topInteresse.aantalGelijk] ?? topInteresse.aantalGelijk} onderdelen even sterk naar voren; hierboven staan er twee van.`,
+    });
   }
   blokken.push({ soort: "alinea", tekst: WAT_JE_HIER_ZOCHT_SLOT });
   return blokken;

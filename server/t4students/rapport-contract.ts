@@ -604,6 +604,51 @@ export function groepeerOpAandeel(rijen: T4SRij[]): T4SGroep[] {
   return groepen;
 }
 
+/** Het resultaat van sterksteUitGroep(): de gekozen constructen en de context erbij. */
+export interface T4SSterksteUitGroep {
+  /** Een of twee rijen: twee alleen bij een echt gelijkspel op het hoogste aandeel. */
+  constructen: T4SRij[];
+  /** Hoeveel rijen precies dat hoogste aandeel hadden (1 als er geen gelijkspel is). */
+  aantalGelijk: number;
+  /** True wanneer de groep sterk aanwezig leeg was en dit uit het middenveld komt. */
+  uitMiddenveld: boolean;
+}
+
+/**
+ * Herstelronde 2, punt C: kiest het construct (of de twee constructen bij een
+ * gelijkspel) met het hoogste aandeel binnen de groep sterk aanwezig van een
+ * dimensie. Vervangt het rechtstreeks aflezen van rang 1 op de bladen "In één
+ * zin" en "Wat je hier zocht": die bladen moeten uit de groep putten, niet
+ * uit de rangorde van de motor.
+ *
+ * - Zijn er meer dan twee rijen met hetzelfde hoogste aandeel, dan worden er
+ *   twee teruggegeven en telt aantalGelijk hoeveel dat er precies waren, zodat
+ *   de aanroeper dezelfde soort gelijkspel-zin kan schrijven die al bestaat.
+ * - Is de groep sterk aanwezig leeg, dan valt de keuze terug op het hoogste
+ *   aandeel binnen het middenveld en staat uitMiddenveld op true, zodat de
+ *   aanroeper de vaste zin kan toevoegen dat niets in dit beeld sterk
+ *   uitkomt en dat dat ook een uitkomst is.
+ * - Heeft geen enkele rij een groep (niets ingevuld), dan is constructen leeg.
+ */
+export function sterksteUitGroep(dim: T4SDimensie): T4SSterksteUitGroep {
+  const groepen = groepeerOpAandeel(dim.gerangschikt);
+  const sterk = groepen.find((g) => g.titel === "sterk aanwezig");
+  const bron = sterk ?? groepen.find((g) => g.titel === "middenveld");
+  if (!bron || bron.rijen.length === 0) {
+    return { constructen: [], aantalGelijk: 0, uitMiddenveld: false };
+  }
+  // De rijen binnen een groep staan al op aandeel gesorteerd (groepeerOpAandeel
+  // behoudt de volgorde van dim.gerangschikt, die zelf al aflopend op aandeel
+  // gerangschikt is); het hoogste aandeel staat dus vooraan.
+  const hoogsteAandeel = bron.rijen[0].herkenning;
+  const gelijkAanTop = bron.rijen.filter((r) => r.herkenning === hoogsteAandeel);
+  return {
+    constructen: gelijkAanTop.slice(0, 2),
+    aantalGelijk: gelijkAanTop.length,
+    uitMiddenveld: bron.titel === "middenveld",
+  };
+}
+
 /**
  * Bepaalt per rij hoeveel decimalen de weergave nodig heeft. Standaard een
  * decimaal. Zodra twee opeenvolgende rijen met een verschillende rang op een

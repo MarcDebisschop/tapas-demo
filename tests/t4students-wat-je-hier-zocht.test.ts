@@ -97,10 +97,15 @@ describe("het blad Wat je hier zocht bestaat en staat vlak voor de bronpagina's"
     // volle haalbare maximum bereikten. De waarborg zelf (foci.sorted is de
     // enige bron, nooit hertypt) staat overeind; alleen de concrete namen
     // voor dit voorbeeldprofiel zijn bijgewerkt naar de eerlijke, aandeel-
-    // gebaseerde uitkomst. Punt C van dezelfde opdracht kan de indeling van
-    // dit blad later nog verder aanpassen (tekenen uit de groep "sterk
-    // aanwezig" in plaats van uit foci.sorted rechtstreeks); dat is een
-    // afzonderlijke, latere stap.
+    // gebaseerde uitkomst. Herstelronde 2, punt C, is inmiddels ook doorgevoerd:
+    // het blad tekent de twee foci niet meer rechtstreeks uit foci.sorted,
+    // maar uit de groep "sterk aanwezig" van rangschik() (topTweeUitGroep in
+    // rapport-paginas.ts). Voor dit voorbeeldprofiel geeft dat dezelfde twee
+    // namen, in dezelfde volgorde, omdat Sociaal Interactief en Overdrachtelijk
+    // Interactief ook de twee hoogste aandelen binnen sterk aanwezig zijn
+    // (zie tests/t4students-punt-c-sterk-aanwezig.test.ts voor de twee
+    // gevallen die dit voorbeeldprofiel niet raakt: een gelijkspel met meer
+    // dan twee constructen, en een lege groep sterk aanwezig).
     expect(resultaat.foci.sorted.slice(0, 2)).toEqual(["Sociaal Interactief", "Overdrachtelijk Interactief"]);
     expect(tekst).toContain("Sociaal Interactief");
     expect(tekst).toContain("Overdrachtelijk Interactief");
