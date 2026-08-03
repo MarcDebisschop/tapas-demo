@@ -553,4 +553,11 @@ export const PAGINAPLAN: { nr: number; titel: string; basis: boolean }[] = [
   { nr: 25, titel: "Alles wat je zelf antwoordde over je talent-versnellers", basis: true },
   { nr: 26, titel: "Alles wat je zelf antwoordde over je drivers", basis: true },
   { nr: 27, titel: "Verantwoording en grenzen", basis: true },
+  // Nr 28 is nieuw (motivatieblok). De motivatiebalans komt uit fase 1b van de
+  // scoringsmotor en stond nog niet in de oorspronkelijke zevenentwintig
+  // pagina's van de blauwdruk. Ze is toegevoegd na pagina 15 (Drivers, de
+  // keerzijde) en voor pagina 16 (Hoe jij het beste leert): na de drie
+  // kern-dimensies en voor het praktische leerhoofdstuk. Ze staat in zowel de
+  // Basis als de Verdieping, net als de meeste kernhoofdstukken hiervoor.
+  { nr: 28, titel: "Wat je motiveert om te studeren", basis: true },
 ];

@@ -228,6 +228,77 @@ function bronPagina(
 
 // ── De opbouw ───────────────────────────────────────────────────────────────
 
+/**
+ * De duidingstekst bij elk van de drie mogelijke balanslabels van de motor.
+ * Zelfde toon als de zeventien constructteksten in
+ * server/data/t4students-duidingsteksten.json: je-vorm, gewone taal, geen
+ * vakjargon, geen streepjes. Het label zelf komt uitsluitend uit de motor; deze
+ * teksten kiezen alleen welke van de drie al geschreven zinnen erbij horen.
+ */
+const MOTIVATIE_DUIDING: Record<string, string> = {
+  intrinsiek:
+    "Je motivatie komt vooral van binnenuit. Je werkt het liefst als je zelf mag kiezen hoe je iets " +
+    "aanpakt, als je voelt dat je bijleert, en als je je verbonden voelt met de mensen om je heen. " +
+    "Dat soort motivatie houdt het meestal langer uit, ook zonder dat er iemand toekijkt of beloont. " +
+    "De valkuil is dat je minder in beweging komt in een omgeving die alles dichttimmert met regels " +
+    "en weinig ruimte laat voor je eigen aanpak.",
+  extrinsiek:
+    "Je motivatie komt vooral van buitenaf. Goede punten, erkenning en de verwachtingen van je " +
+    "omgeving zetten je in beweging en dat werkt voor jou echt. Dat is niet minderwaardig: veel mensen " +
+    "presteren daar sterk op. De valkuil is dat je motivatie kan wegvallen zodra de erkenning of de " +
+    "druk van buitenaf even wegvalt, ook als de taak zelf niet is veranderd.",
+  evenwichtig:
+    "Je motivatie komt ongeveer even sterk van binnenuit als van buitenaf. Eigen keuze, groei en " +
+    "verbondenheid spelen mee, en erkenning en verwachtingen van anderen spelen ook mee, zonder dat " +
+    "een van de twee duidelijk de overhand heeft. Dat geeft je meerdere aanknopingspunten om jezelf in " +
+    "beweging te houden, ook als een van de twee kanten het even laat afweten.",
+};
+
+/**
+ * De blokken van pagina 28, "Wat je motiveert om te studeren". Leest
+ * uitsluitend resultaat.motivatie (balansLabel, intrinsiek, extrinsiek) en
+ * rekent nergens zelf een oordeel uit.
+ */
+function motivatieBlokken(resultaat: T4SResultaat): T4SBlok[] {
+  const { intrinsiek, extrinsiek, balansLabel } = resultaat.motivatie;
+  const duiding = MOTIVATIE_DUIDING[balansLabel] ?? MOTIVATIE_DUIDING.evenwichtig;
+  return [
+    {
+      soort: "intro",
+      tekst:
+        "Naast je talent en je drivers meet dit studiekompas ook wat je motiveert om te studeren: wat je " +
+        "van binnenuit in beweging brengt, en wat er van buitenaf bij komt. Dit onderdeel staat los van de " +
+        "drivers hiervoor: het gaat niet over hoe je onder druk reageert, maar over waar je energie om te " +
+        "studeren vandaan komt.",
+    },
+    {
+      soort: "alinea",
+      tekst:
+        "Volgens de zelfdeterminatietheorie van Deci en Ryan (1985, 2000) komt motivatie uit twee soorten " +
+        "bronnen. Intrinsiek wil zeggen dat de motivatie van binnenuit komt: uit autonomie (zelf kunnen " +
+        "kiezen), competentie (voelen dat je bijleert) en verbondenheid (je verbonden voelen met anderen). " +
+        "Extrinsiek wil zeggen dat de motivatie van buitenaf komt: uit erkenning (waardering, punten, " +
+        "prijzen) en verwachtingen (wat je omgeving van je vraagt).",
+    },
+    {
+      soort: "paren",
+      paren: [
+        { label: "Intrinsiek (autonomie, competentie, verbondenheid)", waarde: getal1(intrinsiek) },
+        { label: "Extrinsiek (erkenning, verwachtingen)", waarde: getal1(extrinsiek) },
+        { label: "Jouw balans", waarde: balansLabel },
+      ],
+    },
+    { soort: "alinea", tekst: duiding },
+    {
+      soort: "alinea",
+      tekst:
+        "De grens tussen de twee kanten ligt in dit studiekompas op 0,5 op de schaal van 0 tot 3. Dat is " +
+        "een gekozen conventie om een duidelijk label te kunnen tonen, geen grens die op afnamegegevens is " +
+        "geijkt. De getallen hierboven zeggen meer dan het label alleen.",
+    },
+  ];
+}
+
 export function bouwT4StudentsRapport(
   inst: T4SInstrument,
   resultaat: T4SResultaat,
@@ -672,6 +743,15 @@ export function bouwT4StudentsRapport(
     paginas.push(pagina(b.laag, laagBlokken, b.laagOndertitel));
   }
 
+  // ── 28. Wat je motiveert om te studeren ───────────────────────────────────
+  // Het oordeel komt uitsluitend uit de motor: balansLabel, intrinsiek en
+  // extrinsiek worden hier alleen gelezen en getoond, nooit herberekend. Zie
+  // tests/t4students-oordeel-komt-uit-de-motor.test.ts en
+  // tests/t4students-motivatieblok-in-studiekompas.test.ts.
+  // Motivatie is een eigen laag en heeft geen koppeling met de drivers, ook al
+  // gaat het bij allebei over wat iemand aanstuurt.
+  paginas.push(pagina(28, motivatieBlokken(resultaat), "Wat je in beweging brengt om te leren."));
+
   // ── 16. Hoe jij het beste leert ───────────────────────────────────────────
   const ss = resultaat.studiestrategie;
   const s1 = citaatVanItem(inst, antwoorden, "S1", taal);
@@ -1109,6 +1189,29 @@ export function bouwT4StudentsRapport(
           tekst:
             "Heb je een vraag bij wat hier staat, leg dit rapport dan naast iemand die je kent: een " +
             "leerkracht, een begeleider, een ouder. Het is bedoeld om samen te lezen.",
+        },
+        {
+          soort: "tussenkop",
+          tekst: "Bronvermelding",
+        },
+        {
+          soort: "alinea",
+          tekst:
+            "Het motivatieprofiel op de pagina hiervoor steunt op de zelfdeterminatietheorie van Deci en " +
+            "Ryan (1985, 2000). Hieronder de volledige verwijzingen.",
+        },
+        {
+          soort: "opsomming",
+          kop: null,
+          punten: [
+            "Deci, E. L., en Ryan, R. M. (1985). Intrinsic Motivation and Self-Determination in Human " +
+              "Behavior. New York: Plenum Press.",
+            "Ryan, R. M., en Deci, E. L. (2000). Self-determination theory and the facilitation of " +
+              "intrinsic motivation, social development, and well-being. American Psychologist, 55(1), " +
+              "68 tot 78.",
+            "Ryan, R. M., en Deci, E. L. (2017). Self-Determination Theory: Basic Psychological Needs in " +
+              "Motivation, Development, and Wellness. New York: Guilford Press.",
+          ],
         },
       ],
       "Wat dit rapport is, en wat het niet is.",
