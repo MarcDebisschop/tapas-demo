@@ -541,23 +541,25 @@ export const PAGINAPLAN: { nr: number; titel: string; basis: boolean }[] = [
   { nr: 13, titel: "Drivers, wat het zijn", basis: true },
   { nr: 14, titel: "Drivers, jouw patroon", basis: true },
   { nr: 15, titel: "Drivers, de keerzijde", basis: false },
-  { nr: 16, titel: "Hoe jij het beste leert", basis: true },
-  { nr: 17, titel: "Jouw leer- en werkomgeving", basis: false },
-  { nr: 18, titel: "Waar je interesse naar uitgaat", basis: true },
-  { nr: 19, titel: "Studierichtingen om te verkennen", basis: false },
-  { nr: 20, titel: "Waar jij iets wilt betekenen", basis: true },
-  { nr: 21, titel: "Jouw specifieke positie", basis: false },
-  { nr: 22, titel: "Aandachtspunten", basis: false },
-  { nr: 23, titel: "Een eerste stap", basis: true },
-  { nr: 24, titel: "Alles wat je zelf antwoordde over je talent-foci", basis: true },
-  { nr: 25, titel: "Alles wat je zelf antwoordde over je talent-versnellers", basis: true },
-  { nr: 26, titel: "Alles wat je zelf antwoordde over je drivers", basis: true },
-  { nr: 27, titel: "Verantwoording en grenzen", basis: true },
-  // Nr 28 is nieuw (motivatieblok). De motivatiebalans komt uit fase 1b van de
+  // Nr 16 is nieuw (motivatieblok). De motivatiebalans komt uit fase 1b van de
   // scoringsmotor en stond nog niet in de oorspronkelijke zevenentwintig
-  // pagina's van de blauwdruk. Ze is toegevoegd na pagina 15 (Drivers, de
-  // keerzijde) en voor pagina 16 (Hoe jij het beste leert): na de drie
-  // kern-dimensies en voor het praktische leerhoofdstuk. Ze staat in zowel de
-  // Basis als de Verdieping, net als de meeste kernhoofdstukken hiervoor.
-  { nr: 28, titel: "Wat je motiveert om te studeren", basis: true },
+  // pagina's van de blauwdruk. Ze staat hier, na pagina 15 (Drivers, de
+  // keerzijde) en voor het praktische leerhoofdstuk: na de drie
+  // kern-dimensies en voor "Hoe jij het beste leert". Alle hoofdstukken die
+  // hierna volgden zijn met een stap opgeschoven zodat de nummering
+  // ononderbroken blijft. Ze staat in zowel de Basis als de Verdieping, net
+  // als de meeste kernhoofdstukken hiervoor.
+  { nr: 16, titel: "Wat je motiveert om te studeren", basis: true },
+  { nr: 17, titel: "Hoe jij het beste leert", basis: true },
+  { nr: 18, titel: "Jouw leer- en werkomgeving", basis: false },
+  { nr: 19, titel: "Waar je interesse naar uitgaat", basis: true },
+  { nr: 20, titel: "Studierichtingen om te verkennen", basis: false },
+  { nr: 21, titel: "Waar jij iets wilt betekenen", basis: true },
+  { nr: 22, titel: "Jouw specifieke positie", basis: false },
+  { nr: 23, titel: "Aandachtspunten", basis: false },
+  { nr: 24, titel: "Een eerste stap", basis: true },
+  { nr: 25, titel: "Alles wat je zelf antwoordde over je talent-foci", basis: true },
+  { nr: 26, titel: "Alles wat je zelf antwoordde over je talent-versnellers", basis: true },
+  { nr: 27, titel: "Alles wat je zelf antwoordde over je drivers", basis: true },
+  { nr: 28, titel: "Verantwoording en grenzen", basis: true },
 ];

@@ -743,16 +743,16 @@ export function bouwT4StudentsRapport(
     paginas.push(pagina(b.laag, laagBlokken, b.laagOndertitel));
   }
 
-  // ── 28. Wat je motiveert om te studeren ───────────────────────────────────
+  // ── 16. Wat je motiveert om te studeren ───────────────────────────────────
   // Het oordeel komt uitsluitend uit de motor: balansLabel, intrinsiek en
   // extrinsiek worden hier alleen gelezen en getoond, nooit herberekend. Zie
   // tests/t4students-oordeel-komt-uit-de-motor.test.ts en
   // tests/t4students-motivatieblok-in-studiekompas.test.ts.
   // Motivatie is een eigen laag en heeft geen koppeling met de drivers, ook al
   // gaat het bij allebei over wat iemand aanstuurt.
-  paginas.push(pagina(28, motivatieBlokken(resultaat), "Wat je in beweging brengt om te leren."));
+  paginas.push(pagina(16, motivatieBlokken(resultaat), "Wat je in beweging brengt om te leren."));
 
-  // ── 16. Hoe jij het beste leert ───────────────────────────────────────────
+  // ── 17. Hoe jij het beste leert ───────────────────────────────────────────
   const ss = resultaat.studiestrategie;
   const s1 = citaatVanItem(inst, antwoorden, "S1", taal);
   const leerPunten: string[] = [];
@@ -774,7 +774,7 @@ export function bouwT4StudentsRapport(
   );
   paginas.push(
     pagina(
-      16,
+      17,
       [
         {
           soort: "intro",
@@ -799,7 +799,7 @@ export function bouwT4StudentsRapport(
     ),
   );
 
-  // ── 17. Jouw leer- en werkomgeving ────────────────────────────────────────
+  // ── 18. Jouw leer- en werkomgeving ────────────────────────────────────────
   //
   // Dit blad noemt geen enkel construct bij een vaste naam en kiest er ook geen
   // op positie in de lijst. Het leest de kop en de staart van de rangordes en
@@ -843,7 +843,7 @@ export function bouwT4StudentsRapport(
   );
   paginas.push(
     pagina(
-      17,
+      18,
       [
         {
           soort: "intro",
@@ -865,7 +865,7 @@ export function bouwT4StudentsRapport(
     ),
   );
 
-  // ── 18. Waar je interesse naar uitgaat ────────────────────────────────────
+  // ── 19. Waar je interesse naar uitgaat ────────────────────────────────────
   const interesseBlokken: T4SBlok[] = [
     {
       soort: "intro",
@@ -891,9 +891,9 @@ export function bouwT4StudentsRapport(
       "Bij dit onderdeel is niet naar energie gevraagd. Daarom staat er in de rechterkolom niets. " +
       "Dat is geen ontbrekend antwoord van jou, die vraag is er gewoon niet.",
   });
-  paginas.push(pagina(18, interesseBlokken, "Waar je aandacht vanzelf naartoe gaat."));
+  paginas.push(pagina(19, interesseBlokken, "Waar je aandacht vanzelf naartoe gaat."));
 
-  // ── 19. Studierichtingen om te verkennen ──────────────────────────────────
+  // ── 20. Studierichtingen om te verkennen ──────────────────────────────────
   const gebieden = resultaat.studiegebieden.top.length > 0
     ? resultaat.studiegebieden.top
     : resultaat.studiegebieden.gesorteerd.slice(0, 3);
@@ -903,7 +903,7 @@ export function bouwT4StudentsRapport(
   });
   paginas.push(
     pagina(
-      19,
+      20,
       [
         {
           soort: "intro",
@@ -942,11 +942,11 @@ export function bouwT4StudentsRapport(
     ),
   );
 
-  // ── 20. Waar jij iets wilt betekenen ──────────────────────────────────────
+  // ── 21. Waar jij iets wilt betekenen ──────────────────────────────────────
   const b1 = citaatVanItem(inst, antwoorden, "B1", taal);
   paginas.push(
     pagina(
-      20,
+      21,
       [
         {
           soort: "intro",
@@ -984,7 +984,7 @@ export function bouwT4StudentsRapport(
     ),
   );
 
-  // ── 21. Jouw specifieke positie ───────────────────────────────────────────
+  // ── 22. Jouw specifieke positie ───────────────────────────────────────────
   const spanningen: string[] = [];
   for (const [as, paren] of Object.entries(inst.scoringMap.convergenceAxes)) {
     const posities = paren
@@ -1026,7 +1026,7 @@ export function bouwT4StudentsRapport(
   }
   paginas.push(
     pagina(
-      21,
+      22,
       [
         {
           soort: "intro",
@@ -1048,7 +1048,7 @@ export function bouwT4StudentsRapport(
     ),
   );
 
-  // ── 22. Aandachtspunten ───────────────────────────────────────────────────
+  // ── 23. Aandachtspunten ───────────────────────────────────────────────────
   const aandacht: string[] = [];
   const kopDrivers = drivers.gerangschikt.slice(0, 2);
   if (kopDrivers.length > 0) {
@@ -1074,7 +1074,7 @@ export function bouwT4StudentsRapport(
   }
   paginas.push(
     pagina(
-      22,
+      23,
       [
         {
           soort: "kader",
@@ -1097,7 +1097,7 @@ export function bouwT4StudentsRapport(
     ),
   );
 
-  // ── 23. Een eerste stap ───────────────────────────────────────────────────
+  // ── 24. Een eerste stap ───────────────────────────────────────────────────
   const eersteStap =
     foci.gerangschikt.length > 0
       ? `Zoek in de komende twee weken een situatie op waarin ${foci.gerangschikt[0].construct} echt ` +
@@ -1107,7 +1107,7 @@ export function bouwT4StudentsRapport(
         "daarna terug of het klopte met wat je hier las.";
   paginas.push(
     pagina(
-      23,
+      24,
       [
         {
           soort: "intro",
@@ -1138,15 +1138,15 @@ export function bouwT4StudentsRapport(
     ),
   );
 
-  // ── 24, 25, 26: de bronpagina's ───────────────────────────────────────────
-  paginas.push(bronPagina(24, inst, antwoorden, taal, FAM_FOCI));
-  paginas.push(bronPagina(25, inst, antwoorden, taal, FAM_VERSNELLERS));
-  paginas.push(bronPagina(26, inst, antwoorden, taal, FAM_DRIVERS));
+  // ── 25, 26, 27: de bronpagina's ───────────────────────────────────────────
+  paginas.push(bronPagina(25, inst, antwoorden, taal, FAM_FOCI));
+  paginas.push(bronPagina(26, inst, antwoorden, taal, FAM_VERSNELLERS));
+  paginas.push(bronPagina(27, inst, antwoorden, taal, FAM_DRIVERS));
 
-  // ── 27. Verantwoording en grenzen ─────────────────────────────────────────
+  // ── 28. Verantwoording en grenzen ─────────────────────────────────────────
   paginas.push(
     pagina(
-      27,
+      28,
       [
         {
           soort: "intro",
