@@ -304,13 +304,19 @@ function hoogteRijen(rijen: T4SRij[]): number {
 // Herstelronde 2, punt B: de titel van een van de drie groepen (sterk
 // aanwezig, middenveld, minder aanwezig), boven een reeks rijen. Vervangt het
 // genummerde plaatscijfer dat vroeger per rij stond.
-const GROEPKOP_H = 18;
+//
+// Compact gehouden (na de melding dat de one-page hierdoor niet meer op een
+// blad paste): één regel per kopje, een kleinere letter dan een tussenkop, en
+// de kolomkoppen HERKENNING/ENERGIE VANDAAG worden niet meer per groep
+// herhaald. Die kolomkoppen komen voortaan eenmalig vóór de eerste groep,
+// via tekenRijkoppen() zelf op de aanroepplek in tekenBlok().
+const GROEPKOP_H = 12;
 
 function tekenGroepkop(doc: Doc, groep: T4SGroep, x: number, y: number): number {
   const titel = groep.titel.charAt(0).toUpperCase() + groep.titel.slice(1);
-  doc.font(F.dmBold).fontSize(8.6).fillColor(KLEUR.accentDiep);
-  doc.text(titel, x, y + 2, { width: TEKST_B, characterSpacing: 0.3, lineBreak: false });
-  return GROEPKOP_H + tekenRijkoppen(doc, x, y + GROEPKOP_H - 11);
+  doc.font(F.dmBold).fontSize(7.6).fillColor(KLEUR.accentDiep);
+  doc.text(titel, x, y + 1, { width: TEKST_B, characterSpacing: 0.3, lineBreak: false });
+  return GROEPKOP_H;
 }
 
 // ── De hoogte van een blok, voor het getekend wordt ─────────────────────────
@@ -326,15 +332,19 @@ function blokHoogte(doc: Doc, blok: T4SBlok): number {
     case "banden": {
       // Herstelronde 2, punt B: ook hier geen platte rijenlijst meer, maar
       // de drie groepen (sterk aanwezig, middenveld, minder aanwezig) per
-      // band, elk met een eigen kopje.
+      // band. De kolomkoppen HERKENNING/ENERGIE VANDAAG staan nog maar één
+      // keer per band, boven de eerste groep, in plaats van bij elke groep
+      // herhaald: dat scheelt drie keer 11 punten per band en hield de
+      // one-page eerder van een blad af.
       let h = 0;
       for (const band of blok.banden) {
         h += 17 + 11;
         if (band.noot) h += 11;
+        h += 11; // eenmalige kolomkoppen voor deze band
         const groepen = groepeerOpAandeel(band.rijen);
-        for (const g of groepen) h += GROEPKOP_H + hoogteRijen(g.rijen) + 8;
+        for (const g of groepen) h += GROEPKOP_H + hoogteRijen(g.rijen) + 4;
         const nietIngevuld = band.rijen.filter((r) => r.groep == null);
-        if (nietIngevuld.length > 0) h += hoogteRijen(nietIngevuld) + 8;
+        if (nietIngevuld.length > 0) h += hoogteRijen(nietIngevuld) + 4;
         h += 13;
       }
       for (const r of blok.legende) h += hoogteVan(doc, r, F.dm, 7.6, TEKST_B, 2.4) + 3;
@@ -344,16 +354,17 @@ function blokHoogte(doc: Doc, blok: T4SBlok): number {
     case "rangtabel": {
       // Herstelronde 2, punt B: geen platte rijenlijst meer, maar drie
       // groepen (sterk aanwezig, middenveld, minder aanwezig), elk met een
-      // eigen kopje. Een lege groep telt niet mee.
+      // eigen kopje. Een lege groep telt niet mee. De kolomkoppen staan hier
+      // maar één keer, boven de eerste groep (net als bij "banden").
       const groepen = groepeerOpAandeel(blok.rijen);
-      let h = 0;
-      for (const g of groepen) h += GROEPKOP_H + hoogteRijen(g.rijen) + 8;
+      let h = 11; // eenmalige kolomkoppen
+      for (const g of groepen) h += GROEPKOP_H + hoogteRijen(g.rijen) + 4;
       // De niet-ingevulde rijen (T4SDimensie.zonderOordeel) staan altijd al
       // in blok.rijen mee (rangschik() voegt ze aan het eind toe) en horen
       // bij geen van de drie groepen; ze blijven zichtbaar onder een vierde,
       // ongetitelde sectie met dezelfde rijhoogte.
       const nietIngevuld = blok.rijen.filter((r) => r.groep == null);
-      if (nietIngevuld.length > 0) h += hoogteRijen(nietIngevuld) + 8;
+      if (nietIngevuld.length > 0) h += hoogteRijen(nietIngevuld) + 4;
       for (const r of blok.naschrift) h += hoogteVan(doc, r, F.dm, 8.2, TEKST_B, 2.8) + 5;
       return h;
     }
@@ -449,17 +460,18 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
           doc.text(band.noot, x + 18, yy, { width: TEKST_B - 18, lineBreak: false, oblique: SCHUIN });
           yy += 11;
         }
+        yy += tekenRijkoppen(doc, x, yy);
         const groepen = groepeerOpAandeel(band.rijen);
         for (const g of groepen) {
           yy += tekenGroepkop(doc, g, x, yy);
           tekenHaken(doc, g.rijen, x, yy);
           for (const rij of g.rijen) yy += tekenRij(doc, rij, x, yy, band.kleur);
-          yy += 8;
+          yy += 4;
         }
         const nietIngevuld = band.rijen.filter((r) => r.groep == null);
         if (nietIngevuld.length > 0) {
           for (const rij of nietIngevuld) yy += tekenRij(doc, rij, x, yy, band.kleur);
-          yy += 8;
+          yy += 4;
         }
         yy += 3;
         lijn(doc, x, yy, x + TEKST_B, yy, KLEUR.lijn);
@@ -471,17 +483,18 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
     }
     case "rangtabel": {
       let yy = y;
+      yy += tekenRijkoppen(doc, x, yy);
       const groepen = groepeerOpAandeel(blok.rijen);
       for (const g of groepen) {
         yy += tekenGroepkop(doc, g, x, yy);
         tekenHaken(doc, g.rijen, x, yy);
         for (const rij of g.rijen) yy += tekenRij(doc, rij, x, yy, blok.kleur);
-        yy += 8;
+        yy += 4;
       }
       const nietIngevuld = blok.rijen.filter((r) => r.groep == null);
       if (nietIngevuld.length > 0) {
         for (const rij of nietIngevuld) yy += tekenRij(doc, rij, x, yy, blok.kleur);
-        yy += 8;
+        yy += 4;
       }
       for (const r of blok.naschrift) yy += schrijf(doc, r, x, yy, TEKST_B, F.dm, 8.2, KLEUR.inktZacht, 2.8) + 5;
       return yy - y;
