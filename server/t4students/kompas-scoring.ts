@@ -10,9 +10,20 @@
 // Naast dit bestand staat server/t4students/scoring.ts. Dat is de oudere
 // aanpak, die rekent op de itembank van 37 items in server/question-manager.ts
 // en die vandaag door de afnameroute gebruikt wordt. Die blijft ongewijzigd
-// staan. Deze motor hoort bij het studiekompas van 34 items uit
-// server/data/t4students.json. Welke van de twee het platform uiteindelijk
+// staan. Deze motor hoort bij het studiekompas van 39 items uit
+// server/data/t4students.json (34 uit de motorronde plus de vijf van de
+// motivatiefamilie, zie fase 1b). Welke van de twee het platform uiteindelijk
 // gebruikt, is een beslissing voor een latere fase.
+//
+// DE MOTIVATIEBALANS (FASE 1B)
+// Deze motor krijgt in fase 1b een motivatiebalans erbij: het gemiddelde van
+// drie intrinsieke en twee extrinsieke items naar de zelfdeterminatietheorie
+// van Deci en Ryan, met een drempel van 0.5 voor het label intrinsiek of
+// extrinsiek. Die laag komt niet uit de blauwdruk van dit studiekompas, maar
+// uit de bestaande T4Students-toepassing die vandaag al op het platform
+// draait (server/t4students/scoring.ts). Ze wordt met eigen items gemeten en
+// staat los van de families Drivers en Talent-foci; zie de uitleg bij de
+// berekening zelf, verderop in dit bestand.
 //
 // WAAROM DE CONSTANTEN ZIJN WAT ZE ZIJN (blauwdruk v1.0.0)
 // Geen enkele constante staat hier in de code. Ze komen allemaal uit
@@ -215,6 +226,16 @@ export interface T4SResultaat {
   };
   betekenis: { keuze: string | null };
   studeerstijl: { keuze: string | null };
+  /**
+   * De motivatiebalans (fase 1b), toegevoegd aan het resultaatobject zonder
+   * een van de bestaande velden hierboven te wijzigen. Zie de uitleg bij de
+   * berekening zelf, verderop in dit bestand.
+   */
+  motivatie: {
+    intrinsiek: number;
+    extrinsiek: number;
+    balansLabel: "intrinsiek" | "extrinsiek" | "evenwichtig";
+  };
 }
 
 /**
@@ -346,6 +367,17 @@ export function scoreStudiekompas(
     const a = answers[itemId];
     if (a == null || a.recognition == null) continue;
     beantwoord++;
+    acc(itemById[itemId].family, construct).recognition += a.recognition;
+  }
+
+  // Motivatie-items (fase 1b). Bewust een eigen lus, los van recognitionItems
+  // hierboven: deze vijf items horen niet bij beantwoord of totaalSignaal, net
+  // zoals de vijf items in de bestaande T4Students-toepassing (server/
+  // t4students/scoring.ts) niet meetellen voor de talent- of driversignalen.
+  // De uitleg bij de motivatiebalans verderop in dit bestand gaat hier verder.
+  for (const [itemId, construct] of Object.entries(sm.motivationItems)) {
+    const a = answers[itemId];
+    if (a == null || a.recognition == null) continue;
     acc(itemById[itemId].family, construct).recognition += a.recognition;
   }
 
@@ -943,6 +975,62 @@ export function scoreStudiekompas(
     };
   }
 
+  // ── Motivatiebalans (fase 1b) ─────────────────────────────────────────────
+  //
+  // WAT DIT IS EN WAAR HET VANDAAN KOMT
+  // Dit stuk komt niet uit de blauwdruk van dit studiekompas: de
+  // browsertoepassing die in fase 1 is overgezet, kende geen motivatielaag.
+  // De motivatielaag komt uit de T4Students-toepassing die vandaag al op het
+  // platform draait (server/t4students/scoring.ts, regels 197 tot 203), met
+  // vijf eigen items naar de zelfdeterminatietheorie van Deci en Ryan: drie
+  // intrinsiek (autonomie, competentie, verbondenheid) en twee extrinsiek
+  // (erkenning, verwachting). Diezelfde vijf items staan nu ook in dit
+  // instrument, als familie "Motivatie" met sm.motivationItems.
+  //
+  // WAAROM DIT LOS STAAT VAN DE DRIVERS
+  // Een driver uit de transactionele analyse van Kahler is een onbewust
+  // controlepatroon dat onder druk het gedrag stuurt. Motivatie in de zin van
+  // de zelfdeterminatietheorie gaat over iets anders: waar het handelen
+  // vandaan komt, van binnenuit of van buitenaf. Het ene mag niet uit het
+  // andere afgeleid worden. Daarom leest dit stuk uitsluitend
+  // sm.motivationItems en nooit de driverconstructen of driverScores, en
+  // schrijft het naar een eigen construct per motivatie-item (Autonomie,
+  // Competentie, Verbondenheid, Erkenning, Verwachting) dat nergens in de
+  // driver- of talentberekeningen hierboven wordt gelezen.
+  //
+  // DE FORMULE, LETTERLIJK OVERGEZET
+  // Per kant (intrinsiek, extrinsiek) wordt het gemiddelde genomen van de
+  // herkenningsscore van de items aan die kant. Is het verschil intrinsiek min
+  // extrinsiek groter of gelijk aan de drempel, dan is de balans intrinsiek; is
+  // het omgekeerde verschil groter of gelijk aan de drempel, dan is de balans
+  // extrinsiek; anders evenwichtig. Geen enkel getal in deze formule is
+  // gewijzigd ten opzichte van server/t4students/scoring.ts.
+  //
+  // DE DREMPEL VAN 0.5 IS EEN CONVENTIE, GEEN IJKING
+  // Net als bij GASPEDAAL_REM_GRENS in server/driverscan/duiding.ts staat hier
+  // geen onderzoek achter. De bestaande toepassing gebruikt 0.5 zonder
+  // onderbouwing in code of documentatie; die waarde blijft hier ongewijzigd
+  // staan, benoemd als motivatieBalansDrempel in de scoringMap, met deze
+  // eerlijke opmerking erbij.
+  const intrinsiekConstructen = ["Autonomie", "Competentie", "Verbondenheid"];
+  const extrinsiekConstructen = ["Erkenning", "Verwachting"];
+  function motivatieGemiddelde(constructenLijst: string[]): number {
+    const scores = constructenLijst
+      .map((con) => (constructs[con] ? constructs[con].recognition : null))
+      .filter((v): v is number => v != null);
+    if (!scores.length) return 0;
+    return round2(scores.reduce((a, b) => a + b, 0) / scores.length);
+  }
+  const motivatieIntrinsiek = motivatieGemiddelde(intrinsiekConstructen);
+  const motivatieExtrinsiek = motivatieGemiddelde(extrinsiekConstructen);
+  const motivatieDrempel = C.motivatieBalansDrempel;
+  let motivatieBalansLabel: "intrinsiek" | "extrinsiek" | "evenwichtig" = "evenwichtig";
+  if (round2(motivatieIntrinsiek - motivatieExtrinsiek) >= motivatieDrempel) {
+    motivatieBalansLabel = "intrinsiek";
+  } else if (round2(motivatieExtrinsiek - motivatieIntrinsiek) >= motivatieDrempel) {
+    motivatieBalansLabel = "extrinsiek";
+  }
+
   return {
     contractVersion: sm.scorerVersion,
     instrumentId: instrumentDef.instrumentId,
@@ -1029,5 +1117,11 @@ export function scoreStudiekompas(
 
     betekenis: { keuze: betekenisKeuze },
     studeerstijl: { keuze: s1 },
+
+    motivatie: {
+      intrinsiek: motivatieIntrinsiek,
+      extrinsiek: motivatieExtrinsiek,
+      balansLabel: motivatieBalansLabel,
+    },
   };
 }
