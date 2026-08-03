@@ -1197,7 +1197,7 @@ export function bouwT4StudentsRapport(
         {
           soort: "alinea",
           tekst:
-            "Het motivatieprofiel op de pagina hiervoor steunt op de zelfdeterminatietheorie van Deci en " +
+            "Het motivatieprofiel eerder in dit rapport steunt op de zelfdeterminatietheorie van Deci en " +
             "Ryan (1985, 2000). Hieronder de volledige verwijzingen.",
         },
         {
