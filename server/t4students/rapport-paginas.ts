@@ -70,6 +70,15 @@ const ONEPAGE_LEGENDE = [
 
 const BAND_NOOT_FOCI = "TaPas-BEELD hoort hier niet bij; dat lees je apart op pagina 5.";
 
+// Herstelronde 2, punt B: vaste tekst, letterlijk overnemen, bij elke plaats
+// waar de drie groepen (sterk aanwezig, middenveld, minder aanwezig)
+// verschijnen in plaats van een genummerde rangorde.
+const GROEP_UITLEG =
+  "De drie groepen hieronder komen uit de antwoordschaal zelf, in drie gelijke " +
+  "delen. Het is geen vergelijking met andere studenten, want die " +
+  "vergelijkingsgroep bestaat niet. Het is het beeld dat jij vandaag van " +
+  "jezelf geeft.";
+
 const COVER_SLOTREGEL =
   "Samengesteld door TaPasCity · Dit rapport beschrijft en oriënteert, het beslist niet.";
 
@@ -955,7 +964,7 @@ export function bouwT4StudentsRapport(
           soort: "rangtabel",
           kleur: beeld.kleur,
           rijen: beeld.rijen,
-          naschrift: [],
+          naschrift: [GROEP_UITLEG],
         },
         {
           soort: "alinea",
@@ -1096,11 +1105,14 @@ export function bouwT4StudentsRapport(
     // In rangorde, net als op het blad met de drie sterkste. Anders leest de ene
     // bladzijde van boven naar onder en de andere van onder naar boven.
     const drieLaag = rijen.slice(-3);
-    const naschriftDim = b.dim.zonderOordeel.map(
-      (r) =>
-        `Van ${r.construct} is nog niet alles ingevuld. Daarom staat er geen score bij en geen plaats ` +
-        `in de rangorde.`,
-    );
+    // Herstelronde 2, punt B: "plaats in de rangorde" bestaat niet meer. Een
+    // niet-ingevuld construct krijgt geen score en dus ook geen groep.
+    const naschriftDim = [
+      GROEP_UITLEG,
+      ...b.dim.zonderOordeel.map(
+        (r) => `Van ${r.construct} is nog niet alles ingevuld. Daarom staat er geen score bij en geen groep.`,
+      ),
+    ];
 
     // Opener met de volledige tabel.
     paginas.push(
@@ -1321,7 +1333,7 @@ export function bouwT4StudentsRapport(
         "Interesse is de lichtste van de onderdelen in dit rapport. Ze zegt waar je aandacht naartoe " +
         "gaat, niet wat je kunt. Ze is ook de brug naar het volgende blad over richtingen.",
     },
-    { soort: "rangtabel", kleur: interesse.kleur, rijen: interesse.rijen, naschrift: [] },
+    { soort: "rangtabel", kleur: interesse.kleur, rijen: interesse.rijen, naschrift: [GROEP_UITLEG] },
   ];
   for (const r of interesse.gerangschikt.slice(0, 3)) {
     const tekst = INTERESSE_DUIDING[r.construct];

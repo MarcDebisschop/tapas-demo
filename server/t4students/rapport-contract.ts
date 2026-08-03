@@ -575,6 +575,36 @@ export function rangschik(
 }
 
 /**
+ * Een groep uit punt B van herstelronde 2: een van de drie vaste
+ * groepen (sterk aanwezig, middenveld, minder aanwezig) met de
+ * constructen die daarin vallen, al op aandeel gesorteerd (dat is de
+ * volgorde die T4SRij.rang meegeeft in rangschik() hierboven).
+ */
+export interface T4SGroep {
+  titel: "sterk aanwezig" | "middenveld" | "minder aanwezig";
+  rijen: T4SRij[];
+}
+
+/**
+ * Herstelronde 2, punt B: zet de rijen van een dimensie om in de drie vaste
+ * groepen. Een genummerde plaats van 1 tot 6 suggereert een nauwkeurigheid
+ * die dit aantal vragen niet kan dragen; de groep is de vervanging die een
+ * student ziet. Neemt uitsluitend T4SRij.groep als maatstaf, nooit rang: een
+ * lege groep valt gewoon weg, in de vaste volgorde sterk aanwezig,
+ * middenveld, minder aanwezig. Rijen zonder groep (niet ingevuld) komen in
+ * geen van de drie groepen terecht; ze blijven in T4SDimensie.zonderOordeel.
+ */
+export function groepeerOpAandeel(rijen: T4SRij[]): T4SGroep[] {
+  const volgorde: T4SGroep["titel"][] = ["sterk aanwezig", "middenveld", "minder aanwezig"];
+  const groepen: T4SGroep[] = [];
+  for (const titel of volgorde) {
+    const inDezeGroep = rijen.filter((r) => r.groep === titel);
+    if (inDezeGroep.length > 0) groepen.push({ titel, rijen: inDezeGroep });
+  }
+  return groepen;
+}
+
+/**
  * Bepaalt per rij hoeveel decimalen de weergave nodig heeft. Standaard een
  * decimaal. Zodra twee opeenvolgende rijen met een verschillende rang op een
  * decimaal hetzelfde cijfer zouden tonen, krijgen beide een extra decimaal:
