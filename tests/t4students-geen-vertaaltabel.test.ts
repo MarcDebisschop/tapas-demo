@@ -67,8 +67,11 @@ function alleTeksten(waarde: unknown, uit: string[] = []): string[] {
 
 describe("geen enkele vertaaltabel voor constructnamen", () => {
   it("het instrument is de enige plaats waar de namen staan", () => {
-    expect(ECHTE_NAMEN.length).toBe(25);
-    expect(new Set(ECHTE_NAMEN).size).toBe(25);
+    // 30 sinds fase 1b: de 25 bestaande constructen plus de vijf van de
+    // nieuwe familie Motivatie (Autonomie, Competentie, Verbondenheid,
+    // Erkenning, Verwachting).
+    expect(ECHTE_NAMEN.length).toBe(30);
+    expect(new Set(ECHTE_NAMEN).size).toBe(30);
   });
 
   it("elke constructnaam in het rapport staat letterlijk in het instrument", () => {

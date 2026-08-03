@@ -5,8 +5,9 @@
 // tonen en te kunnen testen zonder een echte deelnemer nodig te hebben.
 //
 // WAT HIER WEL EN NIET STAAT
-// Hier staan uitsluitend antwoorden: wat een student op elk van de 34 items zou
-// hebben aangeklikt. Geen enkele score, geen enkele rangorde en geen enkel label
+// Hier staan uitsluitend antwoorden: wat een student op elk van de 39 items zou
+// hebben aangeklikt (34 uit de motorronde plus de vijf van de motivatiefamilie,
+// zie fase 1b). Geen enkele score, geen enkele rangorde en geen enkel label
 // staat hier. Die worden gerekend door scoreStudiekompas en daarna door de
 // rapportlaag. Wie hier een uitkomst wil veranderen, verandert een antwoord.
 //
@@ -89,6 +90,15 @@ const ANTWOORDEN: T4SAntwoorden = {
   P2: { value: 4 },
   S1: { choice: "dialoog" },
   B1: { choice: "mensen" },
+
+  // Motivatie (fase 1b). Een lichte overwegend intrinsieke stand, om de
+  // motivatiebalans op papier zichtbaar te maken zonder een van de andere
+  // dimensies van dit voorbeeldprofiel te raken.
+  "MOT-INT-1": { recognition: 3 },
+  "MOT-INT-2": { recognition: 2 },
+  "MOT-INT-3": { recognition: 3 },
+  "MOT-EXT-1": { recognition: 1 },
+  "MOT-EXT-2": { recognition: 2 },
 };
 
 export const VOORBEELDAFNAME: T4SVoorbeeld = {

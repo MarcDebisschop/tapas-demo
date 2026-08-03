@@ -192,13 +192,15 @@ describe("naloop C: bij nul antwoorden staan er toch namen in de uitvoer", () =>
     expect(leeg.studiegebieden.top.map((g) => g.score)).toEqual([0, 0, 0]);
   });
 
-  it("alle 25 constructen staan op nul herkenning en hebben geen energiegetal", () => {
+  it("alle 30 constructen staan op nul herkenning en hebben geen energiegetal", () => {
     // De lege noemer leverde nooit een NaN op, maar wel een nul, en nul is het
     // midden van de energieschaal. Sinds motorronde punt 4 blijft dat getal
     // leeg. De herkenning blijft wel nul, want dat is een optelsom en geen
     // gemiddelde. Zie tests/t4students-geen-halve-oordelen.test.ts.
+    // 30 sinds fase 1b: 25 bestaande constructen plus de vijf van de nieuwe
+    // familie Motivatie.
     const waarden = Object.values(leeg.constructScores);
-    expect(waarden).toHaveLength(25);
+    expect(waarden).toHaveLength(30);
     for (const s of waarden) {
       expect(s.recognition).toBe(0);
       expect(s.avgEnergy).toBeNull();

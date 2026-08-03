@@ -67,11 +67,13 @@ describe("de vertaalvlag en de inhoud zeggen hetzelfde", () => {
   });
 
   it("elk vertaalbaar veld draagt alle drie de talen", () => {
+    // 84 sinds fase 1b: de 79 bestaande velden plus de vijf tekstvelden van de
+    // nieuwe familie Motivatie, die nu ook in fr en en zijn ingevuld.
     const { totaal, gevuld } = telVertaalbareVelden();
-    expect(totaal).toBe(79);
-    expect(gevuld.nl).toBe(79);
-    expect(gevuld.fr).toBe(79);
-    expect(gevuld.en).toBe(79);
+    expect(totaal).toBe(84);
+    expect(gevuld.nl).toBe(84);
+    expect(gevuld.fr).toBe(84);
+    expect(gevuld.en).toBe(84);
   });
 
   it("geen enkel item mist nog Frans of Engels", () => {
