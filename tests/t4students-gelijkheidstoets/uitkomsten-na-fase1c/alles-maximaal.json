@@ -262,28 +262,29 @@
       "Constructief onderscheidend": 3
     },
     "rangorde": [
+      "Impact",
+      "Constructief onderscheidend",
       "Groepsondersteunend",
       "Analyse",
       "Individueel ondersteunend",
-      "Impact",
-      "Resultaat",
-      "Constructief onderscheidend"
+      "Resultaat"
     ],
     "kopGroep": [
-      "Groepsondersteunend"
+      "Impact",
+      "Constructief onderscheidend"
     ],
     "groepen": [
       [
-        "Groepsondersteunend"
-      ],
-      [
-        "Analyse"
-      ],
-      [
-        "Individueel ondersteunend",
         "Impact",
-        "Resultaat",
         "Constructief onderscheidend"
+      ],
+      [
+        "Groepsondersteunend",
+        "Analyse",
+        "Individueel ondersteunend"
+      ],
+      [
+        "Resultaat"
       ]
     ],
     "balanslabels": {
@@ -294,8 +295,10 @@
       "Resultaat": "kernsterkte",
       "Constructief onderscheidend": "kernsterkte"
     },
-    "dominante": "Groepsondersteunend",
-    "gedeeldMet": []
+    "dominante": "Impact",
+    "gedeeldMet": [
+      "Constructief onderscheidend"
+    ]
   },
   "convergentie": {
     "onderzoekend": "bevestigd",
@@ -431,17 +434,16 @@
     ]
   },
   "studiestrategie": {
-    "dominanteVersneller": "Groepsondersteunend",
+    "dominanteVersneller": "Impact",
     "primair": {
-      "strategie": "structuurgestuurd in groep",
-      "belofte": "breng eerst orde, overzicht en planning aan, het liefst samen"
+      "strategie": "betekenisgestuurd",
+      "belofte": "verbind de stof met waarom het ertoe doet voor jou"
     },
-    "secondaryVersneller": "Analyse",
-    "secundair": {
-      "strategie": "bottom-up vanuit de onderdelen",
-      "belofte": "begin bij de bouwstenen en doorgrond eerst hoe het in elkaar zit"
-    },
-    "gedeeldMet": []
+    "secondaryVersneller": null,
+    "secundair": null,
+    "gedeeldMet": [
+      "Constructief onderscheidend"
+    ]
   },
   "interesse": {
     "scores": {
@@ -478,14 +480,14 @@
       "Be Strong": 1
     },
     "sorted": [
-      "Please Others",
-      "Hurry Up",
-      "Be Perfect",
       "Try Hard",
+      "Hurry Up",
+      "Please Others",
+      "Be Perfect",
       "Be Strong"
     ],
     "top2": [
-      "Please Others",
+      "Try Hard",
       "Hurry Up"
     ],
     "doorslag": null,
@@ -503,11 +505,11 @@
       "Systematisch/Uitvoerend"
     ],
     "minVersnellers": [
-      "Resultaat",
-      "Constructief onderscheidend"
+      "Individueel ondersteunend",
+      "Resultaat"
     ],
     "minDrivers": [
-      "Try Hard",
+      "Be Perfect",
       "Be Strong"
     ]
   },

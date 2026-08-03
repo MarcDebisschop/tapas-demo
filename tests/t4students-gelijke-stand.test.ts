@@ -32,19 +32,32 @@ import { T4STUDENTS_INSTRUMENT as I } from "../server/t4students/instrument";
 // wie exact gelijk scoort, komt in dezelfde groep. Zou er ooit een halve punt
 // bij komen, dan begint het getal weer te tellen; daarom is 0,3 een andere
 // keuze dan 0.
+//
+// HERSTELRONDE 2, PUNT A
+// De motor rangschikt en groepeert sindsdien op het aandeel van het haalbare
+// maximum, niet meer op de ruwe herkenningssom. Constructen met een
+// verschillend maximum zijn dus geen aflopende trap meer als hun ruwe scores
+// dat wel zijn. Deze test gebruikt daarom vier TALENT-FOCI-constructen die elk
+// precies een eigen herkenningsitem hebben en allemaal hetzelfde haalbare
+// maximum (3): Functioneel Innovatief, Artistiek Innovatief,
+// Complexiteit/Conceptueel en Overdrachtelijk Interactief. Bij een gelijk
+// maximum is het aandeel recht evenredig met de ruwe score, dus vormen hele
+// scores 3, 2, 1 en 0 nog steeds een aflopende trap, precies zoals de
+// bedoeling van deze test is.
 // ---------------------------------------------------------------------------
 
 const C = I.scoringMap.constants;
 
 /**
- * Vier versnellers met elk maar een bron, op vier opeenvolgende hele scores.
- * Bij marge 1,0 gelden 3 en 2 als gelijk; bij 0,3 niet meer.
+ * Vier talent-foci met elk maar een bron en hetzelfde haalbare maximum (3),
+ * op vier opeenvolgende hele scores. Bij marge 1,0 gelden 3 en 2 als gelijk;
+ * bij 0,3 niet meer.
  */
 const TRAP = {
-  V1: { recognition: 3 },
-  V4: { recognition: 2 },
-  V5: { recognition: 1 },
-  V6: { recognition: 0 },
+  F1: { recognition: 3 }, // Functioneel Innovatief: 3 van 3
+  F2: { recognition: 2 }, // Artistiek Innovatief: 2 van 3
+  F3: { recognition: 1 }, // Complexiteit/Conceptueel: 1 van 3
+  F6: { recognition: 0 }, // Overdrachtelijk Interactief: 0 van 3
 };
 
 describe("punt 3: de marge voor gelijke stand staat op 0,3", () => {
@@ -53,28 +66,46 @@ describe("punt 3: de marge voor gelijke stand staat op 0,3", () => {
   });
 
   it("een heel punt verschil geldt niet langer als gelijke stand", () => {
+    // HERSTELRONDE 2, PUNT A. Deze test gebruikte tot nu toe de
+    // talent-versneller-items V1/V4/V5/V6, waarvan de constructen
+    // (Analyse/Impact/Resultaat/Constructief onderscheidend) elk een ander
+    // haalbaar maximum hebben. Sinds de motor op aandeel rangschikt, is een
+    // "heel punt verschil in ruwe score" bij ongelijke maxima geen vaste maat
+    // meer: het effect van de marge zou dan door twee dingen tegelijk worden
+    // bepaald (de marge zelf, en het verschil in maximum), en dat maakt de
+    // tegenproef onduidelijk. TRAP gebruikt daarom vier TALENT-FOCI met elk
+    // hetzelfde haalbare maximum (3): Functioneel Innovatief, Artistiek
+    // Innovatief, Complexiteit/Conceptueel en Overdrachtelijk Interactief. Bij
+    // een gelijk maximum is aandeel recht evenredig met ruwe score, dus blijft
+    // de oorspronkelijke waarborg overeind: een verschil van een heel punt op
+    // de schaal van 0 tot 3 (aandeelverschil 0,333, ruim boven de marge 0,3)
+    // geldt niet als gelijke stand.
     const r = scoreStudiekompas(I, TRAP, null, "nl");
-    expect(r.versnellers.scores["Analyse"]).toBe(3);
-    expect(r.versnellers.scores["Impact"]).toBe(2);
+    expect(r.foci.scores["Functioneel Innovatief"]).toBe(3);
+    expect(r.foci.scores["Artistiek Innovatief"]).toBe(2);
 
-    // Dit is de kern. Onder de oude marge stonden deze twee samen bovenaan,
-    // hoewel de deelnemer bij de een "helemaal" en bij de ander "tamelijk"
-    // antwoordde.
-    expect(r.versnellers.kopGroep).toEqual(["Analyse"]);
-    expect(r.versnellers.dominante).toBe("Analyse");
-    expect(r.versnellers.gedeeldMet).toEqual([]);
+    // Dit is de kern. Onder de oude marge (1,0) stonden deze twee samen
+    // bovenaan, hoewel de deelnemer bij de een "helemaal" en bij de ander
+    // "tamelijk" antwoordde. De familie Talent-foci gebruikt topGroep/sorted
+    // in plaats van kopGroep/dominante/gedeeldMet (dat laatste drietal bestaat
+    // alleen bij Talent-versnellers), dus die velden worden hier getoetst.
+    expect(r.foci.topGroep).toEqual(["Functioneel Innovatief"]);
+    expect(r.foci.sorted[0]).toBe("Functioneel Innovatief");
   });
 
   it("wie werkelijk gelijk scoort, staat nog altijd samen in de kopgroep", () => {
     // Tegenproef. De marge verkleinen mag de groep niet afschaffen.
+    // Zelfde reden als hierboven om over te stappen op talent-foci met een
+    // gelijk maximum (3): Functioneel Innovatief en Artistiek Innovatief
+    // scoren hier allebei het volle maximum (aandeel 1,0), Complexiteit/
+    // Conceptueel duidelijk lager (aandeel 0,333).
     const r = scoreStudiekompas(
       I,
-      { V1: { recognition: 3 }, V4: { recognition: 3 }, V5: { recognition: 1 } },
+      { F1: { recognition: 3 }, F2: { recognition: 3 }, F3: { recognition: 1 } },
       null,
       "nl",
     );
-    expect(r.versnellers.kopGroep.sort()).toEqual(["Analyse", "Impact"]);
-    expect(r.versnellers.gedeeldMet).toEqual(["Impact"]);
+    expect(r.foci.topGroep.slice().sort()).toEqual(["Artistiek Innovatief", "Functioneel Innovatief"]);
   });
 
   it("alle rangschikscores zijn hele getallen, dus elke marge onder 1 doet hetzelfde", () => {

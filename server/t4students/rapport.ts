@@ -69,7 +69,7 @@ export function bouwT4StudentsRapport(contract: any): RapportInhoud {
   secties.push({
     kop: "Over dit studiekompas",
     paragrafen: [
-      "Dit rapport is een oriënterend studiekompas. Het beschrijft — op basis van je eigen keuzes — " +
+      "Dit rapport is een oriënterend studiekompas. Het beschrijft, op basis van je eigen keuzes, " +
         "waar je energie naartoe stroomt, welke onbewuste drivers je gedrag kunnen sturen, welke talent" +
         "versnellers je herkent en wat je motiveert om te studeren.",
       "Het is uitdrukkelijk géén selectie- of diagnose-instrument en geeft geen deterministisch " +
@@ -79,7 +79,7 @@ export function bouwT4StudentsRapport(contract: any): RapportInhoud {
 
   // 2. Talentfoci (4 clusters).
   secties.push({
-    kop: "Talentfoci — waar je energie naartoe stroomt",
+    kop: "Talentfoci: waar je energie naartoe stroomt",
     paragrafen: [
       talentfoci.length
         ? "De vier talentfoci beschrijven verschillende manieren waarop je van nature energie richt. " +
@@ -132,7 +132,7 @@ export function bouwT4StudentsRapport(contract: any): RapportInhoud {
 
   // 4. Talentversnellers (6 clusters).
   secties.push({
-    kop: "Talentversnellers — hoe je je talenten inzet",
+    kop: "Talentversnellers: hoe je je talenten inzet",
     paragrafen: [
       versnellers.length
         ? "De talentversnellers beschrijven concrete manieren waarop je talenten tot hun recht komen. " +
@@ -149,7 +149,7 @@ export function bouwT4StudentsRapport(contract: any): RapportInhoud {
       : undefined,
   });
 
-  // 5. Motivatieprofiel — intrinsiek vs extrinsiek (SDT, Deci & Ryan).
+  // 5. Motivatieprofiel: intrinsiek versus extrinsiek (SDT, Deci en Ryan).
   const intr = num(meta?.motivatie?.intrinsiek);
   const extr = num(meta?.motivatie?.extrinsiek);
   const balans = String(meta?.motivatie?.balansLabel ?? "evenwichtig");
@@ -162,10 +162,10 @@ export function bouwT4StudentsRapport(contract: any): RapportInhoud {
         "je omgeving spelen een grote rol. Dat kan sterk motiveren, maar is gevoeliger voor externe druk."
       : "Je motivatie is relatief evenwichtig verdeeld over intrinsieke en extrinsieke bronnen.";
   secties.push({
-    kop: "Motivatieprofiel — wat je drijft om te studeren",
+    kop: "Motivatieprofiel: wat je drijft om te studeren",
     paragrafen: [
-      "Volgens de zelfdeterminatietheorie (Deci & Ryan) komt motivatie uit intrinsieke bronnen " +
-        "(autonomie, competentie, verbondenheid) en extrinsieke bronnen (erkenning, verwachtingen). " +
+      "Volgens de zelfdeterminatietheorie van Deci en Ryan (1985, 2000) komt motivatie uit intrinsieke " +
+        "bronnen (autonomie, competentie, verbondenheid) en extrinsieke bronnen (erkenning, verwachtingen). " +
         balansZin,
       "Beide vormen zijn waardevol. Bewustzijn van je balans helpt je omgevingen te kiezen waarin je " +
         "motivatie duurzaam blijft.",
@@ -181,7 +181,7 @@ export function bouwT4StudentsRapport(contract: any): RapportInhoud {
 
   // 6. Deep-Dive & studierichting-denkspoor (KORTE oriënterende basissectie).
   const denkspoor: string[] = [
-    "Onderstaand denkspoor is oriënterend en indicatief — het benoemt richtingen die passen bij je " +
+    "Onderstaand denkspoor is oriënterend en indicatief: het benoemt richtingen die passen bij je " +
       "profiel, maar schrijft geen keuze voor. Gebruik het als voer voor gesprek, niet als beslissing.",
   ];
   const sterkeFoci = talentfoci.filter((r) => num(r.avgEnergy) > 0).map((r) => r.construct);
@@ -203,7 +203,7 @@ export function bouwT4StudentsRapport(contract: any): RapportInhoud {
       "dagen, proeflessen en je eigen ervaringen."
   );
   secties.push({
-    kop: "Deep-Dive & studierichting — een oriënterend denkspoor",
+    kop: "Deep-Dive en studierichting: een oriënterend denkspoor",
     paragrafen: denkspoor,
   });
 
@@ -225,7 +225,7 @@ export function bouwT4StudentsRapport(contract: any): RapportInhoud {
     ondertitel: "Oriënterend talent-, driver- en motivatieprofiel voor je studiekeuze",
     respondent: {
       naam: p.name ?? "Onbekend",
-      code: p.respondentCode ?? "—",
+      code: p.respondentCode ?? "(geen code)",
       organisatie: p.company ?? null,
       functie: p.role ?? null,
     },
@@ -235,7 +235,13 @@ export function bouwT4StudentsRapport(contract: any): RapportInhoud {
       "Dit studiekompas beschrijft talent, drivers en motivatie op basis van zelfgerapporteerde keuzes. " +
       "Het is een momentopname en geen psychologische diagnose, geen meting van intelligentie of " +
       "potentieel, en geen selectie-instrument. Het is bedoeld als oriënterend startpunt voor reflectie " +
-      "en gesprek over je studiekeuze — niet als een deterministisch studieadvies.",
+      "en gesprek over je studiekeuze, niet als een deterministisch studieadvies. Het motivatieprofiel " +
+      "steunt op de zelfdeterminatietheorie van Deci en Ryan (1985, 2000). Volledige bronvermelding: " +
+      "Deci, E. L., en Ryan, R. M. (1985). Intrinsic Motivation and Self-Determination in Human " +
+      "Behavior. New York: Plenum Press. Ryan, R. M., en Deci, E. L. (2000). Self-determination theory " +
+      "and the facilitation of intrinsic motivation, social development, and well-being. American " +
+      "Psychologist, 55(1), 68 tot 78. Ryan, R. M., en Deci, E. L. (2017). Self-Determination Theory: " +
+      "Basic Psychological Needs in Motivation, Development, and Wellness. New York: Guilford Press.",
   };
 }
 
@@ -267,7 +273,7 @@ export function renderT4StudentsHtml(inhoud: RapportInhoud): string {
 <html lang="nl">
 <head>
 <meta charset="utf-8" />
-<title>${esc(inhoud.titel)} — ${esc(r.naam)}</title>
+<title>${esc(inhoud.titel)}: ${esc(r.naam)}</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
   :root {

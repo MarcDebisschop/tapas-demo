@@ -26,5 +26,42 @@
       "Aarde & Milieu": "richtingen waarin je natuurlijke systemen onderzoekt en waarin geduldig meten het vak is",
       "Gezondheid": "richtingen waarin je zorgt en behandelt, en waarin zorgvuldigheid direct gevolgen heeft"
     }
+  },
+  "eenZinTalentfocus": {
+    "sleutel": "de constructnaam van de talent-focus zoals die in server/data/t4students.json staat",
+    "teksten": {
+      "Functioneel Innovatief": "dingen die niet werken opnieuw kunt bedenken",
+      "Artistiek Innovatief": "met verbeelding iets kunt laten ontstaan",
+      "Complexiteit/Conceptueel": "ingewikkelde dingen kunt doordenken",
+      "Systematisch/Uitvoerend": "iets zorgvuldig kunt opbouwen",
+      "Sociaal Interactief": "met anderen kunt samenwerken",
+      "Overdrachtelijk Interactief": "iets kunt uitleggen zodat een ander het begrijpt"
+    }
+  },
+  "eenZinVersneller": {
+    "sleutel": "de constructnaam van de talent-versneller zoals die in server/data/t4students.json staat",
+    "teksten": {
+      "Analyse": "eerst wil begrijpen hoe iets in elkaar zit",
+      "Individueel ondersteunend": "iemand persoonlijk verder helpt",
+      "Groepsondersteunend": "een groep laat draaien",
+      "Impact": "anderen in beweging brengt",
+      "Resultaat": "iets afmaakt",
+      "Constructief onderscheidend": "het op je eigen manier aanpakt"
+    }
+  },
+  "eenZinInteresse": {
+    "sleutel": "de constructnaam van het interessegebied zoals die in server/data/t4students.json staat",
+    "teksten": {
+      "Realistisch": "techniek, materialen en dingen die werken",
+      "Investigative": "uitzoeken hoe iets zit",
+      "Artistiek": "vorm, beeld en taal",
+      "Sociaal": "mensen en wat hen bezighoudt",
+      "Ondernemend": "initiatief, overtuigen en vooruit willen",
+      "Conventioneel": "orde, overzicht en zorgvuldigheid"
+    }
+  },
+  "kiezenDrivers": {
+    "sleutel": "de constructnamen van de drivers Please Others en Try Hard, gelezen uit server/data/t4students.json en hier alleen als lijst herhaald zodat onderdeel F ze structureel kan opzoeken",
+    "namen": ["Please Others", "Try Hard"]
   }
 }

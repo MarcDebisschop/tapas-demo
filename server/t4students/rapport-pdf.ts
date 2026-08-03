@@ -34,7 +34,9 @@ import PDFDocument from "pdfkit";
 import { existsSync } from "node:fs";
 import {
   KLEUR,
+  groepeerOpAandeel,
   type T4SBlok,
+  type T4SGroep,
   type T4SPagina,
   type T4SRapport,
   type T4SRij,
@@ -110,6 +112,15 @@ function schrijf(
 
 function getal1(x: number): string {
   return x.toFixed(1).replace(".", ",");
+}
+
+/**
+ * Toont herkenning met het aantal decimalen dat de rangorde nodig heeft
+ * (T4SRij.weergavePrecisie / T4SBlok constructblok.weergavePrecisie). Zie
+ * server/t4students/rapport-contract.ts, wijsPrecisieToe.
+ */
+function getalMetPrecisie(x: number, precisie: 1 | 2): string {
+  return x.toFixed(precisie).replace(".", ",");
 }
 
 function getalMetTeken(x: number): string {
@@ -202,13 +213,16 @@ function tekenVorm(doc: Doc, x: number, y: number, vorm: T4SVorm, kleur: string)
 
 // ── Een rij in een rangorde ─────────────────────────────────────────────────
 
-const RIJ_H = 19;
-const KOL_RANG = 16;
-const KOL_NAAM = 152;
+const RIJ_H = 27;
+// Herstelronde 2, punt B: de kolom met het genummerde plaatscijfer (KOL_RANG)
+// is vervallen. De constructnaam begint nu waar vroeger het cijfer begon, en
+// KOL_NAAM_TOTAAL is de opgetelde breedte zodat de rest van de rij (herkenning,
+// energie) op precies dezelfde plaats blijft staan als voorheen.
+const KOL_NAAM_TOTAAL = 168;
 const KOL_GAT = 11;
 
 function tekenRijkoppen(doc: Doc, x: number, y: number): number {
-  const xHerk = x + KOL_RANG + KOL_NAAM;
+  const xHerk = x + KOL_NAAM_TOTAAL;
   const xEner = xHerk + HERK_B + KOL_GAT;
   doc.font(F.dmBold).fontSize(6.6).fillColor(KLEUR.inktZacht);
   doc.text("HERKENNING", xHerk, y, { width: HERK_B, characterSpacing: 0.5, lineBreak: false });
@@ -217,18 +231,27 @@ function tekenRijkoppen(doc: Doc, x: number, y: number): number {
 }
 
 function tekenRij(doc: Doc, rij: T4SRij, x: number, y: number, kleur: string): number {
-  const xHerk = x + KOL_RANG + KOL_NAAM;
+  const xHerk = x + KOL_NAAM_TOTAAL;
   const xEner = xHerk + HERK_B + KOL_GAT;
   const xWoord = xEner + ENERGIE_B + KOL_GAT;
   const woordB = TEKST_B - (xWoord - x);
   const midden = y + RIJ_H / 2;
 
-  doc.font(F.dmBold).fontSize(8.4).fillColor(rij.ingevuld ? kleur : KLEUR.inktZacht);
-  doc.text(rij.rang == null ? "-" : String(rij.rang), x, midden - 4.4, { width: KOL_RANG - 4, lineBreak: false });
-
+  // Herstelronde 2, punt B: geen genummerd plaatscijfer meer voor de naam. De
+  // groep (sterk aanwezig / middenveld / minder aanwezig) staat als kopje
+  // boven een reeks rijen, niet meer als cijfer per rij.
   doc.font(rij.ingevuld ? F.dmMed : F.dm).fontSize(8.3).fillColor(rij.ingevuld ? KLEUR.inkt : KLEUR.inktZacht);
-  meet(doc, rij.construct, KOL_NAAM - 6, "constructnaam in een rangorde");
-  doc.text(rij.construct, x + KOL_RANG, midden - 4.3, { width: KOL_NAAM - 6, lineBreak: false, ellipsis: false });
+  meet(doc, rij.construct, KOL_NAAM_TOTAAL - 6, "constructnaam in een rangorde");
+  doc.text(rij.construct, x, midden - 8.7, { width: KOL_NAAM_TOTAAL - 6, lineBreak: false, ellipsis: false });
+
+  // Onderdeel C: de gewone omschrijving komt als kleiner lijntje onder de
+  // constructnaam, zodat elke rangorde in het rapport zowel de vaste naam als
+  // een gewone toelichting toont.
+  if (rij.omschrijving) {
+    doc.font(F.dm).fontSize(6.9).fillColor(KLEUR.inktZacht);
+    meet(doc, rij.omschrijving, KOL_NAAM_TOTAAL - 6, "omschrijving in een rangorde");
+    doc.text(rij.omschrijving, x, midden + 1.8, { width: KOL_NAAM_TOTAAL - 6, lineBreak: false, ellipsis: false });
+  }
 
   if (!rij.ingevuld) {
     doc.font(F.dm).fontSize(7.4).fillColor(KLEUR.inktZacht);
@@ -240,7 +263,7 @@ function tekenRij(doc: Doc, rij: T4SRij, x: number, y: number, kleur: string): n
   tekenEnergie(doc, xEner, midden - BALK_H / 2, rij.energie, kleur);
 
   const cijfers =
-    (rij.herkenning != null ? getal1(rij.herkenning) : "") +
+    (rij.herkenning != null ? getalMetPrecisie(rij.herkenning, rij.weergavePrecisie) : "") +
     (rij.energie != null ? "  " + getalMetTeken(rij.energie) : "");
   doc.font(F.dm).fontSize(6.8).fillColor(KLEUR.inktZacht);
   doc.text(cijfers, xWoord, midden - 7.4, { width: woordB, lineBreak: false });
@@ -278,6 +301,24 @@ function hoogteRijen(rijen: T4SRij[]): number {
   return rijen.length * RIJ_H;
 }
 
+// Herstelronde 2, punt B: de titel van een van de drie groepen (sterk
+// aanwezig, middenveld, minder aanwezig), boven een reeks rijen. Vervangt het
+// genummerde plaatscijfer dat vroeger per rij stond.
+//
+// Compact gehouden (na de melding dat de one-page hierdoor niet meer op een
+// blad paste): één regel per kopje, een kleinere letter dan een tussenkop, en
+// de kolomkoppen HERKENNING/ENERGIE VANDAAG worden niet meer per groep
+// herhaald. Die kolomkoppen komen voortaan eenmalig vóór de eerste groep,
+// via tekenRijkoppen() zelf op de aanroepplek in tekenBlok().
+const GROEPKOP_H = 12;
+
+function tekenGroepkop(doc: Doc, groep: T4SGroep, x: number, y: number): number {
+  const titel = groep.titel.charAt(0).toUpperCase() + groep.titel.slice(1);
+  doc.font(F.dmBold).fontSize(7.6).fillColor(KLEUR.accentDiep);
+  doc.text(titel, x, y + 1, { width: TEKST_B, characterSpacing: 0.3, lineBreak: false });
+  return GROEPKOP_H;
+}
+
 // ── De hoogte van een blok, voor het getekend wordt ─────────────────────────
 
 function blokHoogte(doc: Doc, blok: T4SBlok): number {
@@ -289,23 +330,47 @@ function blokHoogte(doc: Doc, blok: T4SBlok): number {
     case "tussenkop":
       return hoogteVan(doc, blok.tekst, F.dmBold, 9.6, TEKST_B, 2) + 14;
     case "banden": {
+      // Herstelronde 2, punt B: ook hier geen platte rijenlijst meer, maar
+      // de drie groepen (sterk aanwezig, middenveld, minder aanwezig) per
+      // band. De kolomkoppen HERKENNING/ENERGIE VANDAAG staan nog maar één
+      // keer per band, boven de eerste groep, in plaats van bij elke groep
+      // herhaald: dat scheelt drie keer 11 punten per band en hield de
+      // one-page eerder van een blad af.
       let h = 0;
       for (const band of blok.banden) {
-        h += 17 + 11 + hoogteRijen(band.rijen) + 13;
+        h += 17 + 11;
         if (band.noot) h += 11;
+        h += 11; // eenmalige kolomkoppen voor deze band
+        const groepen = groepeerOpAandeel(band.rijen);
+        for (const g of groepen) h += GROEPKOP_H + hoogteRijen(g.rijen) + 4;
+        const nietIngevuld = band.rijen.filter((r) => r.groep == null);
+        if (nietIngevuld.length > 0) h += hoogteRijen(nietIngevuld) + 4;
+        h += 13;
       }
       for (const r of blok.legende) h += hoogteVan(doc, r, F.dm, 7.6, TEKST_B, 2.4) + 3;
       for (const r of blok.naschrift) h += hoogteVan(doc, r, F.dm, 8, TEKST_B, 2.8) + 5;
       return h + 8;
     }
     case "rangtabel": {
-      let h = 11 + hoogteRijen(blok.rijen) + 8;
+      // Herstelronde 2, punt B: geen platte rijenlijst meer, maar drie
+      // groepen (sterk aanwezig, middenveld, minder aanwezig), elk met een
+      // eigen kopje. Een lege groep telt niet mee. De kolomkoppen staan hier
+      // maar één keer, boven de eerste groep (net als bij "banden").
+      const groepen = groepeerOpAandeel(blok.rijen);
+      let h = 11; // eenmalige kolomkoppen
+      for (const g of groepen) h += GROEPKOP_H + hoogteRijen(g.rijen) + 4;
+      // De niet-ingevulde rijen (T4SDimensie.zonderOordeel) staan altijd al
+      // in blok.rijen mee (rangschik() voegt ze aan het eind toe) en horen
+      // bij geen van de drie groepen; ze blijven zichtbaar onder een vierde,
+      // ongetitelde sectie met dezelfde rijhoogte.
+      const nietIngevuld = blok.rijen.filter((r) => r.groep == null);
+      if (nietIngevuld.length > 0) h += hoogteRijen(nietIngevuld) + 4;
       for (const r of blok.naschrift) h += hoogteVan(doc, r, F.dm, 8.2, TEKST_B, 2.8) + 5;
       return h;
     }
     case "constructblok": {
       const h = hoogteVan(doc, blok.duiding, F.dm, 9, TEKST_B - 32, 3.4);
-      return h + 46;
+      return h + 46 + (blok.omschrijving ? 12 : 0);
     }
     case "citaat": {
       let h = 30;
@@ -395,10 +460,19 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
           doc.text(band.noot, x + 18, yy, { width: TEKST_B - 18, lineBreak: false, oblique: SCHUIN });
           yy += 11;
         }
-        yy += tekenRijkoppen(doc, x, yy) - 11;
-        yy += 11;
-        tekenHaken(doc, band.rijen, x, yy);
-        for (const rij of band.rijen) yy += tekenRij(doc, rij, x, yy, band.kleur);
+        yy += tekenRijkoppen(doc, x, yy);
+        const groepen = groepeerOpAandeel(band.rijen);
+        for (const g of groepen) {
+          yy += tekenGroepkop(doc, g, x, yy);
+          tekenHaken(doc, g.rijen, x, yy);
+          for (const rij of g.rijen) yy += tekenRij(doc, rij, x, yy, band.kleur);
+          yy += 4;
+        }
+        const nietIngevuld = band.rijen.filter((r) => r.groep == null);
+        if (nietIngevuld.length > 0) {
+          for (const rij of nietIngevuld) yy += tekenRij(doc, rij, x, yy, band.kleur);
+          yy += 4;
+        }
         yy += 3;
         lijn(doc, x, yy, x + TEKST_B, yy, KLEUR.lijn);
         yy += 10;
@@ -410,35 +484,55 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
     case "rangtabel": {
       let yy = y;
       yy += tekenRijkoppen(doc, x, yy);
-      tekenHaken(doc, blok.rijen, x, yy);
-      for (const rij of blok.rijen) yy += tekenRij(doc, rij, x, yy, blok.kleur);
-      yy += 8;
+      const groepen = groepeerOpAandeel(blok.rijen);
+      for (const g of groepen) {
+        yy += tekenGroepkop(doc, g, x, yy);
+        tekenHaken(doc, g.rijen, x, yy);
+        for (const rij of g.rijen) yy += tekenRij(doc, rij, x, yy, blok.kleur);
+        yy += 4;
+      }
+      const nietIngevuld = blok.rijen.filter((r) => r.groep == null);
+      if (nietIngevuld.length > 0) {
+        for (const rij of nietIngevuld) yy += tekenRij(doc, rij, x, yy, blok.kleur);
+        yy += 4;
+      }
       for (const r of blok.naschrift) yy += schrijf(doc, r, x, yy, TEKST_B, F.dm, 8.2, KLEUR.inktZacht, 2.8) + 5;
       return yy - y;
     }
     case "constructblok": {
+      const verschuiving = blok.omschrijving ? 12 : 0;
       const h = hoogteVan(doc, blok.duiding, F.dm, 9, TEKST_B - 32, 3.4);
-      const totaal = h + 40;
+      const totaal = h + 40 + verschuiving;
       vulRechthoek(doc, x, y, TEKST_B, totaal, KLEUR.kaart, 4);
       vulRechthoek(doc, x, y, 3, totaal, blok.kleur, 1.5);
       doc.save().lineWidth(0.5).strokeColor(KLEUR.lijn).roundedRect(x, y, TEKST_B, totaal, 4).stroke().restore();
 
-      doc.font(F.dmBold).fontSize(8).fillColor(blok.kleur);
-      const rangtekst = blok.rang == null ? "-" : String(blok.rang);
-      doc.text(rangtekst, x + 14, y + 13.5, { width: 14, lineBreak: false });
+      // Herstelronde 2, punt B: geen genummerd plaatscijfer meer voor de
+      // naam; de constructnaam begint waar vroeger het cijfer stond.
       doc.font(F.dmBold).fontSize(11).fillColor(KLEUR.inkt);
-      meet(doc, blok.construct, TEKST_B - 230, "constructnaam in een constructblok");
-      doc.text(blok.construct, x + 30, y + 11, { width: TEKST_B - 230, lineBreak: false });
+      meet(doc, blok.construct, TEKST_B - 214, "constructnaam in een constructblok");
+      doc.text(blok.construct, x + 14, y + 11, { width: TEKST_B - 214, lineBreak: false });
+
+      // Onderdeel C: de gewone omschrijving komt als kleiner lijntje onder de
+      // constructnaam, net als in de rangordes. Het blok wordt hoger gemaakt
+      // (verschuiving) zodat dit extra lijntje niet over de duiding heen valt.
+      if (blok.omschrijving) {
+        doc.font(F.dm).fontSize(7.4).fillColor(KLEUR.inktZacht);
+        meet(doc, blok.omschrijving, TEKST_B - 214, "omschrijving in een constructblok");
+        doc.text(blok.omschrijving, x + 14, y + 24.5, { width: TEKST_B - 214, lineBreak: false });
+      }
 
       const xHerk = x + TEKST_B - 14 - HERK_B - KOL_GAT - ENERGIE_B;
       if (blok.ingevuld) {
         tekenHerkenning(doc, xHerk, y + 12, blok.herkenning, blok.kleur);
         tekenEnergie(doc, xHerk + HERK_B + KOL_GAT, y + 12, blok.energie, blok.kleur);
         doc.font(F.dm).fontSize(6.6).fillColor(KLEUR.inktZacht);
-        doc.text("HERKENNING " + (blok.herkenning != null ? getal1(blok.herkenning) : ""), xHerk, y + 22.5, {
-          width: HERK_B,
-          lineBreak: false,
-        });
+        doc.text(
+          "HERKENNING " + (blok.herkenning != null ? getalMetPrecisie(blok.herkenning, blok.weergavePrecisie) : ""),
+          xHerk,
+          y + 22.5,
+          { width: HERK_B, lineBreak: false },
+        );
         doc.text(
           "ENERGIE " + (blok.energie != null ? getalMetTeken(blok.energie) : ""),
           xHerk + HERK_B + KOL_GAT,
@@ -449,7 +543,7 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
         doc.font(F.dm).fontSize(7.6).fillColor(KLEUR.inktZacht);
         doc.text("Te weinig antwoorden", xHerk, y + 14, { width: HERK_B + ENERGIE_B + KOL_GAT, lineBreak: false });
       }
-      schrijf(doc, blok.duiding, x + 16, y + 32, TEKST_B - 32, F.dm, 9, KLEUR.inkt, 3.4);
+      schrijf(doc, blok.duiding, x + 16, y + 32 + verschuiving, TEKST_B - 32, F.dm, 9, KLEUR.inkt, 3.4);
       return totaal + 6;
     }
     case "citaat": {
@@ -695,9 +789,24 @@ export function renderT4StudentsRapport(rapport: T4SRapport, opties: T4SPdfOptie
     let y = tekenPaginakop(doc, pagina, false);
     let vervolgen = 0;
 
-    for (const blok of pagina.blokken) {
+    for (let bi = 0; bi < pagina.blokken.length; bi++) {
+      const blok = pagina.blokken[bi];
       const h = blokHoogte(doc, blok);
-      if (y + h > BODEM && y > INHOUD_TOP) {
+      // Een tussenkop mag nooit alleen onderaan een blad achterblijven. Het
+      // blok erna wordt altijd in zijn geheel op een blad getekend (het
+      // splitst zichzelf niet), dus het volstaat te kijken of dat volgende
+      // blok als geheel meer ruimte nodig heeft dan wat er na de tussenkop
+      // nog over is: zo ja, dan verhuist de tussenkop zelf ook mee.
+      const volgende = pagina.blokken[bi + 1];
+      const volgendeHoogte = volgende ? blokHoogte(doc, volgende) : 0;
+      // Als het volgende blok op geen enkel blad in zijn geheel past (groter
+      // dan een heel blad), helpt vooruitschuiven niet: dan blijft de normale
+      // regel gelden en krijgt dat blok verderop zijn eigen melding.
+      const volgendeKanOoitPassen = volgendeHoogte <= BODEM - INHOUD_TOP;
+      const volgendePast = !volgende || y + h + volgendeHoogte <= BODEM;
+      const moetVerhuizen = blok.soort === "tussenkop" && volgende && volgendeKanOoitPassen && !volgendePast;
+      const benodigd = moetVerhuizen ? BODEM - y + 1 : h;
+      if (y + benodigd > BODEM && y > INHOUD_TOP) {
         if (h > BODEM - INHOUD_TOP) {
           meldingen.push(
             `Pagina ${pagina.nr}: een blok van het soort ${blok.soort} is hoger dan een blad ` +

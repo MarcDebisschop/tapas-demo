@@ -238,7 +238,9 @@
       ],
       [
         "Artistiek Innovatief",
-        "Complexiteit/Conceptueel",
+        "Complexiteit/Conceptueel"
+      ],
+      [
         "Systematisch/Uitvoerend"
       ],
       [
@@ -259,24 +261,25 @@
       "Constructief onderscheidend": 1
     },
     "rangorde": [
+      "Impact",
       "Analyse",
       "Groepsondersteunend",
-      "Impact",
       "Resultaat",
       "Constructief onderscheidend",
       "Individueel ondersteunend"
     ],
     "kopGroep": [
-      "Analyse",
-      "Groepsondersteunend"
+      "Impact"
     ],
     "groepen": [
       [
-        "Analyse",
-        "Groepsondersteunend"
+        "Impact"
       ],
       [
-        "Impact",
+        "Analyse"
+      ],
+      [
+        "Groepsondersteunend",
         "Resultaat"
       ],
       [
@@ -294,10 +297,8 @@
       "Resultaat": "kernsterkte",
       "Constructief onderscheidend": "latent"
     },
-    "dominante": "Analyse",
-    "gedeeldMet": [
-      "Groepsondersteunend"
-    ]
+    "dominante": "Impact",
+    "gedeeldMet": []
   },
   "convergentie": {
     "onderzoekend": "bevestigd",
@@ -433,16 +434,17 @@
     ]
   },
   "studiestrategie": {
-    "dominanteVersneller": "Analyse",
+    "dominanteVersneller": "Impact",
     "primair": {
+      "strategie": "betekenisgestuurd",
+      "belofte": "verbind de stof met waarom het ertoe doet voor jou"
+    },
+    "secondaryVersneller": "Analyse",
+    "secundair": {
       "strategie": "bottom-up vanuit de onderdelen",
       "belofte": "begin bij de bouwstenen en doorgrond eerst hoe het in elkaar zit"
     },
-    "secondaryVersneller": null,
-    "secundair": null,
-    "gedeeldMet": [
-      "Groepsondersteunend"
-    ]
+    "gedeeldMet": []
   },
   "interesse": {
     "scores": {
@@ -475,15 +477,15 @@
       "Be Strong": 3
     },
     "sorted": [
+      "Be Perfect",
       "Please Others",
       "Be Strong",
-      "Be Perfect",
       "Try Hard",
       "Hurry Up"
     ],
     "top2": [
-      "Please Others",
-      "Be Strong"
+      "Be Perfect",
+      "Please Others"
     ],
     "doorslag": null,
     "energielabels": {

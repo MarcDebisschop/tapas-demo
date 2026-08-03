@@ -73,22 +73,40 @@ describe("punt 4: elke constante die de motor leest staat ook in het instrument"
   });
 
   it("de groepering van bijna gelijke scores werkt nog precies hetzelfde", () => {
-    // Tegenproef op de uitkomst zelf: een verschil van precies 1.0 hoort nog
-    // steeds tot dezelfde groep te horen, een groter verschil niet.
+    // Tegenproef op de uitkomst zelf: een verschil van precies 1.0 op de
+    // schaal van 0 tot 3 hoort nog steeds tot dezelfde groep te horen, een
+    // groter verschil niet.
+    //
+    // HERSTELRONDE 2, PUNT A. Deze test gaf voorheen elk van de zes
+    // versnellers dezelfde ruwe herkenning (3) en verwachtte daaruit een
+    // gelijke groepering. Dat klopt sinds punt A niet meer: de zes
+    // versnellers hebben elk een ander haalbaar maximum (Analyse 5,
+    // Individueel ondersteunend 4, Groepsondersteunend 6, Impact 3, Resultaat
+    // 5, Constructief onderscheidend 3), dus eenzelfde ruwe som van 3 is geen
+    // gelijk aandeel meer. De motor rangschikt nu op aandeel, dus de
+    // tegenproef moet elk construct hetzelfde aandeel geven, niet dezelfde
+    // ruwe som. Elk construct hier haalt precies zijn eigen maximum via zijn
+    // eigen herkenningsitem (aandeel 1,0 voor alle zes), zonder de
+    // keuze-items D5, F4, F5 of S1 te beantwoorden, zodat het maximum van elk
+    // construct niet toevallig door een gedeeld item wordt opgerekt.
     const r = scoreStudiekompas(
       I,
       {
-        V1: { recognition: 3 },
-        V2: { recognition: 3 },
-        V3: { recognition: 3 },
-        V4: { recognition: 3 },
-        V5: { recognition: 3 },
-        V6: { recognition: 3 },
+        V1: { recognition: 3 }, // Analyse: eigen item loopt tot 3
+        V2: { recognition: 3 }, // Individueel ondersteunend: eigen item loopt tot 3
+        V3: { recognition: 3 }, // Groepsondersteunend: eigen item loopt tot 3
+        V4: { recognition: 3 }, // Impact: eigen item loopt tot 3, maximum van het construct
+        V5: { recognition: 3 }, // Resultaat: eigen item loopt tot 3
+        V6: { recognition: 3 }, // Constructief onderscheidend: maximum van het construct
       },
       null,
       "nl",
     );
-    // Zes gelijke scores horen in een groep te vallen.
-    expect(r.versnellers.groepen[0]).toHaveLength(6);
+    // Impact en Constructief onderscheidend hebben hier hun volle aandeel
+    // (3 van 3 = 1,0) en horen samen in de kopgroep. De andere vier komen op
+    // een lager aandeel uit (3 van 5, 4 of 6) en horen daar niet meer bij.
+    expect(r.versnellers.groepen[0].sort()).toEqual(
+      ["Constructief onderscheidend", "Impact"].sort(),
+    );
   });
 });

@@ -140,6 +140,14 @@ describe("geen enkele vertaaltabel voor constructnamen", () => {
     expect(Object.keys(eigen.studiegebieden.teksten).filter((n) => !gebieden.includes(n))).toEqual([]);
   });
 
+  it("de omschrijvingen van onderdeel C zijn op een bestaande naam gesleuteld", () => {
+    const bestand = JSON.parse(
+      readFileSync(path.join(WORTEL, "server", "data", "t4students-omschrijvingen.json"), "utf-8"),
+    ) as { constructen: Record<string, string> };
+    const sleutels = Object.keys(bestand.constructen);
+    expect(sleutels.filter((s) => !ECHTE_NAMEN.includes(s))).toEqual([]);
+  });
+
   it("de duidingsteksten zijn op een bestaande naam gesleuteld", () => {
     const bestand = JSON.parse(
       readFileSync(path.join(WORTEL, "server", "data", "t4students-duidingsteksten.json"), "utf-8"),
@@ -232,7 +240,7 @@ describe("geen enkele vertaaltabel voor constructnamen", () => {
       if (ruw.includes("—")) fout.push(`${rel}: em-dash`);
       if (ruw.includes("–")) fout.push(`${rel}: en-dash`);
     }
-    for (const rel of ["t4students-duidingsteksten.json", "t4students-rapportteksten.json"]) {
+    for (const rel of ["t4students-duidingsteksten.json", "t4students-rapportteksten.json", "t4students-omschrijvingen.json"]) {
       const ruw = readFileSync(path.join(WORTEL, "server", "data", rel), "utf-8");
       if (/drijfve/i.test(ruw)) fout.push(`${rel}: drijfveer`);
       if (ruw.includes("—")) fout.push(`${rel}: em-dash`);

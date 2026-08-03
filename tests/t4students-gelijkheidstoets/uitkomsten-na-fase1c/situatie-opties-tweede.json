@@ -237,7 +237,9 @@
         "Overdrachtelijk Interactief"
       ],
       [
-        "Artistiek Innovatief",
+        "Artistiek Innovatief"
+      ],
+      [
         "Sociaal Interactief"
       ],
       [
@@ -260,26 +262,25 @@
       "Groepsondersteunend",
       "Individueel ondersteunend",
       "Analyse",
-      "Resultaat",
       "Constructief onderscheidend",
+      "Resultaat",
       "Impact"
     ],
     "kopGroep": [
-      "Groepsondersteunend"
+      "Groepsondersteunend",
+      "Individueel ondersteunend"
     ],
     "groepen": [
       [
-        "Groepsondersteunend"
-      ],
-      [
+        "Groepsondersteunend",
         "Individueel ondersteunend"
       ],
       [
-        "Analyse"
+        "Analyse",
+        "Constructief onderscheidend"
       ],
       [
-        "Resultaat",
-        "Constructief onderscheidend"
+        "Resultaat"
       ],
       [
         "Impact"
@@ -294,7 +295,9 @@
       "Constructief onderscheidend": "latent"
     },
     "dominante": "Groepsondersteunend",
-    "gedeeldMet": []
+    "gedeeldMet": [
+      "Individueel ondersteunend"
+    ]
   },
   "convergentie": {
     "onderzoekend": "inactief",
@@ -435,12 +438,11 @@
       "strategie": "structuurgestuurd in groep",
       "belofte": "breng eerst orde, overzicht en planning aan, het liefst samen"
     },
-    "secondaryVersneller": "Individueel ondersteunend",
-    "secundair": {
-      "strategie": "sociaal-dialogisch (één op één)",
-      "belofte": "leer in dialoog, leg het aan iemand uit, bespreek het samen"
-    },
-    "gedeeldMet": []
+    "secondaryVersneller": null,
+    "secundair": null,
+    "gedeeldMet": [
+      "Individueel ondersteunend"
+    ]
   },
   "interesse": {
     "scores": {
@@ -498,7 +500,7 @@
       "Systematisch/Uitvoerend"
     ],
     "minVersnellers": [
-      "Constructief onderscheidend",
+      "Resultaat",
       "Impact"
     ],
     "minDrivers": [

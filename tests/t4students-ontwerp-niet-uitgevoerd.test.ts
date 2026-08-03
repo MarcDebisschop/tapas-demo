@@ -113,11 +113,26 @@ describe("punt 2: rankItems is ontwerp dat niet is uitgevoerd", () => {
     expect(leestWie("rankItems")).toEqual([]);
   });
 
-  it("de motor rangschikt iets anders dan de blauwdruk beschrijft", () => {
-    // Deze deelnemer zegt: Impact kenmerkt me helemaal (3), de vijf andere
-    // versnellers helemaal niet (0). Op de items zelf gerangschikt is Impact
-    // dus zonder twijfel de dominante. De motor komt op iets anders uit, omdat
-    // Groepsondersteunend uit drie situatiekeuzes samen 3 punten opraapt.
+  it("de motor rangschikt sinds herstelronde 2 punt A weer zoals de blauwdruk beschrijft", () => {
+    // HERSTELRONDE 2, PUNT A. Deze test heette voorheen "de motor rangschikt
+    // iets anders dan de blauwdruk beschrijft" en verwachtte
+    // dominanteVersneller = "Groepsondersteunend". Die verwachting was
+    // gebaseerd op de RUWE SOM: Groepsondersteunend raapte via drie
+    // situatiekeuzes (D5, F5, S1) evenveel ruwe punten op als Impact via zijn
+    // ene item, en met een ruwe-som-rangschikking wint bij gelijke ruwe score
+    // de eerst gedefinieerde. Dat was precies het gebrek dat deze testfamilie
+    // aan de kaak stelde: de zes versnellers hebben een ongelijk bereik (zie
+    // de test hieronder), dus een ruwe-somvergelijking is geen eerlijke
+    // vergelijking.
+    //
+    // Sinds punt A rangschikt de motor op AANDEEL van het haalbare maximum.
+    // Impact heeft hier 3 van de 3 haalbare punten (aandeel 1,0);
+    // Groepsondersteunend heeft 3 van de 6 haalbare punten (aandeel 0,5).
+    // Impact wint dus terecht, en de motor komt weer overeen met wat de
+    // blauwdruk (rankItems, itemsgewijs) zou voorspellen. Dit is geen
+    // verzwakking van de waarborg: het bereikverschil zelf (getest hieronder)
+    // bestaat nog steeds en wordt nu net door de aandeelrekening opgevangen in
+    // plaats van genegeerd.
     const antwoorden = {
       V1: { recognition: 0 },
       V2: { recognition: 0 },
@@ -131,7 +146,12 @@ describe("punt 2: rankItems is ontwerp dat niet is uitgevoerd", () => {
     };
     const r = scoreStudiekompas(I, antwoorden, null, "nl");
     expect(byId["V4"].construct).toBe("Impact");
-    expect(r.studiestrategie.dominanteVersneller).toBe("Groepsondersteunend");
+    // Ruwe scores blijven gelijk (3 om 3): dat bewijst dat het verschil in de
+    // uitkomst hieronder echt van de aandeelrekening komt, niet van de
+    // herkenningssom zelf.
+    expect(r.versnellers.scores["Impact"]).toBe(3);
+    expect(r.versnellers.scores["Groepsondersteunend"]).toBe(3);
+    expect(r.studiestrategie.dominanteVersneller).toBe("Impact");
   });
 
   it("de zes versnellers hebben een ongelijk bereik, en dat is de oorzaak", () => {

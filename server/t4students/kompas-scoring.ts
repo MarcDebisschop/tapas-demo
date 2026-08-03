@@ -89,6 +89,7 @@
 // ---------------------------------------------------------------------------
 
 import type { T4SInstrument, T4SItem, T4SOptie } from "./instrument";
+import { voedingPerConstruct } from "./voeding";
 
 /**
  * Eén antwoord. Welke velden gevuld zijn, hangt af van het itemtype:
@@ -101,6 +102,8 @@ export interface T4SAntwoord {
   interest?: number | null;
   choice?: string | null;
   value?: number | null;
+  /** Alleen bij de open beginvraag (P0). Vrije tekst, telt in geen score mee. */
+  text?: string | null;
 }
 
 export type T4SAntwoorden = Record<string, T4SAntwoord | null | undefined>;
@@ -327,7 +330,13 @@ export function scoreStudiekompas(
   }
 
   const main = instrumentDef.sections.find((s) => s.sectionId === "main");
-  const items: T4SItem[] = main && main.items ? main.items : [];
+  const alleItems: T4SItem[] = main && main.items ? main.items : [];
+  // De open beginvraag (P0, onderdeel B1) hoort niet bij de vragenlijst die
+  // hier doorgerekend wordt: ze voedt geen construct, telt niet mee in
+  // totaalItems en niet in totaalSignaal. Ze wordt hier bewust uit `items`
+  // gefilterd zodat geen enkele latere regel in deze functie haar per ongeluk
+  // toch meetelt.
+  const items: T4SItem[] = alleItems.filter((it) => it.itemType !== "open-intro");
   const itemById: Record<string, T4SItem> = {};
   for (const it of items) itemById[it.id] = it;
 
@@ -525,6 +534,22 @@ export function scoreStudiekompas(
     return constructs[con].recognition;
   }
 
+  // ── Aandeel van het haalbare (herstelronde 2, punt A) ────────────────────
+  //
+  // Elk construct heeft een ander hoogst haalbaar aantal punten: het ene
+  // wordt door meer vragen gevoed dan het andere. De ruwe herkenningssom is
+  // daardoor geen eerlijke maat om constructen onderling te vergelijken. Het
+  // aandeel (ruwe som gedeeld door het haalbare maximum van dat construct) is
+  // dat wel, en is vanaf nu de enige maat die de motor gebruikt om te
+  // ordenen. voedingPerConstruct komt uit het instrument zelf, dus het
+  // maximum is berekend, nooit geschat.
+  const voeding = voedingPerConstruct(instrumentDef);
+  function aandeel(con: string): number {
+    const v = voeding[con];
+    if (!v || v.maxHerkenning <= 0) return 0;
+    return herkenning(con) / v.maxHerkenning;
+  }
+
   // ── Energie-status per item (blauwdruk §3) ───────────────────────────────
   function energyStatus(eId: string): string {
     const ea = answers[eId];
@@ -659,18 +684,17 @@ export function scoreStudiekompas(
     versScores[con] = herkenning(con);
     versBalans[con] = balanceLabel(con);
   }
-  // LET OP (punt 2 uit fase 1). Hier wordt gerangschikt op de opgetelde
-  // herkenning van het construct. De blauwdruk beschrijft in punt 4 iets anders: "rankItems =
-  // V1-V6 worden onderling gerangschikt om de dominante versneller(s) te
-  // bepalen", dus een rangorde over de zes items zelf. Dat is niet hetzelfde,
-  // want de zes versnellers hebben een verschillend aantal bronnen. Impact en
-  // Constructief onderscheidend hebben alleen hun eigen item en lopen tot 3;
-  // Groepsondersteunend vangt daarnaast ladingen op uit D5, F5 en S1 en loopt
-  // tot 6. De uitkomst hiervan stuurt de studiestrategie die de deelnemer leest.
-  // Wat dat scheeftrekt is gemeten en voorgelegd in het verslag van fase 1c;
-  // het is niet zelf gewijzigd, omdat het de uitvoer van elke deelnemer raakt.
-  const versRangorde = versCons.slice().sort((a, b) => versScores[b] - versScores[a]);
-  const versGroepen = groepeerRangorde(versRangorde, (c) => versScores[c]);
+  // HERSTELRONDE 2, PUNT A. Hier werd gerangschikt op de opgetelde, ruwe
+  // herkenning van het construct. De zes versnellers hebben een verschillend
+  // aantal bronnen: Impact en Constructief onderscheidend hebben alleen hun
+  // eigen item en lopen tot 3; Groepsondersteunend vangt daarnaast ladingen
+  // op uit D5, F5 en S1 en loopt tot 6. Een ruwe som van 4 bij
+  // Groepsondersteunend (4 van 6) is dus geen sterker signaal dan een ruwe
+  // som van 3 bij Impact (3 van 3): in aandeel is het net andersom. Daarom
+  // rangschikt de motor voortaan op het aandeel van het haalbare maximum,
+  // niet meer op de ruwe som. Zie ook tests/t4students-aandeel-i-p-v-ruwe-som.test.ts.
+  const versRangorde = versCons.slice().sort((a, b) => aandeel(b) - aandeel(a));
+  const versGroepen = groepeerRangorde(versRangorde, (c) => aandeel(c) * 3);
   const versKopGroep = versGroepen[0] || [];
 
   const dominanteVersneller = versRangorde[0] || null;
@@ -694,8 +718,12 @@ export function scoreStudiekompas(
     fociScores[con] = herkenning(con);
     fociBalans[con] = balanceLabel(con);
   }
-  const fociSorted = fociCons.slice().sort((a, b) => fociScores[b] - fociScores[a]);
-  const fociGroepen = groepeerRangorde(fociSorted, (c) => fociScores[c]);
+  // Herstelronde 2, punt A: rangschikken op aandeel, niet op ruwe som. Zelfde
+  // reden als bij de versnellers hierboven: Sociaal Interactief, Systematisch/
+  // Uitvoerend en Overdrachtelijk Interactief hebben elk een ander haalbaar
+  // maximum (6, 5 en 3 in het voorbeeldprofiel).
+  const fociSorted = fociCons.slice().sort((a, b) => aandeel(b) - aandeel(a));
+  const fociGroepen = groepeerRangorde(fociSorted, (c) => aandeel(c) * 3);
   const fociTopGroep = fociGroepen[0] || [];
   const fociTop2 = fociSorted.slice(0, 2);
 
@@ -759,8 +787,10 @@ export function scoreStudiekompas(
   const intCons = intFam ? intFam.constructs : [];
   const intScores: Record<string, number> = {};
   for (const con of intCons) intScores[con] = constructs[con].recognition;
-  const intSorted = intCons.slice().sort((a, b) => intScores[b] - intScores[a]);
-  const intGroepen = groepeerRangorde(intSorted, (c) => intScores[c]);
+  // Herstelronde 2, punt A: ook interesse rangschikt op aandeel, niet op
+  // ruwe som.
+  const intSorted = intCons.slice().sort((a, b) => aandeel(b) - aandeel(a));
+  const intGroepen = groepeerRangorde(intSorted, (c) => aandeel(c) * 3);
   const intTopGroep = intGroepen[0] || [];
 
   // ── Drivers (blauwdruk §8) ───────────────────────────────────────────────
@@ -821,7 +851,13 @@ export function scoreStudiekompas(
 
   const driverEnergielabels: Record<string, string> = {};
   for (const con of driverCons) driverEnergielabels[con] = driverEnergielabel(con);
-  const driverSorted = driverCons.slice().sort((a, b) => driverScores[b] - driverScores[a]);
+  // Herstelronde 2, punt A: driverSorted rangschikt voortaan op aandeel, niet
+  // op ruwe som. Be Perfect (0 tot 4) en Be Strong (0 tot 8) op een gelijke
+  // ruwe som van 3 zijn geen gelijk signaal: 3 van 4 (aandeel 0,75) is een
+  // sterker signaal dan 3 van 8 (aandeel 0,375). De doorslagregel hieronder
+  // blijft wel de ruwe sommen rechtstreeks vergelijken (bedoeld, zie de
+  // uitleg hierboven); alleen de plaats in de rangorde verandert.
+  const driverSorted = driverCons.slice().sort((a, b) => aandeel(b) - aandeel(a));
   const tweedeDriver = driverSorted.length >= 2 ? driverScores[driverSorted[1]] : 0;
   let driverDoorslag: string | null = null;
   if (

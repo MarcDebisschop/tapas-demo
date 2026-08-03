@@ -256,27 +256,28 @@
     },
     "rangorde": [
       "Individueel ondersteunend",
-      "Resultaat",
       "Constructief onderscheidend",
-      "Analyse",
+      "Resultaat",
       "Impact",
+      "Analyse",
       "Groepsondersteunend"
     ],
     "kopGroep": [
       "Individueel ondersteunend",
+      "Constructief onderscheidend",
       "Resultaat"
     ],
     "groepen": [
       [
         "Individueel ondersteunend",
+        "Constructief onderscheidend",
         "Resultaat"
       ],
       [
-        "Constructief onderscheidend"
+        "Impact"
       ],
       [
-        "Analyse",
-        "Impact"
+        "Analyse"
       ],
       [
         "Groepsondersteunend"
@@ -292,6 +293,7 @@
     },
     "dominante": "Individueel ondersteunend",
     "gedeeldMet": [
+      "Constructief onderscheidend",
       "Resultaat"
     ]
   },
@@ -437,6 +439,7 @@
     "secondaryVersneller": null,
     "secundair": null,
     "gedeeldMet": [
+      "Constructief onderscheidend",
       "Resultaat"
     ]
   },
@@ -471,15 +474,15 @@
       "Be Strong": 5
     },
     "sorted": [
-      "Be Strong",
       "Be Perfect",
       "Try Hard",
+      "Be Strong",
       "Please Others",
       "Hurry Up"
     ],
     "top2": [
-      "Be Strong",
-      "Be Perfect"
+      "Be Perfect",
+      "Try Hard"
     ],
     "doorslag": null,
     "energielabels": {
@@ -496,7 +499,7 @@
       "Sociaal Interactief"
     ],
     "minVersnellers": [
-      "Impact",
+      "Analyse",
       "Groepsondersteunend"
     ],
     "minDrivers": [
