@@ -162,9 +162,21 @@ export type T4SBlok =
    * de student zelf zei of voor een samenvattende gedachte, ter afwisseling
    * met de balkkaarten ("kader", "citaat", "constructblok") die uitleg geven.
    * Draagt, net als de balkkaarten, een verplicht opschriftje in kleine
-   * kapitalen boven de kop.
+   * kapitalen boven de kop. Het opschriftje kleurt standaard inkt, niet oker:
+   * oker blijft voorbehouden aan nuance en keerzijde. Alleen waar dit vlak
+   * zelf een nuance is (bijvoorbeeld een aandachtspunt in de eigen woorden
+   * van de student), geeft de aanroeper kleur: KLEUR.oker mee. Het optionele
+   * veld contactregel tekent, zoals op de dankkaart van het slothoofdstuk,
+   * een losse laatste regel onder de hoofdtekst in de accentkleur.
    */
-  | { soort: "kaartvlak"; opschrift: string; kop: string; tekst: string }
+  | {
+      soort: "kaartvlak";
+      opschrift: string;
+      kop: string;
+      tekst: string;
+      kleur?: string;
+      contactregel?: string;
+    }
   | { soort: "paren"; paren: { label: string; waarde: string }[] }
   | { soort: "vragen"; kop: string; vragen: string[] }
   | { soort: "ruimte"; hoogte: number };
@@ -808,9 +820,15 @@ export const PAGINAPLAN: { nr: number; titel: string; basis: boolean }[] = [
   { nr: 27, titel: "In één zin", basis: true },
   { nr: 28, titel: "Wat je hier zocht", basis: true },
   { nr: 29, titel: "Voor wie meeleest, slot", basis: true },
-  { nr: 30, titel: "Verantwoording en grenzen", basis: true },
-  { nr: 31, titel: "Waarop dit rapport gebouwd is", basis: true },
-  { nr: 32, titel: "Alles wat je zelf antwoordde over je talent-foci", basis: true },
-  { nr: 33, titel: "Alles wat je zelf antwoordde over je talent-versnellers", basis: true },
-  { nr: 34, titel: "Alles wat je zelf antwoordde over je drivers", basis: true },
+  // Nr 30 is het nieuwe slothoofdstuk van de opdracht Slotnoot en opmaak: het
+  // vat samen wat hiervoor al stond en beweert niets nieuws. Het staat na
+  // Voor wie meeleest, slot en voor de bijlagen met de eigen antwoorden, en
+  // voor de hoofdstukken met de onderbouwing en de bronnen, die daarom nu
+  // helemaal achteraan staan.
+  { nr: 30, titel: "Een zin om mee te nemen", basis: true },
+  { nr: 31, titel: "Alles wat je zelf antwoordde over je talent-foci", basis: true },
+  { nr: 32, titel: "Alles wat je zelf antwoordde over je talent-versnellers", basis: true },
+  { nr: 33, titel: "Alles wat je zelf antwoordde over je drivers", basis: true },
+  { nr: 34, titel: "Verantwoording en grenzen", basis: true },
+  { nr: 35, titel: "Waarop dit rapport gebouwd is", basis: true },
 ];

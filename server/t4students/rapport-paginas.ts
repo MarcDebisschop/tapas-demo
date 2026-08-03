@@ -398,6 +398,23 @@ const D2_UITLEG =
   "hoeveel je iets in jezelf herkent en hoeveel energie het je geeft. Daarom kan iets bij de sterk aanwezige " +
   "onderdelen staan en toch in het tweede lijstje verschijnen.";
 
+// ── Onderdeel voor het nieuwe slothoofdstuk "Een zin om mee te nemen" ──────
+//
+// Ingreep 2 van de opdracht "Slotnoot en opmaak". Dit hoofdstuk voegt geen
+// enkele nieuwe bewering toe: elk onderdeel leest een uitkomst af die al
+// eerder in het rapport berekend en getoond is (het citaatvlak hergebruikt
+// letterlijk de zin uit het hoofdstuk "In één zin"; de twee kaarten lezen
+// dezelfde duidingstekst af die ook op de bladen met de constructen zelf
+// staat). De dankkaart is de enige vaste, niet-berekende tekst op dit blad.
+const H_TOELICHTING = "Dit blad vat samen wat je hiervoor las. Er staat niets nieuws in.";
+
+const H_DANK_TEKST =
+  "Dank dat je de tijd nam om jezelf te leren kennen via TaPasCity. We hopen dat dit beeld je verder " +
+  "helpt in je keuze. Wil je verder lezen over zichtbaar worden in wie je bent? Lees dan Zichtbaar, van " +
+  "onbegrepen talent naar gewaardeerde eigenheid.";
+
+const H_DANK_CONTACT = "www.tapascity.com · info@tapascity.com";
+
 // Herstelronde 2, punt C: telwoorden tot en met zes, want een familie telt
 // hoogstens zes constructen. Alleen nodig om te melden hoeveel constructen
 // even sterk uitkwamen; het getal zelf komt altijd uit de lengte van een
@@ -526,6 +543,81 @@ function eenZinBlokken(
       punten: latentOnderbenut.map((r) => `${r.construct}: ${r.omschrijving}`.trim()),
     });
   }
+  return blokken;
+}
+
+// ── Het nieuwe slothoofdstuk "Een zin om mee te nemen" ─────────────────────
+//
+// Vier vaste onderdelen, in deze volgorde: het citaatvlak met de zin uit
+// "In één zin", de kaart "WAT AL STERK IS", de kaart "WAT NOG STERKER KAN"
+// (allebei weggelaten als er niets voor is) en de vaste dankkaart. Alle
+// inhoud, behalve de dankkaart, komt uit bestaande, al geteste berekeningen.
+function eenZinOmMeeTeNemenBlokken(
+  resultaat: T4SResultaat,
+  foci: T4SDimensie,
+  versnellers: T4SDimensie,
+  interesse: T4SDimensie,
+  drivers: T4SDimensie,
+): T4SBlok[] {
+  const blokken: T4SBlok[] = [{ soort: "alinea", tekst: H_TOELICHTING }];
+
+  // Onderdeel a: het citaatvlak hergebruikt letterlijk de zin die ook op het
+  // hoofdstuk "In één zin" staat (het eerste blok van eenZinBlokken, alleen
+  // aanwezig als er genoeg is ingevuld om de zin te bouwen).
+  const zinBlokken = eenZinBlokken(resultaat, foci, versnellers, interesse);
+  const eersteZin = zinBlokken[0];
+  if (eersteZin && eersteZin.soort === "alinea" && eersteZin.tekst !== D_TE_WEINIG) {
+    blokken.push({
+      soort: "citaat",
+      opschrift: "JOUW ZIN",
+      kop: "Wat je antwoorden samen zeggen",
+      kleur: KLEUR.teal,
+      regels: [{ vraag: eersteZin.tekst, herkenning: null, energie: null }],
+    });
+  }
+
+  // Onderdeel b: de kaart "WAT AL STERK IS", op het construct met het
+  // hoogste aandeel uit de groep sterk aanwezig van de talent-foci (dezelfde
+  // berekening als op de bladen met de talent-foci zelf). Leeg, dus
+  // weggelaten, als die groep niets opleverde.
+  const sterkFoci = sterksteUitGroep(foci);
+  if (sterkFoci.constructen.length > 0) {
+    const construct = sterkFoci.constructen[0].construct;
+    blokken.push({
+      soort: "kaartvlak",
+      opschrift: "WAT AL STERK IS",
+      kop: construct,
+      tekst: duidingVan(construct),
+    });
+  }
+
+  // Onderdeel c: de kaart "WAT NOG STERKER KAN", op de driver met het
+  // hoogste aandeel binnen de drivers die als gaspedaal gelezen worden
+  // (dezelfde indeling als bij de drivers, de keerzijde). drivers.gerangschikt
+  // staat al op aandeel gesorteerd, dus de eerste rij met dat leeswoord is de
+  // sterkste. Leeg, dus weggelaten, als geen driver dat leeswoord draagt.
+  const gaspedaal = drivers.gerangschikt.filter((r) => r.leeswoord === "gaspedaal");
+  if (gaspedaal.length > 0) {
+    const construct = gaspedaal[0].construct;
+    blokken.push({
+      soort: "kader",
+      opschrift: "WAT NOG STERKER KAN",
+      kop: construct,
+      kleur: KLEUR.oker,
+      tekst: duidingVan(construct),
+    });
+  }
+
+  // Onderdeel d: de vaste dankkaart, de enige niet-berekende tekst op dit
+  // blad. De contactregel staat op een eigen lijn in de accentkleur.
+  blokken.push({
+    soort: "kaartvlak",
+    opschrift: "MET DANK",
+    kop: "Bedankt dat je dit met ons deelde",
+    tekst: H_DANK_TEKST,
+    contactregel: H_DANK_CONTACT,
+  });
+
   return blokken;
 }
 
@@ -1834,10 +1926,30 @@ export function bouwT4StudentsRapport(
   // ── 29. Voor wie meeleest, slot (onderdeel E2) ─────────────────────
   paginas.push(pagina(29, voorWieMeeleestSlotBlokken(), "Hoe je dit rapport samen leest."));
 
-  // ── 30. Verantwoording en grenzen ─────────────────────────────────────────
+  // ── 30. Een zin om mee te nemen (ingreep 2, nieuw slothoofdstuk) ──────
+  // Ingreep 1 van de opdracht "Slotnoot en opmaak": de hoofdstukken met de
+  // onderbouwing en de bronnen (nr 34 en 35 hieronder) staan nu achter de
+  // bijlagen met de eigen antwoorden (nr 31 tot en met 33), in plaats van
+  // ervoor. Dit nieuwe slothoofdstuk staat direct na "Voor wie meeleest,
+  // slot" en voor die bijlagen: het laatste dat de student leest voordat de
+  // eigen, letterlijke antwoorden nog eens voorbijkomen.
   paginas.push(
     pagina(
       30,
+      eenZinOmMeeTeNemenBlokken(resultaat, foci, versnellers, interesse, drivers),
+      "Jouw profiel, samengevat in één beweging.",
+    ),
+  );
+
+  // ── 31, 32, 33: de bronpagina's ──────────────────────────────────
+  paginas.push(bronPagina(31, inst, antwoorden, taal, FAM_FOCI));
+  paginas.push(bronPagina(32, inst, antwoorden, taal, FAM_VERSNELLERS));
+  paginas.push(bronPagina(33, inst, antwoorden, taal, FAM_DRIVERS));
+
+  // ── 34. Verantwoording en grenzen ─────────────────────────────────────────
+  paginas.push(
+    pagina(
+      34,
       [
         {
           soort: "intro",
@@ -1886,13 +1998,8 @@ export function bouwT4StudentsRapport(
     ),
   );
 
-  // ── 31. Waarop dit rapport gebouwd is (onderdeel G) ──────────────────
-  paginas.push(pagina(31, waaropGebouwdBlokken(), "De bronnen achter de onderdelen en het ontwerp."));
-
-  // ── 32, 33, 34: de bronpagina's ──────────────────────────────────
-  paginas.push(bronPagina(32, inst, antwoorden, taal, FAM_FOCI));
-  paginas.push(bronPagina(33, inst, antwoorden, taal, FAM_VERSNELLERS));
-  paginas.push(bronPagina(34, inst, antwoorden, taal, FAM_DRIVERS));
+  // ── 35. Waarop dit rapport gebouwd is (onderdeel G) ──────────────────
+  paginas.push(pagina(35, waaropGebouwdBlokken(), "De bronnen achter de onderdelen en het ontwerp."));
 
   // ── De licentie toepassen ─────────────────────────────────────────────────
   const toegestaan = new Set(

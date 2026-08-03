@@ -377,10 +377,15 @@ function blokHoogte(doc: Doc, blok: T4SBlok): number {
     case "citaat": {
       // Ingreep 3: 12 punten extra voor de eigen kopregel boven de regels, en
       // 8 punten extra ademruimte na de kaart (punt 4).
+      // Staat herkenning op null (geen letterlijk antwoord op een vraag,
+      // maar een samengestelde zin zoals op het slothoofdstuk), dan valt de
+      // regel "Jouw antwoord:" weg en telt alleen de hoogte van de zin zelf.
       let h = 42;
       for (const r of blok.regels) {
         h += hoogteVan(doc, r.vraag, F.dm, 9.4, TEKST_B - 44, 2.8) + 4;
-        h += hoogteVan(doc, r.herkenning || "", F.dmMed, 8.5, TEKST_B - 124, 1.5) + 3;
+        if (r.herkenning !== null) {
+          h += hoogteVan(doc, r.herkenning || "", F.dmMed, 8.5, TEKST_B - 124, 1.5) + 3;
+        }
         if (r.energie) h += 11;
         if (r !== blok.regels[blok.regels.length - 1]) h += 5;
       }
@@ -411,8 +416,12 @@ function blokHoogte(doc: Doc, blok: T4SBlok): number {
       // Ingreep 3: 12 punten extra voor de eigen kopregel boven de tekst, en
       // 8 punten extra ademruimte na de kaart (punt 4).
       return hoogteVan(doc, blok.tekst, F.dm, 9, TEKST_B - 32, 3.2) + 60;
-    case "kaartvlak":
-      return hoogteVan(doc, blok.tekst, F.dm, 9, TEKST_B - 32, 3.2) + 60;
+    case "kaartvlak": {
+      // Contactregel telt als een extra regel met een eigen regelafstand.
+      let h = hoogteVan(doc, blok.tekst, F.dm, 9, TEKST_B - 32, 3.2) + 60;
+      if (blok.contactregel) h += 16;
+      return h;
+    }
     case "paren": {
       const kolB = (TEKST_B - 12) / 2;
       let h = 0;
@@ -565,7 +574,9 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
       let h = 32;
       for (const r of blok.regels) {
         h += hoogteVan(doc, r.vraag, F.dm, 9.4, TEKST_B - 44, 2.8) + 4;
-        h += hoogteVan(doc, r.herkenning || "", F.dmMed, 8.5, TEKST_B - 124, 1.5) + 3;
+        if (r.herkenning !== null) {
+          h += hoogteVan(doc, r.herkenning || "", F.dmMed, 8.5, TEKST_B - 124, 1.5) + 3;
+        }
         if (r.energie) h += 11;
         if (r !== blok.regels[blok.regels.length - 1]) h += 5;
       }
@@ -582,9 +593,14 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
         doc.font(F.dm).fontSize(9.4).fillColor(KLEUR.inkt);
         doc.text(r.vraag, x + 30, yy, { width: TEKST_B - 44, lineGap: 2.8, oblique: SCHUIN });
         yy += vh + 4;
-        doc.font(F.dmBold).fontSize(8.5).fillColor(KLEUR.inktZacht);
-        doc.text("Jouw antwoord:", x + 30, yy, { width: 78, lineBreak: false });
-        yy += schrijf(doc, r.herkenning || "", x + 110, yy, TEKST_B - 124, F.dmMed, 8.5, KLEUR.inkt, 1.5) + 3;
+        // Staat herkenning op null, dan is dit geen letterlijk antwoord op een
+        // vraag maar een samengestelde zin (zoals op het slothoofdstuk); dan
+        // blijft het label "Jouw antwoord:" weg.
+        if (r.herkenning !== null) {
+          doc.font(F.dmBold).fontSize(8.5).fillColor(KLEUR.inktZacht);
+          doc.text("Jouw antwoord:", x + 30, yy, { width: 78, lineBreak: false });
+          yy += schrijf(doc, r.herkenning || "", x + 110, yy, TEKST_B - 124, F.dmMed, 8.5, KLEUR.inkt, 1.5) + 3;
+        }
         if (r.energie) {
           doc.font(F.dmBold).fontSize(8.5).fillColor(KLEUR.inktZacht);
           doc.text("En dat:", x + 30, yy, { width: 78, lineBreak: false });
@@ -668,14 +684,22 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
       // Ingreep 3, punt 3: de tweede kaartsoort. Een licht warm vlak zonder
       // gekleurde balk aan de linkerrand, voor wat de student zelf zei of
       // voor een samenvattende gedachte. Dezelfde zachte ronde hoeken als de
-      // andere kaarten, het opschriftje in de okertint (nuance), geen balk.
-      const h = hoogteVan(doc, blok.tekst, F.dm, 9, TEKST_B - 32, 3.2);
-      const totaal = h + 48;
+      // andere kaarten, geen balk. Het opschriftje kleurt oker alleen als de
+      // aanroeper dat expliciet meegeeft (een nuance); anders accentDiep, een
+      // neutrale kleur die al elders in het rapport voorkomt.
+      const opschriftKleur = blok.kleur === KLEUR.oker ? KLEUR.okerDiep : blok.kleur ?? KLEUR.accentDiep;
+      const tekstH = hoogteVan(doc, blok.tekst, F.dm, 9, TEKST_B - 32, 3.2);
+      const contactH = blok.contactregel ? 16 : 0;
+      const totaal = tekstH + contactH + 48;
       vulRechthoek(doc, x, y, TEKST_B, totaal, KLEUR.okerZacht, 3);
-      kapitalen(doc, blok.opschrift, x + 16, y + 10, 6.8, KLEUR.okerDiep);
+      kapitalen(doc, blok.opschrift, x + 16, y + 10, 6.8, opschriftKleur);
       doc.font(F.dmBold).fontSize(11.5).fillColor(KLEUR.inkt);
       doc.text(blok.kop, x + 16, y + 22, { width: TEKST_B - 32, lineBreak: false });
       schrijf(doc, blok.tekst, x + 16, y + 36, TEKST_B - 32, F.dm, 9, KLEUR.inkt, 3.2);
+      if (blok.contactregel) {
+        doc.font(F.dmBold).fontSize(9).fillColor(KLEUR.accent);
+        doc.text(blok.contactregel, x + 16, y + 36 + tekstH + 8, { width: TEKST_B - 32, lineBreak: false });
+      }
       // Ingreep 3, punt 4: acht punten extra ademruimte na de kaart.
       return totaal + 14;
     }
