@@ -155,6 +155,8 @@ interface DashboardResponse {
     status: string;
     taal: string;
     voltooidOp: string | null;
+    instrumentId: string;
+    instrumentNaam: string;
     rapporten: Array<{ id: number; variant: string; titel: string }>;
   }>;
   galerij: GalerijData;
@@ -677,7 +679,7 @@ export default function Dashboard() {
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-foreground">
-                          T4P Business Kompas{a.bedrijf ? ` · ${a.bedrijf}` : ""}
+                          {a.instrumentNaam}{a.bedrijf ? ` · ${a.bedrijf}` : ""}
                         </p>
                         <div className="mt-1 flex flex-wrap items-center gap-2">
                           <Badge variant={a.status === "voltooid" ? "default" : "secondary"}>
@@ -705,7 +707,7 @@ export default function Dashboard() {
                             </p>
                             <div className="flex flex-wrap gap-2">
                               <a
-                                href={`${API_BASE}/api/rapporten/${rapport.id}/html`}
+                                href={`${API_BASE}/api/dashboard/${token}/rapport/${rapport.id}/html`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 data-testid={`link-rapport-bekijk-${rapport.id}`}
@@ -725,7 +727,7 @@ export default function Dashboard() {
                                   en houdt de HTML-download enkel als vangnet bij een
                                   renderfout. */}
                               <a
-                                href={`${API_BASE}/api/rapporten/${rapport.id}/pdf`}
+                                href={`${API_BASE}/api/dashboard/${token}/rapport/${rapport.id}/pdf`}
                                 data-testid={`link-rapport-download-${rapport.id}`}
                               >
                                 <Button size="sm">

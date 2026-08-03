@@ -11,6 +11,7 @@ import { serveStatic } from "./static";
 import { sqlite } from "./storage";
 import { logEncryptieStatus } from "./db-encryptie";
 import { meldDemoModusBijOpstart } from "./demomodus";
+import { bepaalSessieCookieNaam } from "./sessie-cookie";
 import { VERSIE, COMMIT, BOUWDATUM, BRON } from "./versie";
 import { createServer } from "node:http";
 
@@ -202,25 +203,51 @@ app.use(csrfBescherming);
 //          SameSite=None vereist Secure=true → alleen in productie (HTTPS).
 app.set("trust proxy", 1);
 // KRITIEK pplx.app cookie-regels:
-// 1. Cookie naam MOET __Host- prefix hebben (pplx.app proxy strip andere cookies).
-// 2. SameSite=None vereist voor cross-origin POST (S3-frontend → /port/5000 sandbox).
+// 1. Cookie naam MOET __Host- prefix hebben op elke omgeving die effectief
+//    over HTTPS loopt (pplx.app proxy strip andere cookies, en __Host- is
+//    sowieso de veiligste keuze zodra Secure gegarandeerd aan staat).
+// 2. SameSite=None vereist voor cross-origin POST (S3-frontend → sandbox-backend).
 // 3. secure: "auto" = express-session gebruikt req.secure (werkt correct achter
 //    pplx.app HTTPS-proxy via trust proxy: 1 + X-Forwarded-Proto: https).
 // 4. credentials: "include" staat in queryClient.ts zodat de browser de cookie meestuurt.
+//
+// Punt C (verslag-t4teens-doorloop.md, Gebrek 1): __Host- is geen decoratie,
+// het is een door de browser afgedwongen voorvoegsel. Een cookie met die naam
+// wordt door elke standaardconforme browser/http-client geweigerd zodra hij
+// niet ALTIJD de Secure-vlag draagt, ongeacht wat secure: "auto" er op dat
+// moment van maakt. Op een gewone (niet-HTTPS) verbinding gaf secure: "auto"
+// terecht secure=false, maar de naam bleef __Host-, dus het cookie werd nooit
+// gezet en aanmelden was onmogelijk op elke niet-HTTPS-omgeving (lokale
+// ontwikkeling, of eender welke installatie zonder eigen HTTPS-terminatie).
+//
+// Oplossing: het __Host- voorvoegsel wordt enkel gebruikt op de omgevingen
+// waarvan we bij het opstarten al zeker weten dat ze altijd over HTTPS lopen
+// (productie op Render, of de pplx.app-sandbox die zelf een HTTPS-proxy
+// ervoor zet). Overal elders (lokale dev, tests) heet de cookie gewoon
+// "tapas-sid", zonder voorvoegseleisen, maar met exact dezelfde
+// secure/sameSite/httpOnly-instellingen als voorheen. Dit verzwakt de
+// productieomgeving niet: daar blijft de naam, de Secure-vlag en
+// SameSite=None precies zoals ze waren.
+const _sessieCookieNaam = bepaalSessieCookieNaam(process.env);
 app.use(session({
   secret: process.env.SESSION_SECRET || "tapas-demo-secret-2026",
   resave: false,
   saveUninitialized: false,
-  name: "__Host-tapas-sid",
+  name: _sessieCookieNaam,
   store: new SessieOpslag({ client: sqlite, ruimVerlopenOp: true, opruimIntervalMs: 24 * 60 * 60 * 1000 }),
   cookie: {
     maxAge: 24 * 60 * 60 * 1000,
     httpOnly: true,
-    // sameSite: "auto" → op HTTPS (pplx.app): "none" (cross-origin OK)
+    // sameSite: "auto" → op HTTPS (pplx.app/productie): "none" (cross-origin OK)
     //                  → op HTTP (lokaal dev): "lax" (veilig)
     // secure: "auto"  → op HTTPS: true → vereist voor __Host- prefix + SameSite=None
     //                  → op HTTP: false → werkt lokaal
-    sameSite: "auto",
+    // Dit zijn geldige runtime-waarden voor express-session (zie
+    // node_modules/express-session/index.js: cookieOptions.secure/sameSite
+    // === "auto" wordt per request opgelost), ook al kent het type-pakket
+    // @types/express-session enkel "auto" voor `secure`, niet voor
+    // `sameSite`. Vandaar de expliciete cast hieronder voor de typecontrole.
+    sameSite: "auto" as unknown as "lax",
     secure: "auto",
     path: "/",
   },

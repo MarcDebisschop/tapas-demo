@@ -13,6 +13,7 @@ import { CheckCircle2 } from "lucide-react";
 import { maakVertaler, normaliseerTaal, STANDAARD_TAAL } from "@shared/i18n";
 import { ontbrekendeSchaalvragen } from "@shared/verplicht-antwoorden";
 import { bewijsSleutel } from "@/pages/klaar";
+import { useEffect } from "react";
 
 /**
  * De stand waarop een nog niet aangeraakte regelaar getoond wordt. Dit is enkel
@@ -38,6 +39,19 @@ export default function Deel2() {
   });
   const taal = normaliseerTaal(afname?.taal ?? STANDAARD_TAAL);
   const t = maakVertaler(taal);
+
+  // Instrumenten zonder eigen deel 2 (organisatieverbondenheid horen niet bij
+  // T4Teens/T4Kids/T4Students, zie bevindingen-punt-a-instrumentkaart.md) mogen
+  // dit scherm nooit tonen, ook niet als iemand hier rechtstreeks naartoe
+  // navigeert. Dit is de tweede, client-zijdige laag onder de serverlaag in
+  // routes/afnames.ts (GEEN_EIGEN_DEEL2): een deelnemer krijgt zo nooit de
+  // vragen van een ander instrument te zien.
+  const GEEN_EIGEN_DEEL2 = new Set(["t4teens", "t4kids", "t4students"]);
+  useEffect(() => {
+    if (afname && GEEN_EIGEN_DEEL2.has(afname.instrumentId ?? "")) {
+      navigate(`/afname/${id}/klaar`, { replace: true });
+    }
+  }, [afname, id, navigate]);
 
   const { data: inst, isLoading } = useQuery<ClientInstrument>({
     queryKey: ["/api/instrument", taal],

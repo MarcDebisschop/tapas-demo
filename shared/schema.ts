@@ -223,13 +223,20 @@ export const submitMainSchema = z.object({
 });
 export type SubmitMain = z.infer<typeof submitMainSchema>;
 
+// `answers` is optioneel: instrumenten zonder eigen deel 2 (organisatie-
+// verbondenheid hoort enkel bij het T4P Business Kompas, zie
+// server/registry.ts en server/routes/afnames.ts) ronden af via deze route
+// zonder ooit deel 2 getoond te hebben gekregen, en sturen dus geen antwoorden
+// mee. De server bepaalt zelf, per instrument, of `answers` verplicht is.
 export const submitConnectionSchema = z.object({
-  answers: z.object({
-    q1: z.number().int().min(0).max(10),
-    q2: z.number().int().min(0).max(10),
-    q3: z.number().int().min(0).max(10),
-    q4: z.number().int().min(0).max(10),
-  }),
+  answers: z
+    .object({
+      q1: z.number().int().min(0).max(10),
+      q2: z.number().int().min(0).max(10),
+      q3: z.number().int().min(0).max(10),
+      q4: z.number().int().min(0).max(10),
+    })
+    .optional(),
 });
 export type SubmitConnection = z.infer<typeof submitConnectionSchema>;
 

@@ -66,6 +66,13 @@ import { isDemoModus } from "../demomodus";
 // T4P-contract. Door dat bij aanmaak ook echt in de kolom te zetten, komt de
 // opvolging per instrument overeen met wat de deelnemer feitelijk invult, in
 // plaats van alles op "Onbekend" te laten vallen.
+// Instrumenten zonder eigen deel 2 (organisatieverbondenheid). Gemeten in
+// server/registry.ts (metadata-only descriptors, geen instrument.json) en in
+// de eigen scoring-adapters (server/t4teens/scoring.ts, server/t4kids/scoring.ts,
+// server/t4students/scoring.ts): geen van drie gebruikt de q1-q4-antwoorden.
+// Zie bevindingen-punt-a-instrumentkaart.md voor de volledige onderbouwing.
+const GEEN_EIGEN_DEEL2 = new Set(["t4teens", "t4kids", "t4students"]);
+
 function standaardInstrumentId(): string {
   return getDefaultDescriptor().instrumentId;
 }
@@ -445,7 +452,15 @@ export function registerAfnameRoutes(app: Express): void {
     if (!parsed.success) {
       return res.status(400).json({ error: "Ongeldige antwoorden voor deel 2" });
     }
-    const connection = parsed.data.answers;
+    // Enkel het T4P Business Kompas (de else-tak hieronder) heeft een eigen
+    // deel 2 (organisatieverbondenheid); zie server/registry.ts en
+    // bevindingen-punt-a-instrumentkaart.md voor de meting. Voor die instrumenten
+    // is `answers` dus verplicht. t4kids/t4students/t4teens hebben geen deel 2 en
+    // sturen `answers` niet mee; dat is dan geen fout, geen `connection`-object.
+    if (!GEEN_EIGEN_DEEL2.has(a.instrumentId ?? "") && !parsed.data.answers) {
+      return res.status(400).json({ error: "Ongeldige antwoorden voor deel 2" });
+    }
+    const connection = parsed.data.answers ?? null;
     const responses = JSON.parse(a.mainResponses);
 
     // Verplicht doorklikken, serverkant. Het scherm houdt de knop dicht, maar
@@ -530,6 +545,10 @@ export function registerAfnameRoutes(app: Express): void {
         taal: a.taal,
       });
     } else {
+      // Hier is `connection` altijd gevuld: de controle hierboven wijst elke
+      // aanvraag zonder `answers` al af voor elk instrument dat niet in
+      // GEEN_EIGEN_DEEL2 staat, en dit is de tak voor precies die instrumenten
+      // (het T4P Business Kompas, de enige eigenaar van deel 2).
       contract = buildGeneratorContract({
         respondentCode: a.respondentCode,
         name: a.name,
@@ -539,18 +558,38 @@ export function registerAfnameRoutes(app: Express): void {
         consentTimestamp: a.consentTimestamp,
         responses,
         baseline: a.baselineEnergy,
-        connection,
+        connection: connection!,
         taal: a.taal,
         itemTijden,
       });
     }
 
     let updated = await storage.updateAfname(id, {
-      connectionAnswers: JSON.stringify(connection),
+      // Instrumenten zonder eigen deel 2 hebben geen `connection`-antwoorden;
+      // dan blijft deze kolom leeg in plaats van de tekst "null" te bevatten.
+      connectionAnswers: connection ? JSON.stringify(connection) : null,
       generatorContract: JSON.stringify(contract),
       status: "voltooid",
       completedAt: new Date().toISOString(),
     });
+
+    // Punt B: T4Teens leidde een afgeronde afname nooit vanzelf tot een
+    // rapport; het deelnemersdashboard bleef op "Rapport in voorbereiding"
+    // staan omdat POST /api/rapporten enkel bereikbaar is met een
+    // beheerderssessie (server/routes/rapporten.ts, vereisScope). Gemeten
+    // (bevindingen-punt-b-rapportontwerp.md): rapportgeneratie verbruikt geen
+    // credits (dat gebeurt al hierboven bij het afronden) en T4Teens heeft een
+    // eigen, synchrone generator zonder AI-duiding, dus dit kan hier veilig
+    // synchroon gebeuren. Enkel voor t4teens; andere instrumenten blijven op
+    // het bestaande, beheerder-gestuurde pad. Een rapportfout mag de afronding
+    // van de afname nooit blokkeren.
+    if (a.instrumentId === "t4teens") {
+      try {
+        await storage.genereerRapport(id, "kompas");
+      } catch (e) {
+        console.warn(`[rapport] automatische T4Teens-rapportgeneratie mislukt (afname ${id}):`, e);
+      }
+    }
 
     // TaPas Persoonlijk — Fase 1: als de deelnemer (optioneel) een e-mailadres
     // opgaf bij het afronden, koppelen we deze afname meteen aan een
