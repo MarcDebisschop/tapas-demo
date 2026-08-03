@@ -634,13 +634,20 @@ function eenZinOmMeeTeNemenBlokken(
   // de gewone omschrijving naast de naam van het construct ontbrak; die
   // stond in de oorspronkelijke opdracht en staat er nu weer bij, net als op
   // de andere bladen met een construct als kop.
+  // Opmaak afwerken, punt 1: WAT AL STERK IS is een kader (wit, met balk in
+  // het gewone accent), net als zijn tegenhanger WAT NOG STERKER KAN
+  // hieronder. Beide zijn uitleg (duiding bij een construct), dus horen ze
+  // dezelfde kaartsoort te zijn; voorheen was dit blok een kaartvlak
+  // (getint, geen balk), wat het paar niet liet lezen als sterk tegenover
+  // nuance.
   const sterkFoci = sterksteUitGroep(foci);
   if (sterkFoci.constructen.length > 0) {
     const construct = sterkFoci.constructen[0].construct;
     blokken.push({
-      soort: "kaartvlak",
+      soort: "kader",
       opschrift: "WAT AL STERK IS",
       kop: construct,
+      kleur: KLEUR.accent,
       omschrijving: sterkFoci.constructen[0].omschrijving,
       tekst: duidingVan(construct),
     });

@@ -380,7 +380,10 @@ function blokHoogte(doc: Doc, blok: T4SBlok): number {
       // Staat herkenning op null (geen letterlijk antwoord op een vraag,
       // maar een samengestelde zin zoals op het slothoofdstuk), dan valt de
       // regel "Jouw antwoord:" weg en telt alleen de hoogte van de zin zelf.
-      let h = 42;
+      // Opmaak afwerken, punt 3: twee punten extra zodat de afstand tussen de
+      // kop en de eerste tekstregel, net als bij kader en kaartvlak, op 18
+      // punten komt (was 16).
+      let h = 44;
       for (const r of blok.regels) {
         h += hoogteVan(doc, r.vraag, F.dm, 9.4, TEKST_B - 44, 2.8) + 4;
         if (r.herkenning !== null) {
@@ -418,8 +421,10 @@ function blokHoogte(doc: Doc, blok: T4SBlok): number {
       // tussen kop en tekst is vergroot (lucht), dus de hoogte groeit mee.
       // Herstel, punt 5: de onderste witruimte is met 4 punten verkleind
       // (60 in plaats van 64) zodat het slothoofdstuk dichter bij één blad
-      // komt; de lucht tussen kop en tekst zelf blijft ongemoeid.
-      return hoogteVan(doc, blok.tekst, F.dm, 9, TEKST_B - 32, 3.2) + 60;
+      // komt; de lucht tussen kop en tekst zelf blijft ongemoeid. Opmaak
+      // afwerken, punt 1: een optionele omschrijving naast de kop (net als
+      // bij kaartvlak) kost een extra regel.
+      return hoogteVan(doc, blok.tekst, F.dm, 9, TEKST_B - 32, 3.2) + 60 + (blok.omschrijving ? 12 : 0);
     case "kaartvlak": {
       // Contactregel telt als een extra regel met een eigen regelafstand.
       // Opmaakherstel-2, punt 2: hoogte groeit mee met de extra lucht tussen
@@ -467,9 +472,12 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
   const x = MARGE;
   switch (blok.soort) {
     case "intro": {
+      // Opmaak afwerken, punt 1: het introblok is een getint vlak (papier2)
+      // en heeft, net als elk ander getint vlak, geen balk aan de
+      // linkerrand. Het is een aanloop, geen uitleg van een onderdeel, en
+      // zonder balk leest het rustiger.
       const h = hoogteVan(doc, blok.tekst, F.dm, 9.4, TEKST_B - 16, 3.4);
       vulRechthoek(doc, x, y, TEKST_B, h + 16, KLEUR.papier2, 3);
-      vulRechthoek(doc, x, y, 2.4, h + 16, KLEUR.accent, 1.2);
       schrijf(doc, blok.tekst, x + 13, y + 8, TEKST_B - 26, F.dm, 9.4, KLEUR.inkt, 3.4);
       return h + 22;
     }
@@ -600,11 +608,13 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
         if (r.energie) h += 11;
         if (r !== blok.regels[blok.regels.length - 1]) h += 5;
       }
-      vulRechthoek(doc, x, y, TEKST_B, h, KLEUR.okerZacht, 3);
+      // Opmaak afwerken, punt 3: dezelfde 18 punten lucht tussen de kop en
+      // de eerste tekstregel als bij kader en kaartvlak (was 16 punten).
+      vulRechthoek(doc, x, y, TEKST_B, h + 2, KLEUR.okerZacht, 3);
       kapitalen(doc, blok.opschrift, x + 16, y + 9, 6.8, kopKleur);
       doc.font(F.dmBold).fontSize(10.5).fillColor(KLEUR.inkt);
       doc.text(blok.kop, x + 16, y + 24, { width: TEKST_B - 32, lineBreak: false });
-      let yy = y + 40;
+      let yy = y + 42;
       blok.regels.forEach((r, i) => {
         const vh = hoogteVan(doc, r.vraag, F.dm, 9.4, TEKST_B - 44, 2.8);
         doc.font(F.dm).fontSize(9.4).fillColor(KLEUR.inkt);
@@ -631,7 +641,7 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
         }
       });
       // Ingreep 3, punt 4: acht punten extra ademruimte na de kaart.
-      return h + 18;
+      return h + 2 + 18;
     }
     case "batterij": {
       const b = 176;
@@ -687,16 +697,24 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
       // hoofdletters/kleine letters). Punt 2: er zit nu duidelijke lucht
       // tussen de kop en de eerste tekstregel (18 punten in plaats van 14),
       // en een iets kleinere afstand tussen het opschriftje en de kop.
+      // Opmaak afwerken, punt 1: een optionele omschrijving naast de kop
+      // (net als bij kaartvlak en in de rangordes) schuift de hoofdtekst
+      // een extra regel naar beneden.
       const kopKleur = blok.kleur === KLEUR.oker ? KLEUR.okerDiep : blok.kleur;
+      const omschrijvingH = blok.omschrijving ? 12 : 0;
       const h = hoogteVan(doc, blok.tekst, F.dm, 9, TEKST_B - 32, 3.2);
-      const totaal = h + 48;
+      const totaal = h + 48 + omschrijvingH;
       vulRechthoek(doc, x, y, TEKST_B, totaal, KLEUR.kaart, 3);
       doc.save().lineWidth(0.5).strokeColor(KLEUR.lijn).roundedRect(x, y, TEKST_B, totaal, 3).stroke().restore();
       vulRechthoek(doc, x, y, 2.6, totaal, blok.kleur, 1.3);
       kapitalen(doc, blok.opschrift, x + 16, y + 10, 6.8, kopKleur);
       doc.font(F.dmBold).fontSize(11.5).fillColor(KLEUR.inkt);
       doc.text(blok.kop, x + 16, y + 22, { width: TEKST_B - 32, lineBreak: false });
-      schrijf(doc, blok.tekst, x + 16, y + 40, TEKST_B - 32, F.dm, 9, KLEUR.inkt, 3.2);
+      if (blok.omschrijving) {
+        doc.font(F.dm).fontSize(7.6).fillColor(KLEUR.inktZacht);
+        doc.text(blok.omschrijving, x + 16, y + 35.5, { width: TEKST_B - 32, lineBreak: false });
+      }
+      schrijf(doc, blok.tekst, x + 16, y + 40 + omschrijvingH, TEKST_B - 32, F.dm, 9, KLEUR.inkt, 3.2);
       // Ingreep 3, punt 4: acht punten extra ademruimte na de kaart.
       return totaal + 14;
     }
@@ -879,6 +897,34 @@ function tekenCover(doc: Doc, rapport: T4SRapport, pagina: T4SPagina, opties: T4
   });
 }
 
+// -- Opmaak afwerken, punt 2: halflege bladen krijgen hun inhoud in het midden --
+//
+// Veel hoofdstukken zijn kort en laten het onderste deel van het blad leeg.
+// Vult de inhoud van een blad minder dan de drempel hieronder van de
+// beschikbare hoogte (tussen het einde van de kop en de bodem), dan schuift
+// het beginpunt van de inhoud naar beneden zodat het geheel verticaal in het
+// midden komt te staan. De kop, de eventuele onderkop en het streepje
+// eronder (getekend door tekenPaginakop) blijven op hun eigen plaats; alleen
+// het beginpunt van de blokken erna verschuift. Op een vervolgblad gebeurt
+// dit nooit: de inhoud sluit daar aan op wat al op het vorige blad stond, en
+// zou anders raar losstaand in het midden van het vervolgblad komen te staan.
+const HALFLEEG_DREMPEL = 0.55;
+
+/**
+ * Berekent waar de inhoud van een blad moet beginnen. Bij een vervolgblad of
+ * bij inhoud die de drempel haalt, is dat gewoon het einde van de kop
+ * (ongewijzigd). Is de inhoud korter dan de drempel van de beschikbare
+ * hoogte, dan komt het beginpunt zo veel lager te staan dat de inhoud precies
+ * verticaal gecentreerd staat tussen de kop en de bodem.
+ */
+export function berekenInhoudStart(inhoudHoogte: number, kopEindY: number, isVervolg: boolean): number {
+  if (isVervolg) return kopEindY;
+  const beschikbaar = BODEM - kopEindY;
+  if (beschikbaar <= 0 || inhoudHoogte >= beschikbaar * HALFLEEG_DREMPEL) return kopEindY;
+  const overschot = beschikbaar - inhoudHoogte;
+  return kopEindY + overschot / 2;
+}
+
 /**
  * Tekent het rapport en meldt wat er onderweg mis dreigde te gaan. De meldingen
  * komen bij die van de rapportlaag in het verslag terecht.
@@ -905,6 +951,17 @@ export function renderT4StudentsRapport(rapport: T4SRapport, opties: T4SPdfOptie
     tekenKopEnVoet(doc, rapport, bladnr);
     let y = tekenPaginakop(doc, pagina, false);
     let vervolgen = 0;
+
+    // Opmaak afwerken, punt 2: eerst meten of alle blokken van deze pagina
+    // in hun geheel op dit ene blad passen (dus geen vervolgblad nodig is),
+    // en zo ja hoeveel hoogte ze samen innemen. Alleen dan telt deze pagina
+    // als kandidaat voor verticale centrering; een pagina die toch al een
+    // vervolgblad krijgt, blijft gewoon bovenaan beginnen.
+    let totaleInhoudHoogte = 0;
+    let pastOpEenBlad = true;
+    for (const blok of pagina.blokken) totaleInhoudHoogte += blokHoogte(doc, blok);
+    if (y + totaleInhoudHoogte > BODEM) pastOpEenBlad = false;
+    if (pastOpEenBlad) y = berekenInhoudStart(totaleInhoudHoogte, y, false);
 
     for (let bi = 0; bi < pagina.blokken.length; bi++) {
       const blok = pagina.blokken[bi];

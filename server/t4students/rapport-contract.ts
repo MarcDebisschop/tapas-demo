@@ -166,8 +166,14 @@ export type T4SBlok =
    * Opmaakherstel-2: "kader" is de UITLEGKAART. Achtergrond altijd wit
    * (KLEUR.kaart), met een gekleurde balk aan de linkerrand. Hierin staat
    * alles wat het rapport uitlegt of duidt, nooit wat de student zelf zei.
+   * Het optionele veld omschrijving (Opmaak afwerken, punt 1) toont, net als
+   * in de rangordes en de constructblokken, de gewone toelichting naast een
+   * constructnaam wanneer de kop een constructnaam is (bijvoorbeeld de kaart
+   * WAT AL STERK IS op het slothoofdstuk, die van kaartvlak naar kader
+   * verhuisde zodat ze net als haar tegenhanger WAT NOG STERKER KAN wit is
+   * met een balk).
    */
-  | { soort: "kader"; opschrift: string; kop: string; tekst: string; kleur: string }
+  | { soort: "kader"; opschrift: string; kop: string; tekst: string; kleur: string; omschrijving?: string }
   /**
    * Ingreep 3 van de opdracht "Slotnoot en opmaak", contrast hersteld in
    * Opmaakherstel-2: de tweede kaartsoort, het INGETOGEN VLAK. Achtergrond
