@@ -425,8 +425,11 @@ function blokHoogte(doc: Doc, blok: T4SBlok): number {
       // Opmaakherstel-2, punt 2: hoogte groeit mee met de extra lucht tussen
       // kop en tekst. Onderdeel E2 (herstel, punt 5): een eventuele
       // omschrijving naast de kop kost een extra regel. De onderste
-      // witruimte is, net als bij "kader", met 4 punten verkleind.
-      let h = hoogteVan(doc, blok.tekst, F.dm, 9, TEKST_B - 32, 3.2) + 60;
+      // witruimte is, net als bij "kader", met 4 punten verkleind. Herstel,
+      // punt 1 en 4: bij citaatstijl staan er aanhalingstekens omheen, die
+      // tellen mee in de hoogteberekening (zie tekenBlok hieronder).
+      const kaartvlakTekstH = blok.citaatstijl ? `\u201C${blok.tekst}\u201D` : blok.tekst;
+      let h = hoogteVan(doc, kaartvlakTekstH, F.dm, 9, TEKST_B - 32, 3.2) + 60;
       if (blok.contactregel) h += 16;
       if (blok.omschrijving) h += 12;
       return h;
@@ -711,7 +714,11 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
       // tussen de kop en de hoofdtekst, net als in de rangordes.
       const opschriftKleur = blok.kleur === KLEUR.oker ? KLEUR.okerDiep : blok.kleur ?? KLEUR.accentDiep;
       const omschrijvingH = blok.omschrijving ? 12 : 0;
-      const tekstH = hoogteVan(doc, blok.tekst, F.dm, 9, TEKST_B - 32, 3.2);
+      // Herstel, punt 1 en 4: citaatstijl zet de hoofdtekst tussen
+      // aanhalingstekens en schuin, voor letterlijke, vrije tekst van de
+      // student zelf (zie de doc-comment bij het type in rapport-contract.ts).
+      const kaartvlakTekst = blok.citaatstijl ? `\u201C${blok.tekst}\u201D` : blok.tekst;
+      const tekstH = hoogteVan(doc, kaartvlakTekst, F.dm, 9, TEKST_B - 32, 3.2);
       const contactH = blok.contactregel ? 16 : 0;
       const totaal = tekstH + contactH + omschrijvingH + 48;
       vulRechthoek(doc, x, y, TEKST_B, totaal, KLEUR.okerZacht, 3);
@@ -722,7 +729,7 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
         doc.font(F.dm).fontSize(7.6).fillColor(KLEUR.inktZacht);
         doc.text(blok.omschrijving, x + 16, y + 35.5, { width: TEKST_B - 32, lineBreak: false });
       }
-      schrijf(doc, blok.tekst, x + 16, y + 40 + omschrijvingH, TEKST_B - 32, F.dm, 9, KLEUR.inkt, 3.2);
+      schrijf(doc, kaartvlakTekst, x + 16, y + 40 + omschrijvingH, TEKST_B - 32, F.dm, 9, KLEUR.inkt, 3.2, blok.citaatstijl === true);
       if (blok.contactregel) {
         doc.font(F.dmBold).fontSize(9).fillColor(KLEUR.accent);
         doc.text(blok.contactregel, x + 16, y + 40 + omschrijvingH + tekstH + 8, { width: TEKST_B - 32, lineBreak: false });

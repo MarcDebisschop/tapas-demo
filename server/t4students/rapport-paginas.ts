@@ -1098,10 +1098,13 @@ export function bouwT4StudentsRapport(
   );
 
   // ── 3. Dit hoopte je te vinden (onderdeel B2) ─────────────────────────────
-  // Het letterlijke antwoord op de open beginvraag P0, in een kader. P0 is
-  // niet verplicht: is ze niet beantwoord of enkel met witruimte beantwoord,
-  // dan komt het kader nergens op dit blad. Het blad zelf blijft bestaan; er
-  // wordt nooit een leeg kader getoond.
+  // Het letterlijke antwoord op de open beginvraag P0, in een ingetogen
+  // vlak (herstel, punt 1 en 4: dit is de eigen tekst van de student, dus
+  // hoort het in het getinte vlak zonder balk, niet in de witte uitlegkaart,
+  // en toont het schuin en tussen aanhalingstekens). P0 is niet verplicht:
+  // is ze niet beantwoord of enkel met witruimte beantwoord, dan komt het
+  // vlak nergens op dit blad. Het blad zelf blijft bestaan; er wordt nooit
+  // een leeg vlak getoond.
   const p0Tekst = (antwoorden["P0"] as { text?: string } | undefined)?.text?.trim() || "";
   const hoopteBlokken: T4SBlok[] = [
     {
@@ -1118,11 +1121,11 @@ export function bouwT4StudentsRapport(
     // opschriftje benoemt nu het soort blok ("jouw eigen woorden"), en de
     // kop die hetzelfde zei, is weggelaten.
     hoopteBlokken.push({
-      soort: "kader",
+      soort: "kaartvlak",
       opschrift: "JOUW EIGEN WOORDEN",
       kop: "",
-      kleur: KLEUR.teal,
       tekst: p0Tekst,
+      citaatstijl: true,
     });
   }
   paginas.push(

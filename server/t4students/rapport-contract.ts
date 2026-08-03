@@ -184,7 +184,11 @@ export type T4SBlok =
    * losse laatste regel onder de hoofdtekst in de accentkleur. Het optionele
    * veld omschrijving toont, net als in de rangordes en de constructblokken,
    * de gewone toelichting naast een constructnaam wanneer de kop een
-   * constructnaam is.
+   * constructnaam is. Het optionele veld citaatstijl (herstel, punt 1 en 4)
+   * zet de hoofdtekst schuin en tussen aanhalingstekens: dat is voor de
+   * letterlijke, vrije tekst die de student zelf typte (bijvoorbeeld het
+   * blad "Dit hoopte je te vinden"), in plaats van een samenvattende
+   * gedachte van het rapport zelf, die gewoon rechtop blijft staan.
    */
   | {
       soort: "kaartvlak";
@@ -194,6 +198,7 @@ export type T4SBlok =
       kleur?: string;
       contactregel?: string;
       omschrijving?: string;
+      citaatstijl?: boolean;
     }
   /**
    * Opmaakherstel-2, punt 5: het rustigste, meest ingetogen vlak van alle

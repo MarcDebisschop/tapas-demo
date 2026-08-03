@@ -36,11 +36,31 @@ function pakCase(bron: string, soort: string): string {
   return na.slice(0, volgendeCase > -1 ? volgendeCase : na.length);
 }
 
+// Herstel, punt 1 en 4: het "kaartvlak"-blok tekent zijn hoofdtekst niet
+// langer als het kale blok.tekst, maar als een tussenvariabele (bijvoorbeeld
+// kaartvlakTekst) die bij citaatstijl blok.tekst tussen aanhalingstekens
+// zet. De vindplaats hieronder is daarom verlegd: naast het letterlijke
+// "blok.tekst" wordt ook een variabele herkend die is toegekend met een
+// uitdrukking waar "blok.tekst" in voorkomt (bijvoorbeeld
+// "const kaartvlakTekst = blok.citaatstijl ? ... blok.tekst;"). De bewaakte
+// meting zelf (het aantal punten tussen kop en tekst) blijft ongewijzigd.
+function vindTekstvariabele(code: string): string | null {
+  const m = code.match(/const (\w+) = [^\n;]*blok\.tekst[^\n;]*;/);
+  return m ? m[1] : null;
+}
+
 /** Haalt het getal na "y + " uit een regel met blok.kop of blok.tekst. */
 function yOffsetVan(code: string, veld: "blok.kop" | "blok.tekst"): number {
   const regex = new RegExp(`doc\\.text\\(${veld.replace(".", "\\.")},[^\\n]*y \\+ ([0-9.]+)`);
   const schrijfRegex = new RegExp(`schrijf\\(doc, ${veld.replace(".", "\\.")},[^\\n]*y \\+ ([0-9.]+)`);
-  const m = code.match(regex) ?? code.match(schrijfRegex);
+  let m = code.match(regex) ?? code.match(schrijfRegex);
+  if (!m && veld === "blok.tekst") {
+    const variabele = vindTekstvariabele(code);
+    if (variabele) {
+      const variabeleRegex = new RegExp(`schrijf\\(doc, ${variabele},[^\\n]*y \\+ ([0-9.]+)`);
+      m = code.match(variabeleRegex);
+    }
+  }
   expect(m, `geen y-positie gevonden voor ${veld}`).not.toBeNull();
   return Number(m![1]);
 }
