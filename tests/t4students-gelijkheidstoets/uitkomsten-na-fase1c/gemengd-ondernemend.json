@@ -173,6 +173,31 @@
       "family": "Interesse",
       "recognition": 1,
       "avgEnergy": null
+    },
+    "Autonomie": {
+      "family": "Motivatie",
+      "recognition": 0,
+      "avgEnergy": null
+    },
+    "Competentie": {
+      "family": "Motivatie",
+      "recognition": 0,
+      "avgEnergy": null
+    },
+    "Verbondenheid": {
+      "family": "Motivatie",
+      "recognition": 0,
+      "avgEnergy": null
+    },
+    "Erkenning": {
+      "family": "Motivatie",
+      "recognition": 0,
+      "avgEnergy": null
+    },
+    "Verwachting": {
+      "family": "Motivatie",
+      "recognition": 0,
+      "avgEnergy": null
     }
   },
   "foci": {
@@ -508,7 +533,7 @@
   },
   "betrouwbaarheid": {
     "beantwoord": 31,
-    "totaalItems": 34,
+    "totaalItems": 39,
     "totaalSignaal": 27,
     "voorlopigDrempel": 20,
     "voorlopig": false
@@ -523,5 +548,10 @@
   },
   "studeerstijl": {
     "keuze": "overzicht"
+  },
+  "motivatie": {
+    "intrinsiek": 0,
+    "extrinsiek": 0,
+    "balansLabel": "evenwichtig"
   }
 }

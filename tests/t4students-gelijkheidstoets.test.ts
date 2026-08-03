@@ -214,6 +214,11 @@ const TOEGESTANE_AFWIJKINGEN: { reden: string; patroon: RegExp }[] = [
     reden: "J. drivers.energielabels: het energiesaldo van een driver krijgt een eigen woord",
     patroon: /^[^.]+\.drivers\.energielabels(\..+)?$/,
   },
+  {
+    reden:
+      "K. motivatie: nieuwe motivatiebalans en haar vijf constructScores, de bron kende deze laag niet (fase 1b)",
+    patroon: /^[^.]+\.(motivatie(\..+)?|constructScores\.(Autonomie|Competentie|Verbondenheid|Erkenning|Verwachting))$/,
+  },
 ];
 
 /** Elk pad waarop twee uitvoerbomen van elkaar verschillen. */
@@ -326,8 +331,9 @@ describe("gelijkheidstoets deel 1: tegen de originele motor, met benoemde uitzon
       "H. constructScores: geen energiegetal waar geen energie gemeten is (motorronde punt 4), en het gemengde getal bestaat niet meer": 639,
       "I. energie.kaart: een onbeantwoord item heet niet langer neutraal (motorronde punt 4)": 27,
       "J. drivers.energielabels: het energiesaldo van een driver krijgt een eigen woord": 17,
+      "K. motivatie: nieuwe motivatiebalans en haar vijf constructScores, de bron kende deze laag niet (fase 1b)": 102,
     });
-    expect(totaal).toBe(2127);
+    expect(totaal).toBe(2229);
   });
 
   it("de veranderde balanslabels zijn precies de constructen met meer dan een bron", () => {
