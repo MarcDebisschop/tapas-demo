@@ -51,7 +51,7 @@ import {
 
 // ── Vaste teksten uit de blauwdruk, letterlijk ──────────────────────────────
 
-const ONEPAGE_ONDERTITEL = "Drie lagen, elk met een eigen rangorde en een eigen energie.";
+const ONEPAGE_ONDERTITEL = "Drie lagen, elk met een eigen indeling in groepen en een eigen energie.";
 
 const ONEPAGE_INTRO =
   "Deze pagina zet je drie lagen onder elkaar: waarin je je talent inzet, hoe je het doet, " +
@@ -736,13 +736,18 @@ export function bouwT4StudentsRapport(
   const beeld = rangschik(inst, resultaat, antwoorden, FAM_BEELD);
 
   // De volgorde van de rapportlaag naast die van de motor leggen. Verschilt ze,
-  // dan moet dat gemeld worden en niet weggemoffeld.
+  // dan moet dat gemeld worden en niet weggemoffeld. Sinds herstelronde 2,
+  // punt B toont het rapport geen genummerde rangorde meer aan de student,
+  // maar de motor rangschikt intern nog altijd op aandeel (kompas-scoring.ts)
+  // en die volgorde moet nog steeds gelijklopen met de rapportlaag: anders
+  // klopt de indeling in groepen (sterk aanwezig / middenveld / minder
+  // aanwezig) niet met wat de motor als voorlopig oordeel meegeeft.
   const vergelijk = (eigen: T4SDimensie, motor: string[], naam: string) => {
     const mijn = eigen.gerangschikt.map((r) => r.construct);
     const hunne = motor.filter((c) => mijn.includes(c));
     if (mijn.join("|") !== hunne.join("|")) {
       meldingen.push(
-        `De rangorde van ${naam} op papier wijkt af van die van de motor. Papier: ${mijn.join(", ")}. ` +
+        `De volgorde van ${naam} op papier wijkt af van die van de motor. Papier: ${mijn.join(", ")}. ` +
           `Motor: ${hunne.join(", ")}. Oorzaak is het schalen van de herkenning naar 0 tot 3.`,
       );
     }
@@ -803,13 +808,15 @@ export function bouwT4StudentsRapport(
             "is Niet ik, drie blokjes is Helemaal ik. Energie is een balkje dat in het midden begint: " +
             "naar rechts betekent dat het je energie geeft, naar links dat het je energie kost.",
         },
-        { soort: "tussenkop", tekst: "2. Wat de rangorde betekent" },
+        { soort: "tussenkop", tekst: "2. Wat de groepen betekenen" },
         {
           soort: "alinea",
           tekst:
-            "Bij elk onderdeel staan de constructen op volgorde. Nummer 1 is niet beter dan nummer 6. " +
-            "Het betekent alleen: hier herken je jezelf het sterkst. Een lage plaats is geen tekort en " +
-            "geen zwakte. Ze zegt waar op dit moment minder van jou in zit.",
+            "Bij elk onderdeel staan de constructen in een van drie groepen: sterk aanwezig, " +
+            "middenveld of minder aanwezig. Sterk aanwezig is niet beter dan minder aanwezig. Het " +
+            "betekent alleen: hier herken je jezelf het sterkst. Een plaats in het middenveld of " +
+            "minder aanwezig is geen tekort en geen zwakte. Ze zegt waar op dit moment minder van jou " +
+            "in zit.",
         },
         { soort: "tussenkop", tekst: "3. Waar de cijfers vandaan komen" },
         {
@@ -823,8 +830,8 @@ export function bouwT4StudentsRapport(
           soort: "alinea",
           tekst:
             "Is er binnen een onderdeel iets niet ingevuld, dan krijgt dat onderdeel geen score en " +
-            "geen plaats in de rangorde. Er wordt niets ingeschat en niets gemiddeld. Er staat dan " +
-            "Te weinig antwoorden.",
+            "geen groep. Er wordt niets ingeschat en niets gemiddeld. Er staat dan Te weinig " +
+            "antwoorden.",
         },
       ],
       "Drie dingen die je nodig hebt om de rest te begrijpen.",
@@ -860,14 +867,16 @@ export function bouwT4StudentsRapport(
   const zonderOordeel = [foci, versnellers, drivers].flatMap((dim) =>
     dim.zonderOordeel.map((r) => r.construct),
   );
-  const naschrift: string[] =
-    zonderOordeel.length === 0
+  const naschrift: string[] = [
+    GROEP_UITLEG,
+    ...(zonderOordeel.length === 0
       ? []
       : [
           `Van ${lijst(zonderOordeel)} is nog niet alles ingevuld. Daarom staat er geen score bij ` +
-            `en geen plaats in de rangorde. Zodra je die vragen beantwoordt, ${staan(zonderOordeel.length)} ` +
+            `en geen groep. Zodra je die vragen beantwoordt, ${staan(zonderOordeel.length)} ` +
             `${zonderOordeel.length === 1 ? "dat onderdeel" : "die onderdelen"} er vanzelf bij.`,
-        ];
+        ]),
+  ];
   paginas.push(
     pagina(
       4,
@@ -1176,7 +1185,7 @@ export function bouwT4StudentsRapport(
               "minder stuurt. Hieronder staat wat de sterkste driver doet als hij te hard duwt, en wat " +
               "de zwakst herkende patronen over je zeggen."
             : "Laag betekent hier niet zwak. Het betekent dat dit minder van jou is dan de rest. Je " +
-              "vermogen zit ergens anders, en dat is precies wat een rangorde laat zien.",
+              "vermogen zit ergens anders, en dat is precies wat de indeling in groepen laat zien.",
       },
     ];
     for (const r of drieLaag) {

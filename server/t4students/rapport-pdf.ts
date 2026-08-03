@@ -324,10 +324,18 @@ function blokHoogte(doc: Doc, blok: T4SBlok): number {
     case "tussenkop":
       return hoogteVan(doc, blok.tekst, F.dmBold, 9.6, TEKST_B, 2) + 14;
     case "banden": {
+      // Herstelronde 2, punt B: ook hier geen platte rijenlijst meer, maar
+      // de drie groepen (sterk aanwezig, middenveld, minder aanwezig) per
+      // band, elk met een eigen kopje.
       let h = 0;
       for (const band of blok.banden) {
-        h += 17 + 11 + hoogteRijen(band.rijen) + 13;
+        h += 17 + 11;
         if (band.noot) h += 11;
+        const groepen = groepeerOpAandeel(band.rijen);
+        for (const g of groepen) h += GROEPKOP_H + hoogteRijen(g.rijen) + 8;
+        const nietIngevuld = band.rijen.filter((r) => r.groep == null);
+        if (nietIngevuld.length > 0) h += hoogteRijen(nietIngevuld) + 8;
+        h += 13;
       }
       for (const r of blok.legende) h += hoogteVan(doc, r, F.dm, 7.6, TEKST_B, 2.4) + 3;
       for (const r of blok.naschrift) h += hoogteVan(doc, r, F.dm, 8, TEKST_B, 2.8) + 5;
@@ -441,10 +449,18 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
           doc.text(band.noot, x + 18, yy, { width: TEKST_B - 18, lineBreak: false, oblique: SCHUIN });
           yy += 11;
         }
-        yy += tekenRijkoppen(doc, x, yy) - 11;
-        yy += 11;
-        tekenHaken(doc, band.rijen, x, yy);
-        for (const rij of band.rijen) yy += tekenRij(doc, rij, x, yy, band.kleur);
+        const groepen = groepeerOpAandeel(band.rijen);
+        for (const g of groepen) {
+          yy += tekenGroepkop(doc, g, x, yy);
+          tekenHaken(doc, g.rijen, x, yy);
+          for (const rij of g.rijen) yy += tekenRij(doc, rij, x, yy, band.kleur);
+          yy += 8;
+        }
+        const nietIngevuld = band.rijen.filter((r) => r.groep == null);
+        if (nietIngevuld.length > 0) {
+          for (const rij of nietIngevuld) yy += tekenRij(doc, rij, x, yy, band.kleur);
+          yy += 8;
+        }
         yy += 3;
         lijn(doc, x, yy, x + TEKST_B, yy, KLEUR.lijn);
         yy += 10;
