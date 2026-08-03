@@ -21,12 +21,18 @@ import type { T4SPagina } from "../server/t4students/rapport-contract";
 // toch in het tweede lijstje verschijnen. De strekking van de test blijft
 // exact dezelfde waarborg: de uitlegzin staat letterlijk en vlak voor het
 // blok "Wat nu al sterk is".
+//
+// Opdracht-verwijzingen.md, punt 2: "de groepen hierboven" verwees naar
+// niets, want op dit blad staan geen groepen. Vervangen door "de groepen op
+// de bladen hiervoor". Ook hier verandert alleen de letterlijke tekst zelf;
+// de waarborg (zin staat letterlijk en vlak voor "Wat nu al sterk is")
+// blijft exact gelden.
 // ---------------------------------------------------------------------------
 
 const UITLEG_TEKST =
-  "De twee lijstjes hieronder komen niet uit de groepen hierboven, maar uit de verhouding tussen hoeveel je " +
-  "iets in jezelf herkent en hoeveel energie het je geeft. Daarom kan iets bij de sterk aanwezige onderdelen " +
-  "staan en toch in het tweede lijstje verschijnen.";
+  "De twee lijstjes hieronder komen niet uit de groepen op de bladen hiervoor, maar uit de verhouding tussen " +
+  "hoeveel je iets in jezelf herkent en hoeveel energie het je geeft. Daarom kan iets bij de sterk aanwezige " +
+  "onderdelen staan en toch in het tweede lijstje verschijnen.";
 
 function vindBlad(paginas: T4SPagina[]): T4SPagina {
   const blad = paginas.find((p) => /^in één zin$/i.test(p.titel));

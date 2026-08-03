@@ -71,7 +71,8 @@ const ONEPAGE_LEGENDE = [
     "remmend, een streepje is neutraal.",
 ];
 
-const BAND_NOOT_FOCI = "TaPas-BEELD hoort hier niet bij; dat lees je apart op pagina 5.";
+const BAND_NOOT_FOCI =
+  "TaPas-BEELD hoort hier niet bij; dat lees je apart op het blad Jouw beeld van jezelf.";
 
 // Herstelronde 2, punt B: vaste tekst, letterlijk overnemen, bij elke plaats
 // waar de drie groepen (sterk aanwezig, middenveld, minder aanwezig)
@@ -392,9 +393,9 @@ const D_TE_WEINIG =
 // woord "rangorde" niet meer in wat een student ziet. Vaste tekst, letterlijk
 // overnemen uit opdracht-herstelronde-2.md.
 const D2_UITLEG =
-  "De twee lijstjes hieronder komen niet uit de groepen hierboven, maar uit de verhouding tussen hoeveel je " +
-  "iets in jezelf herkent en hoeveel energie het je geeft. Daarom kan iets bij de sterk aanwezige onderdelen " +
-  "staan en toch in het tweede lijstje verschijnen.";
+  "De twee lijstjes hieronder komen niet uit de groepen op de bladen hiervoor, maar uit de verhouding tussen " +
+  "hoeveel je iets in jezelf herkent en hoeveel energie het je geeft. Daarom kan iets bij de sterk aanwezige " +
+  "onderdelen staan en toch in het tweede lijstje verschijnen.";
 
 // Herstelronde 2, punt C: telwoorden tot en met zes, want een familie telt
 // hoogstens zes constructen. Alleen nodig om te melden hoeveel constructen
@@ -1092,7 +1093,8 @@ export function bouwT4StudentsRapport(
           soort: "intro",
           tekst:
             "TaPas-BEELD gaat niet over wat je kunt, maar over hoe helder je eigen beeld op dit moment " +
-            "is. Daarom staat het niet bij de drie lagen op pagina 3, maar hier apart.",
+            "is. Daarom staat het niet bij de drie lagen op het blad Jouw talentmotor in één oogopslag, " +
+            "maar hier apart.",
         },
         {
           soort: "rangtabel",
