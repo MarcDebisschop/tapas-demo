@@ -12,12 +12,21 @@ import type { T4SPagina } from "../server/t4students/rapport-contract";
 // tussen herkenning en energie. Zonder die uitleg lijkt het net alsof een
 // construct dat hoog in de rangorde staat, nooit in het tweede lijstje kan
 // staan, wat niet klopt.
+//
+// Herstelronde 2, punt D: de rangorde bestaat niet meer als iets dat een
+// student ziet (Punt B verving elke genummerde rangorde door drie groepen
+// op aandeel). Punt D schrijft daarom letterlijk voor dat deze tekst het
+// woord "rangorde" vervangt door "groepen": een construct kan bij de sterk
+// aanwezige onderdelen staan (in plaats van "hoog in de rangorde staan") en
+// toch in het tweede lijstje verschijnen. De strekking van de test blijft
+// exact dezelfde waarborg: de uitlegzin staat letterlijk en vlak voor het
+// blok "Wat nu al sterk is".
 // ---------------------------------------------------------------------------
 
 const UITLEG_TEKST =
-  "De twee lijstjes hieronder komen niet uit de rangorde, maar uit de verhouding tussen hoeveel je " +
-  "iets in jezelf herkent en hoeveel energie het je geeft. Daarom kan iets hoog in je rangorde staan " +
-  "en toch in het tweede lijstje verschijnen.";
+  "De twee lijstjes hieronder komen niet uit de groepen hierboven, maar uit de verhouding tussen hoeveel je " +
+  "iets in jezelf herkent en hoeveel energie het je geeft. Daarom kan iets bij de sterk aanwezige onderdelen " +
+  "staan en toch in het tweede lijstje verschijnen.";
 
 function vindBlad(paginas: T4SPagina[]): T4SPagina {
   const blad = paginas.find((p) => /^in één zin$/i.test(p.titel));

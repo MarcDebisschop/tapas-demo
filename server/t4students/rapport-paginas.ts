@@ -369,7 +369,8 @@ function kiezenBlokken(resultaat: T4SResultaat, drivers: T4SDimensie): T4SBlok[]
 // ── Onderdeel D: het blad "In één zin" ────────────────────────────────────────
 //
 // De vaste bouwstenen per familie, letterlijk uit de opdracht. Ze worden
-// uitsluitend gekozen op basis van de bestaande rangorde (rang 1), nooit
+// gekozen via sterksteUitGroep: het hoogste aandeel binnen de groep sterk
+// aanwezig, met terugval op het middenveld (herstelronde 2, punt C), nooit
 // opnieuw berekend.
 // De bouwstenen zelf staan niet hier, maar in server/data/t4students-rapportteksten.json,
 // zodat elke constructnaam als sleutel maar op een plaats voorkomt (zie
@@ -386,11 +387,14 @@ const D_TE_WEINIG =
   "Er is nog te weinig ingevuld om deze zin te bouwen. De losse onderdelen hiervóór in dit rapport " +
   "blijven wel staan; alleen deze samenvattende zin niet.";
 
-// Herstelronde, punt 5. Vaste tekst, letterlijk overnemen.
+// Herstelronde, punt 5, herzien in herstelronde 2, punt D: nu Punt B de
+// genummerde rangorde overal heeft vervangen door drie groepen, bestaat het
+// woord "rangorde" niet meer in wat een student ziet. Vaste tekst, letterlijk
+// overnemen uit opdracht-herstelronde-2.md.
 const D2_UITLEG =
-  "De twee lijstjes hieronder komen niet uit de rangorde, maar uit de verhouding tussen hoeveel je " +
-  "iets in jezelf herkent en hoeveel energie het je geeft. Daarom kan iets hoog in je rangorde staan " +
-  "en toch in het tweede lijstje verschijnen.";
+  "De twee lijstjes hieronder komen niet uit de groepen hierboven, maar uit de verhouding tussen hoeveel je " +
+  "iets in jezelf herkent en hoeveel energie het je geeft. Daarom kan iets bij de sterk aanwezige onderdelen " +
+  "staan en toch in het tweede lijstje verschijnen.";
 
 // Herstelronde 2, punt C: telwoorden tot en met zes, want een familie telt
 // hoogstens zes constructen. Alleen nodig om te melden hoeveel constructen
@@ -497,11 +501,12 @@ function eenZinBlokken(
   const latentOnderbenut = alleDimensies.flatMap((d) =>
     d.gerangschikt.filter((r) => r.leeswoord === "latent" || r.leeswoord === "onderbenut"),
   );
-  // Herstelronde, punt 5: zonder uitleg lijkt het een rekenfout dat een
-  // construct hoog in de rangorde staat en toch in het tweede lijstje
-  // verschijnt. De twee lijstjes komen niet uit de rangorde, maar uit de
-  // verhouding tussen herkenning en energie (het balanslabel), een andere
-  // berekening dan de rangorde hierboven in de zin.
+  // Herstelronde, punt 5, tekst herzien in herstelronde 2, punt D: zonder
+  // uitleg lijkt het een rekenfout dat een construct bij de sterk aanwezige
+  // onderdelen staat en toch in het tweede lijstje verschijnt. De twee
+  // lijstjes komen niet uit de groepen hierboven, maar uit de verhouding
+  // tussen herkenning en energie (het balanslabel), een andere berekening
+  // dan het aandeel dat de groepen hierboven bepaalt.
   if (kernsterktes.length > 0 || latentOnderbenut.length > 0) {
     blokken.push({ soort: "alinea", tekst: D2_UITLEG });
   }
@@ -526,8 +531,9 @@ function eenZinBlokken(
 //
 // Sluit de cirkel met B2: het letterlijke antwoord op P0 komt hier terug,
 // samen met de twee sterkste talent-foci, de sterkste versneller en het
-// sterkste interessegebied, uitsluitend uit de bestaande rangorde. Nooit de
-// suggestie wekken dat de vraag van de student hiermee beantwoord is.
+// sterkste interessegebied, uitsluitend uit de groep sterk aanwezig, op het
+// aandeel (herstelronde 2, punt C). Nooit de suggestie wekken dat de vraag
+// van de student hiermee beantwoord is.
 const WAT_JE_HIER_ZOCHT_SLOT =
   "Dit rapport beantwoordt je eigen vraag niet rechtstreeks. Het legt ernaast wat uit je antwoorden " +
   "naar voren komt. Wat je daarmee doet, beslis jij.";
