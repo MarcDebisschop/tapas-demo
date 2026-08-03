@@ -151,11 +151,80 @@ export type T4SBlok =
       kleur: string;
       duiding: string;
     }
-  | { soort: "citaat"; kop: string; kleur: string; regels: T4SCitaatRegel[] }
+  /**
+   * Opmaakherstel-2 van de opdracht "Herstelronde opmaak": "citaat" is het
+   * ingetogen vlak, altijd in de warme lichte tint en zonder balk. Het toont
+   * wat de student zelf zei: het antwoord (T4SCitaatRegel.herkenning) komt
+   * schuin en tussen aanhalingstekens op het papier, precies zoals in het
+   * referentiebeeld.
+   */
+  | { soort: "citaat"; kop: string; opschrift: string; kleur: string; regels: T4SCitaatRegel[] }
   | { soort: "batterij"; waarde: number | null; zin: string }
   | { soort: "kolommen"; kopLinks: string; kopRechts: string; links: T4SCitaatRegel[]; rechts: T4SCitaatRegel[] }
   | { soort: "opsomming"; kop: string | null; punten: string[] }
-  | { soort: "kader"; kop: string; tekst: string; kleur: string }
+  /**
+   * Opmaakherstel-2: "kader" is de UITLEGKAART. Achtergrond altijd wit
+   * (KLEUR.kaart), met een gekleurde balk aan de linkerrand. Hierin staat
+   * alles wat het rapport uitlegt of duidt, nooit wat de student zelf zei.
+   * Het optionele veld omschrijving (Opmaak afwerken, punt 1) toont, net als
+   * in de rangordes en de constructblokken, de gewone toelichting naast een
+   * constructnaam wanneer de kop een constructnaam is (bijvoorbeeld de kaart
+   * WAT AL STERK IS op het slothoofdstuk, die van kaartvlak naar kader
+   * verhuisde zodat ze net als haar tegenhanger WAT NOG STERKER KAN wit is
+   * met een balk).
+   */
+  | { soort: "kader"; opschrift: string; kop: string; tekst: string; kleur: string; omschrijving?: string }
+  /**
+   * Ingreep 3 van de opdracht "Slotnoot en opmaak", contrast hersteld in
+   * Opmaakherstel-2: de tweede kaartsoort, het INGETOGEN VLAK. Achtergrond
+   * altijd de warme lichte tint (KLEUR.okerZacht), zonder gekleurde balk aan
+   * de linkerrand. Bedoeld voor wat de student zelf zei of voor een
+   * samenvattende gedachte, ter afwisseling met de uitlegkaarten ("kader",
+   * en "citaat" hierboven, die beide uitleg geven). Draagt, net als de
+   * uitlegkaart, een verplicht opschriftje in kleine kapitalen boven de kop.
+   * Het opschriftje kleurt standaard inkt, niet oker: oker blijft
+   * voorbehouden aan nuance en keerzijde. Alleen waar dit vlak zelf een
+   * nuance is (bijvoorbeeld een aandachtspunt in de eigen woorden van de
+   * student), geeft de aanroeper kleur: KLEUR.oker mee. Het optionele veld
+   * contactregel tekent, zoals op de dankkaart van het slothoofdstuk, een
+   * losse laatste regel onder de hoofdtekst in de accentkleur. Het optionele
+   * veld omschrijving toont, net als in de rangordes en de constructblokken,
+   * de gewone toelichting naast een constructnaam wanneer de kop een
+   * constructnaam is. Het optionele veld citaatstijl (herstel, punt 1 en 4)
+   * zet de hoofdtekst schuin en tussen aanhalingstekens: dat is voor de
+   * letterlijke, vrije tekst die de student zelf typte (bijvoorbeeld het
+   * blad "Dit hoopte je te vinden"), in plaats van een samenvattende
+   * gedachte van het rapport zelf, die gewoon rechtop blijft staan.
+   */
+  | {
+      soort: "kaartvlak";
+      opschrift: string;
+      kop: string;
+      tekst: string;
+      kleur?: string;
+      contactregel?: string;
+      omschrijving?: string;
+      citaatstijl?: boolean;
+    }
+  /**
+   * Opmaakherstel-2, punt 5: het rustigste, meest ingetogen vlak van alle
+   * kaartsoorten. Toont uitsluitend een zin, gecentreerd, schuin gezet en
+   * tussen aanhalingstekens, in de warme lichte tint, zonder balk, zonder
+   * opschriftje en zonder kop. Gebruikt voor de grote samenvattende zin op
+   * het slothoofdstuk "Een zin om mee te nemen": in het referentiebeeld is
+   * dat het rustigste en mooiste vlak, en het spaart de ruimte uit die
+   * eerder ging naar een opschrift, een kop én een decoratief
+   * aanhalingsteken tegelijk.
+   */
+  | { soort: "zinvlak"; tekst: string }
+  /**
+   * Opmaakherstel-2, punt 5: een enkele, kleine regel in de tekstgrootte van
+   * voetnoten en labels. Gebruikt om twee of meer losse verklarende zinnen
+   * samen te voegen tot één compacte regel, zonder de tekst zelf te
+   * wijzigen (de aanroeper voegt de zinnen samen, dit blok tekent ze enkel
+   * kleiner dan een gewone alinea).
+   */
+  | { soort: "kleinschrift"; tekst: string }
   | { soort: "paren"; paren: { label: string; waarde: string }[] }
   | { soort: "vragen"; kop: string; vragen: string[] }
   | { soort: "ruimte"; hoogte: number };
@@ -186,6 +255,18 @@ export interface T4SRapport {
 }
 
 // ── Kleuren, uit de huisstijl van T4Students ────────────────────────────────
+//
+// Ingreep 3 van de opdracht "Slotnoot en opmaak": naast het bestaande accent
+// (roodbruin, accent/accentDiep/accentZacht) krijgt oker een vaste, tweede
+// betekenis als accentkleur: nuance, keerzijde, aandachtspunt, twijfel. Oker
+// bestond al als kleur van de familie Interesse (kleurVanFamilie) en van het
+// citaatblok "Hier zei je ja tegen" op het interesse-hoofdstuk; die twee
+// bestaande toepassingen blijven ongewijzigd. Nieuw is uitsluitend de
+// constante okerDiep, naar het voorbeeld van accentDiep, voor opschriftjes en
+// koppen in een okeren kaart: die hebben een donkerder tint nodig dan de
+// vlakkleur oker om leesbaar te blijven, precies zoals accentDiep dat al voor
+// het bestaande accent doet. Er komt met opzet geen tweede nieuwe kleurwaarde
+// bij: alle andere plekken hergebruiken oker of okerZacht zoals ze al bestonden.
 export const KLEUR = {
   papier: "#FBF6EE",
   papier2: "#F4EAD9",
@@ -197,6 +278,7 @@ export const KLEUR = {
   accentDiep: "#A94B2D",
   accentZacht: "#F7E7DE",
   oker: "#E0A52E",
+  okerDiep: "#9C6A16",
   okerZacht: "#FDF3DC",
   teal: "#3E7CA6",
   tealZacht: "#E0EFF8",
@@ -783,12 +865,23 @@ export const PAGINAPLAN: { nr: number; titel: string; basis: boolean }[] = [
   { nr: 24, titel: "Jouw specifieke positie", basis: false },
   { nr: 25, titel: "Aandachtspunten", basis: false },
   { nr: 26, titel: "Een eerste stap", basis: true },
-  { nr: 27, titel: "In één zin", basis: true },
+  // Nr 27: droeg oorspronkelijk ook de grote samenvattende zin, maar sinds
+  // het nieuwe slothoofdstuk (nr 30) die zin al toont, stond ze twee keer in
+  // hetzelfde rapport. De zin staat voortaan alleen nog in het citaatvlak van
+  // nr 30; hier blijven de twee lijstjes over wat vlot gaat en wat energie
+  // kost, vandaar de nieuwe titel die dekt wat er nog staat.
+  { nr: 27, titel: "Wat vlot gaat en wat energie kost", basis: true },
   { nr: 28, titel: "Wat je hier zocht", basis: true },
   { nr: 29, titel: "Voor wie meeleest, slot", basis: true },
-  { nr: 30, titel: "Verantwoording en grenzen", basis: true },
-  { nr: 31, titel: "Waarop dit rapport gebouwd is", basis: true },
-  { nr: 32, titel: "Alles wat je zelf antwoordde over je talent-foci", basis: true },
-  { nr: 33, titel: "Alles wat je zelf antwoordde over je talent-versnellers", basis: true },
-  { nr: 34, titel: "Alles wat je zelf antwoordde over je drivers", basis: true },
+  // Nr 30 is het nieuwe slothoofdstuk van de opdracht Slotnoot en opmaak: het
+  // vat samen wat hiervoor al stond en beweert niets nieuws. Het staat na
+  // Voor wie meeleest, slot en voor de bijlagen met de eigen antwoorden, en
+  // voor de hoofdstukken met de onderbouwing en de bronnen, die daarom nu
+  // helemaal achteraan staan.
+  { nr: 30, titel: "Een zin om mee te nemen", basis: true },
+  { nr: 31, titel: "Alles wat je zelf antwoordde over je talent-foci", basis: true },
+  { nr: 32, titel: "Alles wat je zelf antwoordde over je talent-versnellers", basis: true },
+  { nr: 33, titel: "Alles wat je zelf antwoordde over je drivers", basis: true },
+  { nr: 34, titel: "Verantwoording en grenzen", basis: true },
+  { nr: 35, titel: "Waarop dit rapport gebouwd is", basis: true },
 ];

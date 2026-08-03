@@ -10,9 +10,19 @@ import type { T4SPagina } from "../server/t4students/rapport-contract";
 //
 // Vlak na "Hoe je dit rapport leest" komt een nieuw blad met de kop
 // "Dit hoopte je te vinden". Het toont het letterlijke antwoord op de
-// beginvraag P0, in een kader. Is P0 niet beantwoord, dan komt het kader
-// nergens op het blad, en het blad zelf blijft wel bestaan (het is de
-// bladzijde net na de leeswijzer), maar zonder kader.
+// beginvraag P0. Is P0 niet beantwoord, dan komt er nergens een blok met dat
+// antwoord op het blad, en het blad zelf blijft wel bestaan (het is de
+// bladzijde net na de leeswijzer), maar zonder dat blok.
+//
+// Opmaakherstel-2, punt 1 en 4 (vindplaats verlegd, bewaakte tekst en
+// aanwezigheidsgedrag behouden): dit is de eigen, letterlijke tekst van de
+// student, dus hoort ze thuis in het INGETOGEN VLAK ("kaartvlak", getint,
+// zonder balk, schuin en tussen aanhalingstekens), niet langer in de witte
+// UITLEGKAART ("kader"). De oorspronkelijke test keek naar b.soort ===
+// "kader"; dat is verlegd naar "kaartvlak". De bewaakte inhoud (het
+// letterlijke antwoord verschijnt wanneer P0 beantwoord is, en het blok
+// ontbreekt volledig wanneer P0 niet of alleen met witruimte beantwoord is)
+// is ongewijzigd.
 // ---------------------------------------------------------------------------
 
 function bouw(antwoorden: Record<string, unknown>) {
@@ -41,33 +51,33 @@ describe("het blad Dit hoopte je te vinden toont het letterlijke antwoord op P0"
     expect(posBlad).toBe(posLeeswijzer + 1);
   });
 
-  it("toont het letterlijke antwoord op P0 in een kader wanneer P0 beantwoord is", () => {
+  it("toont het letterlijke antwoord op P0 in het ingetogen vlak (kaartvlak) wanneer P0 beantwoord is", () => {
     const antwoorden = {
       ...VOORBEELDAFNAME.antwoorden,
       P0: { text: "Ik hoop te weten of ik beter wetenschappen of kunst kan kiezen." },
     };
     const rapport = bouw(antwoorden as unknown as Record<string, unknown>);
     const blad = vindBlad(rapport.paginas)!;
-    const kader = blad.blokken.find(
-      (b) => b.soort === "kader" && /ik hoop te weten of ik beter wetenschappen of kunst kan kiezen/i.test(b.tekst),
+    const vlak = blad.blokken.find(
+      (b) => b.soort === "kaartvlak" && /ik hoop te weten of ik beter wetenschappen of kunst kan kiezen/i.test(b.tekst),
     );
-    expect(kader, "geen kader met het letterlijke antwoord gevonden").toBeDefined();
+    expect(vlak, "geen kaartvlak met het letterlijke antwoord gevonden").toBeDefined();
   });
 
-  it("laat het kader volledig weg wanneer P0 niet beantwoord is", () => {
+  it("laat het ingetogen vlak volledig weg wanneer P0 niet beantwoord is", () => {
     const antwoorden = { ...VOORBEELDAFNAME.antwoorden } as Record<string, unknown>;
     delete (antwoorden as Record<string, unknown>).P0;
     const rapport = bouw(antwoorden);
     const blad = vindBlad(rapport.paginas)!;
-    const kader = blad.blokken.find((b) => b.soort === "kader");
-    expect(kader).toBeUndefined();
+    const vlak = blad.blokken.find((b) => b.soort === "kaartvlak");
+    expect(vlak).toBeUndefined();
   });
 
-  it("laat het kader ook weg wanneer P0 een lege of enkel witruimte tekst heeft", () => {
+  it("laat het ingetogen vlak ook weg wanneer P0 een lege of enkel witruimte tekst heeft", () => {
     const antwoorden = { ...VOORBEELDAFNAME.antwoorden, P0: { text: "   " } };
     const rapport = bouw(antwoorden as unknown as Record<string, unknown>);
     const blad = vindBlad(rapport.paginas)!;
-    const kader = blad.blokken.find((b) => b.soort === "kader");
-    expect(kader).toBeUndefined();
+    const vlak = blad.blokken.find((b) => b.soort === "kaartvlak");
+    expect(vlak).toBeUndefined();
   });
 });

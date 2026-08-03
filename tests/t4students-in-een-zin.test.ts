@@ -9,9 +9,26 @@ import rapportteksten from "../server/data/t4students-rapportteksten.json";
 // ---------------------------------------------------------------------------
 // Onderdeel D van de opdracht "Studiekompas persoonlijk maken".
 //
-// Een blad "In één zin" met een vaste zinsbouw uit bouwstenen (D1), en twee
-// blokken "Wat nu al sterk is" / "Wat sterker kan worden" (D2), die uitsluitend
-// de bestaande balanslabels kernsterkte / latent / onderbenut aflezen.
+// Oorspronkelijk bouwde deze opdracht een blad "In één zin" met zowel een
+// vaste zinsbouw uit bouwstenen (D1) als twee blokken "Wat nu al sterk is" /
+// "Wat sterker kan worden" (D2), die uitsluitend de bestaande balanslabels
+// kernsterkte / latent / onderbenut aflezen.
+//
+// OPMAAKHERSTEL (2026-08-03), PUNT 2: het latere slothoofdstuk "Een zin om
+// mee te nemen" toont dezelfde D1-zin nog eens in zijn citaatvlak, waardoor
+// de student ze twee keer las. De zin (D1) is daarom verhuisd: ze staat nu
+// alleen nog in het citaatvlak van het slothoofdstuk. Het blad van deze test
+// heet voortaan "Wat vlot gaat en wat energie kost" en toont alleen nog D2,
+// de twee lijstjes. Deze test bewaakt daarom de D1-zin nog steeds letterlijk
+// met dezelfde teksten als voorheen, maar nu op de nieuwe plaats (het
+// citaatvlak van het slothoofdstuk); alleen de vindplaats is aangepast, niet
+// de bewaakte tekst zelf. De tests over D2 ("Wat nu al sterk is") blijven
+// ongewijzigd op het eigen blad.
+//
+// OPMAAKHERSTEL-2, PUNT 5: het "citaat"-blok is op het slothoofdstuk
+// vervangen door het nieuwe, rustigere "zinvlak" (geen opschrift, geen kop,
+// alleen de zin zelf). De vindplaats in deze test is daarom verlegd naar
+// "zinvlak"; de bewaakte tekst zelf verandert niet.
 // ---------------------------------------------------------------------------
 
 function bouw(antwoorden: Record<string, unknown>) {
@@ -24,8 +41,21 @@ function bouw(antwoorden: Record<string, unknown>) {
   });
 }
 
+/** Het blad met de twee lijstjes (D2), vroeger "In één zin", nu "Wat vlot gaat en wat energie kost". */
 function vindBlad(paginas: T4SPagina[]): T4SPagina | undefined {
-  return paginas.find((p) => /^in één zin$/i.test(p.titel));
+  return paginas.find((p) => /^wat vlot gaat en wat energie kost$/i.test(p.titel));
+}
+
+/** Het slothoofdstuk waarin de D1-zin nu als citaatvlak staat. */
+function vindSlot(paginas: T4SPagina[]): T4SPagina | undefined {
+  return paginas.find((p) => /een zin om mee te nemen/i.test(p.titel));
+}
+
+/** De letterlijke tekst van de D1-zin uit het zinvlak van het slothoofdstuk. */
+function vindZinUitSlot(paginas: T4SPagina[]): string {
+  const slot = vindSlot(paginas);
+  const zinvlak = slot?.blokken.find((b) => b.soort === "zinvlak") as { tekst: string } | undefined;
+  return zinvlak?.tekst ?? "";
 }
 
 function alleTeksten(p: T4SPagina): string {
@@ -38,11 +68,11 @@ function alleTeksten(p: T4SPagina): string {
   return stukken.join(" \n ");
 }
 
-describe("het blad In één zin bouwt een vaste zin uit bouwstenen", () => {
-  it("bestaat, en staat vlak voor Wat je hier zocht", () => {
+describe("het slothoofdstuk toont de vaste zin uit bouwstenen in zijn citaatvlak", () => {
+  it("bestaat, en staat vlak voor Wat je hier zocht (op de plaats van het blad Wat vlot gaat en wat energie kost)", () => {
     const rapport = bouw(VOORBEELDAFNAME.antwoorden as unknown as Record<string, unknown>);
     const blad = vindBlad(rapport.paginas);
-    expect(blad, "geen blad In één zin gevonden").toBeDefined();
+    expect(blad, "geen blad Wat vlot gaat en wat energie kost gevonden").toBeDefined();
     const bladZocht = rapport.paginas.find((p) => /wat je hier zocht/i.test(p.titel));
     expect(bladZocht).toBeDefined();
     expect(rapport.paginas.indexOf(blad!)).toBe(rapport.paginas.indexOf(bladZocht!) - 1);
@@ -51,8 +81,7 @@ describe("het blad In één zin bouwt een vaste zin uit bouwstenen", () => {
   it("bevat de bouwsteen van de sterkste talent-focus, versneller en interessegebied", () => {
     const resultaat = scoreStudiekompas(I, VOORBEELDAFNAME.antwoorden, null, "nl");
     const rapport = bouw(VOORBEELDAFNAME.antwoorden as unknown as Record<string, unknown>);
-    const blad = vindBlad(rapport.paginas)!;
-    const tekst = alleTeksten(blad).toLowerCase();
+    const zin = vindZinUitSlot(rapport.paginas).toLowerCase();
     // De sterkste focus komt rechtstreeks uit de motor (resultaat.foci.sorted,
     // herstelronde punt 1), niet hertypt: voor het voorbeeldprofiel is dat
     // Sociaal Interactief.
@@ -61,17 +90,17 @@ describe("het blad In één zin bouwt een vaste zin uit bouwstenen", () => {
     const bouwsteen = (
       rapportteksten as { eenZinTalentfocus: { teksten: Record<string, string> } }
     ).eenZinTalentfocus.teksten[sterksteFocus];
-    expect(tekst).toContain(bouwsteen.toLowerCase());
+    expect(zin).toContain(bouwsteen.toLowerCase());
   });
 
   it("bevat de vaste regel dat de zin niet de hele persoon samenvat", () => {
     const rapport = bouw(VOORBEELDAFNAME.antwoorden as unknown as Record<string, unknown>);
-    const blad = vindBlad(rapport.paginas)!;
-    const tekst = alleTeksten(blad).toLowerCase();
+    const slot = vindSlot(rapport.paginas)!;
+    const tekst = alleTeksten(slot).toLowerCase();
     expect(tekst).toContain("hij vat je niet samen als persoon");
   });
 
-  it("toont in plaats van de zin een alinea over te weinig ingevuld, wanneer het beeld voorlopig is", () => {
+  it("toont geen zinvlak met de zin, wanneer het beeld voorlopig is (te weinig ingevuld)", () => {
     const resultaat = scoreStudiekompas(I, {}, null, "nl");
     const rapport = bouwT4StudentsRapport(I, resultaat, {}, "verdieping", {
       naam: "Test",
@@ -80,9 +109,12 @@ describe("het blad In één zin bouwt een vaste zin uit bouwstenen", () => {
       instrumentVersie: I.version,
     });
     expect(resultaat.betrouwbaarheid.voorlopig).toBe(true);
-    const blad = vindBlad(rapport.paginas)!;
-    const tekst = alleTeksten(blad).toLowerCase();
-    expect(tekst).toContain("te weinig ingevuld");
+    const slot = vindSlot(rapport.paginas)!;
+    const zinvlak = slot.blokken.find((b) => b.soort === "zinvlak");
+    // Bij te weinig ingevuld levert berekenZinBlokken de vaste
+    // te-weinig-alinea op, geen bruikbare zin; het zinvlak op het
+    // slothoofdstuk verschijnt dan niet (zie eenZinOmMeeTeNemenBlokken).
+    expect(zinvlak, "zinvlak had niet mogen verschijnen zonder genoeg antwoorden").toBeUndefined();
   });
 
   it("toont het blok Wat nu al sterk is met constructen die het label kernsterkte dragen", () => {

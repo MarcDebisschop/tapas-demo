@@ -27,6 +27,13 @@ import type { T4SPagina } from "../server/t4students/rapport-contract";
 // de bladen hiervoor". Ook hier verandert alleen de letterlijke tekst zelf;
 // de waarborg (zin staat letterlijk en vlak voor "Wat nu al sterk is")
 // blijft exact gelden.
+//
+// OPMAAKHERSTEL (2026-08-03), PUNT 2: het blad zelf heet niet meer "In één
+// zin" maar "Wat vlot gaat en wat energie kost", omdat de grote
+// samenvattende zin (D1) verhuisd is naar het citaatvlak van het
+// slothoofdstuk "Een zin om mee te nemen". Deze uitlegzin hoort bij D2, niet
+// bij D1, en bleef dus altijd al op dit blad staan; alleen de titel waarmee
+// de test het blad opzoekt, is aangepast.
 // ---------------------------------------------------------------------------
 
 const UITLEG_TEKST =
@@ -35,12 +42,12 @@ const UITLEG_TEKST =
   "onderdelen staan en toch in het tweede lijstje verschijnen.";
 
 function vindBlad(paginas: T4SPagina[]): T4SPagina {
-  const blad = paginas.find((p) => /^in één zin$/i.test(p.titel));
-  expect(blad, "geen blad In één zin gevonden").toBeDefined();
+  const blad = paginas.find((p) => /^wat vlot gaat en wat energie kost$/i.test(p.titel));
+  expect(blad, "geen blad Wat vlot gaat en wat energie kost gevonden").toBeDefined();
   return blad!;
 }
 
-describe("het blad In één zin legt uit waar de twee lijstjes wel en niet uit voortkomen", () => {
+describe("het blad Wat vlot gaat en wat energie kost legt uit waar de twee lijstjes wel en niet uit voortkomen", () => {
   it("bevat de uitlegzin vlak voor het blok Wat nu al sterk is", () => {
     const resultaat = scoreStudiekompas(I, VOORBEELDAFNAME.antwoorden, null, "nl");
     const rapport = bouwT4StudentsRapport(I, resultaat, VOORBEELDAFNAME.antwoorden, "verdieping", {

@@ -398,6 +398,23 @@ const D2_UITLEG =
   "hoeveel je iets in jezelf herkent en hoeveel energie het je geeft. Daarom kan iets bij de sterk aanwezige " +
   "onderdelen staan en toch in het tweede lijstje verschijnen.";
 
+// ── Onderdeel voor het nieuwe slothoofdstuk "Een zin om mee te nemen" ──────
+//
+// Ingreep 2 van de opdracht "Slotnoot en opmaak". Dit hoofdstuk voegt geen
+// enkele nieuwe bewering toe: elk onderdeel leest een uitkomst af die al
+// eerder in het rapport berekend en getoond is (het citaatvlak hergebruikt
+// letterlijk de zin uit het hoofdstuk "In één zin"; de twee kaarten lezen
+// dezelfde duidingstekst af die ook op de bladen met de constructen zelf
+// staat). De dankkaart is de enige vaste, niet-berekende tekst op dit blad.
+const H_TOELICHTING = "Dit blad vat samen wat je hiervoor las. Er staat niets nieuws in.";
+
+const H_DANK_TEKST =
+  "Dank dat je de tijd nam om jezelf te leren kennen via TaPasCity. We hopen dat dit beeld je verder " +
+  "helpt in je keuze. Wil je verder lezen over zichtbaar worden in wie je bent? Lees dan Zichtbaar, van " +
+  "onbegrepen talent naar gewaardeerde eigenheid.";
+
+const H_DANK_CONTACT = "www.tapascity.com · info@tapascity.com";
+
 // Herstelronde 2, punt C: telwoorden tot en met zes, want een familie telt
 // hoogstens zes constructen. Alleen nodig om te melden hoeveel constructen
 // even sterk uitkwamen; het getal zelf komt altijd uit de lengte van een
@@ -434,7 +451,22 @@ function d1Bouwsteen(
   return { zin: teksten.join(koppelwoord), gelijkspel: true, aantalGelijk, uitMiddenveld };
 }
 
-function eenZinBlokken(
+// Opmaakherstel (2026-08-03), punt 2: deze functie berekende oorspronkelijk
+// zowel de grote samenvattende zin als de twee lijstjes voor hetzelfde blad
+// "In één zin". Sinds het slothoofdstuk "Een zin om mee te nemen" die zin al
+// toont in zijn citaatvlak, stond ze twee keer in hetzelfde rapport. De
+// berekening van de zin zelf staat daarom nu in het losse berekenZin hierna;
+// deze functie roept dat aan voor het slothoofdstuk, en toont op het eigen
+// blad alleen nog de twee lijstjes die uniek voor dit blad blijven.
+
+/**
+ * Berekent de grote samenvattende zin (met de eventuele gelijkspel- en
+ * middenveld-toelichtingen en de vaste slotregel), of de vaste
+ * te-weinig-ingevuld-alinea wanneer het beeld voorlopig is of een van de drie
+ * bouwstenen ontbreekt. Deze berekening staat los van het blad waarop de zin
+ * verschijnt: alleen het slothoofdstuk "Een zin om mee te nemen" toont ze nog.
+ */
+function berekenZinBlokken(
   resultaat: T4SResultaat,
   foci: T4SDimensie,
   versnellers: T4SDimensie,
@@ -495,6 +527,18 @@ function eenZinBlokken(
     });
   }
   blokken.push({ soort: "alinea", tekst: D_SLOTREGEL });
+  return blokken;
+}
+
+/**
+ * Het blad "Wat vlot gaat en wat energie kost" (vroeger "In één zin"): sinds
+ * de grote samenvattende zin verhuisd is naar het citaatvlak van het
+ * slothoofdstuk, toont dit blad alleen nog onderdeel D2, de twee lijstjes die
+ * uitsluitend de bestaande balanslabels kernsterkte / latent / onderbenut
+ * aflezen. Niets hiervan is nieuw berekend.
+ */
+function eenZinBlokken(foci: T4SDimensie, versnellers: T4SDimensie): T4SBlok[] {
+  const blokken: T4SBlok[] = [];
 
   // Onderdeel D2: twee blokken die uitsluitend de bestaande balanslabels
   // aflezen, niets nieuw berekenen.
@@ -526,6 +570,116 @@ function eenZinBlokken(
       punten: latentOnderbenut.map((r) => `${r.construct}: ${r.omschrijving}`.trim()),
     });
   }
+  return blokken;
+}
+
+// ── Het nieuwe slothoofdstuk "Een zin om mee te nemen" ─────────────────────
+//
+// Vier vaste onderdelen, in deze volgorde: het citaatvlak met de zin uit
+// "In één zin", de kaart "WAT AL STERK IS", de kaart "WAT NOG STERKER KAN"
+// (allebei weggelaten als er niets voor is) en de vaste dankkaart. Alle
+// inhoud, behalve de dankkaart, komt uit bestaande, al geteste berekeningen.
+function eenZinOmMeeTeNemenBlokken(
+  resultaat: T4SResultaat,
+  foci: T4SDimensie,
+  versnellers: T4SDimensie,
+  interesse: T4SDimensie,
+  drivers: T4SDimensie,
+): T4SBlok[] {
+  const blokken: T4SBlok[] = [{ soort: "alinea", tekst: H_TOELICHTING }];
+
+  // Onderdeel a: het zinvlak toont de grote samenvattende zin. Sinds het
+  // opmaakherstel van 2026-08-03 (punt 2) staat deze zin alleen nog hier, niet
+  // meer ook op het blad "Wat vlot gaat en wat energie kost" (vroeger "In één
+  // zin"): dezelfde tekst op twee plaatsen liet de student hetzelfde twee
+  // keer lezen. berekenZinBlokken is dezelfde, ongewijzigde berekening als
+  // voorheen (alleen aanwezig als er genoeg is ingevuld om de zin te bouwen).
+  //
+  // Opmaakherstel-2, punt 5: het vlak droeg voorheen een opschriftje, een kop
+  // én een decoratief aanhalingsteken tegelijk, wat te veel was voor de
+  // rustigste kaart van het blad en onnodig plaats kostte (het slothoofdstuk
+  // liep daardoor door op een tweede, bijna lege pagina). Het is nu "zinvlak":
+  // alleen de zin zelf, gecentreerd, schuin en tussen aanhalingstekens, zonder
+  // opschrift en zonder kop. De eventuele gelijkspel- en
+  // middenveld-toelichtingen en de vaste slotregel horen inhoudelijk bij de
+  // zin en worden, zonder de tekst zelf te wijzigen, samengevoegd tot één
+  // kleine regel in de voetnoot/labelgrootte ("kleinschrift") vlak onder het
+  // zinvlak.
+  const zinBlokken = berekenZinBlokken(resultaat, foci, versnellers, interesse);
+  const eersteZin = zinBlokken[0];
+  if (eersteZin && eersteZin.soort === "alinea" && eersteZin.tekst !== D_TE_WEINIG) {
+    blokken.push({ soort: "zinvlak", tekst: eersteZin.tekst });
+    // De eventuele gelijkspel- en middenveld-toelichtingen (herstelronde 2,
+    // punt C) plus de vaste slotregel (D_SLOTREGEL) horen inhoudelijk bij de
+    // zin. zinBlokken bevat de toelichtingen, in dezelfde volgorde als
+    // voorheen op het blad "In één zin", als alle blokken na de eerste zin en
+    // voor de vaste slotregel (de laatste van de reeks). Opmaakherstel-2,
+    // punt 5: in plaats van elk als een eigen alinea te tonen, worden ze hier
+    // samengevoegd tot één kleine regel; de letterlijke tekst van elke zin
+    // blijft ongewijzigd, enkel de weergave (kleiner, op één regel na elkaar)
+    // verandert.
+    const toelichtingZinnen: string[] = [];
+    for (let i = 1; i < zinBlokken.length - 1; i++) {
+      const b = zinBlokken[i];
+      if (b.soort === "alinea") toelichtingZinnen.push(b.tekst);
+    }
+    toelichtingZinnen.push(D_SLOTREGEL);
+    blokken.push({ soort: "kleinschrift", tekst: toelichtingZinnen.join(" ") });
+  }
+
+  // Onderdeel b: de kaart "WAT AL STERK IS", op het construct met het
+  // hoogste aandeel uit de groep sterk aanwezig van de talent-foci (dezelfde
+  // berekening als op de bladen met de talent-foci zelf). Leeg, dus
+  // weggelaten, als die groep niets opleverde. Herstelronde-2, laatste punt:
+  // de gewone omschrijving naast de naam van het construct ontbrak; die
+  // stond in de oorspronkelijke opdracht en staat er nu weer bij, net als op
+  // de andere bladen met een construct als kop.
+  // Opmaak afwerken, punt 1: WAT AL STERK IS is een kader (wit, met balk in
+  // het gewone accent), net als zijn tegenhanger WAT NOG STERKER KAN
+  // hieronder. Beide zijn uitleg (duiding bij een construct), dus horen ze
+  // dezelfde kaartsoort te zijn; voorheen was dit blok een kaartvlak
+  // (getint, geen balk), wat het paar niet liet lezen als sterk tegenover
+  // nuance.
+  const sterkFoci = sterksteUitGroep(foci);
+  if (sterkFoci.constructen.length > 0) {
+    const construct = sterkFoci.constructen[0].construct;
+    blokken.push({
+      soort: "kader",
+      opschrift: "WAT AL STERK IS",
+      kop: construct,
+      kleur: KLEUR.accent,
+      omschrijving: sterkFoci.constructen[0].omschrijving,
+      tekst: duidingVan(construct),
+    });
+  }
+
+  // Onderdeel c: de kaart "WAT NOG STERKER KAN", op de driver met het
+  // hoogste aandeel binnen de drivers die als gaspedaal gelezen worden
+  // (dezelfde indeling als bij de drivers, de keerzijde). drivers.gerangschikt
+  // staat al op aandeel gesorteerd, dus de eerste rij met dat leeswoord is de
+  // sterkste. Leeg, dus weggelaten, als geen driver dat leeswoord draagt.
+  const gaspedaal = drivers.gerangschikt.filter((r) => r.leeswoord === "gaspedaal");
+  if (gaspedaal.length > 0) {
+    const construct = gaspedaal[0].construct;
+    blokken.push({
+      soort: "kader",
+      opschrift: "WAT NOG STERKER KAN",
+      kop: construct,
+      kleur: KLEUR.oker,
+      tekst: duidingVan(construct),
+    });
+  }
+
+  // Onderdeel d: de vaste dankkaart, de enige niet-berekende tekst op dit
+  // blad. De contactregel staat op een eigen lijn in de accentkleur.
+  blokken.push({
+    soort: "kaartvlak",
+    opschrift: "MET DANK",
+    kop: "Bedankt dat je dit met ons deelde",
+    tekst: H_DANK_TEKST,
+    contactregel: H_DANK_CONTACT,
+  });
+
   return blokken;
 }
 
@@ -574,7 +728,13 @@ function watJeHierZochtBlokken(
     },
   ];
   if (p0Tekst.length > 0) {
-    blokken.push({ soort: "kader", kop: "JOUW VRAAG, NOG EENS", kleur: KLEUR.teal, tekst: p0Tekst });
+    blokken.push({
+      soort: "kader",
+      opschrift: "JOUW VRAAG, NOG EENS",
+      kop: "Wat jij hoopte te vinden",
+      kleur: KLEUR.teal,
+      tekst: p0Tekst,
+    });
   }
   const topFoci = topTweeUitGroep(foci);
   const topVersneller = sterksteUitGroep(versnellers);
@@ -626,7 +786,8 @@ function watJeHierZochtBlokken(
 // E1 staat als kader bij de drivers/motivatie, E2 is het slotblad. Beide
 // eindigen op dezelfde drie gevallen als onderdeel F; kiezenGeval/kiezenSlotzin
 // worden hier hergebruikt en niet opnieuw geschreven.
-const E1_KOP = "VOOR WIE MEELEEST";
+const E1_OPSCHRIFT = "VOOR WIE MEELEEST";
+const E1_KOP = "Een patroon, geen oordeel";
 const E1_TEKST =
   "Dit blad gaat over patronen, niet over goed of fout. Wie hier sterk uitkomt, heeft doorgaans geen " +
   "extra advies nodig, maar wel ruimte om zelf te wegen. De beste vraag die je kunt stellen: wat zou " +
@@ -636,6 +797,7 @@ function e1Kader(resultaat: T4SResultaat, drivers: T4SDimensie): T4SBlok {
   const geval = kiezenGeval(resultaat, drivers);
   return {
     soort: "kader",
+    opschrift: E1_OPSCHRIFT,
     kop: E1_KOP,
     kleur: KLEUR.oker,
     tekst: `${E1_TEKST} ${kiezenSlotzin(geval)}`,
@@ -904,7 +1066,8 @@ export function bouwT4StudentsRapport(
         },
         {
           soort: "kader",
-          kop: "DE TWEE VORMEN",
+          opschrift: "DE TWEE VORMEN",
+          kop: "Herkenning en energie naast elkaar",
           kleur: KLEUR.teal,
           tekst:
             "Herkenning is een rijtje van drie blokjes dat van links naar rechts volloopt. Nul blokjes " +
@@ -942,10 +1105,13 @@ export function bouwT4StudentsRapport(
   );
 
   // ── 3. Dit hoopte je te vinden (onderdeel B2) ─────────────────────────────
-  // Het letterlijke antwoord op de open beginvraag P0, in een kader. P0 is
-  // niet verplicht: is ze niet beantwoord of enkel met witruimte beantwoord,
-  // dan komt het kader nergens op dit blad. Het blad zelf blijft bestaan; er
-  // wordt nooit een leeg kader getoond.
+  // Het letterlijke antwoord op de open beginvraag P0, in een ingetogen
+  // vlak (herstel, punt 1 en 4: dit is de eigen tekst van de student, dus
+  // hoort het in het getinte vlak zonder balk, niet in de witte uitlegkaart,
+  // en toont het schuin en tussen aanhalingstekens). P0 is niet verplicht:
+  // is ze niet beantwoord of enkel met witruimte beantwoord, dan komt het
+  // vlak nergens op dit blad. Het blad zelf blijft bestaan; er wordt nooit
+  // een leeg vlak getoond.
   const p0Tekst = (antwoorden["P0"] as { text?: string } | undefined)?.text?.trim() || "";
   const hoopteBlokken: T4SBlok[] = [
     {
@@ -957,7 +1123,17 @@ export function bouwT4StudentsRapport(
     },
   ];
   if (p0Tekst.length > 0) {
-    hoopteBlokken.push({ soort: "kader", kop: "DIT HOOPTE JE TE VINDEN", kleur: KLEUR.teal, tekst: p0Tekst });
+    // Opmaakherstel-2, punt 3: het opschriftje herhaalde de hoofdstuktitel
+    // ("Dit hoopte je te vinden") woordelijk en zei dus niets extra. Het
+    // opschriftje benoemt nu het soort blok ("jouw eigen woorden"), en de
+    // kop die hetzelfde zei, is weggelaten.
+    hoopteBlokken.push({
+      soort: "kaartvlak",
+      opschrift: "JOUW EIGEN WOORDEN",
+      kop: "",
+      tekst: p0Tekst,
+      citaatstijl: true,
+    });
   }
   paginas.push(
     pagina(3, hoopteBlokken, "Jouw eigen vraag, voor je aan de vragenlijst begon."),
@@ -1114,7 +1290,8 @@ export function bouwT4StudentsRapport(
           ? ([
               {
                 soort: "citaat",
-                kop: "DIT GAF JE ZELF AAN",
+                opschrift: "DIT GAF JE ZELF AAN",
+                kop: "Jouw eigen woorden",
                 kleur: KLEUR.inktZacht,
                 regels: beeldCitaten,
               },
@@ -1318,7 +1495,13 @@ export function bouwT4StudentsRapport(
         const itemId = zwaarsteItemVan(inst, r.construct);
         const regels = itemId ? citatenVoor(inst, antwoorden, taal, [itemId]) : [];
         if (regels.length > 0) {
-          topBlokken.push({ soort: "citaat", kop: b.citaatKop, kleur: b.dim.kleur, regels });
+          topBlokken.push({
+            soort: "citaat",
+            opschrift: b.citaatKop,
+            kop: "Jouw eigen woorden",
+            kleur: b.dim.kleur,
+            regels,
+          });
         }
       }
     }
@@ -1414,7 +1597,15 @@ export function bouwT4StudentsRapport(
         },
         { soort: "opsomming", kop: null, punten: leerPunten },
         ...(s1
-          ? ([{ soort: "citaat", kop: "DIT KOOS JE", kleur: KLEUR.salie, regels: [s1] }] as T4SBlok[])
+          ? ([
+              {
+                soort: "citaat",
+                opschrift: "DIT KOOS JE",
+                kop: "Jouw eigen keuze",
+                kleur: KLEUR.salie,
+                regels: [s1],
+              },
+            ] as T4SBlok[])
           : []),
         {
           soort: "alinea",
@@ -1512,7 +1703,13 @@ export function bouwT4StudentsRapport(
   if (r1) {
     const regels = citatenVoor(inst, antwoorden, taal, [r1]);
     if (regels.length > 0)
-      interesseBlokken.push({ soort: "citaat", kop: "HIER ZEI JE JA TEGEN", kleur: KLEUR.oker, regels });
+      interesseBlokken.push({
+        soort: "citaat",
+        opschrift: "HIER ZEI JE JA TEGEN",
+        kop: "Jouw eigen antwoord",
+        kleur: KLEUR.oker,
+        regels,
+      });
   }
   interesseBlokken.push({
     soort: "alinea",
@@ -1546,7 +1743,8 @@ export function bouwT4StudentsRapport(
           ? ([
               {
                 soort: "kader",
-                kop: "WAAROM DEZE",
+                opschrift: "WAAROM DEZE",
+                kop: "Waar vermogen en interesse elkaar raken",
                 kleur: KLEUR.teal,
                 tekst:
                   `Je sterkste talent-focus is ${foci.gerangschikt[0].construct} en je sterkste ` +
@@ -1583,9 +1781,18 @@ export function bouwT4StudentsRapport(
             "Dit is het enige onderdeel van de vragenlijst dat over richting gaat in plaats van over " +
             "eigenschappen. Niet wat je kunt, maar waar je het voor zou willen inzetten.",
         },
+        // Opmaakherstel-2, punt 3: het opschriftje herhaalde de hoofdstuktitel
+        // ("Waar jij iets wilt betekenen") woordelijk. Het opschriftje benoemt
+        // nu het soort blok in plaats van het onderwerp van het hoofdstuk.
         ...(b1
           ? ([
-              { soort: "citaat", kop: "WAAR JIJ IETS WILT BETEKENEN", kleur: KLEUR.accent, regels: [b1] },
+              {
+                soort: "citaat",
+                opschrift: "JOUW EIGEN ANTWOORD",
+                kop: "",
+                kleur: KLEUR.accent,
+                regels: [b1],
+              },
             ] as T4SBlok[])
           : ([{ soort: "alinea", tekst: "Je hebt deze vraag nog niet beantwoord." }] as T4SBlok[])),
         {
@@ -1707,7 +1914,8 @@ export function bouwT4StudentsRapport(
       [
         {
           soort: "kader",
-          kop: "LEES DIT EERST",
+          opschrift: "LEES DIT EERST",
+          kop: "Geen fouten, wel aandachtspunten",
           kleur: KLEUR.accent,
           tekst:
             "Dit zijn geen fouten. Dit zijn plekken waar aandacht loont. Elk punt hieronder komt " +
@@ -1744,7 +1952,13 @@ export function bouwT4StudentsRapport(
             "Een rapport dat eindigt in beschrijving wordt weggelegd. Daarom eindigt dit blad met iets " +
             "dat je kunt doen.",
         },
-        { soort: "kader", kop: "JOUW EERSTE STAP", kleur: KLEUR.salie, tekst: eersteStap },
+        {
+          soort: "kader",
+          opschrift: "JOUW EERSTE STAP",
+          kop: "Iets concreets om te proberen",
+          kleur: KLEUR.salie,
+          tekst: eersteStap,
+        },
         {
           soort: "vragen",
           kop: "DRIE VRAGEN OM MEE TE NEMEN NAAR EEN GESPREK",
@@ -1767,9 +1981,14 @@ export function bouwT4StudentsRapport(
     ),
   );
 
-  // ── 27. In één zin (onderdeel D) ────────────────────────────────────
+  // ── 27. Wat vlot gaat en wat energie kost (onderdeel D2, vroeger "In één
+  // zin") ─────────────────────────────────────────────────────────────────
   paginas.push(
-    pagina(27, eenZinBlokken(resultaat, foci, versnellers, interesse), "Drie sterke onderdelen in één zin."),
+    pagina(
+      27,
+      eenZinBlokken(foci, versnellers),
+      "Wat vlot gaat en wat energie kost, uit dezelfde antwoorden als hiervoor.",
+    ),
   );
 
   // ── 28. Wat je hier zocht (onderdeel B3) ────────────────────────────
@@ -1784,10 +2003,30 @@ export function bouwT4StudentsRapport(
   // ── 29. Voor wie meeleest, slot (onderdeel E2) ─────────────────────
   paginas.push(pagina(29, voorWieMeeleestSlotBlokken(), "Hoe je dit rapport samen leest."));
 
-  // ── 30. Verantwoording en grenzen ─────────────────────────────────────────
+  // ── 30. Een zin om mee te nemen (ingreep 2, nieuw slothoofdstuk) ──────
+  // Ingreep 1 van de opdracht "Slotnoot en opmaak": de hoofdstukken met de
+  // onderbouwing en de bronnen (nr 34 en 35 hieronder) staan nu achter de
+  // bijlagen met de eigen antwoorden (nr 31 tot en met 33), in plaats van
+  // ervoor. Dit nieuwe slothoofdstuk staat direct na "Voor wie meeleest,
+  // slot" en voor die bijlagen: het laatste dat de student leest voordat de
+  // eigen, letterlijke antwoorden nog eens voorbijkomen.
   paginas.push(
     pagina(
       30,
+      eenZinOmMeeTeNemenBlokken(resultaat, foci, versnellers, interesse, drivers),
+      "Jouw profiel, samengevat in één beweging.",
+    ),
+  );
+
+  // ── 31, 32, 33: de bronpagina's ──────────────────────────────────
+  paginas.push(bronPagina(31, inst, antwoorden, taal, FAM_FOCI));
+  paginas.push(bronPagina(32, inst, antwoorden, taal, FAM_VERSNELLERS));
+  paginas.push(bronPagina(33, inst, antwoorden, taal, FAM_DRIVERS));
+
+  // ── 34. Verantwoording en grenzen ─────────────────────────────────────────
+  paginas.push(
+    pagina(
+      34,
       [
         {
           soort: "intro",
@@ -1836,13 +2075,8 @@ export function bouwT4StudentsRapport(
     ),
   );
 
-  // ── 31. Waarop dit rapport gebouwd is (onderdeel G) ──────────────────
-  paginas.push(pagina(31, waaropGebouwdBlokken(), "De bronnen achter de onderdelen en het ontwerp."));
-
-  // ── 32, 33, 34: de bronpagina's ──────────────────────────────────
-  paginas.push(bronPagina(32, inst, antwoorden, taal, FAM_FOCI));
-  paginas.push(bronPagina(33, inst, antwoorden, taal, FAM_VERSNELLERS));
-  paginas.push(bronPagina(34, inst, antwoorden, taal, FAM_DRIVERS));
+  // ── 35. Waarop dit rapport gebouwd is (onderdeel G) ──────────────────
+  paginas.push(pagina(35, waaropGebouwdBlokken(), "De bronnen achter de onderdelen en het ontwerp."));
 
   // ── De licentie toepassen ─────────────────────────────────────────────────
   const toegestaan = new Set(
