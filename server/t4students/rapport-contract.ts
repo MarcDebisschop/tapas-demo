@@ -604,6 +604,28 @@ export function groepeerOpAandeel(rijen: T4SRij[]): T4SGroep[] {
   return groepen;
 }
 
+/**
+ * Groepen doortrekken naar de uitgewerkte bladen.
+ *
+ * De hoofdstukken "wat sterk aanwezig is" en "wat lager staat" werkten
+ * voorheen een vast aantal van drie onderdelen uit (rijen.slice(0, 3) en
+ * rijen.slice(-3)), terwijl de rest van het rapport op groepen werkt. Bij een
+ * groep sterk aanwezig met meer of minder dan drie leden ontstond zo een
+ * tegenspraak: een onderdeel kon op het overzicht bij "sterk aanwezig" staan
+ * en toch in het hoofdstuk "wat lager staat" belanden. Deze functie verdeelt
+ * de rijen van een dimensie in dezelfde twee hoofdstukken, maar dan volgens
+ * groepeerOpAandeel: sterk krijgt alle leden van de groep sterk aanwezig
+ * (niet vast drie), lager krijgt middenveld en minder aanwezig samen, in die
+ * volgorde. Elk onderdeel met een oordeel (een groep) komt zo in precies één
+ * van de twee lijsten terecht.
+ */
+export function splitsSterkEnLager(dim: T4SDimensie): { sterk: T4SRij[]; lager: T4SRij[] } {
+  const groepen = groepeerOpAandeel(dim.gerangschikt);
+  const sterk = groepen.find((g) => g.titel === "sterk aanwezig")?.rijen ?? [];
+  const lager = groepen.filter((g) => g.titel !== "sterk aanwezig").flatMap((g) => g.rijen);
+  return { sterk, lager };
+}
+
 /** Het resultaat van sterksteUitGroep(): de gekozen constructen en de context erbij. */
 export interface T4SSterksteUitGroep {
   /** Een of twee rijen: twee alleen bij een echt gelijkspel op het hoogste aandeel. */

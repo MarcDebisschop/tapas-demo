@@ -42,6 +42,7 @@ import {
   voedingPerConstruct,
   sterksteUitGroep,
   groepeerOpAandeel,
+  splitsSterkEnLager,
   type T4SBand,
   type T4SBlok,
   type T4SCitaatRegel,
@@ -1236,12 +1237,21 @@ export function bouwT4StudentsRapport(
   ];
 
   for (const b of dimensieBladen) {
-    const rijen = b.dim.gerangschikt;
-    const drieHoog = rijen.slice(0, 3);
-    // In rangorde, net als op het blad "wat sterk aanwezig is" (opmaakherstel,
-    // punt 4: deze kop sprak vroeger van "jouw drie sterkste"). Anders leest
-    // de ene bladzijde van boven naar onder en de andere van onder naar boven.
-    const drieLaag = rijen.slice(-3);
+    // Groepen doortrekken naar de uitgewerkte bladen: de twee hoofdstukken
+    // hieronder werkten voorheen een vast aantal van drie onderdelen uit
+    // (rijen.slice(0, 3) en rijen.slice(-3)), terwijl de rest van het
+    // rapport (het overzicht op "Jouw talentmotor in één oogopslag" en de
+    // rangtabel hierboven) al op groepen werkt. Daardoor kon een onderdeel
+    // op het overzicht bij "sterk aanwezig" staan en toch in het hoofdstuk
+    // "wat lager staat" terechtkomen: een tegenspraak voor de lezer. De
+    // twee hoofdstukken volgen daarom nu dezelfde groepen als de rest van
+    // het rapport: "wat sterk aanwezig is" krijgt alle leden van de groep
+    // sterk aanwezig (niet vast drie), "wat lager staat" krijgt middenveld
+    // en minder aanwezig samen, in die volgorde. Elk onderdeel met een
+    // oordeel komt zo in precies één van de twee hoofdstukken terecht.
+    // Zie splitsSterkEnLager() in rapport-contract.ts voor de eigen tests
+    // van deze verdeling.
+    const { sterk: groepSterk, lager: groepLager } = splitsSterkEnLager(b.dim);
     // Herstelronde 2, punt B: "plaats in de rangorde" bestaat niet meer. Een
     // niet-ingevuld construct krijgt geen score en dus ook geen groep.
     const naschriftDim = [
@@ -1265,20 +1275,27 @@ export function bouwT4StudentsRapport(
 
     // Wat sterk aanwezig is, met een citaatblok bij de sterkste.
     // (opmaakherstel, punt 4: deze pagina heette vroeger "jouw drie
-    // sterkste"; de gekozen constructen blijven dezelfde drie hoogste op
-    // rang, alleen de kop erboven is aangepast aan de groepstaal.)
+    // sterkste"; groepen doortrekken: de gekozen constructen zijn nu alle
+    // leden van de groep sterk aanwezig, niet meer vast drie.)
     const topBlokken: T4SBlok[] = [
       {
         soort: "intro",
         tekst:
-          b.wat === FAM_DRIVERS
-            ? "Hieronder de drie patronen die jij het sterkst herkent, met wat elk patroon je geeft en " +
-              "waar het je in de weg kan zitten."
-            : "Hieronder de drie waarin je jezelf het sterkst herkent, met wat je daarmee kunt en wat " +
-              "dat voor studeren betekent.",
+          groepSterk.length === 0
+            ? (b.wat === FAM_DRIVERS
+                ? "Bij dit onderdeel komt geen enkel patroon sterk naar voren. Ook dat is een uitkomst: geen " +
+                  "patroon dat je op dit moment sterk stuurt."
+                : "Bij dit onderdeel komt niets in dit beeld sterk uitkomen. Ook dat is een uitkomst: je " +
+                  "vermogen zit dan vooral ergens anders in dit rapport.")
+            : b.wat === FAM_DRIVERS
+              ? "Hieronder de patronen die jij het sterkst herkent, met wat elk patroon je geeft en waar " +
+                "het je in de weg kan zitten."
+              : "Hieronder de onderdelen waarin je jezelf het sterkst herkent, met wat je daarmee kunt en " +
+                "wat dat voor studeren betekent.",
       },
     ];
-    for (const r of drieHoog) {
+    for (let i = 0; i < groepSterk.length; i++) {
+      const r = groepSterk[i];
       topBlokken.push({
         soort: "constructblok",
         construct: r.construct,
@@ -1291,49 +1308,61 @@ export function bouwT4StudentsRapport(
         kleur: b.dim.kleur,
         duiding: duidingVan(r.construct),
       });
-    }
-    if (drieHoog.length > 0) {
-      const itemId = zwaarsteItemVan(inst, drieHoog[0].construct);
-      const regels = itemId ? citatenVoor(inst, antwoorden, taal, [itemId]) : [];
-      if (regels.length > 0) {
-        topBlokken.push({ soort: "citaat", kop: b.citaatKop, kleur: b.dim.kleur, regels });
+      // Het citaatblok bij de sterkste komt meteen na diens eigen
+      // constructblok, niet pas na alle andere. Zo blijft het citaat
+      // inhoudelijk bij het onderdeel waarover het gaat, en voorkomt het dat
+      // een groter aantal onderdelen (groepen doortrekken: de groep sterk
+      // aanwezig kan meer dan drie leden hebben) het citaat alleen achterlaat
+      // op een vervolgblad met verder niets erop.
+      if (i === 0) {
+        const itemId = zwaarsteItemVan(inst, r.construct);
+        const regels = itemId ? citatenVoor(inst, antwoorden, taal, [itemId]) : [];
+        if (regels.length > 0) {
+          topBlokken.push({ soort: "citaat", kop: b.citaatKop, kleur: b.dim.kleur, regels });
+        }
       }
     }
     // Onderdeel E1: het kader "voor wie meeleest" hoort bij de drivers, waar
-    // het gaat over gedragspatronen en niet over vermogen.
+    // het gaat over gedragspatronen en niet over vermogen. Dit kader staat
+    // los van een specifiek construct en blijft daarom achteraan.
     if (b.wat === FAM_DRIVERS) {
       topBlokken.push(e1Kader(resultaat, drivers));
     }
     paginas.push(pagina(b.top, topBlokken, b.topOndertitel));
 
-    // Wat lager staat.
-    const laagBlokken: T4SBlok[] = [
-      {
-        soort: "intro",
-        tekst:
-          b.wat === FAM_DRIVERS
-            ? "Een driver die je nauwelijks herkent, is geen gebrek. Het betekent dat dit patroon je " +
-              "minder stuurt. Hieronder staat wat de sterkste driver doet als hij te hard duwt, en wat " +
-              "de zwakst herkende patronen over je zeggen."
-            : "Laag betekent hier niet zwak. Het betekent dat dit minder van jou is dan de rest. Je " +
-              "vermogen zit ergens anders, en dat is precies wat de indeling in groepen laat zien.",
-      },
-    ];
-    for (const r of drieLaag) {
-      laagBlokken.push({
-        soort: "constructblok",
-        construct: r.construct,
-        omschrijving: r.omschrijving,
-        rang: r.rang,
-        herkenning: r.herkenning,
-        weergavePrecisie: r.weergavePrecisie,
-        energie: r.energie,
-        ingevuld: r.ingevuld,
-        kleur: b.dim.kleur,
-        duiding: duidingVan(r.construct),
-      });
+    // Wat lager staat: middenveld en minder aanwezig samen, in die volgorde.
+    // Is de groep sterk aanwezig zo groot dat alle onderdelen erin zitten,
+    // dan is groepLager leeg en blijft dit hoofdstuk hieronder ongebruikt: het
+    // valt dan weg uit het rapport, zonder opmerking (zie de opdracht).
+    if (groepLager.length > 0) {
+      const laagBlokken: T4SBlok[] = [
+        {
+          soort: "intro",
+          tekst:
+            b.wat === FAM_DRIVERS
+              ? "Een driver die je nauwelijks herkent, is geen gebrek. Het betekent dat dit patroon je " +
+                "minder stuurt. Hieronder staat wat de sterkste driver doet als hij te hard duwt, en wat " +
+                "de zwakst herkende patronen over je zeggen."
+              : "Laag betekent hier niet zwak. Het betekent dat dit minder van jou is dan de rest. Je " +
+                "vermogen zit ergens anders, en dat is precies wat de indeling in groepen laat zien.",
+        },
+      ];
+      for (const r of groepLager) {
+        laagBlokken.push({
+          soort: "constructblok",
+          construct: r.construct,
+          omschrijving: r.omschrijving,
+          rang: r.rang,
+          herkenning: r.herkenning,
+          weergavePrecisie: r.weergavePrecisie,
+          energie: r.energie,
+          ingevuld: r.ingevuld,
+          kleur: b.dim.kleur,
+          duiding: duidingVan(r.construct),
+        });
+      }
+      paginas.push(pagina(b.laag, laagBlokken, b.laagOndertitel));
     }
-    paginas.push(pagina(b.laag, laagBlokken, b.laagOndertitel));
   }
 
   // ── 17. Wat je motiveert om te studeren ───────────────────────────────────
