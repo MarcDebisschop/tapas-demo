@@ -53,7 +53,7 @@ describe("de hoofdstuknummers van het Studiekompas lopen ononderbroken op", () =
     }
   });
 
-  it("het motivatieblok draagt in de Verdieping het nummer dat bij zijn plaats hoort: 16", () => {
+  it("het motivatieblok draagt in de Verdieping het nummer dat bij zijn plaats hoort: 17", () => {
     const resultaat = scoreStudiekompas(I, VOORBEELDAFNAME.antwoorden, null, "nl");
     const rapport = bouwT4StudentsRapport(I, resultaat, VOORBEELDAFNAME.antwoorden, "verdieping", {
       naam: VOORBEELDAFNAME.naam,
@@ -63,8 +63,8 @@ describe("de hoofdstuknummers van het Studiekompas lopen ononderbroken op", () =
     });
     const motivatiePagina = rapport.paginas.find((p) => /motiveert/i.test(p.titel));
     expect(motivatiePagina).toBeDefined();
-    expect(motivatiePagina!.nr).toBe(16);
+    expect(motivatiePagina!.nr).toBe(17);
     const positie = rapport.paginas.indexOf(motivatiePagina!);
-    expect(positie).toBe(15); // zestiende bladzijde, index 15
+    expect(positie).toBe(16); // zeventiende bladzijde, index 16
   });
 });

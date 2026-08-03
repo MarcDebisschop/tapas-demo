@@ -80,9 +80,14 @@ const COVER_SLOTREGEL =
 const EIGEN_TEKSTEN = rapportteksten as {
   interesse: { teksten: Record<string, string> };
   studiegebieden: { teksten: Record<string, string> };
+  eenZinTalentfocus: { teksten: Record<string, string> };
+  eenZinVersneller: { teksten: Record<string, string> };
+  eenZinInteresse: { teksten: Record<string, string> };
+  kiezenDrivers: { namen: string[] };
 };
 const INTERESSE_DUIDING = EIGEN_TEKSTEN.interesse.teksten;
 const GEBIED_TOELICHTING = EIGEN_TEKSTEN.studiegebieden.teksten;
+const KIEZEN_DRIVER_NAMEN = EIGEN_TEKSTEN.kiezenDrivers.namen;
 
 // ── Hulp ────────────────────────────────────────────────────────────────────
 
@@ -254,8 +259,345 @@ const MOTIVATIE_DUIDING: Record<string, string> = {
     "beweging te houden, ook als een van de twee kanten het even laat afweten.",
 };
 
+// ── Onderdeel F: het blad over kiezen ───────────────────────────────────────
+//
+// Twee gemeten onderdelen worden naast elkaar gelegd en nooit uit elkaar
+// afgeleid: de motivatiebalans (uitsluitend uit de vijf eigen motivatievragen)
+// en het patroon Please Others/Try Hard (uitsluitend afgelezen aan het
+// bestaande driverlabel). "Sterk aanwezig" betekent hier uitsluitend: het
+// label dat de motor al als hoogste categorie geeft, namelijk "gaspedaal".
+// Er wordt geen nieuwe drempel toegevoegd. Zie meting-vooraf.md, onderdeel 3.
+const KIEZEN_INTRO =
+  "Hierboven en hierna lees je twee dingen die allebei met kiezen te maken kunnen hebben: je " +
+  "motivatiebalans en je driverpatroon. Het zijn twee afzonderlijke metingen. Het ene wordt " +
+  "nergens uit het andere afgeleid, en de ene meting veroorzaakt de andere niet. Hieronder staan " +
+  "ze alleen naast elkaar gelegd.";
+
+const KIEZEN_TEKST_GEVAL1 =
+  "Wat jou beweegt, komt volgens je antwoorden vooral van binnenuit. Tegelijk laat je " +
+  "driverpatroon zien dat je sterk let op wat anderen van je verwachten. Dat zijn twee losse " +
+  "metingen, en ze wijzen niet dezelfde kant op. Op het moment van kiezen kan dat wringen. De " +
+  "vraag die dan helpt: wat zou ik kiezen als niemand meekeek.";
+
+const KIEZEN_TEKST_GEVAL2 =
+  "Allebei de onderdelen wijzen naar de mensen om je heen. Dat maakt je betrokken, en het kan " +
+  "kiezen zwaarder maken, omdat je snel aanvoelt wat een ander goed zou vinden. De vraag die dan " +
+  "helpt: wat zou ik kiezen als niemand meekeek.";
+
+const KIEZEN_TEKST_GEVAL3 =
+  "Je motivatie en je driverpatroon trekken niet duidelijk aan je keuze. Meestal betekent dat " +
+  "dat je een keuze eerder op inhoud zult maken dan op wat je omgeving ervan vindt.";
+
 /**
- * De blokken van pagina 28, "Wat je motiveert om te studeren". Leest
+ * Welk van de drie vaste gevallen van onderdeel F van toepassing is, uitsluitend
+ * op basis van het motivatie-balanslabel van de motor en het driverlabel
+ * "gaspedaal" bij Please Others of Try Hard. Deze functie wordt zowel voor het
+ * blad "Waarom kiezen makkelijk of moeilijk kan voelen" gebruikt als voor de
+ * afsluitende zin van kader E1, die dezelfde drie gevallen volgt.
+ */
+function kiezenGeval(resultaat: T4SResultaat, drivers: T4SDimensie): 1 | 2 | 3 {
+  const poOfTh = drivers.gerangschikt.some(
+    (r) => KIEZEN_DRIVER_NAMEN.includes(r.construct) && r.leeswoord === "gaspedaal",
+  );
+  if (resultaat.motivatie.balansLabel === "intrinsiek" && poOfTh) return 1;
+  if (resultaat.motivatie.balansLabel === "extrinsiek" && poOfTh) return 2;
+  return 3;
+}
+
+function kiezenSlotzin(geval: 1 | 2 | 3): string {
+  if (geval === 1) return KIEZEN_TEKST_GEVAL1;
+  if (geval === 2) return KIEZEN_TEKST_GEVAL2;
+  return KIEZEN_TEKST_GEVAL3;
+}
+
+function kiezenBlokken(resultaat: T4SResultaat, drivers: T4SDimensie): T4SBlok[] {
+  const geval = kiezenGeval(resultaat, drivers);
+  return [
+    { soort: "intro", tekst: KIEZEN_INTRO },
+    {
+      soort: "paren",
+      paren: [
+        { label: "Motivatiebalans", waarde: resultaat.motivatie.balansLabel },
+        {
+          label: `Driverpatroon ${KIEZEN_DRIVER_NAMEN.join("/")}`,
+          waarde: drivers.gerangschikt.some(
+            (r) => KIEZEN_DRIVER_NAMEN.includes(r.construct) && r.leeswoord === "gaspedaal",
+          )
+            ? "gaspedaal"
+            : "niet als gaspedaal gemeten",
+        },
+      ],
+    },
+    { soort: "alinea", tekst: kiezenSlotzin(geval) },
+  ];
+}
+
+// ── Onderdeel D: het blad "In één zin" ────────────────────────────────────────
+//
+// De vaste bouwstenen per familie, letterlijk uit de opdracht. Ze worden
+// uitsluitend gekozen op basis van de bestaande rangorde (rang 1), nooit
+// opnieuw berekend.
+// De bouwstenen zelf staan niet hier, maar in server/data/t4students-rapportteksten.json,
+// zodat elke constructnaam als sleutel maar op een plaats voorkomt (zie
+// tests/t4students-geen-vertaaltabel.test.ts).
+const D1_TALENTFOCUS: Record<string, string> = EIGEN_TEKSTEN.eenZinTalentfocus.teksten;
+const D1_VERSNELLER: Record<string, string> = EIGEN_TEKSTEN.eenZinVersneller.teksten;
+const D1_INTERESSE: Record<string, string> = EIGEN_TEKSTEN.eenZinInteresse.teksten;
+
+const D_SLOTREGEL =
+  "Deze zin is samengesteld uit de drie onderdelen die in jouw antwoorden het sterkst naar voren " +
+  "komen. Hij vat je niet samen als persoon.";
+
+const D_TE_WEINIG =
+  "Er is nog te weinig ingevuld om deze zin te bouwen. De losse onderdelen hiervóór in dit rapport " +
+  "blijven wel staan; alleen deze samenvattende zin niet.";
+
+/** Kiest de bouwsteen (of, bij gelijkspel, beide verbonden met "en") op rang 1 van een dimensie. */
+function d1Bouwsteen(dim: T4SDimensie, tabel: Record<string, string>): { zin: string; gelijkspel: boolean } {
+  const eerste = dim.gerangschikt.filter((r) => r.rang === 1);
+  if (eerste.length === 0) return { zin: "", gelijkspel: false };
+  if (eerste.length === 1) return { zin: tabel[eerste[0].construct] || "", gelijkspel: false };
+  const teksten = eerste.map((r) => tabel[r.construct]).filter((t): t is string => Boolean(t));
+  return { zin: teksten.join(" en "), gelijkspel: true };
+}
+
+function eenZinBlokken(
+  resultaat: T4SResultaat,
+  foci: T4SDimensie,
+  versnellers: T4SDimensie,
+  interesse: T4SDimensie,
+): T4SBlok[] {
+  if (resultaat.betrouwbaarheid.voorlopig) {
+    return [{ soort: "alinea", tekst: D_TE_WEINIG }];
+  }
+  const focusB = d1Bouwsteen(foci, D1_TALENTFOCUS);
+  const versnellerB = d1Bouwsteen(versnellers, D1_VERSNELLER);
+  const interesseB = d1Bouwsteen(interesse, D1_INTERESSE);
+  if (!focusB.zin || !versnellerB.zin || !interesseB.zin) {
+    return [{ soort: "alinea", tekst: D_TE_WEINIG }];
+  }
+  const zin =
+    `Jij komt het sterkst tot je recht waar je ${focusB.zin}, waar je ${versnellerB.zin}, en waar het ` +
+    `gaat over ${interesseB.zin}.`;
+  const blokken: T4SBlok[] = [{ soort: "alinea", tekst: zin }];
+  const gelijkspelZinnen: string[] = [];
+  if (focusB.gelijkspel) gelijkspelZinnen.push("je talent-foci");
+  if (versnellerB.gelijkspel) gelijkspelZinnen.push("je talent-versnellers");
+  if (interesseB.gelijkspel) gelijkspelZinnen.push("je interesse");
+  if (gelijkspelZinnen.length > 0) {
+    blokken.push({
+      soort: "alinea",
+      tekst: `Bij ${gelijkspelZinnen.join(" en ")} kwamen twee onderdelen even sterk naar voren.`,
+    });
+  }
+  blokken.push({ soort: "alinea", tekst: D_SLOTREGEL });
+
+  // Onderdeel D2: twee blokken die uitsluitend de bestaande balanslabels
+  // aflezen, niets nieuw berekenen.
+  const alleDimensies = [foci, versnellers];
+  const kernsterktes = alleDimensies.flatMap((d) => d.gerangschikt.filter((r) => r.leeswoord === "kernsterkte"));
+  const latentOnderbenut = alleDimensies.flatMap((d) =>
+    d.gerangschikt.filter((r) => r.leeswoord === "latent" || r.leeswoord === "onderbenut"),
+  );
+  if (kernsterktes.length > 0) {
+    blokken.push({
+      soort: "opsomming",
+      kop: "Wat nu al sterk is",
+      punten: kernsterktes.map((r) => `${r.construct}. ${r.omschrijving}`.trim()),
+    });
+  }
+  if (latentOnderbenut.length > 0) {
+    blokken.push({
+      soort: "opsomming",
+      kop: "Wat sterker kan worden",
+      punten: latentOnderbenut.map((r) => `${r.construct}. ${r.omschrijving}`.trim()),
+    });
+  }
+  return blokken;
+}
+
+// ── Onderdeel B3: het blad "Wat je hier zocht" ───────────────────────────
+//
+// Sluit de cirkel met B2: het letterlijke antwoord op P0 komt hier terug,
+// samen met de twee sterkste talent-foci, de sterkste versneller en het
+// sterkste interessegebied, uitsluitend uit de bestaande rangorde. Nooit de
+// suggestie wekken dat de vraag van de student hiermee beantwoord is.
+const WAT_JE_HIER_ZOCHT_SLOT =
+  "Dit rapport beantwoordt je eigen vraag niet rechtstreeks. Het legt ernaast wat uit je antwoorden " +
+  "naar voren komt. Wat je daarmee doet, beslis jij.";
+
+function watJeHierZochtBlokken(
+  p0Tekst: string,
+  foci: T4SDimensie,
+  versnellers: T4SDimensie,
+  interesse: T4SDimensie,
+): T4SBlok[] {
+  const blokken: T4SBlok[] = [
+    {
+      soort: "intro",
+      tekst:
+        "Helemaal aan het begin schreef je wat je hoopte dat deze vragenlijst duidelijk zou maken. " +
+        "Hieronder staat dat nog eens, samen met wat je antwoorden het duidelijkst laten zien.",
+    },
+  ];
+  if (p0Tekst.length > 0) {
+    blokken.push({ soort: "kader", kop: "JOUW VRAAG, NOG EENS", kleur: KLEUR.teal, tekst: p0Tekst });
+  }
+  const topFoci = foci.gerangschikt.filter((r) => r.rang === 1 || r.rang === 2).slice(0, 2);
+  const topVersneller = versnellers.gerangschikt.find((r) => r.rang === 1);
+  const topInteresse = interesse.gerangschikt.find((r) => r.rang === 1);
+  const punten: string[] = [];
+  for (const r of topFoci) punten.push(`${r.construct}. ${r.omschrijving}`.trim());
+  if (topVersneller) punten.push(`${topVersneller.construct}. ${topVersneller.omschrijving}`.trim());
+  if (topInteresse) punten.push(`${topInteresse.construct}. ${topInteresse.omschrijving}`.trim());
+  if (punten.length > 0) {
+    blokken.push({ soort: "opsomming", kop: "Wat je antwoorden het duidelijkst laten zien", punten });
+  }
+  blokken.push({ soort: "alinea", tekst: WAT_JE_HIER_ZOCHT_SLOT });
+  return blokken;
+}
+
+// ── Onderdeel E: kaders voor wie meeleest ────────────────────────────────
+//
+// E1 staat als kader bij de drivers/motivatie, E2 is het slotblad. Beide
+// eindigen op dezelfde drie gevallen als onderdeel F; kiezenGeval/kiezenSlotzin
+// worden hier hergebruikt en niet opnieuw geschreven.
+const E1_KOP = "VOOR WIE MEELEEST";
+const E1_TEKST =
+  "Dit blad gaat over patronen, niet over goed of fout. Wie hier sterk uitkomt, heeft doorgaans geen " +
+  "extra advies nodig, maar wel ruimte om zelf te wegen. De beste vraag die je kunt stellen: wat zou " +
+  "jij kiezen als niemand meekeek.";
+
+function e1Kader(resultaat: T4SResultaat, drivers: T4SDimensie): T4SBlok {
+  const geval = kiezenGeval(resultaat, drivers);
+  return {
+    soort: "kader",
+    kop: E1_KOP,
+    kleur: KLEUR.oker,
+    tekst: `${E1_TEKST} ${kiezenSlotzin(geval)}`,
+  };
+}
+
+const E2_INTRO =
+  "Dit rapport is bedoeld om samen te lezen: een student met een leerkracht, een begeleider of een " +
+  "ouder. Hieronder staat hoe dat het beste lukt.";
+
+function voorWieMeeleestSlotBlokken(): T4SBlok[] {
+  return [
+    { soort: "intro", tekst: E2_INTRO },
+    {
+      soort: "opsomming",
+      kop: "Hoe je dit samen leest",
+      punten: [
+        "Laat de student eerst zelf zeggen wat klopt en wat niet.",
+        "Lees pas daarna samen verder, blad per blad.",
+      ],
+    },
+    {
+      soort: "opsomming",
+      kop: "Wat je er niet mee doet",
+      punten: [
+        "Geen studiekeuze afleiden uit dit rapport.",
+        "Niet vergelijken met anderen: er is geen vergelijkingsgroep.",
+      ],
+    },
+    {
+      soort: "alinea",
+      tekst: "Een goede eerste vraag: welk blad herkende je het meest, en welk blad verraste je.",
+    },
+  ];
+}
+
+// ── Onderdeel G: het blad "Waarop dit rapport gebouwd is" ─────────────────
+//
+// De veertien verwijzingen hieronder komen letterlijk uit
+// bronnen-geverifieerd.md, veld "Volledige correcte verwijzing (APA)" en
+// "Werkende URL", zoals besloten in bronnenbesluit.md. Niets is hier
+// herschreven; alleen de sterretjes van de opmaak en de schuine strepen rond
+// tijdschriftnamen zijn weggehaald, en er staan geen lange liggende
+// streepjes in. De verwijzing naar Deci en Ryan (2000, Psychological
+// Inquiry) staat hier in dezelfde vorm als bij het motivatieprofiel; er
+// staat geen tweede vorm van dezelfde auteurs naast.
+const G_INTRO =
+  "Dit rapport is geen test met goede of foute antwoorden. Het geeft geordend weer wat jij over " +
+  "jezelf hebt aangegeven. De onderdelen die het meet en de manier waarop het erover schrijft, " +
+  "steunen op bestaand wetenschappelijk werk. Hieronder staat waarop.";
+
+const G_SLOT =
+  "Tot slot. Dit is een oriënterend zelfbeeld. Het is geen diagnose, geen selectie-instrument en het " +
+  "voorspelt niet hoe een studie zal verlopen. Er is geen vergelijkingsgroep, dus alles wat hier staat " +
+  "gaat over jou en niet over hoe jij het doet in vergelijking met anderen. Jij kiest, in je eigen " +
+  "tempo. Gebruik dit als startpunt voor een gesprek.";
+
+const G_CONSTRUCTEN_EN_INHOUD: string[] = [
+  "Holland, J. L. (1997). Making vocational choices: A theory of vocational personalities and work " +
+    "environments (3de druk). Psychological Assessment Resources. https://doi.org/10.1037/10791-000",
+  "Nauta, M. M. (2010). The development, evolution, and status of Holland's theory of vocational " +
+    "personalities: Reflections and future directions for counseling psychology. Journal of Counseling " +
+    "Psychology, 57(1), 11 tot 22. https://doi.org/10.1037/a0018213",
+  "Deci, E. L. en Ryan, R. M. (2000). The \"what\" and \"why\" of goal pursuits: Human needs and " +
+    "the self-determination of behavior. Psychological Inquiry, 11(4), 227 tot 268. " +
+    "https://doi.org/10.1207/S15327965PLI1104_01",
+  "Ryan, R. M. en Deci, E. L. (2000). Self-determination theory and the facilitation of intrinsic " +
+    "motivation, social development, and well-being. American Psychologist, 55(1), 68 tot 78. " +
+    "https://doi.org/10.1037/0003-066X.55.1.68",
+  "Ryan, R. M. en Deci, E. L. (2020). Intrinsic and extrinsic motivation from a self-determination " +
+    "theory perspective: Definitions, theory, practices, and future directions. Contemporary " +
+    "Educational Psychology, 61, artikel 101860. https://doi.org/10.1016/j.cedpsych.2020.101860",
+  "Csikszentmihalyi, M. (1990). Flow: The psychology of optimal experience. Harper & Row. " +
+    "https://www.harpercollins.com/products/flow-mihaly-csikszentmihalyi",
+  "Bakker, A. B. en Demerouti, E. (2017). Job demands-resources theory: Taking stock and looking " +
+    "forward. Journal of Occupational Health Psychology, 22(3), 273 tot 285. " +
+    "https://doi.org/10.1037/ocp0000056",
+  "Kahler, T. (1975). Drivers: The key to the process of scripts. Transactional Analysis Journal, " +
+    "5(3), 280 tot 284. https://doi.org/10.1177/036215377500500318",
+];
+
+const G_SCOREBELEID: string[] = [
+  "American Educational Research Association, American Psychological Association en National " +
+    "Council on Measurement in Education. (2014). Standards for educational and psychological " +
+    "testing. American Educational Research Association. " +
+    "https://www.testingstandards.net/uploads/7/6/6/4/76643089/standards_2014edition.pdf",
+  "International Test Commission. (2013). ITC guidelines on test use (versie 1.2). " +
+    "www.intestcom.org. https://www.intestcom.org/files/guideline_test_use.pdf",
+];
+
+const G_RAPPORTONTWERP: string[] = [
+  "Nielsen Norman Group. (z.d.). Designing for young adults (ages 18 tot 25) (3de editie). " +
+    "https://www.nngroup.com/reports/designing-for-young-adults/",
+  "World Wide Web Consortium. (2018). Web content accessibility guidelines (WCAG) 2.1. " +
+    "https://www.w3.org/TR/WCAG21/",
+];
+
+const G_GRENZEN: string[] = [
+  "Europees Parlement en Raad van de Europese Unie. (2016). Verordening (EU) 2016/679 van het " +
+    "Europees Parlement en de Raad van 27 april 2016 betreffende de bescherming van natuurlijke " +
+    "personen in verband met de verwerking van persoonsgegevens en betreffende het vrije verkeer van " +
+    "die gegevens en tot intrekking van Richtlijn 95/46/EG (algemene verordening gegevensbescherming), " +
+    "artikel 22. Publicatieblad van de Europese Unie, L 119, 1 tot 88. " +
+    "https://eur-lex.europa.eu/legal-content/NL/TXT/HTML/?uri=CELEX:02016R0679-20160504",
+  "Colonna, L. (2024). Teachers in the loop? An analysis of automatic assessment systems under " +
+    "Article 22 GDPR. International Data Privacy Law, 14(1), 3 tot 18. " +
+    "https://doi.org/10.1093/idpl/ipad024",
+];
+
+function waaropGebouwdBlokken(): T4SBlok[] {
+  return [
+    { soort: "intro", tekst: G_INTRO },
+    { soort: "tussenkop", tekst: "Constructen en inhoud" },
+    { soort: "opsomming", kop: null, punten: G_CONSTRUCTEN_EN_INHOUD },
+    { soort: "tussenkop", tekst: "Scorebeleid en verantwoord gebruik" },
+    { soort: "opsomming", kop: null, punten: G_SCOREBELEID },
+    { soort: "tussenkop", tekst: "Rapportontwerp" },
+    { soort: "opsomming", kop: null, punten: G_RAPPORTONTWERP },
+    { soort: "tussenkop", tekst: "Grenzen aan geautomatiseerde besluitvorming" },
+    { soort: "opsomming", kop: null, punten: G_GRENZEN },
+    { soort: "alinea", tekst: G_SLOT },
+  ];
+}
+
+/**
+ * De blokken van de pagina "Wat je motiveert om te studeren". Leest
  * uitsluitend resultaat.motivatie (balansLabel, intrinsiek, extrinsiek) en
  * rekent nergens zelf een oordeel uit.
  */
@@ -274,7 +616,7 @@ function motivatieBlokken(resultaat: T4SResultaat): T4SBlok[] {
     {
       soort: "alinea",
       tekst:
-        "Volgens de zelfdeterminatietheorie van Deci en Ryan (1985, 2000) komt motivatie uit twee soorten " +
+        "Volgens de zelfdeterminatietheorie van Deci en Ryan (2000, 2020) komt motivatie uit twee soorten " +
         "bronnen. Intrinsiek wil zeggen dat de motivatie van binnenuit komt: uit autonomie (zelf kunnen " +
         "kiezen), competentie (voelen dat je bijleert) en verbondenheid (je verbonden voelen met anderen). " +
         "Extrinsiek wil zeggen dat de motivatie van buitenaf komt: uit erkenning (waardering, punten, " +
@@ -412,7 +754,29 @@ export function bouwT4StudentsRapport(
     ),
   );
 
-  // ── 3. De one-page ────────────────────────────────────────────────────────
+  // ── 3. Dit hoopte je te vinden (onderdeel B2) ─────────────────────────────
+  // Het letterlijke antwoord op de open beginvraag P0, in een kader. P0 is
+  // niet verplicht: is ze niet beantwoord of enkel met witruimte beantwoord,
+  // dan komt het kader nergens op dit blad. Het blad zelf blijft bestaan; er
+  // wordt nooit een leeg kader getoond.
+  const p0Tekst = (antwoorden["P0"] as { text?: string } | undefined)?.text?.trim() || "";
+  const hoopteBlokken: T4SBlok[] = [
+    {
+      soort: "intro",
+      tekst:
+        "Voor je de eerste vraag beantwoordde, vroegen we je wat je hoopte dat deze vragenlijst voor " +
+        "jou duidelijk of duidelijker kon maken. Dat antwoord staat hieronder, letterlijk zoals jij " +
+        "het schreef.",
+    },
+  ];
+  if (p0Tekst.length > 0) {
+    hoopteBlokken.push({ soort: "kader", kop: "DIT HOOPTE JE TE VINDEN", kleur: KLEUR.teal, tekst: p0Tekst });
+  }
+  paginas.push(
+    pagina(3, hoopteBlokken, "Jouw eigen vraag, voor je aan de vragenlijst begon."),
+  );
+
+  // ── 4. De one-page ────────────────────────────────────────────────────────
   // Een zin voor alle onderdelen samen, en niet een alinea per onderdeel. Anders
   // groeit dit blok mee met het aantal openstaande vragen en wordt de one-page
   // juist bij een dunne invulling van haar eigen blad geduwd.
@@ -429,7 +793,7 @@ export function bouwT4StudentsRapport(
         ];
   paginas.push(
     pagina(
-      3,
+      4,
       [
         { soort: "intro", tekst: ONEPAGE_INTRO },
         {
@@ -447,12 +811,12 @@ export function bouwT4StudentsRapport(
     ),
   );
 
-  // ── 4. Hoe scherp is dit beeld ────────────────────────────────────────────
+  // ── 5. Hoe scherp is dit beeld ────────────────────────────────────────────
   const bt = resultaat.betrouwbaarheid;
   const p1 = citaatVanItem(inst, antwoorden, "P1", taal);
   paginas.push(
     pagina(
-      4,
+      5,
       [
         {
           soort: "intro",
@@ -507,11 +871,11 @@ export function bouwT4StudentsRapport(
     ),
   );
 
-  // ── 5. Jouw beeld van jezelf ──────────────────────────────────────────────
+  // ── 6. Jouw beeld van jezelf ──────────────────────────────────────────────
   const beeldCitaten = citatenVoor(inst, antwoorden, taal, ["BE1", "BE2"]);
   paginas.push(
     pagina(
-      5,
+      6,
       [
         {
           soort: "intro",
@@ -547,7 +911,7 @@ export function bouwT4StudentsRapport(
     ),
   );
 
-  // ── 6. Jouw energie vandaag ───────────────────────────────────────────────
+  // ── 7. Jouw energie vandaag ───────────────────────────────────────────────
   // energie.bronnen en energie.lekken dragen constructnamen, geen item-id's.
   // Alleen de drie families die het rapport rangschikt komen hier op papier;
   // TaPas-BEELD wordt apart gelezen en zou zichzelf anders nog eens herhalen.
@@ -558,7 +922,7 @@ export function bouwT4StudentsRapport(
   const lekken = resultaat.energie.lekken.filter((c) => drieFamilies.has(c));
   paginas.push(
     pagina(
-      6,
+      7,
       [
         {
           soort: "intro",
@@ -608,9 +972,9 @@ export function bouwT4StudentsRapport(
   }[] = [
     {
       dim: foci,
-      opener: 7,
-      top: 8,
-      laag: 9,
+      opener: 8,
+      top: 9,
+      laag: 10,
       wat: FAM_FOCI,
       openerTekst: [
         "Een talent-focus zegt waarin je je talent inzet: het soort werk dat je met weinig moeite af " +
@@ -625,9 +989,9 @@ export function bouwT4StudentsRapport(
     },
     {
       dim: versnellers,
-      opener: 10,
-      top: 11,
-      laag: 12,
+      opener: 11,
+      top: 12,
+      laag: 13,
       wat: FAM_VERSNELLERS,
       openerTekst: [
         "Een talent-versneller zegt hoe je het doet. Niet aan welk soort werk je vermogen zichtbaar " +
@@ -641,9 +1005,9 @@ export function bouwT4StudentsRapport(
     },
     {
       dim: drivers,
-      opener: 13,
-      top: 14,
-      laag: 15,
+      opener: 14,
+      top: 15,
+      laag: 16,
       wat: FAM_DRIVERS,
       openerTekst: [
         "Een driver is een aangeleerd patroon dat je gedrag stuurt, vooral onder druk. Het begrip komt " +
@@ -714,6 +1078,11 @@ export function bouwT4StudentsRapport(
         topBlokken.push({ soort: "citaat", kop: b.citaatKop, kleur: b.dim.kleur, regels });
       }
     }
+    // Onderdeel E1: het kader "voor wie meeleest" hoort bij de drivers, waar
+    // het gaat over gedragspatronen en niet over vermogen.
+    if (b.wat === FAM_DRIVERS) {
+      topBlokken.push(e1Kader(resultaat, drivers));
+    }
     paginas.push(pagina(b.top, topBlokken, b.topOndertitel));
 
     // Wat lager staat.
@@ -745,16 +1114,23 @@ export function bouwT4StudentsRapport(
     paginas.push(pagina(b.laag, laagBlokken, b.laagOndertitel));
   }
 
-  // ── 16. Wat je motiveert om te studeren ───────────────────────────────────
+  // ── 17. Wat je motiveert om te studeren ───────────────────────────────────
   // Het oordeel komt uitsluitend uit de motor: balansLabel, intrinsiek en
   // extrinsiek worden hier alleen gelezen en getoond, nooit herberekend. Zie
   // tests/t4students-oordeel-komt-uit-de-motor.test.ts en
   // tests/t4students-motivatieblok-in-studiekompas.test.ts.
   // Motivatie is een eigen laag en heeft geen koppeling met de drivers, ook al
   // gaat het bij allebei over wat iemand aanstuurt.
-  paginas.push(pagina(16, motivatieBlokken(resultaat), "Wat je in beweging brengt om te leren."));
+  paginas.push(pagina(17, motivatieBlokken(resultaat), "Wat je in beweging brengt om te leren."));
 
-  // ── 17. Hoe jij het beste leert ───────────────────────────────────────────
+  // ── 18. Waarom kiezen makkelijk of moeilijk kan voelen (onderdeel F) ───────
+  // Meteen na het motivatieblok, zoals de opdracht vraagt. Twee gemeten
+  // onderdelen naast elkaar, nooit uit elkaar afgeleid: zie kiezenBlokken().
+  paginas.push(
+    pagina(18, kiezenBlokken(resultaat, drivers), "Twee metingen naast elkaar, niet uit elkaar afgeleid."),
+  );
+
+  // ── 19. Hoe jij het beste leert ───────────────────────────────────────────
   const ss = resultaat.studiestrategie;
   const s1 = citaatVanItem(inst, antwoorden, "S1", taal);
   const leerPunten: string[] = [];
@@ -776,7 +1152,7 @@ export function bouwT4StudentsRapport(
   );
   paginas.push(
     pagina(
-      17,
+      19,
       [
         {
           soort: "intro",
@@ -801,7 +1177,7 @@ export function bouwT4StudentsRapport(
     ),
   );
 
-  // ── 18. Jouw leer- en werkomgeving ────────────────────────────────────────
+  // ── 20. Jouw leer- en werkomgeving ────────────────────────────────────────
   //
   // Dit blad noemt geen enkel construct bij een vaste naam en kiest er ook geen
   // op positie in de lijst. Het leest de kop en de staart van de rangordes en
@@ -845,7 +1221,7 @@ export function bouwT4StudentsRapport(
   );
   paginas.push(
     pagina(
-      18,
+      20,
       [
         {
           soort: "intro",
@@ -867,7 +1243,7 @@ export function bouwT4StudentsRapport(
     ),
   );
 
-  // ── 19. Waar je interesse naar uitgaat ────────────────────────────────────
+  // ── 21. Waar je interesse naar uitgaat ────────────────────────────────────
   const interesseBlokken: T4SBlok[] = [
     {
       soort: "intro",
@@ -893,9 +1269,9 @@ export function bouwT4StudentsRapport(
       "Bij dit onderdeel is niet naar energie gevraagd. Daarom staat er in de rechterkolom niets. " +
       "Dat is geen ontbrekend antwoord van jou, die vraag is er gewoon niet.",
   });
-  paginas.push(pagina(19, interesseBlokken, "Waar je aandacht vanzelf naartoe gaat."));
+  paginas.push(pagina(21, interesseBlokken, "Waar je aandacht vanzelf naartoe gaat."));
 
-  // ── 20. Studierichtingen om te verkennen ──────────────────────────────────
+  // ── 22. Studierichtingen om te verkennen ──────────────────────────────────
   const gebieden = resultaat.studiegebieden.top.length > 0
     ? resultaat.studiegebieden.top
     : resultaat.studiegebieden.gesorteerd.slice(0, 3);
@@ -905,7 +1281,7 @@ export function bouwT4StudentsRapport(
   });
   paginas.push(
     pagina(
-      20,
+      22,
       [
         {
           soort: "intro",
@@ -944,11 +1320,11 @@ export function bouwT4StudentsRapport(
     ),
   );
 
-  // ── 21. Waar jij iets wilt betekenen ──────────────────────────────────────
+  // ── 23. Waar jij iets wilt betekenen ──────────────────────────────────────
   const b1 = citaatVanItem(inst, antwoorden, "B1", taal);
   paginas.push(
     pagina(
-      21,
+      23,
       [
         {
           soort: "intro",
@@ -986,7 +1362,7 @@ export function bouwT4StudentsRapport(
     ),
   );
 
-  // ── 22. Jouw specifieke positie ───────────────────────────────────────────
+  // ── 24. Jouw specifieke positie ───────────────────────────────────────────
   const spanningen: string[] = [];
   for (const [as, paren] of Object.entries(inst.scoringMap.convergenceAxes)) {
     const posities = paren
@@ -1028,7 +1404,7 @@ export function bouwT4StudentsRapport(
   }
   paginas.push(
     pagina(
-      22,
+      24,
       [
         {
           soort: "intro",
@@ -1050,7 +1426,7 @@ export function bouwT4StudentsRapport(
     ),
   );
 
-  // ── 23. Aandachtspunten ───────────────────────────────────────────────────
+  // ── 25. Aandachtspunten ───────────────────────────────────────────────────
   const aandacht: string[] = [];
   const kopDrivers = drivers.gerangschikt.slice(0, 2);
   if (kopDrivers.length > 0) {
@@ -1076,7 +1452,7 @@ export function bouwT4StudentsRapport(
   }
   paginas.push(
     pagina(
-      23,
+      25,
       [
         {
           soort: "kader",
@@ -1099,7 +1475,7 @@ export function bouwT4StudentsRapport(
     ),
   );
 
-  // ── 24. Een eerste stap ───────────────────────────────────────────────────
+  // ── 26. Een eerste stap ───────────────────────────────────────────────────
   const eersteStap =
     foci.gerangschikt.length > 0
       ? `Zoek in de komende twee weken een situatie op waarin ${foci.gerangschikt[0].construct} echt ` +
@@ -1109,7 +1485,7 @@ export function bouwT4StudentsRapport(
         "daarna terug of het klopte met wat je hier las.";
   paginas.push(
     pagina(
-      24,
+      26,
       [
         {
           soort: "intro",
@@ -1140,15 +1516,27 @@ export function bouwT4StudentsRapport(
     ),
   );
 
-  // ── 25, 26, 27: de bronpagina's ───────────────────────────────────────────
-  paginas.push(bronPagina(25, inst, antwoorden, taal, FAM_FOCI));
-  paginas.push(bronPagina(26, inst, antwoorden, taal, FAM_VERSNELLERS));
-  paginas.push(bronPagina(27, inst, antwoorden, taal, FAM_DRIVERS));
+  // ── 27. In één zin (onderdeel D) ────────────────────────────────────
+  paginas.push(
+    pagina(27, eenZinBlokken(resultaat, foci, versnellers, interesse), "Drie sterke onderdelen in één zin."),
+  );
 
-  // ── 28. Verantwoording en grenzen ─────────────────────────────────────────
+  // ── 28. Wat je hier zocht (onderdeel B3) ────────────────────────────
   paginas.push(
     pagina(
       28,
+      watJeHierZochtBlokken(p0Tekst, foci, versnellers, interesse),
+      "Terug naar je eigen vraag, met wat je antwoorden laten zien.",
+    ),
+  );
+
+  // ── 29. Voor wie meeleest, slot (onderdeel E2) ─────────────────────
+  paginas.push(pagina(29, voorWieMeeleestSlotBlokken(), "Hoe je dit rapport samen leest."));
+
+  // ── 30. Verantwoording en grenzen ─────────────────────────────────────────
+  paginas.push(
+    pagina(
+      30,
       [
         {
           soort: "intro",
@@ -1192,33 +1580,18 @@ export function bouwT4StudentsRapport(
             "Heb je een vraag bij wat hier staat, leg dit rapport dan naast iemand die je kent: een " +
             "leerkracht, een begeleider, een ouder. Het is bedoeld om samen te lezen.",
         },
-        {
-          soort: "tussenkop",
-          tekst: "Bronvermelding",
-        },
-        {
-          soort: "alinea",
-          tekst:
-            "Het motivatieprofiel eerder in dit rapport steunt op de zelfdeterminatietheorie van Deci en " +
-            "Ryan (1985, 2000). Hieronder de volledige verwijzingen.",
-        },
-        {
-          soort: "opsomming",
-          kop: null,
-          punten: [
-            "Deci, E. L., en Ryan, R. M. (1985). Intrinsic Motivation and Self-Determination in Human " +
-              "Behavior. New York: Plenum Press.",
-            "Ryan, R. M., en Deci, E. L. (2000). Self-determination theory and the facilitation of " +
-              "intrinsic motivation, social development, and well-being. American Psychologist, 55(1), " +
-              "68 tot 78.",
-            "Ryan, R. M., en Deci, E. L. (2017). Self-Determination Theory: Basic Psychological Needs in " +
-              "Motivation, Development, and Wellness. New York: Guilford Press.",
-          ],
-        },
       ],
       "Wat dit rapport is, en wat het niet is.",
     ),
   );
+
+  // ── 31. Waarop dit rapport gebouwd is (onderdeel G) ──────────────────
+  paginas.push(pagina(31, waaropGebouwdBlokken(), "De bronnen achter de onderdelen en het ontwerp."));
+
+  // ── 32, 33, 34: de bronpagina's ──────────────────────────────────
+  paginas.push(bronPagina(32, inst, antwoorden, taal, FAM_FOCI));
+  paginas.push(bronPagina(33, inst, antwoorden, taal, FAM_VERSNELLERS));
+  paginas.push(bronPagina(34, inst, antwoorden, taal, FAM_DRIVERS));
 
   // ── De licentie toepassen ─────────────────────────────────────────────────
   const toegestaan = new Set(

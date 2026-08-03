@@ -572,41 +572,68 @@ export { getal1, getalMetTeken, lijst, kleurVanFamilie };
 
 // ── Het paginaplan uit blauwdruk 5.1 ────────────────────────────────────────
 
+// ---------------------------------------------------------------------------
+// ONDERDEEL H: HET RAPPORT ALS VERHAAL
+//
+// Dit paginaplan is herschikt volgens onderdeel H van de opdracht
+// "Studiekompas persoonlijk maken" (2026-08-03). Er kwamen zes nieuwe bladen
+// bij, en de bestaande bladen bleven allemaal staan, in dezelfde onderlinge
+// volgorde als voorheen. Wat volgt is de plaats van elk nieuw blad en waarom.
+//
+// - Nr 3 "Dit hoopte je te vinden" (onderdeel B2, nieuw): meteen na de
+//   leeswijzer, zodat de eigen vraag van de student als eerste inhoudelijke
+//   blad verschijnt, voor er één cijfer valt.
+// - Nr 18 "Waarom kiezen makkelijk of moeilijk kan voelen" (onderdeel F,
+//   nieuw): meteen na het motivatieblok (nu nr 17), zoals de opdracht letterlijk
+//   vraagt.
+// - Nr 27 "In één zin" (onderdeel D, nieuw): na "Een eerste stap", vlak voor
+//   "Wat je hier zocht".
+// - Nr 28 "Wat je hier zocht" (onderdeel B3, nieuw): sluit de inhoudelijke
+//   bladen af door terug te grijpen naar de beginvraag van nr 3.
+// - Nr 29 "Voor wie meeleest, slot" (onderdeel E2, nieuw): het tweede kader
+//   voor wie meeleest, als apart slotblad voor de verantwoording.
+// - Nr 31 "Waarop dit rapport gebouwd is" (onderdeel G, nieuw): een eigen blad
+//   na "Verantwoording en grenzen" en voor de bronpagina's, met uitsluitend
+//   bevestigde verwijzingen uit bronnen-geverifieerd.md.
+//
+// Alle bladen na nr 2 zijn ten opzichte van de vorige indeling met een stap
+// opgeschoven per ingevoegd blad dat ervoor komt. tests/t4students-hoofdstuknummers-doorlopend.test.ts
+// bewaakt dat de nummering in de Verdieping exact 1 tot en met het laatste
+// hoofdstuk blijft, zonder gaten.
+// ---------------------------------------------------------------------------
 export const PAGINAPLAN: { nr: number; titel: string; basis: boolean }[] = [
   { nr: 1, titel: "Cover", basis: true },
   { nr: 2, titel: "Hoe je dit rapport leest", basis: true },
-  { nr: 3, titel: "Jouw talentmotor in één oogopslag", basis: true },
-  { nr: 4, titel: "Hoe scherp is dit beeld", basis: false },
-  { nr: 5, titel: "Jouw beeld van jezelf", basis: true },
-  { nr: 6, titel: "Jouw energie vandaag", basis: true },
-  { nr: 7, titel: "Talent-foci, wat het zijn", basis: true },
-  { nr: 8, titel: "Talent-foci, jouw drie sterkste", basis: true },
-  { nr: 9, titel: "Talent-foci, wat lager staat", basis: false },
-  { nr: 10, titel: "Talent-versnellers, wat het zijn", basis: true },
-  { nr: 11, titel: "Talent-versnellers, jouw drie sterkste", basis: true },
-  { nr: 12, titel: "Talent-versnellers, wat lager staat", basis: false },
-  { nr: 13, titel: "Drivers, wat het zijn", basis: true },
-  { nr: 14, titel: "Drivers, jouw patroon", basis: true },
-  { nr: 15, titel: "Drivers, de keerzijde", basis: false },
-  // Nr 16 is nieuw (motivatieblok). De motivatiebalans komt uit fase 1b van de
-  // scoringsmotor en stond nog niet in de oorspronkelijke zevenentwintig
-  // pagina's van de blauwdruk. Ze staat hier, na pagina 15 (Drivers, de
-  // keerzijde) en voor het praktische leerhoofdstuk: na de drie
-  // kern-dimensies en voor "Hoe jij het beste leert". Alle hoofdstukken die
-  // hierna volgden zijn met een stap opgeschoven zodat de nummering
-  // ononderbroken blijft. Ze staat in zowel de Basis als de Verdieping, net
-  // als de meeste kernhoofdstukken hiervoor.
-  { nr: 16, titel: "Wat je motiveert om te studeren", basis: true },
-  { nr: 17, titel: "Hoe jij het beste leert", basis: true },
-  { nr: 18, titel: "Jouw leer- en werkomgeving", basis: false },
-  { nr: 19, titel: "Waar je interesse naar uitgaat", basis: true },
-  { nr: 20, titel: "Studierichtingen om te verkennen", basis: false },
-  { nr: 21, titel: "Waar jij iets wilt betekenen", basis: true },
-  { nr: 22, titel: "Jouw specifieke positie", basis: false },
-  { nr: 23, titel: "Aandachtspunten", basis: false },
-  { nr: 24, titel: "Een eerste stap", basis: true },
-  { nr: 25, titel: "Alles wat je zelf antwoordde over je talent-foci", basis: true },
-  { nr: 26, titel: "Alles wat je zelf antwoordde over je talent-versnellers", basis: true },
-  { nr: 27, titel: "Alles wat je zelf antwoordde over je drivers", basis: true },
-  { nr: 28, titel: "Verantwoording en grenzen", basis: true },
+  { nr: 3, titel: "Dit hoopte je te vinden", basis: true },
+  { nr: 4, titel: "Jouw talentmotor in één oogopslag", basis: true },
+  { nr: 5, titel: "Hoe scherp is dit beeld", basis: false },
+  { nr: 6, titel: "Jouw beeld van jezelf", basis: true },
+  { nr: 7, titel: "Jouw energie vandaag", basis: true },
+  { nr: 8, titel: "Talent-foci, wat het zijn", basis: true },
+  { nr: 9, titel: "Talent-foci, jouw drie sterkste", basis: true },
+  { nr: 10, titel: "Talent-foci, wat lager staat", basis: false },
+  { nr: 11, titel: "Talent-versnellers, wat het zijn", basis: true },
+  { nr: 12, titel: "Talent-versnellers, jouw drie sterkste", basis: true },
+  { nr: 13, titel: "Talent-versnellers, wat lager staat", basis: false },
+  { nr: 14, titel: "Drivers, wat het zijn", basis: true },
+  { nr: 15, titel: "Drivers, jouw patroon", basis: true },
+  { nr: 16, titel: "Drivers, de keerzijde", basis: false },
+  { nr: 17, titel: "Wat je motiveert om te studeren", basis: true },
+  { nr: 18, titel: "Waarom kiezen makkelijk of moeilijk kan voelen", basis: true },
+  { nr: 19, titel: "Hoe jij het beste leert", basis: true },
+  { nr: 20, titel: "Jouw leer- en werkomgeving", basis: false },
+  { nr: 21, titel: "Waar je interesse naar uitgaat", basis: true },
+  { nr: 22, titel: "Studierichtingen om te verkennen", basis: false },
+  { nr: 23, titel: "Waar jij iets wilt betekenen", basis: true },
+  { nr: 24, titel: "Jouw specifieke positie", basis: false },
+  { nr: 25, titel: "Aandachtspunten", basis: false },
+  { nr: 26, titel: "Een eerste stap", basis: true },
+  { nr: 27, titel: "In één zin", basis: true },
+  { nr: 28, titel: "Wat je hier zocht", basis: true },
+  { nr: 29, titel: "Voor wie meeleest, slot", basis: true },
+  { nr: 30, titel: "Verantwoording en grenzen", basis: true },
+  { nr: 31, titel: "Waarop dit rapport gebouwd is", basis: true },
+  { nr: 32, titel: "Alles wat je zelf antwoordde over je talent-foci", basis: true },
+  { nr: 33, titel: "Alles wat je zelf antwoordde over je talent-versnellers", basis: true },
+  { nr: 34, titel: "Alles wat je zelf antwoordde over je drivers", basis: true },
 ];

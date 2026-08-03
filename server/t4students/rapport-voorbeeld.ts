@@ -99,6 +99,10 @@ const ANTWOORDEN: T4SAntwoorden = {
   "MOT-INT-3": { recognition: 3 },
   "MOT-EXT-1": { recognition: 1 },
   "MOT-EXT-2": { recognition: 2 },
+
+  // De open beginvraag (P0, onderdeel B1). Vrije tekst, telt in geen score
+  // mee en wordt uitsluitend letterlijk getoond op de bladen B2 en B3.
+  P0: { text: "Ik hoop te weten of ik beter wetenschappen of kunst kan kiezen." },
 };
 
 export const VOORBEELDAFNAME: T4SVoorbeeld = {
