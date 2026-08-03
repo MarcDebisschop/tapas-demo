@@ -6,9 +6,15 @@ import { VOORBEELDAFNAME } from "../server/t4students/rapport-voorbeeld";
 import type { T4SPagina } from "../server/t4students/rapport-contract";
 
 // ---------------------------------------------------------------------------
-// Herstelronde 2, punt C: de bladen "In één zin" en "Wat je hier zocht"
-// putten voortaan uit de groep sterk aanwezig (op aandeel), niet meer
+// Herstelronde 2, punt C: de samenvattende zin en het blad "Wat je hier
+// zocht" putten voortaan uit de groep sterk aanwezig (op aandeel), niet meer
 // rechtstreeks uit rang 1 van de motor.
+//
+// OPMAAKHERSTEL (2026-08-03), PUNT 2: de samenvattende zin stond
+// oorspronkelijk op het blad "In één zin". Sinds ze verhuisd is naar het
+// citaatvlak van het slothoofdstuk "Een zin om mee te nemen" (om te
+// voorkomen dat de student ze twee keer leest), controleert deze test de zin
+// op de nieuwe plaats. De bewaakte berekening zelf verandert niet.
 //
 // Het gewone voorbeeldprofiel (VOORBEELDAFNAME) heeft altijd hoogstens twee
 // gelijke hoogste aandelen en heeft nooit een lege groep sterk aanwezig,
@@ -27,9 +33,10 @@ function bouw(antwoorden: Record<string, unknown>) {
   });
 }
 
+/** Het slothoofdstuk waarin de samenvattende zin nu als citaatvlak staat. */
 function vindEenZin(paginas: T4SPagina[]): T4SPagina {
-  const blad = paginas.find((p) => /^in één zin$/i.test(p.titel));
-  expect(blad, "geen blad In één zin gevonden").toBeDefined();
+  const blad = paginas.find((p) => /een zin om mee te nemen/i.test(p.titel));
+  expect(blad, "geen slothoofdstuk Een zin om mee te nemen gevonden").toBeDefined();
   return blad!;
 }
 
@@ -67,7 +74,9 @@ describe("In één zin en Wat je hier zocht putten uit de groep sterk aanwezig (
     };
     const rapport = bouw(antwoorden);
     const blad = vindEenZin(rapport.paginas);
-    const eersteZin = (blad.blokken[0] as { tekst: string }).tekst;
+    const citaat = blad.blokken.find((b) => b.soort === "citaat") as { regels: { vraag: string }[] } | undefined;
+    expect(citaat, "geen citaatvlak op het slothoofdstuk gevonden").toBeDefined();
+    const eersteZin = citaat!.regels[0].vraag;
     // Precies twee van de drie bouwstenen worden benoemd in de samenvattende
     // zin zelf (de bouwstenen komen uit rapportteksten.json en zijn geen
     // constructnamen, dus dit controleert de echte D1-zin, niet toevallig

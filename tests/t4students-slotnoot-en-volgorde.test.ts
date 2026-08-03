@@ -12,13 +12,23 @@ import type { T4SBlok, T4SPagina } from "../server/t4students/rapport-contract";
 // INGREEP 1: de hoofdstukken met de onderbouwing en de bronnen
 // ("Verantwoording en grenzen" en "Waarop dit rapport gebouwd is") verhuizen
 // naar het einde, achter de bijlagen met de eigen antwoorden. Het bestaande
-// hoofdstuk "In één zin" blijft bestaan zoals het is (een andere, bestaande
-// test bewaakt dat al en mag niet worden afgezwakt); het schuift mee naar
-// zijn nieuwe plaats, samen met "Wat je hier zocht" en "Voor wie meeleest,
-// slot".
+// hoofdstuk, vroeger "In één zin" en sinds het opmaakherstel van 2026-08-03
+// "Wat vlot gaat en wat energie kost", schuift mee naar zijn nieuwe plaats,
+// samen met "Wat je hier zocht" en "Voor wie meeleest, slot".
 //
 // INGREEP 2: het nieuwe slothoofdstuk "Een zin om mee te nemen" komt na
 // "Voor wie meeleest, slot" en voor de bijlagen met de eigen antwoorden.
+//
+// OPMAAKHERSTEL (2026-08-03), PUNT 2: de grote samenvattende zin stond eerst
+// zowel op het toenmalige blad "In één zin" als in het citaatvlak van dit
+// nieuwe slothoofdstuk; de student las dezelfde zin dus twee keer. De zin
+// staat voortaan alleen nog in het citaatvlak hier. Het oude blad bestaat nog
+// steeds en heet nu "Wat vlot gaat en wat energie kost": het toont alleen nog
+// de twee lijstjes die uniek voor dat blad zijn (bewaakt door de bestaande
+// tests t4students-in-een-zin.test.ts en
+// t4students-in-een-zin-gelijkspel-grammatica.test.ts, die zelf aangepast
+// zijn om de zin op de nieuwe plaats te controleren, zonder de bewaakte
+// tekst zelf te veranderen).
 // ---------------------------------------------------------------------------
 
 function bouw(): T4SPagina[] {
@@ -58,9 +68,9 @@ describe("ingreep 1: de nieuwe hoofdstukvolgorde aan het einde van het rapport",
     expect(paginas[paginas.length - 1].titel).toBe("Waarop dit rapport gebouwd is");
   });
 
-  it("In één zin blijft bestaan en blijft onmiddellijk voor Wat je hier zocht staan (bestaande waarborg)", () => {
+  it("Wat vlot gaat en wat energie kost (vroeger In één zin) blijft bestaan en blijft onmiddellijk voor Wat je hier zocht staan (bestaande waarborg)", () => {
     const paginas = bouw();
-    const iInEenZin = titelIndex(paginas, /^in één zin$/i);
+    const iInEenZin = titelIndex(paginas, /^wat vlot gaat en wat energie kost$/i);
     const iWatJeHierZocht = titelIndex(paginas, /^wat je hier zocht$/i);
     expect(iInEenZin).toBeGreaterThanOrEqual(0);
     expect(iWatJeHierZocht).toBe(iInEenZin + 1);
@@ -97,7 +107,7 @@ describe("ingreep 2: het nieuwe slothoofdstuk Een zin om mee te nemen", () => {
     expect(slot.ondertitel).toBe("Jouw profiel, samengevat in één beweging.");
   });
 
-  it("het citaatvlak toont letterlijk dezelfde zin als de bestaande In één zin berekening", () => {
+  it("het citaatvlak toont de grote samenvattende zin, en die zin staat nergens anders meer in het rapport", () => {
     const resultaat = scoreStudiekompas(I, VOORBEELDAFNAME.antwoorden, null, "nl");
     const rapport = bouwT4StudentsRapport(I, resultaat, VOORBEELDAFNAME.antwoorden, "verdieping", {
       naam: VOORBEELDAFNAME.naam,
@@ -105,16 +115,26 @@ describe("ingreep 2: het nieuwe slothoofdstuk Een zin om mee te nemen", () => {
       datum: VOORBEELDAFNAME.datum,
       instrumentVersie: I.version,
     });
-    const inEenZin = rapport.paginas.find((p) => /^in één zin$/i.test(p.titel));
-    expect(inEenZin).toBeDefined();
-    const bronZin = (inEenZin!.blokken.find((b) => b.soort === "alinea") as { tekst: string }).tekst;
     const slot = vindSlot(rapport.paginas);
     const citaatBlok = slot.blokken.find((b) => b.soort === "citaat") as
       | (T4SBlok & { soort: "citaat" })
       | undefined;
     expect(citaatBlok, "geen citaatvlak op het slothoofdstuk").toBeDefined();
     const citaatTekst = citaatBlok!.regels[0]?.vraag ?? "";
-    expect(citaatTekst).toBe(bronZin);
+    expect(citaatTekst.length).toBeGreaterThan(0);
+    // De zin bevat de sterkste bouwsteen van de talent-focus (rechtstreeks uit
+    // de motor, niet hertypt), net als vroeger op het blad In één zin.
+    expect(citaatTekst).toContain("waar je");
+    // De zin komt nergens anders in het gerenderde rapport voor: dat was
+    // precies het probleem dat hersteld is.
+    let elders = 0;
+    for (const pagina of rapport.paginas) {
+      if (pagina === slot) continue;
+      for (const blok of pagina.blokken) {
+        if ("tekst" in blok && typeof blok.tekst === "string" && blok.tekst === citaatTekst) elders++;
+      }
+    }
+    expect(elders, "de samenvattende zin staat nog ergens anders in het rapport").toBe(0);
   });
 
   it("de kaart WAT AL STERK IS noemt het construct met het hoogste aandeel uit de groep sterk aanwezig van de talent-foci", () => {

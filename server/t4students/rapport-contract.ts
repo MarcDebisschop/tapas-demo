@@ -817,7 +817,12 @@ export const PAGINAPLAN: { nr: number; titel: string; basis: boolean }[] = [
   { nr: 24, titel: "Jouw specifieke positie", basis: false },
   { nr: 25, titel: "Aandachtspunten", basis: false },
   { nr: 26, titel: "Een eerste stap", basis: true },
-  { nr: 27, titel: "In één zin", basis: true },
+  // Nr 27: droeg oorspronkelijk ook de grote samenvattende zin, maar sinds
+  // het nieuwe slothoofdstuk (nr 30) die zin al toont, stond ze twee keer in
+  // hetzelfde rapport. De zin staat voortaan alleen nog in het citaatvlak van
+  // nr 30; hier blijven de twee lijstjes over wat vlot gaat en wat energie
+  // kost, vandaar de nieuwe titel die dekt wat er nog staat.
+  { nr: 27, titel: "Wat vlot gaat en wat energie kost", basis: true },
   { nr: 28, titel: "Wat je hier zocht", basis: true },
   { nr: 29, titel: "Voor wie meeleest, slot", basis: true },
   // Nr 30 is het nieuwe slothoofdstuk van de opdracht Slotnoot en opmaak: het

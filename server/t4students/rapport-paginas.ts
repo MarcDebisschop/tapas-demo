@@ -451,7 +451,22 @@ function d1Bouwsteen(
   return { zin: teksten.join(koppelwoord), gelijkspel: true, aantalGelijk, uitMiddenveld };
 }
 
-function eenZinBlokken(
+// Opmaakherstel (2026-08-03), punt 2: deze functie berekende oorspronkelijk
+// zowel de grote samenvattende zin als de twee lijstjes voor hetzelfde blad
+// "In één zin". Sinds het slothoofdstuk "Een zin om mee te nemen" die zin al
+// toont in zijn citaatvlak, stond ze twee keer in hetzelfde rapport. De
+// berekening van de zin zelf staat daarom nu in het losse berekenZin hierna;
+// deze functie roept dat aan voor het slothoofdstuk, en toont op het eigen
+// blad alleen nog de twee lijstjes die uniek voor dit blad blijven.
+
+/**
+ * Berekent de grote samenvattende zin (met de eventuele gelijkspel- en
+ * middenveld-toelichtingen en de vaste slotregel), of de vaste
+ * te-weinig-ingevuld-alinea wanneer het beeld voorlopig is of een van de drie
+ * bouwstenen ontbreekt. Deze berekening staat los van het blad waarop de zin
+ * verschijnt: alleen het slothoofdstuk "Een zin om mee te nemen" toont ze nog.
+ */
+function berekenZinBlokken(
   resultaat: T4SResultaat,
   foci: T4SDimensie,
   versnellers: T4SDimensie,
@@ -512,6 +527,18 @@ function eenZinBlokken(
     });
   }
   blokken.push({ soort: "alinea", tekst: D_SLOTREGEL });
+  return blokken;
+}
+
+/**
+ * Het blad "Wat vlot gaat en wat energie kost" (vroeger "In één zin"): sinds
+ * de grote samenvattende zin verhuisd is naar het citaatvlak van het
+ * slothoofdstuk, toont dit blad alleen nog onderdeel D2, de twee lijstjes die
+ * uitsluitend de bestaande balanslabels kernsterkte / latent / onderbenut
+ * aflezen. Niets hiervan is nieuw berekend.
+ */
+function eenZinBlokken(foci: T4SDimensie, versnellers: T4SDimensie): T4SBlok[] {
+  const blokken: T4SBlok[] = [];
 
   // Onderdeel D2: twee blokken die uitsluitend de bestaande balanslabels
   // aflezen, niets nieuw berekenen.
@@ -561,10 +588,13 @@ function eenZinOmMeeTeNemenBlokken(
 ): T4SBlok[] {
   const blokken: T4SBlok[] = [{ soort: "alinea", tekst: H_TOELICHTING }];
 
-  // Onderdeel a: het citaatvlak hergebruikt letterlijk de zin die ook op het
-  // hoofdstuk "In één zin" staat (het eerste blok van eenZinBlokken, alleen
-  // aanwezig als er genoeg is ingevuld om de zin te bouwen).
-  const zinBlokken = eenZinBlokken(resultaat, foci, versnellers, interesse);
+  // Onderdeel a: het citaatvlak toont de grote samenvattende zin. Sinds het
+  // opmaakherstel van 2026-08-03 (punt 2) staat deze zin alleen nog hier, niet
+  // meer ook op het blad "Wat vlot gaat en wat energie kost" (vroeger "In één
+  // zin"): dezelfde tekst op twee plaatsen liet de student hetzelfde twee
+  // keer lezen. berekenZinBlokken is dezelfde, ongewijzigde berekening als
+  // voorheen (alleen aanwezig als er genoeg is ingevuld om de zin te bouwen).
+  const zinBlokken = berekenZinBlokken(resultaat, foci, versnellers, interesse);
   const eersteZin = zinBlokken[0];
   if (eersteZin && eersteZin.soort === "alinea" && eersteZin.tekst !== D_TE_WEINIG) {
     blokken.push({
@@ -574,6 +604,21 @@ function eenZinOmMeeTeNemenBlokken(
       kleur: KLEUR.teal,
       regels: [{ vraag: eersteZin.tekst, herkenning: null, energie: null }],
     });
+    // De eventuele gelijkspel- en middenveld-toelichtingen (herstelronde 2,
+    // punt C) horen inhoudelijk bij de zin: zonder hen lijkt de zin een
+    // volledige uitspraak, terwijl ze eigenlijk op een gelijkspel of een
+    // terugval op het middenveld berust. zinBlokken bevat ze, in dezelfde
+    // volgorde als voorheen op het blad "In één zin", als alle blokken na de
+    // eerste zin en voor de vaste slotregel (de laatste van de reeks).
+    for (let i = 1; i < zinBlokken.length - 1; i++) {
+      blokken.push(zinBlokken[i]);
+    }
+    // De vaste slotregel die relativeert wat de zin wel en niet betekent,
+    // hoort inhoudelijk bij de zin en blijft daarom zichtbaar, meteen na het
+    // citaatvlak en de eventuele toelichtingen. Dezelfde letterlijke tekst
+    // als voorheen op het blad "In één zin" (nu "Wat vlot gaat en wat energie
+    // kost"), niet opnieuw geformuleerd.
+    blokken.push({ soort: "alinea", tekst: D_SLOTREGEL });
   }
 
   // Onderdeel b: de kaart "WAT AL STERK IS", op het construct met het
@@ -1909,9 +1954,14 @@ export function bouwT4StudentsRapport(
     ),
   );
 
-  // ── 27. In één zin (onderdeel D) ────────────────────────────────────
+  // ── 27. Wat vlot gaat en wat energie kost (onderdeel D2, vroeger "In één
+  // zin") ─────────────────────────────────────────────────────────────────
   paginas.push(
-    pagina(27, eenZinBlokken(resultaat, foci, versnellers, interesse), "Drie sterke onderdelen in één zin."),
+    pagina(
+      27,
+      eenZinBlokken(foci, versnellers),
+      "Wat vlot gaat en wat energie kost, uit dezelfde antwoorden als hiervoor.",
+    ),
   );
 
   // ── 28. Wat je hier zocht (onderdeel B3) ────────────────────────────
