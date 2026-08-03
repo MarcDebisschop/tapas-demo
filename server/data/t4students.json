@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "name": "T4Students",
   "language": "nl",
-  "description": "Studie- en loopbaankompas voor jongvolwassenen (17-25+): 31 stellingen leiden tot TaPas-BEELD, energiebeeld, zes talentfoci, zes talent-versnellers, driverprofiel, een uit de TaPas-data afgeleid en bevestigd RIASEC-vermoeden gekoppeld aan de 10 studiegebieden, en - als USP - de persoonlijke studiestrategie. Uit één meting worden twee rapporten gerenderd: een Basis-rapport (zelfinzicht) en een Verdiepingsrapport (begeleid keuzeadvies).",
+  "description": "Studie- en loopbaankompas voor jongvolwassenen (17-25+): 39 stellingen leiden tot TaPas-BEELD, energiebeeld, zes talentfoci, zes talent-versnellers, driverprofiel, een motivatiebalans naar de zelfdeterminatietheorie, een uit de TaPas-data afgeleid en bevestigd RIASEC-vermoeden gekoppeld aan de 10 studiegebieden, en - als USP - de persoonlijke studiestrategie. Uit één meting worden twee rapporten gerenderd: een Basis-rapport (zelfinzicht) en een Verdiepingsrapport (begeleid keuzeadvies).",
   "responseScales": {
     "recognition": {
       "type": "ordinal",
@@ -203,6 +203,18 @@
         "Ondernemend",
         "Conventioneel"
       ]
+    },
+    {
+      "id": "Motivatie",
+      "label": "Motivatie (intrinsiek en extrinsiek)",
+      "energyMode": "geen",
+      "constructs": [
+        "Autonomie",
+        "Competentie",
+        "Verbondenheid",
+        "Erkenning",
+        "Verwachting"
+      ]
     }
   ],
   "sections": [
@@ -215,7 +227,7 @@
         "fr": "Lis chaque phrase tranquillement. Indique chaque fois à quel point cela te ressemble, et si cela te donne ou te prend de l'énergie. Il n'y a pas de mauvaises réponses ; ceci est un instantané, pas un jugement.",
         "en": "Read each statement calmly. Each time, indicate how much it is like you, and whether it gives or drains your energy. There are no wrong answers; this is a snapshot, not a judgement."
       },
-      "itemCount": 31,
+      "itemCount": 39,
       "items": [
         {
           "id": "I1",
@@ -1123,6 +1135,81 @@
             "E.2",
             "E.3"
           ]
+        },
+        {
+          "id": "MOT-INT-1",
+          "family": "Motivatie",
+          "construct": "Autonomie",
+          "itemType": "recognition",
+          "scale": "recognition",
+          "text": {
+            "nl": "Ik studeer het best als ik zelf mag kiezen hoe en wanneer ik iets aanpak.",
+            "fr": "J'étudie le mieux quand je peux choisir moi-même comment et quand j'aborde quelque chose.",
+            "en": "I study best when I can choose for myself how and when I tackle something."
+          },
+          "sourceItems": [
+            "T4S-MOT-INT-1"
+          ]
+        },
+        {
+          "id": "MOT-INT-2",
+          "family": "Motivatie",
+          "construct": "Competentie",
+          "itemType": "recognition",
+          "scale": "recognition",
+          "text": {
+            "nl": "Ik voel me gedreven als ik merk dat ik echt iets leer of beter word.",
+            "fr": "Je me sens motivé quand je remarque que j'apprends vraiment quelque chose ou que je progresse.",
+            "en": "I feel driven when I notice that I am truly learning something or getting better."
+          },
+          "sourceItems": [
+            "T4S-MOT-INT-2"
+          ]
+        },
+        {
+          "id": "MOT-INT-3",
+          "family": "Motivatie",
+          "construct": "Verbondenheid",
+          "itemType": "recognition",
+          "scale": "recognition",
+          "text": {
+            "nl": "Ik werk harder als ik me verbonden voel met de mensen om me heen.",
+            "fr": "Je travaille plus dur quand je me sens lié aux personnes qui m'entourent.",
+            "en": "I work harder when I feel connected to the people around me."
+          },
+          "sourceItems": [
+            "T4S-MOT-INT-3"
+          ]
+        },
+        {
+          "id": "MOT-EXT-1",
+          "family": "Motivatie",
+          "construct": "Erkenning",
+          "itemType": "recognition",
+          "scale": "recognition",
+          "text": {
+            "nl": "Ik voel me sterk gemotiveerd door goede punten, prijzen of erkenning van anderen.",
+            "fr": "Je me sens fortement motivé par de bonnes notes, des prix ou la reconnaissance des autres.",
+            "en": "I feel strongly motivated by good grades, prizes or recognition from others."
+          },
+          "sourceItems": [
+            "T4S-MOT-EXT-1"
+          ]
+        },
+        {
+          "id": "MOT-EXT-2",
+          "family": "Motivatie",
+          "construct": "Verwachting",
+          "itemType": "recognition",
+          "scale": "recognition",
+          "text": {
+            "nl": "De verwachtingen van mijn omgeving, zoals ouders en school, spelen een grote rol in mijn keuzes.",
+            "fr": "Les attentes de mon entourage, comme mes parents et l'école, jouent un grand rôle dans mes choix.",
+            "en": "The expectations of my environment, such as parents and school, play a large role in my choices."
+          },
+          "sourceItems": [
+            "T4S-MOT-EXT-2"
+          ]
         }
       ]
     }
@@ -1149,7 +1236,15 @@
       "driverDoorslagFactor": 2,
       "beeldNietInEnergieDrempel": 0,
       "leastCharacteristicCount": 2,
-      "tieMargin": 0.3
+      "tieMargin": 0.3,
+      "motivatieBalansDrempel": 0.5
+    },
+    "motivationItems": {
+      "MOT-INT-1": "Autonomie",
+      "MOT-INT-2": "Competentie",
+      "MOT-INT-3": "Verbondenheid",
+      "MOT-EXT-1": "Erkenning",
+      "MOT-EXT-2": "Verwachting"
     },
     "beeldItems": {
       "BE1": "Helderheid/zingeving",

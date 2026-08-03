@@ -90,9 +90,16 @@ describe("punt 8: de teller telt wat een deelnemer werkelijk beantwoordde", () =
     }
   });
 
-  it("een volledig ingevulde vragenlijst staat op 34 van 34", () => {
+  it("een volledig ingevulde vragenlijst staat op 34 van 39 sinds fase 1b", () => {
     // Dit is de tegenproef tegen dubbeltellen. De reparatie mag hier niets
-    // veranderen: het stond al goed.
+    // veranderen: het stond al goed. Tot en met fase 1 stonden hier twee keer
+    // hetzelfde getal, 34 van 34, want elk item in main telde ergens mee voor
+    // beantwoord. Sinds fase 1b telt totaalItems (het aantal items in main)
+    // 39, want de vijf motivatie-items horen er ook bij. beantwoord blijft op
+    // 34 staan zodra ook de vijf motivatie-items ingevuld zijn: die items
+    // horen bewust niet bij het betrouwbaarheids- of voorlopig-signaal, net
+    // zoals de profiel-, studiecontext- en betekenisitems dat al niet deden.
+    // Zie de motivatiebalans-uitleg in server/t4students/kompas-scoring.ts.
     const items = I.sections.find((s) => s.sectionId === "main")!.items;
     const alles: Record<string, any> = {};
     for (const it of items) {
@@ -102,7 +109,7 @@ describe("punt 8: de teller telt wat een deelnemer werkelijk beantwoordde", () =
       else alles[it.id] = { value: 5 };
     }
     const r = scoreStudiekompas(I, alles, null, "nl");
-    expect(r.betrouwbaarheid.totaalItems).toBe(34);
+    expect(r.betrouwbaarheid.totaalItems).toBe(39);
     expect(r.betrouwbaarheid.beantwoord).toBe(34);
   });
 

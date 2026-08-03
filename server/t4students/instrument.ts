@@ -24,6 +24,18 @@
 // 34 items, de vijf responsschalen, de volledige scoringMap met haar constanten
 // en de drie talen zijn ongewijzigd overgenomen. Geen enkel getal is aangeraakt.
 //
+// DE MOTIVATIELAAG (FASE 1B)
+// De T4Students-toepassing die vandaag op het platform draait, buiten dit
+// nieuwe instrument om, heeft al een motivatielaag: vijf items naar de
+// zelfdeterminatietheorie van Deci en Ryan, drie intrinsiek en twee
+// extrinsiek. Die laag stond niet in de browsertoepassing hierboven en is in
+// fase 1b als zevende familie "Motivatie" toegevoegd, met de bestaande
+// itemteksten. Het instrument telt daardoor geen 34 maar 39 items. De
+// motivatielaag wordt met eigen items gemeten en staat los van de familie
+// Drivers: een driver is een onbewust controlepatroon, motivatie gaat over
+// waar iemands handelen vandaan komt. De twee mogen niet uit elkaar worden
+// afgeleid.
+//
 // DE VERTAALVLAG
 // Het bronbestand zette translationStatus op "nl-only" terwijl er wel degelijk
 // Franse en Engelse teksten in stonden. Die tegenspraak is opgelost: D7, F7 en
@@ -118,9 +130,25 @@ export interface T4SScoringMap {
     beeldNietInEnergieDrempel: number;
     leastCharacteristicCount: number;
     tieMargin: number;
+    /**
+     * Drempel voor de motivatiebalans (fase 1b). Komt uit de bestaande
+     * T4Students-toepassing (server/t4students/scoring.ts), niet uit deze
+     * blauwdruk: dat instrument kende de motivatielaag niet. Dezelfde formule
+     * en dezelfde drempel zijn hier overgezet zonder een getal te wijzigen.
+     * De waarde is een conventie van de ontwikkelaar en niet op afnamegegevens
+     * geijkt, net als GASPEDAAL_REM_GRENS bij de Driver-scan
+     * (server/driverscan/duiding.ts).
+     */
+    motivatieBalansDrempel: number;
   };
   beeldItems: Record<string, string>;
   recognitionItems: Record<string, string>;
+  /**
+   * Welk motivatieconstruct bij welk item hoort (fase 1b). Bewust een eigen
+   * veld en geen uitbreiding van recognitionItems: de motivatielaag wordt
+   * apart gemeten en telt niet mee in de driver- of talentberekeningen.
+   */
+  motivationItems: Record<string, string>;
   energyItems: string[];
   sjtItems: string[];
   interestItems: Record<string, string>;
@@ -188,7 +216,7 @@ export interface T4SScoringMap {
 /** Het volledige instrument, precies zoals het in het databestand staat. */
 export const T4STUDENTS_INSTRUMENT = definitie as unknown as T4SInstrument;
 
-/** De sectie waar alle 34 items in zitten. */
+/** De sectie waar alle 39 items in zitten (34 uit de motorronde plus de vijf van de motivatiefamilie). */
 export function t4studentsItems(): T4SItem[] {
   const main = T4STUDENTS_INSTRUMENT.sections.find((s) => s.sectionId === "main");
   return main ? main.items : [];
