@@ -268,7 +268,7 @@ const MOTIVATIE_DUIDING: Record<string, string> = {
 // label dat de motor al als hoogste categorie geeft, namelijk "gaspedaal".
 // Er wordt geen nieuwe drempel toegevoegd. Zie meting-vooraf.md, onderdeel 3.
 const KIEZEN_INTRO =
-  "Hierboven en hierna lees je twee dingen die allebei met kiezen te maken kunnen hebben: je " +
+  "Op de bladen hiervoor las je twee dingen die allebei met kiezen te maken kunnen hebben: je " +
   "motivatiebalans en je driverpatroon. Het zijn twee afzonderlijke metingen. Het ene wordt " +
   "nergens uit het andere afgeleid, en de ene meting veroorzaakt de andere niet. Hieronder staan " +
   "ze alleen naast elkaar gelegd.";
@@ -310,8 +310,34 @@ function kiezenSlotzin(geval: 1 | 2 | 3): string {
   return KIEZEN_TEKST_GEVAL3;
 }
 
+/**
+ * Zet een bestaand driverlabel ("gaspedaal", "remmend", "neutraal") om naar
+ * een waarde die het label zelf behoudt maar er gewone taal aan toevoegt, zodat
+ * de kaart op het blad over kiezen niet met een kaal intern label alleen komt.
+ * Het bestaande label blijft het eerste woord: er wordt niets vervangen.
+ */
+function driverwaardeMetToelichting(leeswoord: "gaspedaal" | "remmend" | "neutraal"): string {
+  if (leeswoord === "gaspedaal") return "gaspedaal, sterk aanwezig";
+  if (leeswoord === "remmend") return "remmend, weinig aanwezig";
+  return "neutraal, gemiddeld aanwezig";
+}
+
 function kiezenBlokken(resultaat: T4SResultaat, drivers: T4SDimensie): T4SBlok[] {
   const geval = kiezenGeval(resultaat, drivers);
+  // Please Others en Try Hard kunnen elk een ander label hebben. Gaspedaal
+  // krijgt voorrang zodra een van beide daarop staat (zo bleef het altijd al
+  // in kiezenGeval); anders geldt het label van de rij die als eerste
+  // gerangschikt staat, en bij verschil tussen de twee: neutraal boven
+  // remmend, omdat neutraal het minst uitgesproken patroon aangeeft.
+  const driverRijen = drivers.gerangschikt.filter((r) => KIEZEN_DRIVER_NAMEN.includes(r.construct));
+  const geldigeLabels = ["gaspedaal", "remmend", "neutraal"] as const;
+  const isGeldig = (w: string): w is "gaspedaal" | "remmend" | "neutraal" =>
+    (geldigeLabels as readonly string[]).includes(w);
+  const labels = driverRijen.map((r) => r.leeswoord).filter(isGeldig);
+  let driverLabel: "gaspedaal" | "remmend" | "neutraal" | null = null;
+  if (labels.includes("gaspedaal")) driverLabel = "gaspedaal";
+  else if (labels.includes("neutraal")) driverLabel = "neutraal";
+  else if (labels.includes("remmend")) driverLabel = "remmend";
   return [
     { soort: "intro", tekst: KIEZEN_INTRO },
     {
@@ -319,12 +345,8 @@ function kiezenBlokken(resultaat: T4SResultaat, drivers: T4SDimensie): T4SBlok[]
       paren: [
         { label: "Motivatiebalans", waarde: resultaat.motivatie.balansLabel },
         {
-          label: `Driverpatroon ${KIEZEN_DRIVER_NAMEN.join("/")}`,
-          waarde: drivers.gerangschikt.some(
-            (r) => KIEZEN_DRIVER_NAMEN.includes(r.construct) && r.leeswoord === "gaspedaal",
-          )
-            ? "gaspedaal"
-            : "niet als gaspedaal gemeten",
+          label: `Driverpatroon, ${KIEZEN_DRIVER_NAMEN[0]} en ${KIEZEN_DRIVER_NAMEN[1]}`,
+          waarde: driverLabel ? driverwaardeMetToelichting(driverLabel) : "niet als gaspedaal gemeten",
         },
       ],
     },
@@ -351,6 +373,12 @@ const D_SLOTREGEL =
 const D_TE_WEINIG =
   "Er is nog te weinig ingevuld om deze zin te bouwen. De losse onderdelen hiervóór in dit rapport " +
   "blijven wel staan; alleen deze samenvattende zin niet.";
+
+// Herstelronde, punt 5. Vaste tekst, letterlijk overnemen.
+const D2_UITLEG =
+  "De twee lijstjes hieronder komen niet uit de rangorde, maar uit de verhouding tussen hoeveel je " +
+  "iets in jezelf herkent en hoeveel energie het je geeft. Daarom kan iets hoog in je rangorde staan " +
+  "en toch in het tweede lijstje verschijnen.";
 
 /**
  * Kiest de bouwsteen (of, bij gelijkspel, beide) op rang 1 van een dimensie.
@@ -415,6 +443,14 @@ function eenZinBlokken(
   const latentOnderbenut = alleDimensies.flatMap((d) =>
     d.gerangschikt.filter((r) => r.leeswoord === "latent" || r.leeswoord === "onderbenut"),
   );
+  // Herstelronde, punt 5: zonder uitleg lijkt het een rekenfout dat een
+  // construct hoog in de rangorde staat en toch in het tweede lijstje
+  // verschijnt. De twee lijstjes komen niet uit de rangorde, maar uit de
+  // verhouding tussen herkenning en energie (het balanslabel), een andere
+  // berekening dan de rangorde hierboven in de zin.
+  if (kernsterktes.length > 0 || latentOnderbenut.length > 0) {
+    blokken.push({ soort: "alinea", tekst: D2_UITLEG });
+  }
   if (kernsterktes.length > 0) {
     blokken.push({
       soort: "opsomming",

@@ -725,9 +725,24 @@ export function renderT4StudentsRapport(rapport: T4SRapport, opties: T4SPdfOptie
     let y = tekenPaginakop(doc, pagina, false);
     let vervolgen = 0;
 
-    for (const blok of pagina.blokken) {
+    for (let bi = 0; bi < pagina.blokken.length; bi++) {
+      const blok = pagina.blokken[bi];
       const h = blokHoogte(doc, blok);
-      if (y + h > BODEM && y > INHOUD_TOP) {
+      // Een tussenkop mag nooit alleen onderaan een blad achterblijven. Het
+      // blok erna wordt altijd in zijn geheel op een blad getekend (het
+      // splitst zichzelf niet), dus het volstaat te kijken of dat volgende
+      // blok als geheel meer ruimte nodig heeft dan wat er na de tussenkop
+      // nog over is: zo ja, dan verhuist de tussenkop zelf ook mee.
+      const volgende = pagina.blokken[bi + 1];
+      const volgendeHoogte = volgende ? blokHoogte(doc, volgende) : 0;
+      // Als het volgende blok op geen enkel blad in zijn geheel past (groter
+      // dan een heel blad), helpt vooruitschuiven niet: dan blijft de normale
+      // regel gelden en krijgt dat blok verderop zijn eigen melding.
+      const volgendeKanOoitPassen = volgendeHoogte <= BODEM - INHOUD_TOP;
+      const volgendePast = !volgende || y + h + volgendeHoogte <= BODEM;
+      const moetVerhuizen = blok.soort === "tussenkop" && volgende && volgendeKanOoitPassen && !volgendePast;
+      const benodigd = moetVerhuizen ? BODEM - y + 1 : h;
+      if (y + benodigd > BODEM && y > INHOUD_TOP) {
         if (h > BODEM - INHOUD_TOP) {
           meldingen.push(
             `Pagina ${pagina.nr}: een blok van het soort ${blok.soort} is hoger dan een blad ` +
