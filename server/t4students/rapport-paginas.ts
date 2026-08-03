@@ -961,23 +961,39 @@ export function bouwT4StudentsRapport(
     pagina(3, hoopteBlokken, "Jouw eigen vraag, voor je aan de vragenlijst begon."),
   );
 
-  // ── 4. De one-page ────────────────────────────────────────────────────────
-  // Een zin voor alle onderdelen samen, en niet een alinea per onderdeel. Anders
-  // groeit dit blok mee met het aantal openstaande vragen en wordt de one-page
-  // juist bij een dunne invulling van haar eigen blad geduwd.
-  const zonderOordeel = [foci, versnellers, drivers].flatMap((dim) =>
-    dim.zonderOordeel.map((r) => r.construct),
-  );
-  const naschrift: string[] = [
-    GROEP_UITLEG,
-    ...(zonderOordeel.length === 0
-      ? []
-      : [
-          `Van ${lijst(zonderOordeel)} is nog niet alles ingevuld. Daarom staat er geen score bij ` +
-            `en geen groep. Zodra je die vragen beantwoordt, ${staan(zonderOordeel.length)} ` +
-            `${zonderOordeel.length === 1 ? "dat onderdeel" : "die onderdelen"} er vanzelf bij.`,
-        ]),
-  ];
+  // ── 4. De one-page, in drie blokken, één per laag ───────────────────────────
+  // Opmaakherstel (2026-08-03), punt 1: dit was oorspronkelijk één blok van
+  // het soort "banden" met alle drie de lagen samen. Dat ene blok werd met de
+  // groepsindeling 836 punten hoog, hoger dan een blad, waardoor het
+  // bouwscript het op een eigen blad zette en het daarna regel per regel liet
+  // doorlopen over de volgende bladen: acht bladen met maar één losse regel
+  // en zonder kop, voettekst of bladnummer, en een leeg slotblad.
+  //
+  // De oplossing is dit ene blok te splitsen in drie afzonderlijke blokken,
+  // één per laag (Talent-foci, Talent-versnellers, Drivers). Elk van de drie
+  // is, gemeten met dezelfde groepeer-logica, ruim onder de beschikbare
+  // hoogte van een blad, dus de opmaak breekt voortaan netjes tussen twee
+  // lagen in plaats van middenin een lijst. Blijft een laag ooit zelf nog te
+  // hoog (bijvoorbeeld door een toekomstige uitbreiding), dan geldt de
+  // gewone regel van het bouwscript: dat blok krijgt zijn eigen melding en
+  // wordt nooit binnen een groep of tussen een naam en zijn rij doorgesneden,
+  // want een "banden"-blok wordt altijd in zijn geheel getekend.
+  //
+  // De vaste uitlegtekst over de drie groepen (GROEP_UITLEG) en de legende
+  // staan één keer, bij het eerste blok (Talent-foci), niet bij elk van de
+  // drie herhaald. Elke laag krijgt wel zijn eigen "nog niet alles
+  // ingevuld"-zin als dat voor die laag geldt, in plaats van één gezamenlijke
+  // zin voor alle drie samen: zo blijft de melding bij de laag waarover ze
+  // gaat, ook al staat die laag straks op een ander blad dan de andere twee.
+  function nietIngevuldZin(dim: T4SDimensie): string[] {
+    const namen = dim.zonderOordeel.map((r) => r.construct);
+    if (namen.length === 0) return [];
+    return [
+      `Van ${lijst(namen)} is nog niet alles ingevuld. Daarom staat er geen score bij en geen groep. ` +
+        `Zodra je die vragen beantwoordt, ${staan(namen.length)} ${namen.length === 1 ? "dat onderdeel" : "die onderdelen"} ` +
+        `er vanzelf bij.`,
+    ];
+  }
   paginas.push(
     pagina(
       4,
@@ -985,13 +1001,21 @@ export function bouwT4StudentsRapport(
         { soort: "intro", tekst: ONEPAGE_INTRO },
         {
           soort: "banden",
-          banden: [
-            bandVan(foci, 1, "TALENT-FOCI", "waarin je je talent inzet", BAND_NOOT_FOCI),
-            bandVan(versnellers, 2, "TALENT-VERSNELLERS", "hoe je het doet", null),
-            bandVan(drivers, 3, "DRIVERS", "wat je aandrijft", null),
-          ],
+          banden: [bandVan(foci, 1, "TALENT-FOCI", "waarin je je talent inzet", BAND_NOOT_FOCI)],
           legende: ONEPAGE_LEGENDE,
-          naschrift,
+          naschrift: [GROEP_UITLEG, ...nietIngevuldZin(foci)],
+        },
+        {
+          soort: "banden",
+          banden: [bandVan(versnellers, 2, "TALENT-VERSNELLERS", "hoe je het doet", null)],
+          legende: [],
+          naschrift: nietIngevuldZin(versnellers),
+        },
+        {
+          soort: "banden",
+          banden: [bandVan(drivers, 3, "DRIVERS", "wat je aandrijft", null)],
+          legende: [],
+          naschrift: nietIngevuldZin(drivers),
         },
       ],
       ONEPAGE_ONDERTITEL,
@@ -1212,8 +1236,9 @@ export function bouwT4StudentsRapport(
   for (const b of dimensieBladen) {
     const rijen = b.dim.gerangschikt;
     const drieHoog = rijen.slice(0, 3);
-    // In rangorde, net als op het blad met de drie sterkste. Anders leest de ene
-    // bladzijde van boven naar onder en de andere van onder naar boven.
+    // In rangorde, net als op het blad "wat sterk aanwezig is" (opmaakherstel,
+    // punt 4: deze kop sprak vroeger van "jouw drie sterkste"). Anders leest
+    // de ene bladzijde van boven naar onder en de andere van onder naar boven.
     const drieLaag = rijen.slice(-3);
     // Herstelronde 2, punt B: "plaats in de rangorde" bestaat niet meer. Een
     // niet-ingevuld construct krijgt geen score en dus ook geen groep.
@@ -1236,7 +1261,10 @@ export function bouwT4StudentsRapport(
       ),
     );
 
-    // De drie sterkste, met een citaatblok bij de sterkste.
+    // Wat sterk aanwezig is, met een citaatblok bij de sterkste.
+    // (opmaakherstel, punt 4: deze pagina heette vroeger "jouw drie
+    // sterkste"; de gekozen constructen blijven dezelfde drie hoogste op
+    // rang, alleen de kop erboven is aangepast aan de groepstaal.)
     const topBlokken: T4SBlok[] = [
       {
         soort: "intro",
