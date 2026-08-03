@@ -23,6 +23,15 @@
 // Anders dan het eerste script heeft dit script geen bronmateriaal van buiten
 // nodig: het draait de motor van dit platform op het instrumentbestand van dit
 // platform.
+//
+// HERSTELRONDE 2, PUNT A (bijgewerkt na fase 1c)
+// De naam van de map (uitkomsten-na-fase1c) is historisch en niet hernoemd,
+// om geen bestandsverwijzingen elders te breken. De inhoud is wel opnieuw
+// weggeschreven na herstelronde 2, punt A: de motor rangschikt foci, versnellers,
+// interesse en drivers voortaan op het aandeel van het haalbare maximum, niet
+// meer op de ruwe herkenningssom. "De motor zoals hij nu rekent" betekent dus
+// vanaf dit punt: inclusief die wijziging. Zie tests/t4students-aandeel-i-p-v-ruwe-som.test.ts
+// en het verslag voor de uitleg waarom.
 // ---------------------------------------------------------------------------
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import path from "node:path";

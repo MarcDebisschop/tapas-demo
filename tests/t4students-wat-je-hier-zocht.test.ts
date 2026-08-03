@@ -84,11 +84,26 @@ describe("het blad Wat je hier zocht bestaat en staat vlak voor de bronpagina's"
     const tekst = alleTeksten(blad);
     // De twee sterkste foci komen rechtstreeks uit de rekenmotor, nooit
     // hertypt: resultaat.foci.sorted is de enige bron van deze volgorde
-    // (herstelronde, punt 1). Voor het voorbeeldprofiel zijn dat Sociaal
-    // Interactief en Systematisch/Uitvoerend.
-    expect(resultaat.foci.sorted.slice(0, 2)).toEqual(["Sociaal Interactief", "Systematisch/Uitvoerend"]);
+    // (herstelronde, punt 1).
+    //
+    // HERSTELRONDE 2, PUNT A. Deze test verwachtte hier voorheen Sociaal
+    // Interactief en Systematisch/Uitvoerend, gebaseerd op de RUWE SOM (6 en
+    // 4). Sinds de motor op aandeel van het haalbare maximum rangschikt, is
+    // dat niet meer juist: Sociaal Interactief haalt 6 van de 6 haalbare
+    // punten (aandeel 1,0) en Overdrachtelijk Interactief haalt 3 van de 3
+    // haalbare punten (aandeel eveneens 1,0): een echte gelijke stand
+    // bovenaan. Systematisch/Uitvoerend haalt 4 van de 5 (aandeel 0,8) en
+    // komt daarmee terecht op de derde plaats, na de twee constructen die hun
+    // volle haalbare maximum bereikten. De waarborg zelf (foci.sorted is de
+    // enige bron, nooit hertypt) staat overeind; alleen de concrete namen
+    // voor dit voorbeeldprofiel zijn bijgewerkt naar de eerlijke, aandeel-
+    // gebaseerde uitkomst. Punt C van dezelfde opdracht kan de indeling van
+    // dit blad later nog verder aanpassen (tekenen uit de groep "sterk
+    // aanwezig" in plaats van uit foci.sorted rechtstreeks); dat is een
+    // afzonderlijke, latere stap.
+    expect(resultaat.foci.sorted.slice(0, 2)).toEqual(["Sociaal Interactief", "Overdrachtelijk Interactief"]);
     expect(tekst).toContain("Sociaal Interactief");
-    expect(tekst).toContain("Systematisch/Uitvoerend");
+    expect(tekst).toContain("Overdrachtelijk Interactief");
   });
 
   it("nooit de suggestie wekken dat de vraag van de student beantwoord is", () => {

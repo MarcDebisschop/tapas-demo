@@ -202,15 +202,14 @@
       "Functioneel Innovatief",
       "Artistiek Innovatief",
       "Complexiteit/Conceptueel",
-      "Systematisch/Uitvoerend",
       "Overdrachtelijk Interactief",
+      "Systematisch/Uitvoerend",
       "Sociaal Interactief"
     ],
     "topGroep": [
       "Functioneel Innovatief",
       "Artistiek Innovatief",
       "Complexiteit/Conceptueel",
-      "Systematisch/Uitvoerend",
       "Overdrachtelijk Interactief"
     ],
     "top2": [
@@ -230,8 +229,10 @@
         "Functioneel Innovatief",
         "Artistiek Innovatief",
         "Complexiteit/Conceptueel",
-        "Systematisch/Uitvoerend",
         "Overdrachtelijk Interactief"
+      ],
+      [
+        "Systematisch/Uitvoerend"
       ],
       [
         "Sociaal Interactief"
@@ -249,11 +250,11 @@
     },
     "rangorde": [
       "Analyse",
+      "Impact",
+      "Constructief onderscheidend",
       "Resultaat",
       "Individueel ondersteunend",
-      "Groepsondersteunend",
-      "Impact",
-      "Constructief onderscheidend"
+      "Groepsondersteunend"
     ],
     "kopGroep": [
       "Analyse"
@@ -263,13 +264,13 @@
         "Analyse"
       ],
       [
-        "Resultaat"
+        "Impact",
+        "Constructief onderscheidend",
+        "Resultaat",
+        "Individueel ondersteunend"
       ],
       [
-        "Individueel ondersteunend",
-        "Groepsondersteunend",
-        "Impact",
-        "Constructief onderscheidend"
+        "Groepsondersteunend"
       ]
     ],
     "balanslabels": {
@@ -422,10 +423,10 @@
       "strategie": "bottom-up vanuit de onderdelen",
       "belofte": "begin bij de bouwstenen en doorgrond eerst hoe het in elkaar zit"
     },
-    "secondaryVersneller": "Resultaat",
+    "secondaryVersneller": "Impact",
     "secundair": {
-      "strategie": "top-down vanuit het eindbeeld",
-      "belofte": "begin bij hoe het eindresultaat eruit moet zien en werk terug"
+      "strategie": "betekenisgestuurd",
+      "belofte": "verbind de stof met waarom het ertoe doet voor jou"
     },
     "gedeeldMet": []
   },
@@ -465,16 +466,16 @@
     },
     "sorted": [
       "Hurry Up",
-      "Be Strong",
+      "Try Hard",
       "Be Perfect",
-      "Please Others",
-      "Try Hard"
+      "Be Strong",
+      "Please Others"
     ],
     "top2": [
       "Hurry Up",
-      "Be Strong"
+      "Try Hard"
     ],
-    "doorslag": null,
+    "doorslag": "Hurry Up",
     "energielabels": {
       "Be Perfect": "te_weinig_antwoorden",
       "Please Others": "te_weinig_antwoorden",
@@ -485,16 +486,16 @@
   },
   "keerzijde": {
     "minFoci": [
-      "Overdrachtelijk Interactief",
+      "Systematisch/Uitvoerend",
       "Sociaal Interactief"
     ],
     "minVersnellers": [
-      "Impact",
-      "Constructief onderscheidend"
+      "Individueel ondersteunend",
+      "Groepsondersteunend"
     ],
     "minDrivers": [
-      "Please Others",
-      "Try Hard"
+      "Be Strong",
+      "Please Others"
     ]
   },
   "profielAnker": {

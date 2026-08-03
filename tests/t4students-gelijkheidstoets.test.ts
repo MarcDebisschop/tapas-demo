@@ -111,6 +111,17 @@ import { T4STUDENTS_INSTRUMENT } from "../server/t4students/instrument";
 //    patroon als een verschil en niet per driver. Zie
 //    tests/t4students-drivers-energielabel.test.ts.
 //
+// L. drivers.sorted, drivers.top2, drivers.doorslag en keerzijde.minDrivers (46 velden)
+//    Herstelronde 2, punt A. De motor rangschikt de vijf drivers voortaan op
+//    het aandeel van het haalbare maximum, niet meer op de ruwe
+//    herkenningssom: Try Hard (max 3), Be Perfect (max 4), Hurry Up en Be
+//    Strong (max 5, Be Strong zelfs zonder eigen herkenningsitem) en Please
+//    Others (max 6) zijn zo pas eerlijk te vergelijken. Omdat driverDoorslag
+//    leest welk construct op plaats een staat (drivers.sorted[0]), en
+//    keerzijde.minDrivers de staart van dezelfde rangorde neemt, verschuiven
+//    die twee soms mee: dat is een bedoeld gevolg van deze herordening en geen
+//    aparte fout. Zie tests/t4students-aandeel-i-p-v-ruwe-som.test.ts.
+//
 // I. de overige velden van energie.kaart (27 velden)
 //    Motorronde punt 4. Een onbeantwoord of half beantwoord energie-item kreeg
 //    "neutraal", hetzelfde woord als wie werkelijk neutraal antwoordde. Het
@@ -216,6 +227,11 @@ const TOEGESTANE_AFWIJKINGEN: { reden: string; patroon: RegExp }[] = [
   },
   {
     reden:
+      "L. drivers.sorted/top2/doorslag en keerzijde.minDrivers: rangschikken gebeurt op het aandeel van het haalbare maximum, niet meer op de ruwe herkenningssom (herstelronde 2, punt A)",
+    patroon: /^[^.]+\.(drivers\.(sorted|top2|doorslag)|keerzijde\.minDrivers)(\..+)?$/,
+  },
+  {
+    reden:
       "K. motivatie: nieuwe motivatiebalans en haar vijf constructScores, de bron kende deze laag niet (fase 1b)",
     patroon: /^[^.]+\.(motivatie(\..+)?|constructScores\.(Autonomie|Competentie|Verbondenheid|Erkenning|Verwachting))$/,
   },
@@ -307,9 +323,13 @@ describe("gelijkheidstoets deel 1: tegen de originele motor, met benoemde uitzon
   });
 
   it("het aantal afwijkende velden is precies wat het verslag noemt", () => {
-    // Achttienhonderdnegenennegentig velden over zeventien patronen. Elk getal hieronder
-    // staat ook in het verslag van de motorronde; loopt het uiteen, dan klopt
-    // een van de twee niet meer.
+    // Bijgewerkt in herstelronde 2, punt A: de motor rangschikt de foci, de
+    // versnellers, de interesse en de drivers nu op het aandeel van het
+    // haalbare maximum. Dat raakt niet alleen de nieuwe categorie L
+    // (drivers), maar ook categorie F: de aandeel-volgorde wijkt op meer
+    // patronen af van de ruwe-som-volgorde van de bron dan de vorige
+    // herstelronde alleen al deed. Elk getal hieronder staat ook in het
+    // verslag; loopt het uiteen, dan klopt een van de twee niet meer.
     const perUitzondering: Record<string, number> = {};
     for (const u of TOEGESTANE_AFWIJKINGEN) perUitzondering[u.reden] = 0;
     let totaal = 0;
@@ -326,14 +346,15 @@ describe("gelijkheidstoets deel 1: tegen de originele motor, met benoemde uitzon
       "C. teller beantwoord: een enkel energie-antwoord telt nu mee (punt 8)": 3,
       "D. energie.kaart: de vijf drivers en twee foci hebben nu ook een anker (motorronde punt 1)": 119,
       "E. totaalItems: drie nieuwe items, 31 wordt 34 (motorronde punt 1)": 17,
-      "F. rangschikken gebeurt op herkenning en niet meer op het gemengde getal, en de marge voor gelijke stand is kleiner (motorronde punt 2 en 3)": 1180,
+      "F. rangschikken gebeurt op herkenning en niet meer op het gemengde getal, en de marge voor gelijke stand is kleiner (motorronde punt 2 en 3)": 1275,
       "G. interesse.topGroep: de kleinere marge deelt ook de interessegebieden anders in (motorronde punt 3)": 51,
       "H. constructScores: geen energiegetal waar geen energie gemeten is (motorronde punt 4), en het gemengde getal bestaat niet meer": 639,
       "I. energie.kaart: een onbeantwoord item heet niet langer neutraal (motorronde punt 4)": 27,
       "J. drivers.energielabels: het energiesaldo van een driver krijgt een eigen woord": 17,
       "K. motivatie: nieuwe motivatiebalans en haar vijf constructScores, de bron kende deze laag niet (fase 1b)": 102,
+      "L. drivers.sorted/top2/doorslag en keerzijde.minDrivers: rangschikken gebeurt op het aandeel van het haalbare maximum, niet meer op de ruwe herkenningssom (herstelronde 2, punt A)": 46,
     });
-    expect(totaal).toBe(2229);
+    expect(totaal).toBe(2370);
   });
 
   it("de veranderde balanslabels zijn precies de constructen met meer dan een bron", () => {

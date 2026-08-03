@@ -212,15 +212,14 @@
     "sorted": [
       "Functioneel Innovatief",
       "Artistiek Innovatief",
-      "Sociaal Interactief",
       "Overdrachtelijk Interactief",
       "Complexiteit/Conceptueel",
+      "Sociaal Interactief",
       "Systematisch/Uitvoerend"
     ],
     "topGroep": [
       "Functioneel Innovatief",
       "Artistiek Innovatief",
-      "Sociaal Interactief",
       "Overdrachtelijk Interactief"
     ],
     "top2": [
@@ -239,11 +238,11 @@
       [
         "Functioneel Innovatief",
         "Artistiek Innovatief",
-        "Sociaal Interactief",
         "Overdrachtelijk Interactief"
       ],
       [
-        "Complexiteit/Conceptueel"
+        "Complexiteit/Conceptueel",
+        "Sociaal Interactief"
       ],
       [
         "Systematisch/Uitvoerend"
@@ -260,27 +259,29 @@
       "Constructief onderscheidend": 2
     },
     "rangorde": [
-      "Resultaat",
-      "Groepsondersteunend",
       "Impact",
-      "Analyse",
+      "Resultaat",
       "Constructief onderscheidend",
+      "Groepsondersteunend",
+      "Analyse",
       "Individueel ondersteunend"
     ],
     "kopGroep": [
-      "Resultaat"
+      "Impact"
     ],
     "groepen": [
+      [
+        "Impact"
+      ],
       [
         "Resultaat"
       ],
       [
-        "Groepsondersteunend",
-        "Impact"
+        "Constructief onderscheidend"
       ],
       [
-        "Analyse",
-        "Constructief onderscheidend"
+        "Groepsondersteunend",
+        "Analyse"
       ],
       [
         "Individueel ondersteunend"
@@ -294,7 +295,7 @@
       "Resultaat": "kernsterkte",
       "Constructief onderscheidend": "kernsterkte"
     },
-    "dominante": "Resultaat",
+    "dominante": "Impact",
     "gedeeldMet": []
   },
   "convergentie": {
@@ -431,15 +432,15 @@
     ]
   },
   "studiestrategie": {
-    "dominanteVersneller": "Resultaat",
+    "dominanteVersneller": "Impact",
     "primair": {
+      "strategie": "betekenisgestuurd",
+      "belofte": "verbind de stof met waarom het ertoe doet voor jou"
+    },
+    "secondaryVersneller": "Resultaat",
+    "secundair": {
       "strategie": "top-down vanuit het eindbeeld",
       "belofte": "begin bij hoe het eindresultaat eruit moet zien en werk terug"
-    },
-    "secondaryVersneller": "Groepsondersteunend",
-    "secundair": {
-      "strategie": "structuurgestuurd in groep",
-      "belofte": "breng eerst orde, overzicht en planning aan, het liefst samen"
     },
     "gedeeldMet": []
   },
@@ -474,15 +475,15 @@
       "Be Strong": 2
     },
     "sorted": [
-      "Hurry Up",
       "Try Hard",
+      "Hurry Up",
       "Be Perfect",
       "Please Others",
       "Be Strong"
     ],
     "top2": [
-      "Hurry Up",
-      "Try Hard"
+      "Try Hard",
+      "Hurry Up"
     ],
     "doorslag": null,
     "energielabels": {
@@ -495,11 +496,11 @@
   },
   "keerzijde": {
     "minFoci": [
-      "Complexiteit/Conceptueel",
+      "Sociaal Interactief",
       "Systematisch/Uitvoerend"
     ],
     "minVersnellers": [
-      "Constructief onderscheidend",
+      "Analyse",
       "Individueel ondersteunend"
     ],
     "minDrivers": [

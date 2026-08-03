@@ -215,8 +215,8 @@
       "Complexiteit/Conceptueel",
       "Systematisch/Uitvoerend",
       "Artistiek Innovatief",
-      "Sociaal Interactief",
-      "Overdrachtelijk Interactief"
+      "Overdrachtelijk Interactief",
+      "Sociaal Interactief"
     ],
     "topGroep": [
       "Functioneel Innovatief",
@@ -240,12 +240,12 @@
         "Complexiteit/Conceptueel"
       ],
       [
-        "Systematisch/Uitvoerend"
+        "Systematisch/Uitvoerend",
+        "Artistiek Innovatief",
+        "Overdrachtelijk Interactief"
       ],
       [
-        "Artistiek Innovatief",
-        "Sociaal Interactief",
-        "Overdrachtelijk Interactief"
+        "Sociaal Interactief"
       ]
     ]
   },
@@ -260,25 +260,24 @@
     },
     "rangorde": [
       "Analyse",
-      "Resultaat",
       "Constructief onderscheidend",
       "Impact",
+      "Resultaat",
       "Individueel ondersteunend",
       "Groepsondersteunend"
     ],
     "kopGroep": [
-      "Analyse"
+      "Analyse",
+      "Constructief onderscheidend"
     ],
     "groepen": [
       [
-        "Analyse"
-      ],
-      [
-        "Resultaat",
+        "Analyse",
         "Constructief onderscheidend"
       ],
       [
-        "Impact"
+        "Impact",
+        "Resultaat"
       ],
       [
         "Individueel ondersteunend",
@@ -294,7 +293,9 @@
       "Constructief onderscheidend": "kernsterkte"
     },
     "dominante": "Analyse",
-    "gedeeldMet": []
+    "gedeeldMet": [
+      "Constructief onderscheidend"
+    ]
   },
   "convergentie": {
     "onderzoekend": "bevestigd",
@@ -435,12 +436,11 @@
       "strategie": "bottom-up vanuit de onderdelen",
       "belofte": "begin bij de bouwstenen en doorgrond eerst hoe het in elkaar zit"
     },
-    "secondaryVersneller": "Resultaat",
-    "secundair": {
-      "strategie": "top-down vanuit het eindbeeld",
-      "belofte": "begin bij hoe het eindresultaat eruit moet zien en werk terug"
-    },
-    "gedeeldMet": []
+    "secondaryVersneller": null,
+    "secundair": null,
+    "gedeeldMet": [
+      "Constructief onderscheidend"
+    ]
   },
   "interesse": {
     "scores": {
@@ -474,16 +474,16 @@
     },
     "sorted": [
       "Be Perfect",
+      "Try Hard",
       "Be Strong",
       "Please Others",
-      "Try Hard",
       "Hurry Up"
     ],
     "top2": [
       "Be Perfect",
-      "Be Strong"
+      "Try Hard"
     ],
-    "doorslag": null,
+    "doorslag": "Be Perfect",
     "energielabels": {
       "Be Perfect": "te_weinig_antwoorden",
       "Please Others": "te_weinig_antwoorden",
@@ -494,15 +494,15 @@
   },
   "keerzijde": {
     "minFoci": [
-      "Sociaal Interactief",
-      "Overdrachtelijk Interactief"
+      "Overdrachtelijk Interactief",
+      "Sociaal Interactief"
     ],
     "minVersnellers": [
       "Individueel ondersteunend",
       "Groepsondersteunend"
     ],
     "minDrivers": [
-      "Try Hard",
+      "Please Others",
       "Hurry Up"
     ]
   },

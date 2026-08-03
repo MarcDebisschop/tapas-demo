@@ -212,10 +212,10 @@
     "sorted": [
       "Artistiek Innovatief",
       "Complexiteit/Conceptueel",
-      "Systematisch/Uitvoerend",
-      "Sociaal Interactief",
       "Overdrachtelijk Interactief",
-      "Functioneel Innovatief"
+      "Systematisch/Uitvoerend",
+      "Functioneel Innovatief",
+      "Sociaal Interactief"
     ],
     "topGroep": [
       "Artistiek Innovatief"
@@ -238,12 +238,12 @@
       ],
       [
         "Complexiteit/Conceptueel",
-        "Systematisch/Uitvoerend",
-        "Sociaal Interactief",
         "Overdrachtelijk Interactief"
       ],
       [
-        "Functioneel Innovatief"
+        "Systematisch/Uitvoerend",
+        "Functioneel Innovatief",
+        "Sociaal Interactief"
       ]
     ]
   },
@@ -265,20 +265,17 @@
       "Constructief onderscheidend"
     ],
     "kopGroep": [
-      "Resultaat"
+      "Resultaat",
+      "Individueel ondersteunend"
     ],
     "groepen": [
       [
-        "Resultaat"
-      ],
-      [
+        "Resultaat",
         "Individueel ondersteunend"
       ],
       [
         "Analyse",
-        "Groepsondersteunend"
-      ],
-      [
+        "Groepsondersteunend",
         "Impact"
       ],
       [
@@ -294,7 +291,9 @@
       "Constructief onderscheidend": "latent"
     },
     "dominante": "Resultaat",
-    "gedeeldMet": []
+    "gedeeldMet": [
+      "Individueel ondersteunend"
+    ]
   },
   "convergentie": {
     "onderzoekend": "inactief",
@@ -435,12 +434,11 @@
       "strategie": "top-down vanuit het eindbeeld",
       "belofte": "begin bij hoe het eindresultaat eruit moet zien en werk terug"
     },
-    "secondaryVersneller": "Individueel ondersteunend",
-    "secundair": {
-      "strategie": "sociaal-dialogisch (één op één)",
-      "belofte": "leer in dialoog, leg het aan iemand uit, bespreek het samen"
-    },
-    "gedeeldMet": []
+    "secondaryVersneller": null,
+    "secundair": null,
+    "gedeeldMet": [
+      "Individueel ondersteunend"
+    ]
   },
   "interesse": {
     "scores": {
@@ -473,14 +471,14 @@
       "Be Strong": 4
     },
     "sorted": [
-      "Be Strong",
-      "Please Others",
       "Be Perfect",
+      "Please Others",
+      "Be Strong",
       "Try Hard",
       "Hurry Up"
     ],
     "top2": [
-      "Be Strong",
+      "Be Perfect",
       "Please Others"
     ],
     "doorslag": null,
@@ -494,8 +492,8 @@
   },
   "keerzijde": {
     "minFoci": [
-      "Overdrachtelijk Interactief",
-      "Functioneel Innovatief"
+      "Functioneel Innovatief",
+      "Sociaal Interactief"
     ],
     "minVersnellers": [
       "Impact",

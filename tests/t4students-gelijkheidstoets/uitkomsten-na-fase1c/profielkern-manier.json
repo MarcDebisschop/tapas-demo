@@ -237,10 +237,10 @@
         "Complexiteit/Conceptueel"
       ],
       [
-        "Functioneel Innovatief",
-        "Sociaal Interactief"
+        "Functioneel Innovatief"
       ],
       [
+        "Sociaal Interactief",
         "Overdrachtelijk Interactief"
       ],
       [
@@ -260,11 +260,11 @@
     },
     "rangorde": [
       "Constructief onderscheidend",
-      "Analyse",
-      "Individueel ondersteunend",
-      "Groepsondersteunend",
       "Impact",
-      "Resultaat"
+      "Individueel ondersteunend",
+      "Analyse",
+      "Resultaat",
+      "Groepsondersteunend"
     ],
     "kopGroep": [
       "Constructief onderscheidend"
@@ -274,11 +274,13 @@
         "Constructief onderscheidend"
       ],
       [
-        "Analyse",
+        "Impact"
+      ],
+      [
         "Individueel ondersteunend",
-        "Groepsondersteunend",
-        "Impact",
-        "Resultaat"
+        "Analyse",
+        "Resultaat",
+        "Groepsondersteunend"
       ]
     ],
     "balanslabels": {
@@ -431,10 +433,10 @@
       "strategie": "herstructurerend",
       "belofte": "maak er je eigen versie van; herordenen en hertekenen mag"
     },
-    "secondaryVersneller": "Analyse",
+    "secondaryVersneller": "Impact",
     "secundair": {
-      "strategie": "bottom-up vanuit de onderdelen",
-      "belofte": "begin bij de bouwstenen en doorgrond eerst hoe het in elkaar zit"
+      "strategie": "betekenisgestuurd",
+      "belofte": "verbind de stof met waarom het ertoe doet voor jou"
     },
     "gedeeldMet": []
   },
@@ -470,16 +472,16 @@
     },
     "sorted": [
       "Hurry Up",
-      "Please Others",
-      "Be Perfect",
       "Try Hard",
+      "Be Perfect",
+      "Please Others",
       "Be Strong"
     ],
     "top2": [
       "Hurry Up",
-      "Please Others"
+      "Try Hard"
     ],
-    "doorslag": null,
+    "doorslag": "Hurry Up",
     "energielabels": {
       "Be Perfect": "te_weinig_antwoorden",
       "Please Others": "te_weinig_antwoorden",
@@ -494,11 +496,11 @@
       "Systematisch/Uitvoerend"
     ],
     "minVersnellers": [
-      "Impact",
-      "Resultaat"
+      "Resultaat",
+      "Groepsondersteunend"
     ],
     "minDrivers": [
-      "Try Hard",
+      "Please Others",
       "Be Strong"
     ]
   },
