@@ -151,11 +151,20 @@ export type T4SBlok =
       kleur: string;
       duiding: string;
     }
-  | { soort: "citaat"; kop: string; kleur: string; regels: T4SCitaatRegel[] }
+  | { soort: "citaat"; kop: string; opschrift: string; kleur: string; regels: T4SCitaatRegel[] }
   | { soort: "batterij"; waarde: number | null; zin: string }
   | { soort: "kolommen"; kopLinks: string; kopRechts: string; links: T4SCitaatRegel[]; rechts: T4SCitaatRegel[] }
   | { soort: "opsomming"; kop: string | null; punten: string[] }
-  | { soort: "kader"; kop: string; tekst: string; kleur: string }
+  | { soort: "kader"; opschrift: string; kop: string; tekst: string; kleur: string }
+  /**
+   * Ingreep 3 van de opdracht "Slotnoot en opmaak": de tweede kaartsoort, een
+   * licht warm vlak zonder gekleurde balk aan de linkerrand. Bedoeld voor wat
+   * de student zelf zei of voor een samenvattende gedachte, ter afwisseling
+   * met de balkkaarten ("kader", "citaat", "constructblok") die uitleg geven.
+   * Draagt, net als de balkkaarten, een verplicht opschriftje in kleine
+   * kapitalen boven de kop.
+   */
+  | { soort: "kaartvlak"; opschrift: string; kop: string; tekst: string }
   | { soort: "paren"; paren: { label: string; waarde: string }[] }
   | { soort: "vragen"; kop: string; vragen: string[] }
   | { soort: "ruimte"; hoogte: number };
@@ -186,6 +195,18 @@ export interface T4SRapport {
 }
 
 // ── Kleuren, uit de huisstijl van T4Students ────────────────────────────────
+//
+// Ingreep 3 van de opdracht "Slotnoot en opmaak": naast het bestaande accent
+// (roodbruin, accent/accentDiep/accentZacht) krijgt oker een vaste, tweede
+// betekenis als accentkleur: nuance, keerzijde, aandachtspunt, twijfel. Oker
+// bestond al als kleur van de familie Interesse (kleurVanFamilie) en van het
+// citaatblok "Hier zei je ja tegen" op het interesse-hoofdstuk; die twee
+// bestaande toepassingen blijven ongewijzigd. Nieuw is uitsluitend de
+// constante okerDiep, naar het voorbeeld van accentDiep, voor opschriftjes en
+// koppen in een okeren kaart: die hebben een donkerder tint nodig dan de
+// vlakkleur oker om leesbaar te blijven, precies zoals accentDiep dat al voor
+// het bestaande accent doet. Er komt met opzet geen tweede nieuwe kleurwaarde
+// bij: alle andere plekken hergebruiken oker of okerZacht zoals ze al bestonden.
 export const KLEUR = {
   papier: "#FBF6EE",
   papier2: "#F4EAD9",
@@ -197,6 +218,7 @@ export const KLEUR = {
   accentDiep: "#A94B2D",
   accentZacht: "#F7E7DE",
   oker: "#E0A52E",
+  okerDiep: "#9C6A16",
   okerZacht: "#FDF3DC",
   teal: "#3E7CA6",
   tealZacht: "#E0EFF8",

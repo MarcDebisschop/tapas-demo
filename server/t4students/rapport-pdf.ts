@@ -369,18 +369,22 @@ function blokHoogte(doc: Doc, blok: T4SBlok): number {
       return h;
     }
     case "constructblok": {
+      // Ingreep 3, punt 4: acht punten extra ademruimte na de kaart (niet
+      // erbinnen), zodat kaarten onderling meer afstand krijgen.
       const h = hoogteVan(doc, blok.duiding, F.dm, 9, TEKST_B - 32, 3.4);
-      return h + 46 + (blok.omschrijving ? 12 : 0);
+      return h + 46 + (blok.omschrijving ? 12 : 0) + 8;
     }
     case "citaat": {
-      let h = 30;
+      // Ingreep 3: 12 punten extra voor de eigen kopregel boven de regels, en
+      // 8 punten extra ademruimte na de kaart (punt 4).
+      let h = 42;
       for (const r of blok.regels) {
         h += hoogteVan(doc, r.vraag, F.dm, 9.4, TEKST_B - 44, 2.8) + 4;
         h += hoogteVan(doc, r.herkenning || "", F.dmMed, 8.5, TEKST_B - 124, 1.5) + 3;
         if (r.energie) h += 11;
         if (r !== blok.regels[blok.regels.length - 1]) h += 5;
       }
-      return h + 10;
+      return h + 18;
     }
     case "batterij":
       return hoogteVan(doc, blok.zin, F.dm, 9.2, TEKST_B, 3.4) + 44;
@@ -404,7 +408,11 @@ function blokHoogte(doc: Doc, blok: T4SBlok): number {
       return h + 6;
     }
     case "kader":
-      return hoogteVan(doc, blok.tekst, F.dm, 9, TEKST_B - 32, 3.2) + 40;
+      // Ingreep 3: 12 punten extra voor de eigen kopregel boven de tekst, en
+      // 8 punten extra ademruimte na de kaart (punt 4).
+      return hoogteVan(doc, blok.tekst, F.dm, 9, TEKST_B - 32, 3.2) + 60;
+    case "kaartvlak":
+      return hoogteVan(doc, blok.tekst, F.dm, 9, TEKST_B - 32, 3.2) + 60;
     case "paren": {
       const kolB = (TEKST_B - 12) / 2;
       let h = 0;
@@ -544,10 +552,17 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
         doc.text("Te weinig antwoorden", xHerk, y + 14, { width: HERK_B + ENERGIE_B + KOL_GAT, lineBreak: false });
       }
       schrijf(doc, blok.duiding, x + 16, y + 32 + verschuiving, TEKST_B - 32, F.dm, 9, KLEUR.inkt, 3.4);
-      return totaal + 6;
+      // Ingreep 3, punt 4: acht punten extra ademruimte na de kaart.
+      return totaal + 14;
     }
     case "citaat": {
-      let h = 20;
+      // Ingreep 3: het opschriftje staat los boven de kop, net als bij
+      // "kader". Het vak zelf blijft het lichte, warme vlak (okerZacht); de
+      // balk, het opschriftje en het aanhalingsteken volgen voortaan de
+      // kleur van het blok zelf (blok.kleur) in plaats van altijd oker: oker
+      // is voorbehouden aan nuance en keerzijde, niet aan elk citaat.
+      const kopKleur = blok.kleur === KLEUR.oker ? KLEUR.okerDiep : blok.kleur;
+      let h = 32;
       for (const r of blok.regels) {
         h += hoogteVan(doc, r.vraag, F.dm, 9.4, TEKST_B - 44, 2.8) + 4;
         h += hoogteVan(doc, r.herkenning || "", F.dmMed, 8.5, TEKST_B - 124, 1.5) + 3;
@@ -556,10 +571,12 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
       }
       vulRechthoek(doc, x, y, TEKST_B, h, KLEUR.okerZacht, 3);
       vulRechthoek(doc, x, y, 2.2, h, blok.kleur, 1.1);
-      kapitalen(doc, blok.kop, x + 16, y + 9, 6.8, KLEUR.oker);
-      doc.font(F.dmBold).fontSize(20).fillColor(KLEUR.oker);
-      doc.text("“", x + 12, y + 17, { width: 20, lineBreak: false });
-      let yy = y + 22;
+      kapitalen(doc, blok.opschrift, x + 16, y + 9, 6.8, kopKleur);
+      doc.font(F.dmBold).fontSize(10.5).fillColor(KLEUR.inkt);
+      doc.text(blok.kop, x + 16, y + 21, { width: TEKST_B - 32, lineBreak: false });
+      doc.font(F.dmBold).fontSize(20).fillColor(blok.kleur);
+      doc.text("“", x + 12, y + 29, { width: 20, lineBreak: false });
+      let yy = y + 34;
       blok.regels.forEach((r, i) => {
         const vh = hoogteVan(doc, r.vraag, F.dm, 9.4, TEKST_B - 44, 2.8);
         doc.font(F.dm).fontSize(9.4).fillColor(KLEUR.inkt);
@@ -580,7 +597,8 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
           yy += 5;
         }
       });
-      return h + 10;
+      // Ingreep 3, punt 4: acht punten extra ademruimte na de kaart.
+      return h + 18;
     }
     case "batterij": {
       const b = 176;
@@ -630,13 +648,36 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
       return yy - y + 6;
     }
     case "kader": {
+      // Ingreep 3: het opschriftje (klein, kapitalen) staat los boven de
+      // echte kop (groter, gewone hoofdletters/kleine letters). Voorheen
+      // droeg blok.kop alleen het opschriftje; nu draagt opschrift dat, en
+      // kop is de eigenlijke titel van de kaart.
+      const kopKleur = blok.kleur === KLEUR.oker ? KLEUR.okerDiep : blok.kleur;
       const h = hoogteVan(doc, blok.tekst, F.dm, 9, TEKST_B - 32, 3.2);
-      const totaal = h + 36;
+      const totaal = h + 48;
       vulRechthoek(doc, x, y, TEKST_B, totaal, KLEUR.papier2, 3);
       vulRechthoek(doc, x, y, 2.6, totaal, blok.kleur, 1.3);
-      kapitalen(doc, blok.kop, x + 16, y + 10, 7, blok.kleur);
-      schrijf(doc, blok.tekst, x + 16, y + 23, TEKST_B - 32, F.dm, 9, KLEUR.inkt, 3.2);
-      return totaal + 6;
+      kapitalen(doc, blok.opschrift, x + 16, y + 10, 6.8, kopKleur);
+      doc.font(F.dmBold).fontSize(11.5).fillColor(KLEUR.inkt);
+      doc.text(blok.kop, x + 16, y + 22, { width: TEKST_B - 32, lineBreak: false });
+      schrijf(doc, blok.tekst, x + 16, y + 36, TEKST_B - 32, F.dm, 9, KLEUR.inkt, 3.2);
+      // Ingreep 3, punt 4: acht punten extra ademruimte na de kaart.
+      return totaal + 14;
+    }
+    case "kaartvlak": {
+      // Ingreep 3, punt 3: de tweede kaartsoort. Een licht warm vlak zonder
+      // gekleurde balk aan de linkerrand, voor wat de student zelf zei of
+      // voor een samenvattende gedachte. Dezelfde zachte ronde hoeken als de
+      // andere kaarten, het opschriftje in de okertint (nuance), geen balk.
+      const h = hoogteVan(doc, blok.tekst, F.dm, 9, TEKST_B - 32, 3.2);
+      const totaal = h + 48;
+      vulRechthoek(doc, x, y, TEKST_B, totaal, KLEUR.okerZacht, 3);
+      kapitalen(doc, blok.opschrift, x + 16, y + 10, 6.8, KLEUR.okerDiep);
+      doc.font(F.dmBold).fontSize(11.5).fillColor(KLEUR.inkt);
+      doc.text(blok.kop, x + 16, y + 22, { width: TEKST_B - 32, lineBreak: false });
+      schrijf(doc, blok.tekst, x + 16, y + 36, TEKST_B - 32, F.dm, 9, KLEUR.inkt, 3.2);
+      // Ingreep 3, punt 4: acht punten extra ademruimte na de kaart.
+      return totaal + 14;
     }
     case "paren": {
       const kolB = (TEKST_B - 12) / 2;

@@ -574,7 +574,13 @@ function watJeHierZochtBlokken(
     },
   ];
   if (p0Tekst.length > 0) {
-    blokken.push({ soort: "kader", kop: "JOUW VRAAG, NOG EENS", kleur: KLEUR.teal, tekst: p0Tekst });
+    blokken.push({
+      soort: "kader",
+      opschrift: "JOUW VRAAG, NOG EENS",
+      kop: "Wat jij hoopte te vinden",
+      kleur: KLEUR.teal,
+      tekst: p0Tekst,
+    });
   }
   const topFoci = topTweeUitGroep(foci);
   const topVersneller = sterksteUitGroep(versnellers);
@@ -626,7 +632,8 @@ function watJeHierZochtBlokken(
 // E1 staat als kader bij de drivers/motivatie, E2 is het slotblad. Beide
 // eindigen op dezelfde drie gevallen als onderdeel F; kiezenGeval/kiezenSlotzin
 // worden hier hergebruikt en niet opnieuw geschreven.
-const E1_KOP = "VOOR WIE MEELEEST";
+const E1_OPSCHRIFT = "VOOR WIE MEELEEST";
+const E1_KOP = "Een patroon, geen oordeel";
 const E1_TEKST =
   "Dit blad gaat over patronen, niet over goed of fout. Wie hier sterk uitkomt, heeft doorgaans geen " +
   "extra advies nodig, maar wel ruimte om zelf te wegen. De beste vraag die je kunt stellen: wat zou " +
@@ -636,6 +643,7 @@ function e1Kader(resultaat: T4SResultaat, drivers: T4SDimensie): T4SBlok {
   const geval = kiezenGeval(resultaat, drivers);
   return {
     soort: "kader",
+    opschrift: E1_OPSCHRIFT,
     kop: E1_KOP,
     kleur: KLEUR.oker,
     tekst: `${E1_TEKST} ${kiezenSlotzin(geval)}`,
@@ -904,7 +912,8 @@ export function bouwT4StudentsRapport(
         },
         {
           soort: "kader",
-          kop: "DE TWEE VORMEN",
+          opschrift: "DE TWEE VORMEN",
+          kop: "Herkenning en energie naast elkaar",
           kleur: KLEUR.teal,
           tekst:
             "Herkenning is een rijtje van drie blokjes dat van links naar rechts volloopt. Nul blokjes " +
@@ -957,7 +966,13 @@ export function bouwT4StudentsRapport(
     },
   ];
   if (p0Tekst.length > 0) {
-    hoopteBlokken.push({ soort: "kader", kop: "DIT HOOPTE JE TE VINDEN", kleur: KLEUR.teal, tekst: p0Tekst });
+    hoopteBlokken.push({
+      soort: "kader",
+      opschrift: "DIT HOOPTE JE TE VINDEN",
+      kop: "Jouw eigen woorden",
+      kleur: KLEUR.teal,
+      tekst: p0Tekst,
+    });
   }
   paginas.push(
     pagina(3, hoopteBlokken, "Jouw eigen vraag, voor je aan de vragenlijst begon."),
@@ -1114,7 +1129,8 @@ export function bouwT4StudentsRapport(
           ? ([
               {
                 soort: "citaat",
-                kop: "DIT GAF JE ZELF AAN",
+                opschrift: "DIT GAF JE ZELF AAN",
+                kop: "Jouw eigen woorden",
                 kleur: KLEUR.inktZacht,
                 regels: beeldCitaten,
               },
@@ -1318,7 +1334,13 @@ export function bouwT4StudentsRapport(
         const itemId = zwaarsteItemVan(inst, r.construct);
         const regels = itemId ? citatenVoor(inst, antwoorden, taal, [itemId]) : [];
         if (regels.length > 0) {
-          topBlokken.push({ soort: "citaat", kop: b.citaatKop, kleur: b.dim.kleur, regels });
+          topBlokken.push({
+            soort: "citaat",
+            opschrift: b.citaatKop,
+            kop: "Jouw eigen woorden",
+            kleur: b.dim.kleur,
+            regels,
+          });
         }
       }
     }
@@ -1414,7 +1436,15 @@ export function bouwT4StudentsRapport(
         },
         { soort: "opsomming", kop: null, punten: leerPunten },
         ...(s1
-          ? ([{ soort: "citaat", kop: "DIT KOOS JE", kleur: KLEUR.salie, regels: [s1] }] as T4SBlok[])
+          ? ([
+              {
+                soort: "citaat",
+                opschrift: "DIT KOOS JE",
+                kop: "Jouw eigen keuze",
+                kleur: KLEUR.salie,
+                regels: [s1],
+              },
+            ] as T4SBlok[])
           : []),
         {
           soort: "alinea",
@@ -1512,7 +1542,13 @@ export function bouwT4StudentsRapport(
   if (r1) {
     const regels = citatenVoor(inst, antwoorden, taal, [r1]);
     if (regels.length > 0)
-      interesseBlokken.push({ soort: "citaat", kop: "HIER ZEI JE JA TEGEN", kleur: KLEUR.oker, regels });
+      interesseBlokken.push({
+        soort: "citaat",
+        opschrift: "HIER ZEI JE JA TEGEN",
+        kop: "Jouw eigen antwoord",
+        kleur: KLEUR.oker,
+        regels,
+      });
   }
   interesseBlokken.push({
     soort: "alinea",
@@ -1546,7 +1582,8 @@ export function bouwT4StudentsRapport(
           ? ([
               {
                 soort: "kader",
-                kop: "WAAROM DEZE",
+                opschrift: "WAAROM DEZE",
+                kop: "Waar vermogen en interesse elkaar raken",
                 kleur: KLEUR.teal,
                 tekst:
                   `Je sterkste talent-focus is ${foci.gerangschikt[0].construct} en je sterkste ` +
@@ -1585,7 +1622,13 @@ export function bouwT4StudentsRapport(
         },
         ...(b1
           ? ([
-              { soort: "citaat", kop: "WAAR JIJ IETS WILT BETEKENEN", kleur: KLEUR.accent, regels: [b1] },
+              {
+                soort: "citaat",
+                opschrift: "WAAR JIJ IETS WILT BETEKENEN",
+                kop: "Jouw eigen antwoord",
+                kleur: KLEUR.accent,
+                regels: [b1],
+              },
             ] as T4SBlok[])
           : ([{ soort: "alinea", tekst: "Je hebt deze vraag nog niet beantwoord." }] as T4SBlok[])),
         {
@@ -1707,7 +1750,8 @@ export function bouwT4StudentsRapport(
       [
         {
           soort: "kader",
-          kop: "LEES DIT EERST",
+          opschrift: "LEES DIT EERST",
+          kop: "Geen fouten, wel aandachtspunten",
           kleur: KLEUR.accent,
           tekst:
             "Dit zijn geen fouten. Dit zijn plekken waar aandacht loont. Elk punt hieronder komt " +
@@ -1744,7 +1788,13 @@ export function bouwT4StudentsRapport(
             "Een rapport dat eindigt in beschrijving wordt weggelegd. Daarom eindigt dit blad met iets " +
             "dat je kunt doen.",
         },
-        { soort: "kader", kop: "JOUW EERSTE STAP", kleur: KLEUR.salie, tekst: eersteStap },
+        {
+          soort: "kader",
+          opschrift: "JOUW EERSTE STAP",
+          kop: "Iets concreets om te proberen",
+          kleur: KLEUR.salie,
+          tekst: eersteStap,
+        },
         {
           soort: "vragen",
           kop: "DRIE VRAGEN OM MEE TE NEMEN NAAR EEN GESPREK",
