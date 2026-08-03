@@ -283,8 +283,8 @@ function motivatieBlokken(resultaat: T4SResultaat): T4SBlok[] {
     {
       soort: "paren",
       paren: [
-        { label: "Intrinsiek (autonomie, competentie, verbondenheid)", waarde: getal1(intrinsiek) },
-        { label: "Extrinsiek (erkenning, verwachtingen)", waarde: getal1(extrinsiek) },
+        { label: "Intrinsiek", waarde: getal1(intrinsiek) },
+        { label: "Extrinsiek", waarde: getal1(extrinsiek) },
         { label: "Jouw balans", waarde: balansLabel },
       ],
     },
