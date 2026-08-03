@@ -230,6 +230,23 @@
       "itemCount": 39,
       "items": [
         {
+          "id": "P0",
+          "family": "Intro",
+          "construct": "Beginvraag",
+          "itemType": "open-intro",
+          "text": {
+            "nl": "Welke vraag of vragen hoop je dat deze vragenlijst voor jou duidelijk of duidelijker kan maken?",
+            "fr": "Quelle question ou quelles questions espères-tu que ce questionnaire pourra rendre claire ou plus claire pour toi ?",
+            "en": "Which question or questions do you hope this questionnaire can make clear, or clearer, for you?"
+          },
+          "placeholder": {
+            "nl": "Bijvoorbeeld: \"Dit is de studierichting die ik zelf zou kiezen, ligt die binnen mijn talentenscoop?\" Of: \"Ik heb geen idee wat ik wil studeren, dus ik hoop dat ik wat richting krijg.\"",
+            "fr": "Par exemple : « C'est la filière que je choisirais moi-même, se situe-t-elle dans mon champ de talents ? » Ou : « Je n'ai aucune idée de ce que je veux étudier, j'espère donc obtenir une direction. »",
+            "en": "For example: \"This is the field of study I would choose myself, does it lie within my talent scope?\" Or: \"I have no idea what I want to study, so I hope to get some direction.\""
+          },
+          "required": false
+        },
+        {
           "id": "I1",
           "family": "Energie",
           "construct": "Energie-ijkpunt",

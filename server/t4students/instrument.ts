@@ -81,6 +81,10 @@ export interface T4SItem {
   /** De tweede schaal bij items die naast herkenning ook energie meten. */
   energyScale?: string;
   text?: T4SVertaalbaar;
+  /** Alleen bij de open beginvraag (P0): voorbeeldtekst in kleinere letter. */
+  placeholder?: T4SVertaalbaar;
+  /** Alleen bij de open beginvraag (P0): staat op false, ze is niet verplicht. */
+  required?: boolean;
   options?: T4SOptie[];
   /** Bron-ID's uit de stellingenlijst van 2015, voor herleidbaarheid. */
   sourceItems?: string[];
@@ -89,6 +93,15 @@ export interface T4SItem {
   /** Alleen P2: de drie varianten, per antwoord op P1. */
   variants?: Record<string, Omit<T4SItem, "id" | "family">>;
 }
+
+/**
+ * Het itemType van de open beginvraag (onderdeel B1). Een item met dit type
+ * hoort bij geen enkele familie die in de scoring meetelt, voedt geen
+ * construct en telt niet mee in totaalItems of totaalSignaal. Dit is een
+ * eigen, herkenbare markering in plaats van een los lijstje item-ID's, zodat
+ * geen enkele plek in de code de beginvraag per ongeluk toch meetelt.
+ */
+export const OPEN_INTRO_ITEMTYPE = "open-intro";
 
 export interface T4SFamilie {
   id: string;
@@ -216,14 +229,26 @@ export interface T4SScoringMap {
 /** Het volledige instrument, precies zoals het in het databestand staat. */
 export const T4STUDENTS_INSTRUMENT = definitie as unknown as T4SInstrument;
 
-/** De sectie waar alle 39 items in zitten (34 uit de motorronde plus de vijf van de motivatiefamilie). */
+/**
+ * De sectie waar alle items in zitten: de open beginvraag P0 (onderdeel B1),
+ * plus de 39 items uit fase 1b (34 uit de motorronde plus de vijf van de
+ * motivatiefamilie). P0 staat als eerste in de lijst, zoals de student ze ook
+ * te zien krijgt, maar telt in geen enkele score mee.
+ */
 export function t4studentsItems(): T4SItem[] {
   const main = T4STUDENTS_INSTRUMENT.sections.find((s) => s.sectionId === "main");
   return main ? main.items : [];
 }
 
-/** Het aantal items dat een deelnemer werkelijk voorgeschoteld krijgt. */
-export const T4STUDENTS_AANTAL_ITEMS = t4studentsItems().length;
+/**
+ * Het aantal items dat in de score, de rangorde en het signaalgetal meetelt.
+ * De open beginvraag P0 is bewust uitgesloten: ze is geen vraag in de zin van
+ * de vragenlijst die het instrument beschrijft, en de opdracht "Studiekompas
+ * persoonlijk maken" (onderdeel B1) verplicht dat ze in geen enkele telling
+ * meetelt. Daarom filtert deze constante op itemType, in plaats van simpelweg
+ * de lengte van de itemlijst te nemen.
+ */
+export const T4STUDENTS_AANTAL_ITEMS = t4studentsItems().filter((i) => i.itemType !== OPEN_INTRO_ITEMTYPE).length;
 
 /**
  * Het nummer van de scoringsmotor, los van het versienummer van het

@@ -67,13 +67,16 @@ describe("de vertaalvlag en de inhoud zeggen hetzelfde", () => {
   });
 
   it("elk vertaalbaar veld draagt alle drie de talen", () => {
-    // 84 sinds fase 1b: de 79 bestaande velden plus de vijf tekstvelden van de
-    // nieuwe familie Motivatie, die nu ook in fr en en zijn ingevuld.
+    // 86 sinds de beginvraag (onderdeel B1 van "Studiekompas persoonlijk
+    // maken"): de 84 bestaande velden plus de twee tekstvelden van de open
+    // beginvraag P0 (de vraagtekst zelf en de voorbeeldtekst), die ook in fr
+    // en en zijn ingevuld. Zie het verslag voor de melding dat die twee
+    // vertalingen niet door een moedertaalspreker zijn nagelezen.
     const { totaal, gevuld } = telVertaalbareVelden();
-    expect(totaal).toBe(84);
-    expect(gevuld.nl).toBe(84);
-    expect(gevuld.fr).toBe(84);
-    expect(gevuld.en).toBe(84);
+    expect(totaal).toBe(86);
+    expect(gevuld.nl).toBe(86);
+    expect(gevuld.fr).toBe(86);
+    expect(gevuld.en).toBe(86);
   });
 
   it("geen enkel item mist nog Frans of Engels", () => {

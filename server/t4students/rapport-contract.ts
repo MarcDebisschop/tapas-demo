@@ -43,6 +43,7 @@
 // ---------------------------------------------------------------------------
 
 import duidingsBestand from "../data/t4students-duidingsteksten.json";
+import omschrijvingenBestand from "../data/t4students-omschrijvingen.json";
 import type { T4SInstrument, T4SItem, T4SVertaalbaar } from "./instrument";
 import type { T4SAntwoorden, T4SResultaat } from "./kompas-scoring";
 
@@ -64,6 +65,8 @@ export const FAM_INTERESSE = "Interesse";
 export interface T4SRij {
   /** De naam zoals hij in het instrument staat. Nooit hertaald. */
   construct: string;
+  /** Gewone omschrijving naast de naam, uit onderdeel C. Leeg als er geen is. */
+  omschrijving: string;
   /** Leeg wanneer het construct niet volledig is ingevuld. */
   rang: number | null;
   /** Herkenning op de schaal 0 tot 3 die de student zelf zag. */
@@ -107,6 +110,8 @@ export type T4SBlok =
   | {
       soort: "constructblok";
       construct: string;
+      /** Gewone omschrijving naast de naam, uit onderdeel C. Leeg als er geen is. */
+      omschrijving: string;
       rang: number | null;
       herkenning: number | null;
       energie: number | null;
@@ -191,6 +196,34 @@ export function duidingVan(construct: string): string {
   return d ? d.tekst : "";
 }
 
+// ── Gewone omschrijving naast elke constructnaam (onderdeel C) ─────────────
+//
+// Overal waar een constructnaam in het rapport verschijnt, komt er een
+// gewone, niet-technische omschrijving naast. De constructnaam zelf blijft
+// ongewijzigd en blijft leidend; de omschrijving is enkel een toelichting.
+// De omschrijvingen liggen, net als de duidingsteksten, vast in een los
+// JSON-bestand en niet als letterlijke naam in deze code (zie de test
+// "geen enkele vertaaltabel voor constructnamen").
+//
+// De twee constructen van TaPas-BEELD (Helderheid/zingeving, Energie-status)
+// kregen in de opdracht geen omschrijving. Daarvoor geeft deze functie met
+// opzet een lege tekst terug: er wordt niets verzonnen dat niet is opgegeven.
+interface OmschrijvingenBestand {
+  bron: string;
+  sleutel: string;
+  constructen: Record<string, string>;
+}
+const OMSCHRIJVING = omschrijvingenBestand as OmschrijvingenBestand;
+
+/**
+ * De gewone, niet-technische omschrijving naast een constructnaam. Geeft een
+ * lege tekst terug wanneer er geen omschrijving is opgegeven (TaPas-BEELD, of
+ * een construct dat niet in de tabel voorkomt), in plaats van iets te gokken.
+ */
+export function omschrijvingVan(construct: string): string {
+  return OMSCHRIJVING.constructen[construct] ?? "";
+}
+
 // ── Wat een construct voedt ─────────────────────────────────────────────────
 
 /**
@@ -236,6 +269,19 @@ export function voedingPerConstruct(inst: T4SInstrument): Record<string, T4SVoed
     v.maxHerkenning += schaalMax(items[itemId]?.scale);
   }
   for (const [itemId, con] of Object.entries(sm.interestItems)) {
+    const v = reserveer(con);
+    v.herkenningsItems.push(itemId);
+    v.maxHerkenning += schaalMax(items[itemId]?.scale);
+  }
+  // De vijf motivatie-items (MOT-INT-*/MOT-EXT-*) voeden hun eigen construct
+  // in de familie Motivatie op precies dezelfde manier als recognitionItems.
+  // Zonder deze lus telde de familie Motivatie nul voedende items, en toonde
+  // het dekkingsblad "0 van 0" ook wanneer de motivatievragen wel beantwoord
+  // waren (onderdeel A1 van de opdracht "Studiekompas persoonlijk maken").
+  // Dit raakt uitsluitend de telling op het dekkingsblad; het signaalgetal
+  // van de motor (totaalSignaal, drempel voorlopig/voldoende) blijft de vaste
+  // lijst SIGNAALDRAGENDE_ITEMS gebruiken en leest hier niet uit.
+  for (const [itemId, con] of Object.entries(sm.motivationItems)) {
     const v = reserveer(con);
     v.herkenningsItems.push(itemId);
     v.maxHerkenning += schaalMax(items[itemId]?.scale);
@@ -448,6 +494,7 @@ export function rangschik(
       v.energieItems.length > 0 && v.energieItems.every((id) => antwoorden[id]?.energy != null);
     return {
       construct: con,
+      omschrijving: omschrijvingVan(con),
       rang: null as number | null,
       herkenning: geschaald,
       energie: energieCompleet && score ? score.avgEnergy : null,

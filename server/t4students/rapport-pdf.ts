@@ -202,7 +202,7 @@ function tekenVorm(doc: Doc, x: number, y: number, vorm: T4SVorm, kleur: string)
 
 // ── Een rij in een rangorde ─────────────────────────────────────────────────
 
-const RIJ_H = 19;
+const RIJ_H = 27;
 const KOL_RANG = 16;
 const KOL_NAAM = 152;
 const KOL_GAT = 11;
@@ -228,7 +228,16 @@ function tekenRij(doc: Doc, rij: T4SRij, x: number, y: number, kleur: string): n
 
   doc.font(rij.ingevuld ? F.dmMed : F.dm).fontSize(8.3).fillColor(rij.ingevuld ? KLEUR.inkt : KLEUR.inktZacht);
   meet(doc, rij.construct, KOL_NAAM - 6, "constructnaam in een rangorde");
-  doc.text(rij.construct, x + KOL_RANG, midden - 4.3, { width: KOL_NAAM - 6, lineBreak: false, ellipsis: false });
+  doc.text(rij.construct, x + KOL_RANG, midden - 8.7, { width: KOL_NAAM - 6, lineBreak: false, ellipsis: false });
+
+  // Onderdeel C: de gewone omschrijving komt als kleiner lijntje onder de
+  // constructnaam, zodat elke rangorde in het rapport zowel de vaste naam als
+  // een gewone toelichting toont.
+  if (rij.omschrijving) {
+    doc.font(F.dm).fontSize(6.9).fillColor(KLEUR.inktZacht);
+    meet(doc, rij.omschrijving, KOL_NAAM - 6, "omschrijving in een rangorde");
+    doc.text(rij.omschrijving, x + KOL_RANG, midden + 1.8, { width: KOL_NAAM - 6, lineBreak: false, ellipsis: false });
+  }
 
   if (!rij.ingevuld) {
     doc.font(F.dm).fontSize(7.4).fillColor(KLEUR.inktZacht);
@@ -305,7 +314,7 @@ function blokHoogte(doc: Doc, blok: T4SBlok): number {
     }
     case "constructblok": {
       const h = hoogteVan(doc, blok.duiding, F.dm, 9, TEKST_B - 32, 3.4);
-      return h + 46;
+      return h + 46 + (blok.omschrijving ? 12 : 0);
     }
     case "citaat": {
       let h = 30;
@@ -417,8 +426,9 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
       return yy - y;
     }
     case "constructblok": {
+      const verschuiving = blok.omschrijving ? 12 : 0;
       const h = hoogteVan(doc, blok.duiding, F.dm, 9, TEKST_B - 32, 3.4);
-      const totaal = h + 40;
+      const totaal = h + 40 + verschuiving;
       vulRechthoek(doc, x, y, TEKST_B, totaal, KLEUR.kaart, 4);
       vulRechthoek(doc, x, y, 3, totaal, blok.kleur, 1.5);
       doc.save().lineWidth(0.5).strokeColor(KLEUR.lijn).roundedRect(x, y, TEKST_B, totaal, 4).stroke().restore();
@@ -429,6 +439,15 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
       doc.font(F.dmBold).fontSize(11).fillColor(KLEUR.inkt);
       meet(doc, blok.construct, TEKST_B - 230, "constructnaam in een constructblok");
       doc.text(blok.construct, x + 30, y + 11, { width: TEKST_B - 230, lineBreak: false });
+
+      // Onderdeel C: de gewone omschrijving komt als kleiner lijntje onder de
+      // constructnaam, net als in de rangordes. Het blok wordt hoger gemaakt
+      // (verschuiving) zodat dit extra lijntje niet over de duiding heen valt.
+      if (blok.omschrijving) {
+        doc.font(F.dm).fontSize(7.4).fillColor(KLEUR.inktZacht);
+        meet(doc, blok.omschrijving, TEKST_B - 230, "omschrijving in een constructblok");
+        doc.text(blok.omschrijving, x + 30, y + 24.5, { width: TEKST_B - 230, lineBreak: false });
+      }
 
       const xHerk = x + TEKST_B - 14 - HERK_B - KOL_GAT - ENERGIE_B;
       if (blok.ingevuld) {
@@ -449,7 +468,7 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
         doc.font(F.dm).fontSize(7.6).fillColor(KLEUR.inktZacht);
         doc.text("Te weinig antwoorden", xHerk, y + 14, { width: HERK_B + ENERGIE_B + KOL_GAT, lineBreak: false });
       }
-      schrijf(doc, blok.duiding, x + 16, y + 32, TEKST_B - 32, F.dm, 9, KLEUR.inkt, 3.4);
+      schrijf(doc, blok.duiding, x + 16, y + 32 + verschuiving, TEKST_B - 32, F.dm, 9, KLEUR.inkt, 3.4);
       return totaal + 6;
     }
     case "citaat": {

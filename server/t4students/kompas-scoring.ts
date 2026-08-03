@@ -101,6 +101,8 @@ export interface T4SAntwoord {
   interest?: number | null;
   choice?: string | null;
   value?: number | null;
+  /** Alleen bij de open beginvraag (P0). Vrije tekst, telt in geen score mee. */
+  text?: string | null;
 }
 
 export type T4SAntwoorden = Record<string, T4SAntwoord | null | undefined>;
@@ -327,7 +329,13 @@ export function scoreStudiekompas(
   }
 
   const main = instrumentDef.sections.find((s) => s.sectionId === "main");
-  const items: T4SItem[] = main && main.items ? main.items : [];
+  const alleItems: T4SItem[] = main && main.items ? main.items : [];
+  // De open beginvraag (P0, onderdeel B1) hoort niet bij de vragenlijst die
+  // hier doorgerekend wordt: ze voedt geen construct, telt niet mee in
+  // totaalItems en niet in totaalSignaal. Ze wordt hier bewust uit `items`
+  // gefilterd zodat geen enkele latere regel in deze functie haar per ongeluk
+  // toch meetelt.
+  const items: T4SItem[] = alleItems.filter((it) => it.itemType !== "open-intro");
   const itemById: Record<string, T4SItem> = {};
   for (const it of items) itemById[it.id] = it;
 

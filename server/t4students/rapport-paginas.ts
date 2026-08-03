@@ -586,7 +586,7 @@ export function bouwT4StudentsRapport(
         {
           soort: "alinea",
           tekst:
-            "Er is een meetmoment, dus er valt niets te zeggen over hoe dit zich verhoudt tot vorige " +
+            "Er is maar één meetmoment, dus er valt niets te zeggen over hoe dit zich verhoudt tot vorige " +
             "week of vorig jaar. Wat je hier ziet, is hoe het er nu voor staat.",
         },
       ],
@@ -698,6 +698,7 @@ export function bouwT4StudentsRapport(
       topBlokken.push({
         soort: "constructblok",
         construct: r.construct,
+        omschrijving: r.omschrijving,
         rang: r.rang,
         herkenning: r.herkenning,
         energie: r.energie,
@@ -732,6 +733,7 @@ export function bouwT4StudentsRapport(
       laagBlokken.push({
         soort: "constructblok",
         construct: r.construct,
+        omschrijving: r.omschrijving,
         rang: r.rang,
         herkenning: r.herkenning,
         energie: r.energie,
