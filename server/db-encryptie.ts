@@ -57,6 +57,7 @@ export const GEKENDE_HANDLES = [
   "server/teamscan/storage.ts",
   "server/t4organizations/storage.ts",
   "server/t4sports/module-routes.ts",
+  "server/traject/storage.ts",
 ] as const;
 
 /** Minimale vorm die de hook van een databank-handle nodig heeft. */

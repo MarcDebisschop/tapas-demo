@@ -181,7 +181,7 @@ describe("FIX 6 - status is auditbaar", () => {
 
 describe("FIX 6 - elke databank-handle past de hook toe", () => {
   it("somt precies de bestanden op die zelf new Database(...) doen", async () => {
-    // De documentatie noemde vijf handles; er zijn er acht. Deze test houdt de
+    // De documentatie noemde vijf handles; er zijn er negen. Deze test houdt de
     // lijst gelijk aan de werkelijkheid, want bij Optie B moet ELKE handle de
     // sleutel toepassen. Eén vergeten handle opent het bestand zonder sleutel.
     const { readFileSync, readdirSync } = await import("node:fs");
