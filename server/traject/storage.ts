@@ -1,4 +1,4 @@
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
 import { schrijfAuditLog } from "../audit-log";
@@ -8,12 +8,16 @@ import { vindDatabasePad } from "../db-pad";
 import {
   FASEN_VAN_TRAJECT,
   NAMEN_VAN_WERKSTROMEN,
+  ROLLEN_VAN_TRAJECT,
+  SOORTEN_MET_BELANG,
   STANDEN_VAN_WERKSTROOM,
   trajecten,
   trajectFasen,
   trajectGebeurtenissen,
   trajectLijnen,
   trajectPartijen,
+  trajectPersonen,
+  trajectRollen,
   trajectVragen,
   trajectWerkstromen,
 } from "./schema";
@@ -24,6 +28,9 @@ import type {
   TrajectGebeurtenis,
   TrajectLijn,
   TrajectPartij,
+  TrajectPersoon,
+  TrajectRol,
+  TrajectRolnaam,
   TrajectVraag,
   TrajectWerkstroom,
 } from "./schema";
@@ -115,6 +122,76 @@ export interface VraagkaartVrijgevenInvoer {
   vrijgegevenOp?: number;
 }
 
+export interface VoegPersoonToeInvoer {
+  trajectId: number;
+  beheerderId: number;
+  organisatieScope?: number | null;
+  naam: string;
+  email: string;
+  partijId?: number | null;
+  /** De aanmelding als TaPas-beheerder van deze persoon, wanneer die bestaat. */
+  persoonBeheerderId?: number | null;
+  /** De aanmelding als deelnemer aan een instrument, wanneer die bestaat. */
+  persoonDeelnemerId?: number | null;
+  aangemaaktOp?: number;
+}
+
+export interface ZetPersoonInactiefInvoer {
+  persoonId: number;
+  beheerderId: number;
+  organisatieScope?: number | null;
+}
+
+export interface KenRolToeInvoer {
+  trajectId: number;
+  beheerderId: number;
+  organisatieScope?: number | null;
+  persoonId: number;
+  rol: TrajectRolnaam;
+  werkstroomId?: number | null;
+  toegekendOp?: number;
+}
+
+export interface TrekRolInInvoer {
+  rolId: number;
+  beheerderId: number;
+  organisatieScope?: number | null;
+  ingetrokkenOp?: number;
+}
+
+/**
+ * Het antwoord op een roltoekenning. De waarschuwing is gevuld wanneer regel 9
+ * van het protocol aanslaat: de handeling gaat door, maar de opmerking staat in
+ * het dossier.
+ */
+export interface RolToekenning {
+  rol: TrajectRol;
+  waarschuwing: string | null;
+}
+
+export interface RolVanPersoon {
+  id: number;
+  rol: TrajectRolnaam;
+  werkstroomId: number | null;
+  werkstroomNaam: string | null;
+  toegekendOp: number;
+}
+
+export interface PersoonInTraject {
+  id: number;
+  naam: string;
+  email: string;
+  actief: boolean;
+  /** Leeg zolang de persoon meedoet, anders de reden in gewone taal. */
+  aanduiding: string | null;
+  partijId: number | null;
+  partijNaam: string | null;
+  partijSoort: string | null;
+  /** De kring volgt uit de partij en wordt bij de persoon niet opgeslagen. */
+  kring: number | null;
+  rollen: RolVanPersoon[];
+}
+
 export interface VolledigTraject {
   traject: Traject;
   fasen: TrajectFase[];
@@ -132,6 +209,29 @@ function nietLegeTekst(waarde: string, veld: string): string {
   }
   return opgeschoond;
 }
+
+/**
+ * Een e-mailadres wordt getrimd en naar kleine letters omgezet, want het is de
+ * brug naar de aanmelding en namen zijn niet uniek. Zonder apenstaartje is het
+ * geen adres.
+ */
+function geldigEmailadres(waarde: string): string {
+  const opgeschoond = nietLegeTekst(waarde, "E-mailadres").toLowerCase();
+  if (!opgeschoond.includes("@")) {
+    throw new Error("Het e-mailadres moet een apenstaartje bevatten.");
+  }
+  return opgeschoond;
+}
+
+function isRolnaam(waarde: string): waarde is TrajectRolnaam {
+  return (ROLLEN_VAN_TRAJECT as readonly string[]).includes(waarde);
+}
+
+const MELDING_ANKERPUNT_EN_FACILITATOR =
+  "Wie belang heeft bij de uitkomst kan het gesprek niet onpartijdig leiden: " +
+  "een ankerpunt van de investeerder of van de onderneming kan daarom niet " +
+  "tegelijk de facilitator van zijn eigen traject zijn. Trek eerst de andere " +
+  "rol in wanneer deze persoon werkelijk van plaats verandert.";
 
 function geheelGetalBinnenBereik(
   waarde: number,
@@ -250,6 +350,38 @@ export function maakTrajectOpslag(
       .get();
     if (!lijn) throw new Error("Lijn hoort niet bij dit traject.");
     return lijn;
+  }
+
+  function haalPersoonVanTraject(persoonId: number, trajectId: number): TrajectPersoon {
+    const persoon = db
+      .select()
+      .from(trajectPersonen)
+      .where(and(eq(trajectPersonen.id, persoonId), eq(trajectPersonen.trajectId, trajectId)))
+      .get();
+    if (!persoon) throw new Error("Persoon hoort niet bij dit traject.");
+    return persoon;
+  }
+
+  function haalWerkstroomVanTraject(werkstroomId: number, trajectId: number): TrajectWerkstroom {
+    const werkstroom = db
+      .select()
+      .from(trajectWerkstromen)
+      .where(
+        and(eq(trajectWerkstromen.id, werkstroomId), eq(trajectWerkstromen.trajectId, trajectId)),
+      )
+      .get();
+    if (!werkstroom) throw new Error("Werkstroom hoort niet bij dit traject.");
+    return werkstroom;
+  }
+
+  /** De rollen die nu gelden, dus alleen de rijen die niet ingetrokken zijn. */
+  function haalGeldigeRolnamenVanPersoon(persoonId: number): string[] {
+    return db
+      .select({ rol: trajectRollen.rol })
+      .from(trajectRollen)
+      .where(and(eq(trajectRollen.persoonId, persoonId), isNull(trajectRollen.ingetrokkenOp)))
+      .all()
+      .map((rij) => rij.rol);
   }
 
   function schrijfTrajectAudit(
@@ -713,6 +845,268 @@ export function maakTrajectOpslag(
         `Vrijgave voor vraagkaart ${vraag.id} aan de zijde van ${invoer.zijde} vastgelegd.`,
       );
       return vraag;
+    },
+
+    /**
+     * Legt een mens in het dossier vast. De kring komt niet mee: die volgt uit
+     * de partij waar deze persoon bij hoort.
+     */
+    voegPersoonToe(invoer: VoegPersoonToeInvoer): TrajectPersoon {
+      controleerBeheerderVoorTraject(
+        invoer.beheerderId,
+        invoer.trajectId,
+        invoer.organisatieScope,
+      );
+      const naam = nietLegeTekst(invoer.naam, "Naam");
+      const email = geldigEmailadres(invoer.email);
+      const partijId = invoer.partijId ?? null;
+      if (partijId !== null) {
+        haalPartijVanTraject(partijId, invoer.trajectId);
+      }
+
+      let persoon: TrajectPersoon;
+      try {
+        persoon = db
+          .insert(trajectPersonen)
+          .values({
+            trajectId: invoer.trajectId,
+            partijId,
+            naam,
+            email,
+            beheerderId: invoer.persoonBeheerderId ?? null,
+            deelnemerId: invoer.persoonDeelnemerId ?? null,
+            actief: 1,
+            aangemaaktOp: tijdstipOfNu(invoer.aangemaaktOp, "Aanmaakmoment"),
+          })
+          .returning()
+          .get();
+      } catch (fout) {
+        if (String((fout as Error).message).includes("uq_traject_personen_email")) {
+          throw new Error("Dit e-mailadres staat al bij een persoon in dit traject.");
+        }
+        throw fout;
+      }
+
+      schrijfTrajectAudit(
+        invoer.beheerderId,
+        "traject_persoon_toegevoegd",
+        invoer.trajectId,
+        `Persoon ${persoon.id} toegevoegd.`,
+      );
+      return persoon;
+    },
+
+    /**
+     * Zet iemand op inactief. Er verdwijnt niets, want de geschiedenis van deze
+     * persoon blijft nodig.
+     */
+    zetPersoonInactief(invoer: ZetPersoonInactiefInvoer): TrajectPersoon {
+      geheelGetalBinnenBereik(invoer.persoonId, 1, Number.MAX_SAFE_INTEGER, "Persoon");
+      const persoon = db
+        .select()
+        .from(trajectPersonen)
+        .where(eq(trajectPersonen.id, invoer.persoonId))
+        .get();
+      if (!persoon) throw new Error("Persoon niet gevonden.");
+      controleerBeheerderVoorTraject(
+        invoer.beheerderId,
+        persoon.trajectId,
+        invoer.organisatieScope,
+      );
+
+      const bijgewerkt = db
+        .update(trajectPersonen)
+        .set({ actief: 0 })
+        .where(eq(trajectPersonen.id, persoon.id))
+        .returning()
+        .get();
+      schrijfTrajectAudit(
+        invoer.beheerderId,
+        "traject_persoon_inactief_gezet",
+        persoon.trajectId,
+        `Persoon ${persoon.id} op inactief gezet.`,
+      );
+      return bijgewerkt;
+    },
+
+    /**
+     * Kent een rol toe. De databank bewaakt de zeven namen, de werkstroomregel
+     * en de uniciteit; hier staat regel 8 van het protocol, die twee rijen die
+     * elkaar uitsluiten bewaakt, en regel 9, die waarschuwt zonder te blokkeren.
+     */
+    kenRolToe(invoer: KenRolToeInvoer): RolToekenning {
+      controleerBeheerderVoorTraject(
+        invoer.beheerderId,
+        invoer.trajectId,
+        invoer.organisatieScope,
+      );
+      if (!isRolnaam(invoer.rol)) {
+        throw new Error(
+          `De rol ${String(invoer.rol)} bestaat niet. Toegestaan zijn: ${ROLLEN_VAN_TRAJECT.join(", ")}.`,
+        );
+      }
+      const persoon = haalPersoonVanTraject(invoer.persoonId, invoer.trajectId);
+      const werkstroomId = invoer.werkstroomId ?? null;
+      if (invoer.rol === "werkstroomleider") {
+        if (werkstroomId === null) {
+          throw new Error("Een werkstroomleider heeft een werkstroom nodig.");
+        }
+        haalWerkstroomVanTraject(werkstroomId, invoer.trajectId);
+      } else if (werkstroomId !== null) {
+        throw new Error("Alleen de rol werkstroomleider hoort bij een werkstroom.");
+      }
+
+      const geldigeRollen = haalGeldigeRolnamenVanPersoon(persoon.id);
+      const isAnkerpunt =
+        invoer.rol === "ankerpunt_investeerder" || invoer.rol === "ankerpunt_onderneming";
+      const heeftAnkerpunt =
+        geldigeRollen.includes("ankerpunt_investeerder") ||
+        geldigeRollen.includes("ankerpunt_onderneming");
+      const heeftFacilitator = geldigeRollen.includes("facilitator");
+      if (
+        (invoer.rol === "facilitator" && heeftAnkerpunt) ||
+        (isAnkerpunt && heeftFacilitator)
+      ) {
+        throw new Error(MELDING_ANKERPUNT_EN_FACILITATOR);
+      }
+
+      const rol = db
+        .insert(trajectRollen)
+        .values({
+          trajectId: invoer.trajectId,
+          persoonId: persoon.id,
+          rol: invoer.rol,
+          werkstroomId,
+          toegekendDoorBeheerderId: invoer.beheerderId,
+          toegekendOp: tijdstipOfNu(invoer.toegekendOp, "Toekenmoment"),
+          ingetrokkenOp: null,
+          ingetrokkenDoorBeheerderId: null,
+        })
+        .returning()
+        .get();
+      schrijfTrajectAudit(
+        invoer.beheerderId,
+        "traject_rol_toegekend",
+        invoer.trajectId,
+        `Persoon ${persoon.id} draagt vanaf nu de rol ${rol.rol}.`,
+      );
+
+      let waarschuwing: string | null = null;
+      if (invoer.rol === "facilitator" && persoon.partijId !== null) {
+        const partij = haalPartijVanTraject(persoon.partijId, invoer.trajectId);
+        if ((SOORTEN_MET_BELANG as readonly string[]).includes(partij.soort)) {
+          waarschuwing =
+            `${persoon.naam} hoort bij ${partij.naam}, een partij van de soort ` +
+            `${partij.soort} die belang heeft bij de uitkomst van dit traject. ` +
+            "Het protocol vraagt een facilitator zonder belang bij de uitkomst. " +
+            "De rol is toegekend, maar deze opmerking blijft in het dossier staan.";
+          schrijfTrajectAudit(
+            invoer.beheerderId,
+            "traject_rol_belangwaarschuwing",
+            invoer.trajectId,
+            waarschuwing,
+          );
+        }
+      }
+
+      return { rol, waarschuwing };
+    },
+
+    /**
+     * Beeindigt een rol door het intrekken vast te leggen. De rij blijft staan,
+     * zodat achteraf te bewijzen valt wie wanneer welke rol droeg.
+     */
+    trekRolIn(invoer: TrekRolInInvoer): TrajectRol {
+      geheelGetalBinnenBereik(invoer.rolId, 1, Number.MAX_SAFE_INTEGER, "Rol");
+      const rol = db.select().from(trajectRollen).where(eq(trajectRollen.id, invoer.rolId)).get();
+      if (!rol) throw new Error("Rol niet gevonden.");
+      controleerBeheerderVoorTraject(invoer.beheerderId, rol.trajectId, invoer.organisatieScope);
+      if (rol.ingetrokkenOp !== null) {
+        throw new Error("Deze rol is al ingetrokken.");
+      }
+
+      const ingetrokken = db
+        .update(trajectRollen)
+        .set({
+          ingetrokkenOp: tijdstipOfNu(invoer.ingetrokkenOp, "Intrekmoment"),
+          ingetrokkenDoorBeheerderId: invoer.beheerderId,
+        })
+        .where(eq(trajectRollen.id, rol.id))
+        .returning()
+        .get();
+      schrijfTrajectAudit(
+        invoer.beheerderId,
+        "traject_rol_ingetrokken",
+        rol.trajectId,
+        `De rol ${rol.rol} van persoon ${rol.persoonId} is ingetrokken.`,
+      );
+      return ingetrokken;
+    },
+
+    /**
+     * Geeft per persoon de naam, het adres, de partij, de kring die uit die
+     * partij volgt en de rollen die nu gelden. Wie inactief is blijft in de
+     * lijst staan, met een aanduiding in gewone taal.
+     */
+    haalPersonenVanTraject(
+      trajectId: number,
+      beheerderId: number,
+      organisatieScope?: number | null,
+    ): PersoonInTraject[] {
+      controleerBeheerderVoorTraject(beheerderId, trajectId, organisatieScope);
+      const rijen = db
+        .select({
+          id: trajectPersonen.id,
+          naam: trajectPersonen.naam,
+          email: trajectPersonen.email,
+          actief: trajectPersonen.actief,
+          partijId: trajectPersonen.partijId,
+          partijNaam: trajectPartijen.naam,
+          partijSoort: trajectPartijen.soort,
+          kring: trajectPartijen.kring,
+        })
+        .from(trajectPersonen)
+        .leftJoin(trajectPartijen, eq(trajectPersonen.partijId, trajectPartijen.id))
+        .where(eq(trajectPersonen.trajectId, trajectId))
+        .orderBy(asc(trajectPersonen.id))
+        .all();
+
+      const rolrijen = db
+        .select({
+          id: trajectRollen.id,
+          persoonId: trajectRollen.persoonId,
+          rol: trajectRollen.rol,
+          werkstroomId: trajectRollen.werkstroomId,
+          werkstroomNaam: trajectWerkstromen.naam,
+          toegekendOp: trajectRollen.toegekendOp,
+        })
+        .from(trajectRollen)
+        .leftJoin(trajectWerkstromen, eq(trajectRollen.werkstroomId, trajectWerkstromen.id))
+        .where(and(eq(trajectRollen.trajectId, trajectId), isNull(trajectRollen.ingetrokkenOp)))
+        .orderBy(asc(trajectRollen.id))
+        .all();
+
+      return rijen.map((rij) => ({
+        id: rij.id,
+        naam: rij.naam,
+        email: rij.email,
+        actief: rij.actief === 1,
+        aanduiding:
+          rij.actief === 1 ? null : "Deze persoon doet niet meer mee in dit traject.",
+        partijId: rij.partijId,
+        partijNaam: rij.partijNaam ?? null,
+        partijSoort: rij.partijSoort ?? null,
+        kring: rij.kring ?? null,
+        rollen: rolrijen
+          .filter((rolrij) => rolrij.persoonId === rij.id)
+          .map((rolrij) => ({
+            id: rolrij.id,
+            rol: rolrij.rol as TrajectRolnaam,
+            werkstroomId: rolrij.werkstroomId,
+            werkstroomNaam: rolrij.werkstroomNaam ?? null,
+            toegekendOp: rolrij.toegekendOp,
+          })),
+      }));
     },
 
     haalTrajectenVoorBeheerder(
