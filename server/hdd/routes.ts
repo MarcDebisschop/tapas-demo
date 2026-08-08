@@ -12,6 +12,7 @@ import { bouwRapport, type Audience } from "./rapport";
 import { buildFlagshipInput } from "./pdf/mapping";
 import { renderFlagshipPdf } from "./pdf/index";
 import { z } from "zod";
+import { vereisScope } from "../scope-guard";
 
 /**
  * Human Due Diligence — routes (prefix /api/hdd/...).
@@ -24,6 +25,8 @@ import { z } from "zod";
  */
 
 export function registerHddRoutes(app: Express): void {
+  app.use("/api/hdd", vereisScope);
+
   // ---- Descriptor (client haalt fasen/credits hier op) ----
   app.get("/api/hdd/descriptor", (_req, res) => {
     const d = getDescriptor("hdd");
