@@ -30,6 +30,12 @@ export const AUDIT_ACTIES = [
   "afname_inzage",
   "gdpr_rectificatie",
   "prive_intake_anonimisering",
+  "traject_aangemaakt",
+  "traject_partij_toegevoegd",
+  "traject_lijn_toegevoegd",
+  "traject_gebeurtenis_toegevoegd",
+  "traject_vraag_aangemaakt",
+  "traject_vraag_toestand_gewijzigd",
 ] as const;
 
 export type AuditActie = (typeof AUDIT_ACTIES)[number];
