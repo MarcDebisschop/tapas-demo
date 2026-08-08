@@ -6,15 +6,24 @@ import {
   ChevronRight,
   CircleAlert,
   Clock3,
+  Eye,
   MoveHorizontal,
   Network,
   PanelRightClose,
   ShieldCheck,
+  Users,
   X,
 } from "lucide-react";
 import { AppHeader } from "@/components/Brand";
 import { BrandedError } from "@/components/BrandedError";
 import { Skeleton } from "@/components/ui/skeleton";
+import { apiRequest } from "@/lib/queryClient";
+import {
+  bouwDossierAdres,
+  brilStrookTekst,
+  heeftIndruk,
+} from "@/lib/regiekamer-bril";
+import { PersonenPaneel } from "./regiekamer-personen";
 
 type LijnToestand = "aandacht" | "lopend" | "stil" | "in_orde";
 type VraagToestand =
@@ -104,6 +113,26 @@ interface Gebeurtenis {
   tijdstip: string;
   soort: string;
   vaststelling: string;
+  /**
+   * Hoe het aanvoelde. Dit veld komt alleen mee wanneer de server het aan deze
+   * lezer geeft; anders is het er helemaal niet en hoort er ook niets over op
+   * het scherm te staan.
+   */
+  indruk?: string;
+}
+
+/** Het merkteken van de server dat de bril aanstond. */
+interface Bril {
+  actief: true;
+  persoonId: number;
+  persoonNaam: string;
+}
+
+/** Een mens uit het dossier, zoals de keuzelijst van de bril hem nodig heeft. */
+interface MensInKeuze {
+  id: number;
+  naam: string;
+  actief: boolean;
 }
 
 interface VolledigTraject {
@@ -114,6 +143,8 @@ interface VolledigTraject {
   werkstromen: Werkstroom[];
   vragen: Vraag[];
   gebeurtenissen: Gebeurtenis[];
+  /** Leeg wanneer u met uw eigen ogen kijkt. */
+  bril: Bril | null;
 }
 
 interface KortTraject {
@@ -962,6 +993,14 @@ function LijnDetail({
                         {gewoneTekst(gebeurtenis.soort, gebeurtenisTeksten)} · {datum(gebeurtenis.tijdstip, true)}
                       </p>
                       <p className="mt-1 text-sm leading-6 text-[var(--regie-tekst)]">{gebeurtenis.vaststelling}</p>
+                      {heeftIndruk(gebeurtenis) ? (
+                        <p
+                          data-testid="gebeurtenis-indruk"
+                          className="mt-1.5 border-l-2 border-[var(--regie-rand)] pl-2.5 text-sm italic leading-6 text-[var(--regie-gedempt)]"
+                        >
+                          {gebeurtenis.indruk}
+                        </p>
+                      ) : null}
                     </div>
                   </li>
                 ))}
@@ -1061,14 +1100,32 @@ export function TrajectScherm() {
   const { trajectId } = useParams<{ trajectId: string }>();
   const [gekozenLijn, zetGekozenLijn] = useState<Lijn | null>(null);
   const [geselecteerdeWerkstroomId, zetGeselecteerdeWerkstroomId] = useState<number | null>(null);
+  const [personenOpen, zetPersonenOpen] = useState(false);
+  // De bril leeft alleen in dit bezoek. Wie het scherm opnieuw opent, begint
+  // met zijn eigen ogen: er wordt niets over bewaard.
+  const [brilPersoonId, zetBrilPersoonId] = useState<number | null>(null);
+  const [brilKeuzeOpen, zetBrilKeuzeOpen] = useState(false);
+  const [brilKeuze, zetBrilKeuze] = useState("");
   const { data: gegevens, isLoading, error, refetch } = useQuery<VolledigTraject>({
-    queryKey: ["/api/traject/trajecten", trajectId],
+    queryKey: ["/api/traject/trajecten", trajectId].concat(
+      brilPersoonId === null ? [] : [`alsPersoon=${brilPersoonId}`],
+    ),
+    queryFn: async () =>
+      (await apiRequest("GET", bouwDossierAdres(trajectId, brilPersoonId))).json(),
+    enabled: Boolean(trajectId),
+  });
+  const { data: mensen } = useQuery<MensInKeuze[]>({
+    queryKey: ["/api/traject/trajecten", trajectId, "personen"],
     enabled: Boolean(trajectId),
   });
 
   useEffect(() => {
     zetGekozenLijn(null);
     zetGeselecteerdeWerkstroomId(null);
+    zetPersonenOpen(false);
+    zetBrilPersoonId(null);
+    zetBrilKeuzeOpen(false);
+    zetBrilKeuze("");
   }, [trajectId]);
 
   if (isLoading) return <RegiekamerLaden />;
@@ -1101,8 +1158,36 @@ export function TrajectScherm() {
           ),
         };
 
+  const bril = gegevens.bril;
+
   return (
-    <div className="regiekamer min-h-screen">
+    <div className={`regiekamer min-h-screen ${bril ? "pt-20 sm:pt-14" : ""}`}>
+      {bril ? (
+        <>
+          <div
+            data-testid="bril-strook"
+            role="status"
+            className="fixed left-1/2 top-2 z-[61] flex w-[calc(100%-1.5rem)] max-w-xl -translate-x-1/2 flex-wrap items-center justify-center gap-x-3 gap-y-1.5 rounded-[4px] bg-[var(--regie-accent)] px-3 py-2 text-center text-white shadow-lg"
+          >
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold leading-5 sm:text-sm">
+              <Eye className="h-4 w-4 shrink-0" aria-hidden="true" />
+              {brilStrookTekst(bril.persoonNaam)}
+            </span>
+            <button
+              type="button"
+              onClick={() => zetBrilPersoonId(null)}
+              className="rounded-[4px] bg-white px-2.5 py-1 text-xs font-semibold text-[var(--regie-accent)] hover:bg-[var(--regie-achtergrond)]"
+            >
+              Terug naar mijn eigen zicht
+            </button>
+          </div>
+          <div
+            data-testid="bril-rand"
+            aria-hidden="true"
+            className="pointer-events-none fixed inset-0 z-[60] border-[3px] border-[var(--regie-accent)]"
+          />
+        </>
+      ) : null}
       <header className="border-b border-[var(--regie-rand)] bg-[var(--regie-vlak)]">
         <div className="mx-auto flex min-h-[64px] max-w-[1560px] items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
@@ -1114,14 +1199,81 @@ export function TrajectScherm() {
               <h1 className="truncate text-base font-semibold text-[var(--regie-tekst)]">{gegevens.traject.naam}</h1>
             </div>
           </div>
-          <Link
-            href="/admin/trajecten"
-            className="hidden items-center gap-2 text-sm font-semibold text-[var(--regie-accent)] sm:inline-flex"
-          >
-            Alle trajecten
-            <ChevronRight className="h-4 w-4" />
-          </Link>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              data-testid="knop-personen"
+              aria-label="Mensen en rollen"
+              title="Mensen en rollen"
+              onClick={() => zetPersonenOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-[4px] border border-[var(--regie-rand)] px-2.5 py-1.5 text-xs font-semibold text-[var(--regie-tekst)] hover:bg-[var(--regie-achtergrond)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--regie-accent)]"
+            >
+              <Users className="h-4 w-4 text-[var(--regie-accent)]" aria-hidden="true" />
+              <span className="hidden sm:inline">Mensen en rollen</span>
+            </button>
+            <button
+              type="button"
+              data-testid="bril-schakelaar"
+              aria-label="Kijk met andere ogen"
+              title="Kijk met andere ogen"
+              aria-expanded={brilKeuzeOpen}
+              onClick={() => zetBrilKeuzeOpen((open) => !open)}
+              className="inline-flex items-center gap-1.5 rounded-[4px] border border-[var(--regie-rand)] px-2.5 py-1.5 text-xs font-semibold text-[var(--regie-tekst)] hover:bg-[var(--regie-achtergrond)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--regie-accent)]"
+            >
+              <Eye className="h-4 w-4 text-[var(--regie-accent)]" aria-hidden="true" />
+              <span className="hidden sm:inline">Kijk met andere ogen</span>
+            </button>
+            <Link
+              href="/admin/trajecten"
+              className="hidden items-center gap-2 text-sm font-semibold text-[var(--regie-accent)] lg:inline-flex"
+            >
+              Alle trajecten
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
+
+        {brilKeuzeOpen ? (
+          <div
+            data-testid="bril-keuze"
+            className="mx-auto max-w-[1560px] border-t border-[var(--regie-rand)] px-4 py-3 sm:px-6"
+          >
+            <p className="text-xs leading-5 text-[var(--regie-gedempt)]">
+              Kies een mens uit dit traject. U ziet daarna hetzelfde dossier zoals
+              die mens het ziet, en nooit meer dan u zelf mag zien.
+            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <label className="sr-only" htmlFor="bril-mens">
+                Door wiens ogen wilt u kijken
+              </label>
+              <select
+                id="bril-mens"
+                value={brilKeuze}
+                onChange={(gebeurtenis) => zetBrilKeuze(gebeurtenis.target.value)}
+                className="min-w-0 flex-1 rounded-[4px] border border-[var(--regie-rand)] bg-[var(--regie-achtergrond)] px-2.5 py-2 text-sm text-[var(--regie-tekst)] sm:flex-none sm:min-w-64"
+              >
+                <option value="">Nog te kiezen</option>
+                {(mensen ?? []).map((mens) => (
+                  <option key={mens.id} value={String(mens.id)}>
+                    {mens.naam}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                disabled={brilKeuze === ""}
+                onClick={() => {
+                  zetBrilPersoonId(Number(brilKeuze));
+                  zetBrilKeuzeOpen(false);
+                  zetGekozenLijn(null);
+                }}
+                className="rounded-[4px] bg-[var(--regie-accent)] px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
+              >
+                Kijk met deze ogen
+              </button>
+            </div>
+          </div>
+        ) : null}
       </header>
 
       <main className="mx-auto max-w-[1560px] px-4 py-5 sm:px-6">
@@ -1181,6 +1333,15 @@ export function TrajectScherm() {
 
       {gekozenLijn ? (
         <LijnDetail lijn={gekozenLijn} gegevens={gegevens} sluit={() => zetGekozenLijn(null)} />
+      ) : null}
+
+      {personenOpen ? (
+        <PersonenPaneel
+          trajectId={trajectId}
+          werkstromen={gegevens.werkstromen}
+          partijen={gegevens.partijen}
+          sluit={() => zetPersonenOpen(false)}
+        />
       ) : null}
     </div>
   );
