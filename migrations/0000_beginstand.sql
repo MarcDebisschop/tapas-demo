@@ -39,11 +39,11 @@ CREATE TABLE IF NOT EXISTS `afnames` (
 	`aangemaakt_door_beheerder_id` integer,
 	`aangemaakt_door_organisatie_id` integer,
 	`created_at` text NOT NULL,
-	`completed_at` text
+	`completed_at` text,
+	UNIQUE(`respondent_code`),
+	UNIQUE(`invite_token`)
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS `afnames_respondent_code_unique` ON `afnames` (`respondent_code`);--> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS `afnames_invite_token_unique` ON `afnames` (`invite_token`);--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS `beheerders` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`naam` text NOT NULL,
@@ -55,10 +55,10 @@ CREATE TABLE IF NOT EXISTS `beheerders` (
 	`actief` integer DEFAULT true NOT NULL,
 	`wachtwoord_hash` text,
 	`created_at` text NOT NULL,
-	FOREIGN KEY (`organisatie_id`) REFERENCES `organisaties`(`id`) ON UPDATE no action ON DELETE no action
+	FOREIGN KEY (`organisatie_id`) REFERENCES `organisaties`(`id`) ON UPDATE no action ON DELETE no action,
+	UNIQUE(`email`)
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS `beheerders_email_unique` ON `beheerders` (`email`);--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS `betalingen` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`organisatie_id` integer NOT NULL,
@@ -162,10 +162,10 @@ CREATE TABLE IF NOT EXISTS `creditnotas` (
 	`peppol_document` text,
 	`credits_teruggeboekt` integer DEFAULT false NOT NULL,
 	`creditnota_datum` text NOT NULL,
-	`created_at` text NOT NULL
+	`created_at` text NOT NULL,
+	UNIQUE(`creditnotanummer`)
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS `creditnotas_creditnotanummer_unique` ON `creditnotas` (`creditnotanummer`);--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS `deelnemers` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`email` text NOT NULL,
@@ -181,11 +181,11 @@ CREATE TABLE IF NOT EXISTS `deelnemers` (
 	`uitleg_tegoed_deelnemer` integer DEFAULT 0 NOT NULL,
 	`uitleg_gebruikt_coach` integer DEFAULT 0 NOT NULL,
 	`uitleg_tegoed_coach` integer DEFAULT 0 NOT NULL,
-	`created_at` text NOT NULL
+	`created_at` text NOT NULL,
+	UNIQUE(`email`),
+	UNIQUE(`dashboard_token`)
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS `deelnemers_email_unique` ON `deelnemers` (`email`);--> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS `deelnemers_dashboard_token_unique` ON `deelnemers` (`dashboard_token`);--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS `facturen` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`factuurnummer` text NOT NULL,
@@ -205,10 +205,10 @@ CREATE TABLE IF NOT EXISTS `facturen` (
 	`factuurdatum` text NOT NULL,
 	`betaalstatus` text DEFAULT 'betaald' NOT NULL,
 	`vervaldatum` text,
-	`created_at` text NOT NULL
+	`created_at` text NOT NULL,
+	UNIQUE(`factuurnummer`)
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS `facturen_factuurnummer_unique` ON `facturen` (`factuurnummer`);--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS `licenties` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`sleutel` text NOT NULL,
@@ -222,10 +222,10 @@ CREATE TABLE IF NOT EXISTS `licenties` (
 	`geldig_tot` text,
 	`status` text DEFAULT 'actief' NOT NULL,
 	`notities` text,
-	`created_at` text NOT NULL
+	`created_at` text NOT NULL,
+	UNIQUE(`sleutel`)
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS `licenties_sleutel_unique` ON `licenties` (`sleutel`);--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS `organisaties` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`naam` text NOT NULL,
@@ -251,10 +251,10 @@ CREATE TABLE IF NOT EXISTS `organisaties` (
 	`branding_achtergrond_url` text,
 	`branding_achtergrond_kleur` text,
 	`branding_quote` text,
-	`created_at` text NOT NULL
+	`created_at` text NOT NULL,
+	UNIQUE(`login_email`)
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS `organisaties_login_email_unique` ON `organisaties` (`login_email`);--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS `rapporten` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`afname_id` integer NOT NULL,
@@ -278,10 +278,10 @@ CREATE TABLE IF NOT EXISTS `sessie_deelnemers` (
 	`individuele_input` text,
 	`uitgenodigd_at` text,
 	`toegetreden_at` text,
-	`created_at` text NOT NULL
+	`created_at` text NOT NULL,
+	UNIQUE(`invite_token`)
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS `sessie_deelnemers_invite_token_unique` ON `sessie_deelnemers` (`invite_token`);--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS `sessie_studies` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`sessie_id` integer NOT NULL,
@@ -321,10 +321,10 @@ CREATE TABLE IF NOT EXISTS `tarieven` (
 	`bundel_credits` integer,
 	`is_custom` integer DEFAULT false NOT NULL,
 	`gewijzigd_door` text,
-	`updated_at` text NOT NULL
+	`updated_at` text NOT NULL,
+	UNIQUE(`instrument_id`)
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS `tarieven_instrument_id_unique` ON `tarieven` (`instrument_id`);--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS `toegangen` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`beheerder_id` integer NOT NULL,
