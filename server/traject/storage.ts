@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
 import { schrijfAuditLog } from "../audit-log";
@@ -41,6 +41,7 @@ export interface MaakTrajectInvoer {
 export interface VoegPartijToeInvoer {
   trajectId: number;
   beheerderId: number;
+  organisatieScope?: number | null;
   soort: string;
   naam: string;
   ankerpunt: string;
@@ -51,6 +52,7 @@ export interface VoegPartijToeInvoer {
 export interface VoegLijnToeInvoer {
   trajectId: number;
   beheerderId: number;
+  organisatieScope?: number | null;
   partijEenId: number;
   partijTweeId: number;
   stiltedrempelDagen: number;
@@ -60,6 +62,7 @@ export interface VoegLijnToeInvoer {
 export interface VoegGebeurtenisToeInvoer {
   trajectId: number;
   beheerderId: number;
+  organisatieScope?: number | null;
   lijnId: number;
   tijdstip: number;
   soort: "gesprek" | "bericht" | "rechtstreeks_contact";
@@ -70,6 +73,7 @@ export interface VoegGebeurtenisToeInvoer {
 export interface MaakVraagkaartInvoer {
   trajectId: number;
   beheerderId: number;
+  organisatieScope?: number | null;
   lijnId: number;
   vragerPartijId: number;
   ontvangerPartijId: number;
@@ -84,10 +88,19 @@ export interface MaakVraagkaartInvoer {
 export interface VeranderVraagtoestandInvoer {
   vraagId: number;
   beheerderId: number;
+  organisatieScope?: number | null;
   toestand: VraagToestand;
   vrijgaveVragerDoorBeheerderId?: number;
   vrijgaveOntvangerDoorBeheerderId?: number;
   veranderdOp?: number;
+}
+
+export interface VraagkaartVrijgevenInvoer {
+  vraagId: number;
+  beheerderId: number;
+  organisatieScope?: number | null;
+  zijde: "vrager" | "ontvanger";
+  vrijgegevenOp?: number;
 }
 
 export interface VolledigTraject {
@@ -191,8 +204,18 @@ export function maakTrajectOpslag(
     }
   }
 
-  function controleerBeheerderVoorTraject(beheerderId: number, trajectId: number): Traject {
+  function controleerBeheerderVoorTraject(
+    beheerderId: number,
+    trajectId: number,
+    organisatieScope?: number | null,
+  ): Traject {
     const traject = haalTrajectZonderScope(trajectId);
+    if (organisatieScope !== undefined) {
+      if (organisatieScope !== null && traject.organisatieId !== organisatieScope) {
+        throw new Error("De beheerder valt buiten de organisatiegrens van dit traject.");
+      }
+      return traject;
+    }
     controleerBeheerderVoorOrganisatie(beheerderId, traject.organisatieId);
     return traject;
   }
@@ -296,7 +319,11 @@ export function maakTrajectOpslag(
     },
 
     voegPartijToe(invoer: VoegPartijToeInvoer): TrajectPartij {
-      controleerBeheerderVoorTraject(invoer.beheerderId, invoer.trajectId);
+      controleerBeheerderVoorTraject(
+        invoer.beheerderId,
+        invoer.trajectId,
+        invoer.organisatieScope,
+      );
       geheelGetalBinnenBereik(invoer.kring, 0, 4, "Kring");
       const partij = db
         .insert(trajectPartijen)
@@ -320,7 +347,11 @@ export function maakTrajectOpslag(
     },
 
     voegLijnToe(invoer: VoegLijnToeInvoer): TrajectLijn {
-      controleerBeheerderVoorTraject(invoer.beheerderId, invoer.trajectId);
+      controleerBeheerderVoorTraject(
+        invoer.beheerderId,
+        invoer.trajectId,
+        invoer.organisatieScope,
+      );
       if (invoer.partijEenId === invoer.partijTweeId) {
         throw new Error("Een lijn heeft twee verschillende partijen nodig.");
       }
@@ -368,7 +399,11 @@ export function maakTrajectOpslag(
     },
 
     voegGebeurtenisToe(invoer: VoegGebeurtenisToeInvoer): TrajectGebeurtenis {
-      controleerBeheerderVoorTraject(invoer.beheerderId, invoer.trajectId);
+      controleerBeheerderVoorTraject(
+        invoer.beheerderId,
+        invoer.trajectId,
+        invoer.organisatieScope,
+      );
       haalLijnVanTraject(invoer.lijnId, invoer.trajectId);
       tijdstipOfNu(invoer.tijdstip, "Tijdstip");
       const gebeurtenis = db
@@ -393,7 +428,11 @@ export function maakTrajectOpslag(
     },
 
     maakVraagkaart(invoer: MaakVraagkaartInvoer): TrajectVraag {
-      controleerBeheerderVoorTraject(invoer.beheerderId, invoer.trajectId);
+      controleerBeheerderVoorTraject(
+        invoer.beheerderId,
+        invoer.trajectId,
+        invoer.organisatieScope,
+      );
       const lijn = haalLijnVanTraject(invoer.lijnId, invoer.trajectId);
       haalPartijVanTraject(invoer.vragerPartijId, invoer.trajectId);
       haalPartijVanTraject(invoer.ontvangerPartijId, invoer.trajectId);
@@ -452,7 +491,11 @@ export function maakTrajectOpslag(
     veranderVraagtoestand(invoer: VeranderVraagtoestandInvoer): TrajectVraag {
       const vraag = db.select().from(trajectVragen).where(eq(trajectVragen.id, invoer.vraagId)).get();
       if (!vraag) throw new Error("Vraagkaart niet gevonden.");
-      controleerBeheerderVoorTraject(invoer.beheerderId, vraag.trajectId);
+      controleerBeheerderVoorTraject(
+        invoer.beheerderId,
+        vraag.trajectId,
+        invoer.organisatieScope,
+      );
       if (!isVraagToestand(vraag.toestand)) {
         throw new Error("Vraagkaart heeft een ongeldige opgeslagen toestand.");
       }
@@ -491,8 +534,8 @@ export function maakTrajectOpslag(
         if (vrager === ontvanger) {
           throw new Error("Dubbele vrijgave vereist twee verschillende beheerders.");
         }
-        controleerBeheerderVoorTraject(vrager, vraag.trajectId);
-        controleerBeheerderVoorTraject(ontvanger, vraag.trajectId);
+        controleerBeheerderVoorTraject(vrager, vraag.trajectId, invoer.organisatieScope);
+        controleerBeheerderVoorTraject(ontvanger, vraag.trajectId, invoer.organisatieScope);
         wijzigingen = {
           toestand: "gedeeld",
           vrijgaveVragerDoorBeheerderId: vrager,
@@ -517,8 +560,153 @@ export function maakTrajectOpslag(
       return veranderdeVraag;
     },
 
-    haalTrajectOp(trajectId: number, beheerderId: number): VolledigTraject {
-      const traject = controleerBeheerderVoorTraject(beheerderId, trajectId);
+    vraagkaartVrijgeven(invoer: VraagkaartVrijgevenInvoer): TrajectVraag {
+      geheelGetalBinnenBereik(invoer.vraagId, 1, Number.MAX_SAFE_INTEGER, "Vraagkaart");
+      geheelGetalBinnenBereik(invoer.beheerderId, 1, Number.MAX_SAFE_INTEGER, "Beheerder");
+      const vrijgegevenOp = tijdstipOfNu(invoer.vrijgegevenOp, "Vrijgavemoment");
+
+      const geefVrij = sqlite.transaction(() => {
+        const vraag = db.select().from(trajectVragen).where(eq(trajectVragen.id, invoer.vraagId)).get();
+        if (!vraag) throw new Error("Vraagkaart niet gevonden.");
+        controleerBeheerderVoorTraject(
+          invoer.beheerderId,
+          vraag.trajectId,
+          invoer.organisatieScope,
+        );
+        if (vraag.toestand !== "beantwoord") {
+          throw new Error("Een vraagkaart kan alleen vanuit beantwoord worden vrijgegeven.");
+        }
+
+        const bestaandDoorBeheerderId =
+          invoer.zijde === "vrager"
+            ? vraag.vrijgaveVragerDoorBeheerderId
+            : vraag.vrijgaveOntvangerDoorBeheerderId;
+        const andereDoorBeheerderId =
+          invoer.zijde === "vrager"
+            ? vraag.vrijgaveOntvangerDoorBeheerderId
+            : vraag.vrijgaveVragerDoorBeheerderId;
+
+        if (
+          bestaandDoorBeheerderId !== null &&
+          bestaandDoorBeheerderId !== invoer.beheerderId
+        ) {
+          throw new Error("Deze zijde is al door een andere beheerder vrijgegeven.");
+        }
+        if (andereDoorBeheerderId === invoer.beheerderId) {
+          throw new Error("Dubbele vrijgave vereist twee verschillende beheerders.");
+        }
+
+        if (bestaandDoorBeheerderId === null) {
+          if (invoer.zijde === "vrager") {
+            db.update(trajectVragen)
+              .set({
+                vrijgaveVragerDoorBeheerderId: invoer.beheerderId,
+                vrijgaveVragerOp: vrijgegevenOp,
+              })
+              .where(eq(trajectVragen.id, vraag.id))
+              .run();
+          } else {
+            db.update(trajectVragen)
+              .set({
+                vrijgaveOntvangerDoorBeheerderId: invoer.beheerderId,
+                vrijgaveOntvangerOp: vrijgegevenOp,
+              })
+              .where(eq(trajectVragen.id, vraag.id))
+              .run();
+          }
+        }
+
+        const naVrijgave = db
+          .select()
+          .from(trajectVragen)
+          .where(eq(trajectVragen.id, vraag.id))
+          .get();
+        if (!naVrijgave) throw new Error("Vraagkaart niet gevonden.");
+
+        const volledigVrijgegeven =
+          naVrijgave.vrijgaveVragerDoorBeheerderId !== null &&
+          naVrijgave.vrijgaveOntvangerDoorBeheerderId !== null;
+        if (!volledigVrijgegeven) return naVrijgave;
+
+        return db
+          .update(trajectVragen)
+          .set({ toestand: "gedeeld" })
+          .where(eq(trajectVragen.id, vraag.id))
+          .returning()
+          .get();
+      });
+
+      const vraag = geefVrij();
+      schrijfTrajectAudit(
+        invoer.beheerderId,
+        "traject_vraag_toestand_gewijzigd",
+        vraag.trajectId,
+        `Vrijgave voor vraagkaart ${vraag.id} aan de zijde van ${invoer.zijde} vastgelegd.`,
+      );
+      return vraag;
+    },
+
+    haalTrajectenVoorBeheerder(
+      beheerderId: number,
+      organisatieScope?: number | null,
+    ): Traject[] {
+      geheelGetalBinnenBereik(beheerderId, 1, Number.MAX_SAFE_INTEGER, "Beheerder");
+      const beheerder = sqlite
+        .prepare("SELECT organisatie_id, is_prior FROM beheerders WHERE id = ?")
+        .get(beheerderId) as
+        | { organisatie_id: number | null; is_prior: number }
+        | undefined;
+      if (!beheerder) throw new Error("Beheerder niet gevonden.");
+
+      if (organisatieScope !== undefined) {
+        if (organisatieScope === null) {
+          return db.select().from(trajecten).orderBy(desc(trajecten.id)).all();
+        }
+        return db
+          .select()
+          .from(trajecten)
+          .where(eq(trajecten.organisatieId, organisatieScope))
+          .orderBy(desc(trajecten.id))
+          .all();
+      }
+
+      if (beheerder.is_prior === 1) {
+        return db.select().from(trajecten).orderBy(desc(trajecten.id)).all();
+      }
+      if (beheerder.organisatie_id === null) {
+        throw new Error("De beheerder valt buiten de organisatiegrens van dit traject.");
+      }
+      return db
+        .select()
+        .from(trajecten)
+        .where(eq(trajecten.organisatieId, beheerder.organisatie_id))
+        .orderBy(desc(trajecten.id))
+        .all();
+    },
+
+    haalGebeurtenissenVanLijn(
+      lijnId: number,
+      beheerderId: number,
+      organisatieScope?: number | null,
+    ): TrajectGebeurtenis[] {
+      geheelGetalBinnenBereik(lijnId, 1, Number.MAX_SAFE_INTEGER, "Lijn");
+      const lijn = db.select().from(trajectLijnen).where(eq(trajectLijnen.id, lijnId)).get();
+      if (!lijn) throw new Error("Lijn niet gevonden.");
+      controleerBeheerderVoorTraject(beheerderId, lijn.trajectId, organisatieScope);
+      return db
+        .select()
+        .from(trajectGebeurtenissen)
+        .where(eq(trajectGebeurtenissen.lijnId, lijnId))
+        .orderBy(desc(trajectGebeurtenissen.tijdstip), desc(trajectGebeurtenissen.id))
+        .all();
+    },
+
+    haalTrajectOp(
+      trajectId: number,
+      beheerderId: number,
+      organisatieScope?: number | null,
+    ): VolledigTraject {
+      const traject = controleerBeheerderVoorTraject(beheerderId, trajectId, organisatieScope);
       return {
         traject,
         fasen: db

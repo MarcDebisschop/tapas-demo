@@ -13,6 +13,7 @@ import { registerAdminStmVoortgangRoutes } from "./admin-stm-voortgang";
 import { registerT4RRoutes } from "./t4r/routes";
 import { registerTeamscanRoutes } from "./teamscan/routes";
 import { registerHddRoutes } from "./hdd/routes";
+import { registerTrajectRoutes } from "./traject/routes";
 import { registerToegangRoutes } from "./toegang/routes";
 import { registerDeelnemerRoutes } from "./routes-deelnemer";
 import { startCreditRecoveryJob } from "./credit-recovery";
@@ -123,6 +124,11 @@ export async function registerRoutes(
   // Human Due Diligence — vlaggenschip-traject (journey).
   // -------------------------------------------------------------------------
   registerHddRoutes(app);
+
+  // -------------------------------------------------------------------------
+  // Regiekamer - organisatiegebonden trajectregister.
+  // -------------------------------------------------------------------------
+  registerTrajectRoutes(app);
 
   // -------------------------------------------------------------------------
   // Toegang & accreditatie — governance-laag.
