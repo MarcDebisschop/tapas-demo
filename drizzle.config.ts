@@ -12,6 +12,7 @@ export default defineConfig({
     "./server/t4r/schema.ts",
     "./server/t4sports/schema.ts",
     "./server/teamscan/schema.ts",
+    "./server/traject/schema.ts",
   ],
   dialect: "sqlite",
   dbCredentials: {
