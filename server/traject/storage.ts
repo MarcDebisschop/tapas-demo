@@ -194,6 +194,8 @@ export interface PersoonInTraject {
   partijSoort: string | null;
   /** De kring volgt uit de partij en wordt bij de persoon niet opgeslagen. */
   kring: number | null;
+  /** De aanmelding die aan deze persoon hangt, of leeg als er geen is. */
+  beheerderId: number | null;
   rollen: RolVanPersoon[];
 }
 
@@ -1078,6 +1080,7 @@ export function maakTrajectOpslag(
           partijNaam: trajectPartijen.naam,
           partijSoort: trajectPartijen.soort,
           kring: trajectPartijen.kring,
+          beheerderId: trajectPersonen.beheerderId,
         })
         .from(trajectPersonen)
         .leftJoin(trajectPartijen, eq(trajectPersonen.partijId, trajectPartijen.id))
@@ -1111,6 +1114,7 @@ export function maakTrajectOpslag(
         partijNaam: rij.partijNaam ?? null,
         partijSoort: rij.partijSoort ?? null,
         kring: rij.kring ?? null,
+        beheerderId: rij.beheerderId ?? null,
         rollen: rolrijen
           .filter((rolrij) => rolrij.persoonId === rij.id)
           .map((rolrij) => ({
@@ -1121,6 +1125,90 @@ export function maakTrajectOpslag(
             toegekendOp: rolrij.toegekendOp,
           })),
       }));
+    },
+
+    /**
+     * Zoekt een persoon op nummer en houdt daarbij de organisatiegrens aan. De
+     * webadressen die met een persoonsnummer werken hebben dit nodig om te
+     * weten bij welk traject die persoon hoort.
+     */
+    haalPersoonOp(
+      persoonId: number,
+      beheerderId: number,
+      organisatieScope?: number | null,
+    ): TrajectPersoon {
+      geheelGetalBinnenBereik(persoonId, 1, Number.MAX_SAFE_INTEGER, "Persoon");
+      const persoon = db
+        .select()
+        .from(trajectPersonen)
+        .where(eq(trajectPersonen.id, persoonId))
+        .get();
+      if (!persoon) throw new Error("Persoon niet gevonden.");
+      controleerBeheerderVoorTraject(beheerderId, persoon.trajectId, organisatieScope);
+      return persoon;
+    },
+
+    /**
+     * Zet achteraf vast wie een gebeurtenis heeft neergeschreven. Nodig voor
+     * dossiers die al bestonden voordat de personen erin stonden: zonder auteur
+     * kan de indruk bij niemand terechtkomen.
+     */
+    zetAuteurVanGebeurtenis(invoer: {
+      gebeurtenisId: number;
+      persoonId: number;
+      beheerderId: number;
+      organisatieScope?: number | null;
+    }): TrajectGebeurtenis {
+      geheelGetalBinnenBereik(
+        invoer.gebeurtenisId,
+        1,
+        Number.MAX_SAFE_INTEGER,
+        "Gebeurtenis",
+      );
+      const gebeurtenis = db
+        .select()
+        .from(trajectGebeurtenissen)
+        .where(eq(trajectGebeurtenissen.id, invoer.gebeurtenisId))
+        .get();
+      if (!gebeurtenis) throw new Error("Gebeurtenis niet gevonden.");
+      const lijn = db
+        .select()
+        .from(trajectLijnen)
+        .where(eq(trajectLijnen.id, gebeurtenis.lijnId))
+        .get();
+      if (!lijn) throw new Error("Lijn niet gevonden.");
+      controleerBeheerderVoorTraject(
+        invoer.beheerderId,
+        lijn.trajectId,
+        invoer.organisatieScope,
+      );
+      const persoon = haalPersoonVanTraject(invoer.persoonId, lijn.trajectId);
+      const bijgewerkt = db
+        .update(trajectGebeurtenissen)
+        .set({ vastgelegdDoorPersoonId: persoon.id })
+        .where(eq(trajectGebeurtenissen.id, gebeurtenis.id))
+        .returning()
+        .get();
+      schrijfTrajectAudit(
+        invoer.beheerderId,
+        "traject_gebeurtenis_auteur_gezet",
+        lijn.trajectId,
+        `Gebeurtenis ${gebeurtenis.id} staat nu op naam van persoon ${persoon.id}.`,
+      );
+      return bijgewerkt;
+    },
+
+    /**
+     * Laat de webadressen een regel in het auditspoor schrijven langs dezelfde
+     * weg als de opslag zelf, zodat er maar een spoor is.
+     */
+    schrijfAuditregel(
+      beheerderId: number,
+      actie: AuditInvoer["actie"],
+      trajectId: number,
+      detail: string,
+    ): void {
+      schrijfTrajectAudit(beheerderId, actie, trajectId, detail);
     },
 
     haalTrajectenVoorBeheerder(

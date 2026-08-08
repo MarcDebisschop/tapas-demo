@@ -14,6 +14,21 @@ import type { VraagToestand } from "../server/traject/afleiding";
 
 const beheerdersVoorScope = vi.hoisted(() => new Map<number, any>());
 
+/**
+ * De zeven beheerders van organisatie A die in de rollentests elk aan een eigen
+ * persoon van het traject hangen. Zo loopt elke rol door het echte webadres en
+ * niet enkel door de module.
+ */
+const ROLBEHEERDERS = {
+  facilitator: 12,
+  ankerpuntInvesteerder: 13,
+  ankerpuntOnderneming: 14,
+  werkstroomleider: 15,
+  adviseur: 16,
+  overlegorgaan: 17,
+  betrokkene: 18,
+} as const;
+
 vi.mock("../server/storage", () => ({
   storage: {
     getBeheerder: async (id: number) => beheerdersVoorScope.get(id),
@@ -37,6 +52,13 @@ type TrajectRoute = { methode: "GET" | "POST" | "PATCH"; pad: string };
 
 let databank: Database.Database;
 let opslag: ReturnType<typeof maakTrajectOpslag>;
+/** Alles wat er tijdens een test in het auditspoor geschreven wordt. */
+let auditregels: Array<{
+  adminId: number | null;
+  actie: string;
+  afnameId: number | null;
+  detail?: string | null;
+}> = [];
 
 function maakProefdatabank(): Database.Database {
   const proefdatabank = new Database(":memory:");
@@ -50,6 +72,10 @@ function maakProefdatabank(): Database.Database {
       id INTEGER PRIMARY KEY,
       organisatie_id INTEGER,
       is_prior INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE TABLE deelnemers (
+      id INTEGER PRIMARY KEY,
+      naam TEXT NOT NULL
     );
   `);
   proefdatabank.exec(migratie);
@@ -84,6 +110,13 @@ function maakProefdatabank(): Database.Database {
       "INSERT INTO beheerders (id, organisatie_id, is_prior) VALUES (?, ?, ?)",
     )
     .run(30, 1, 1);
+  for (const beheerderId of Object.values(ROLBEHEERDERS)) {
+    proefdatabank
+      .prepare(
+        "INSERT INTO beheerders (id, organisatie_id, is_prior) VALUES (?, ?, ?)",
+      )
+      .run(beheerderId, 1, 0);
+  }
   return proefdatabank;
 }
 
@@ -124,6 +157,16 @@ function zetBeheerdersVoorScope(): void {
     organisatie: "Organisatie A",
     organisatieId: 1,
   });
+  for (const [rol, beheerderId] of Object.entries(ROLBEHEERDERS)) {
+    beheerdersVoorScope.set(beheerderId, {
+      id: beheerderId,
+      naam: `Beheerder ${rol}`,
+      actief: true,
+      isPrior: false,
+      organisatie: "Organisatie A",
+      organisatieId: 1,
+    });
+  }
 }
 
 function maakApp(aanmelding: "geen" | "prior" | "a" | "a2" | "b" | "pseudo") {
@@ -162,7 +205,44 @@ function padVoorRoute(pad: string): string {
   return pad
     .replace(":trajectId", "1")
     .replace(":lijnId", "1")
-    .replace(":vraagId", "1");
+    .replace(":vraagId", "1")
+    .replace(":persoonId", "1")
+    .replace(":rolId", "1");
+}
+
+/** Dezelfde app, maar aangemeld met een willekeurig beheerdersnummer. */
+function maakAppVoorBeheerder(beheerderId: number) {
+  const app = express();
+  app.use(express.json());
+  app.use((req, _res, next) => {
+    (req as any).session = { adminId: beheerderId };
+    next();
+  });
+  registerTrajectRoutes(app, opslag);
+  return app;
+}
+
+async function verzoekAlsBeheerder(
+  beheerderId: number,
+  methode: "GET" | "POST" | "PATCH",
+  pad: string,
+  lichaam?: unknown,
+): Promise<{ status: number; lichaam: any; kop: Headers }> {
+  return metServer(maakAppVoorBeheerder(beheerderId), async (basis) => {
+    const heeftLichaam = lichaam !== undefined && methode !== "GET";
+    const antwoord = await fetch(`${basis}${pad}`, {
+      method: methode,
+      headers: heeftLichaam
+        ? { "Content-Type": "application/json" }
+        : undefined,
+      body: heeftLichaam ? JSON.stringify(lichaam) : undefined,
+    });
+    return {
+      status: antwoord.status,
+      lichaam: await antwoord.json().catch(() => null),
+      kop: antwoord.headers,
+    };
+  });
 }
 
 async function metServer<T>(
@@ -246,8 +326,15 @@ beforeEach(() => {
   vi.setSystemTime(NU);
   zetBeheerdersVoorScope();
   databank = maakProefdatabank();
-  opslag = maakTrajectOpslag(databank, () => undefined);
+  auditregels = [];
+  opslag = maakTrajectOpslag(databank, (invoer) => {
+    auditregels.push(invoer);
+  });
 });
+
+function auditregelsMetActie(actie: string) {
+  return auditregels.filter((regel) => regel.actie === actie);
+}
 
 afterEach(() => {
   databank.close();
@@ -362,7 +449,7 @@ describe("opslag voor routes van de Regiekamer", () => {
 describe("Regiekamer routes", () => {
   it("weigert zonder aanmelding elke geregistreerde route onder /api/traject", async () => {
     const routes = geregistreerdeTrajectRoutes(maakApp("geen"));
-    expect(routes).toHaveLength(9);
+    expect(routes).toHaveLength(14);
     for (const route of routes) {
       const antwoord = await verzoek(
         "geen",
@@ -441,7 +528,7 @@ describe("Regiekamer routes", () => {
     ).toBe(403);
   });
 
-  it("levert indruk nooit standaard uit en alleen na een uitdrukkelijk verzoek van een bevoegde beheerder", async () => {
+  it("levert indruk nooit uit, ook niet na een uitdrukkelijk verzoek van een bevoegde beheerder", async () => {
     const { traject, lijn } = maakTrajectMetLijn(10, 1, "Indrukken");
     opslag.voegGebeurtenisToe({
       trajectId: traject.id,
@@ -468,7 +555,7 @@ describe("Regiekamer routes", () => {
       `/api/traject/trajecten/${traject.id}/lijnen/${lijn.id}/gebeurtenissen?metIndruk=true`,
     );
     expect(metIndruk.status).toBe(200);
-    expect(metIndruk.lichaam[0].indruk).toBe("De toon was gespannen.");
+    expect(metIndruk.lichaam[0]).not.toHaveProperty("indruk");
 
     const volledigStandaard = await verzoek(
       "a",
@@ -483,8 +570,8 @@ describe("Regiekamer routes", () => {
       "GET",
       `/api/traject/trajecten/${traject.id}?metIndruk=true`,
     );
-    expect(volledigMetIndruk.lichaam.gebeurtenissen[0].indruk).toBe(
-      "De toon was gespannen.",
+    expect(volledigMetIndruk.lichaam.gebeurtenissen[0]).not.toHaveProperty(
+      "indruk",
     );
   });
 
@@ -807,5 +894,852 @@ describe("aandacht per vraagkaart in het antwoord van het hoofdscherm", () => {
     expect(
       afleidingBron.match(/function isOpenstaandeVraag/g) ?? [],
     ).toHaveLength(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Het proefdossier voor de rechten, de rollen en de zichtbaarheidsbril.
+//
+// Drie partijen: de investeerder en de onderneming in kring 0, de adviseur in
+// kring 1. Twee lijnen: een tussen investeerder en onderneming, een tussen
+// onderneming en adviseur. Zeven personen, elk met een eigen aanmelding, zodat
+// elke rol door het echte webadres heen gemeten kan worden.
+// ---------------------------------------------------------------------------
+
+function maakRechtendossier() {
+  const basis = maakTrajectMetLijn(10, 1, "Rechtendossier");
+  const trajectId = basis.traject.id;
+  const werkstromen = opslag.haalTrajectOp(trajectId, 10).werkstromen;
+  const partijAdviseur = opslag.voegPartijToe({
+    trajectId,
+    beheerderId: 10,
+    soort: "adviseur",
+    naam: "Helder en Partners",
+    ankerpunt: "Lina Mertens",
+    kring: 1,
+    rol: "financieel_adviseur",
+  });
+  const tweedeLijn = opslag.voegLijnToe({
+    trajectId,
+    beheerderId: 10,
+    partijEenId: basis.partijTwee.id,
+    partijTweeId: partijAdviseur.id,
+    stiltedrempelDagen: 10,
+    aangemaaktOp: NU - 40 * DAG,
+  });
+
+  const voegPersoon = (
+    naam: string,
+    email: string,
+    partijId: number | null,
+    persoonBeheerderId: number,
+  ) =>
+    opslag.voegPersoonToe({
+      trajectId,
+      beheerderId: 10,
+      naam,
+      email,
+      partijId,
+      persoonBeheerderId,
+      aangemaaktOp: NU - 30 * DAG,
+    });
+
+  const facilitator = voegPersoon(
+    "Ruth Vandewalle",
+    "ruth@buitenstaander.be",
+    null,
+    ROLBEHEERDERS.facilitator,
+  );
+  const ankerpuntInvesteerder = voegPersoon(
+    "Sofie Van Loon",
+    "sofie@noordzee.be",
+    basis.partijEen.id,
+    ROLBEHEERDERS.ankerpuntInvesteerder,
+  );
+  const ankerpuntOnderneming = voegPersoon(
+    "Tom Aerts",
+    "tom@asterra.be",
+    basis.partijTwee.id,
+    ROLBEHEERDERS.ankerpuntOnderneming,
+  );
+  const werkstroomleider = voegPersoon(
+    "Bram Coppens",
+    "bram@asterra.be",
+    null,
+    ROLBEHEERDERS.werkstroomleider,
+  );
+  const adviseur = voegPersoon(
+    "Lina Mertens",
+    "lina@helder.be",
+    partijAdviseur.id,
+    ROLBEHEERDERS.adviseur,
+  );
+  const overlegorgaan = voegPersoon(
+    "Amira El Haddad",
+    "amira@asterra.be",
+    null,
+    ROLBEHEERDERS.overlegorgaan,
+  );
+  const betrokkene = voegPersoon(
+    "Jens Peeters",
+    "jens@asterra.be",
+    basis.partijTwee.id,
+    ROLBEHEERDERS.betrokkene,
+  );
+
+  const kenToe = (persoonId: number, rol: string, werkstroomId?: number) =>
+    opslag.kenRolToe({
+      trajectId,
+      beheerderId: 10,
+      persoonId,
+      rol: rol as any,
+      werkstroomId: werkstroomId ?? null,
+      toegekendOp: NU - 29 * DAG,
+    });
+  kenToe(facilitator.id, "facilitator");
+  kenToe(ankerpuntInvesteerder.id, "ankerpunt_investeerder");
+  kenToe(ankerpuntOnderneming.id, "ankerpunt_onderneming");
+  kenToe(werkstroomleider.id, "werkstroomleider", werkstromen[0]!.id);
+  kenToe(adviseur.id, "adviseur");
+  kenToe(overlegorgaan.id, "overlegorgaan");
+  kenToe(betrokkene.id, "betrokkene");
+
+  const eersteGebeurtenis = opslag.voegGebeurtenisToe({
+    trajectId,
+    beheerderId: 10,
+    lijnId: basis.lijn.id,
+    tijdstip: NU - 5 * DAG,
+    soort: "gesprek",
+    vaststelling: "De documentlijst is bevestigd.",
+    indruk: "Indruk van de investeerder.",
+    vastgelegdDoorPersoonId: ankerpuntInvesteerder.id,
+  });
+  const tweedeGebeurtenis = opslag.voegGebeurtenisToe({
+    trajectId,
+    beheerderId: 10,
+    lijnId: basis.lijn.id,
+    tijdstip: NU - 4 * DAG,
+    soort: "bericht",
+    vaststelling: "De termijn is besproken.",
+    indruk: "Indruk van de onderneming.",
+    vastgelegdDoorPersoonId: ankerpuntOnderneming.id,
+  });
+  const derdeGebeurtenis = opslag.voegGebeurtenisToe({
+    trajectId,
+    beheerderId: 10,
+    lijnId: tweedeLijn.id,
+    tijdstip: NU - 3 * DAG,
+    soort: "bericht",
+    vaststelling: "De cijferbundel is toegelicht.",
+    indruk: "Indruk van de adviseur.",
+    vastgelegdDoorPersoonId: adviseur.id,
+  });
+
+  const eersteVraag = opslag.maakVraagkaart({
+    trajectId,
+    beheerderId: 10,
+    lijnId: basis.lijn.id,
+    vragerPartijId: basis.partijEen.id,
+    ontvangerPartijId: basis.partijTwee.id,
+    werkstroomId: werkstromen[0]!.id,
+    vraagtekst: "Kan de eigendomsstructuur bevestigd worden?",
+    kader: "Nodig voor de financiele beoordeling.",
+    antwoordtermijnOp: NU + 3 * DAG,
+    antwoordKring: 1,
+    aangemaaktOp: NU - 8 * DAG,
+  });
+  const tweedeVraag = opslag.maakVraagkaart({
+    trajectId,
+    beheerderId: 10,
+    lijnId: tweedeLijn.id,
+    vragerPartijId: basis.partijTwee.id,
+    ontvangerPartijId: partijAdviseur.id,
+    werkstroomId: werkstromen[5]!.id,
+    vraagtekst: "Wie verzorgt de terugkoppeling aan het kernteam?",
+    kader: "Nodig voor de menselijke werkstroom.",
+    antwoordtermijnOp: NU + 6 * DAG,
+    antwoordKring: 0,
+    aangemaaktOp: NU - 7 * DAG,
+  });
+
+  return {
+    ...basis,
+    trajectId,
+    werkstromen,
+    partijAdviseur,
+    tweedeLijn,
+    personen: {
+      facilitator,
+      ankerpuntInvesteerder,
+      ankerpuntOnderneming,
+      werkstroomleider,
+      adviseur,
+      overlegorgaan,
+      betrokkene,
+    },
+    gebeurtenissen: {
+      eerste: eersteGebeurtenis,
+      tweede: tweedeGebeurtenis,
+      derde: derdeGebeurtenis,
+    },
+    vragen: { eerste: eersteVraag, tweede: tweedeVraag },
+  };
+}
+
+describe("de webadressen voor personen en rollen van een traject", () => {
+  it("geeft de lijst met kring en geldende rollen, weigert een andere organisatie en een ongeldig nummer", async () => {
+    const dossier = maakRechtendossier();
+
+    const lijst = await verzoek(
+      "a",
+      "GET",
+      `/api/traject/trajecten/${dossier.trajectId}/personen`,
+    );
+    expect(lijst.status).toBe(200);
+    expect(lijst.lichaam).toHaveLength(7);
+    const perNaam = new Map<string, any>(
+      lijst.lichaam.map((persoon: any) => [persoon.naam, persoon]),
+    );
+    expect(perNaam.get("Sofie Van Loon")).toMatchObject({
+      kring: 0,
+      partijNaam: "Rechtendossier Invest",
+      actief: true,
+      aanduiding: null,
+    });
+    expect(
+      perNaam.get("Sofie Van Loon").rollen.map((rol: any) => rol.rol),
+    ).toEqual(["ankerpunt_investeerder"]);
+    expect(perNaam.get("Lina Mertens").kring).toBe(1);
+    expect(perNaam.get("Ruth Vandewalle").kring).toBeNull();
+    expect(perNaam.get("Bram Coppens").rollen[0]).toMatchObject({
+      rol: "werkstroomleider",
+      werkstroomNaam: "financieel",
+    });
+
+    expect(auditregelsMetActie("traject_personen_ingekeken")).toHaveLength(1);
+    expect(auditregelsMetActie("traject_personen_ingekeken")[0]).toMatchObject({
+      adminId: 10,
+      afnameId: dossier.trajectId,
+    });
+
+    expect(
+      (
+        await verzoek(
+          "b",
+          "GET",
+          `/api/traject/trajecten/${dossier.trajectId}/personen`,
+        )
+      ).status,
+    ).toBe(404);
+    expect(
+      (await verzoek("a", "GET", "/api/traject/trajecten/nul/personen")).status,
+    ).toBe(400);
+  });
+
+  it("voegt een persoon toe, weigert een andere organisatie en weigert ongeldige invoer", async () => {
+    const dossier = maakRechtendossier();
+
+    const gelukt = await verzoek(
+      "a",
+      "POST",
+      `/api/traject/trajecten/${dossier.trajectId}/personen`,
+      {
+        naam: "Wim Claes",
+        email: "Wim@Asterra.BE",
+        partijId: dossier.partijTwee.id,
+      },
+    );
+    expect(gelukt.status).toBe(201);
+    expect(gelukt.lichaam).toMatchObject({
+      naam: "Wim Claes",
+      email: "wim@asterra.be",
+      partijId: dossier.partijTwee.id,
+      actief: 1,
+    });
+    // Zeven personen komen uit het dossier zelf, de achtste is deze toevoeging.
+    expect(auditregelsMetActie("traject_persoon_toegevoegd")).toHaveLength(8);
+
+    expect(
+      (
+        await verzoek(
+          "b",
+          "POST",
+          `/api/traject/trajecten/${dossier.trajectId}/personen`,
+          { naam: "Onbevoegd", email: "onbevoegd@b.be" },
+        )
+      ).status,
+    ).toBe(404);
+    expect(
+      (
+        await verzoek(
+          "a",
+          "POST",
+          `/api/traject/trajecten/${dossier.trajectId}/personen`,
+          { naam: "Geen adres" },
+        )
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await verzoek(
+          "a",
+          "POST",
+          `/api/traject/trajecten/${dossier.trajectId}/personen`,
+          { naam: "Zonder apenstaartje", email: "geenadres" },
+        )
+      ).status,
+    ).toBe(400);
+  });
+
+  it("zet een persoon op inactief, weigert een andere organisatie en weigert een ongeldig nummer", async () => {
+    const dossier = maakRechtendossier();
+
+    const gelukt = await verzoek(
+      "a",
+      "PATCH",
+      `/api/traject/personen/${dossier.personen.betrokkene.id}/inactief`,
+      {},
+    );
+    expect(gelukt.status).toBe(200);
+    expect(gelukt.lichaam.actief).toBe(0);
+    expect(auditregelsMetActie("traject_persoon_inactief_gezet")).toHaveLength(
+      1,
+    );
+    expect(
+      auditregelsMetActie("traject_persoon_inactief_gezet")[0],
+    ).toMatchObject({ adminId: 10, afnameId: dossier.trajectId });
+
+    expect(
+      (
+        await verzoek(
+          "b",
+          "PATCH",
+          `/api/traject/personen/${dossier.personen.adviseur.id}/inactief`,
+          {},
+        )
+      ).status,
+    ).toBe(404);
+    expect(
+      (await verzoek("a", "PATCH", "/api/traject/personen/nul/inactief", {}))
+        .status,
+    ).toBe(400);
+    expect(
+      (
+        await verzoek(
+          "a",
+          "PATCH",
+          `/api/traject/personen/${dossier.personen.adviseur.id}/inactief`,
+          { actief: true },
+        )
+      ).status,
+    ).toBe(400);
+  });
+
+  it("kent een rol toe, geeft de waarschuwing over belang mee en weigert wat niet mag", async () => {
+    const dossier = maakRechtendossier();
+
+    const gelukt = await verzoek(
+      "a",
+      "POST",
+      `/api/traject/personen/${dossier.personen.overlegorgaan.id}/rollen`,
+      { rol: "werkstroomleider", werkstroomId: dossier.werkstromen[1]!.id },
+    );
+    expect(gelukt.status).toBe(201);
+    expect(gelukt.lichaam.rol).toMatchObject({
+      rol: "werkstroomleider",
+      werkstroomId: dossier.werkstromen[1]!.id,
+      ingetrokkenOp: null,
+    });
+    expect(gelukt.lichaam.waarschuwing).toBeNull();
+    // Zeven toekenningen komen uit het dossier zelf, de achtste is deze rol.
+    expect(auditregelsMetActie("traject_rol_toegekend")).toHaveLength(8);
+
+    // De waarschuwing over belang is geen fout: de handeling slaagt.
+    const nieuweFacilitator = await verzoek(
+      "a",
+      "POST",
+      `/api/traject/trajecten/${dossier.trajectId}/personen`,
+      { naam: "Karel Dhondt", email: "karel@asterra.be", partijId: dossier.partijTwee.id },
+    );
+    const metWaarschuwing = await verzoek(
+      "a",
+      "POST",
+      `/api/traject/personen/${nieuweFacilitator.lichaam.id}/rollen`,
+      { rol: "facilitator" },
+    );
+    expect(metWaarschuwing.status).toBe(400);
+
+    // Eerst de zittende facilitator intrekken, dan slaagt het met waarschuwing.
+    const rollen = await verzoek(
+      "a",
+      "GET",
+      `/api/traject/trajecten/${dossier.trajectId}/personen`,
+    );
+    const zittend = rollen.lichaam.find(
+      (persoon: any) => persoon.naam === "Ruth Vandewalle",
+    );
+    expect(
+      (
+        await verzoek(
+          "a",
+          "PATCH",
+          `/api/traject/rollen/${zittend.rollen[0].id}/intrekken`,
+          {},
+        )
+      ).status,
+    ).toBe(200);
+    const tweedePoging = await verzoek(
+      "a",
+      "POST",
+      `/api/traject/personen/${nieuweFacilitator.lichaam.id}/rollen`,
+      { rol: "facilitator" },
+    );
+    expect(tweedePoging.status).toBe(201);
+    expect(tweedePoging.lichaam.waarschuwing).toMatch(/belang/i);
+    expect(
+      auditregelsMetActie("traject_rol_belangwaarschuwing"),
+    ).toHaveLength(1);
+
+    expect(
+      (
+        await verzoek(
+          "b",
+          "POST",
+          `/api/traject/personen/${dossier.personen.adviseur.id}/rollen`,
+          { rol: "adviseur" },
+        )
+      ).status,
+    ).toBe(404);
+    expect(
+      (
+        await verzoek(
+          "a",
+          "POST",
+          `/api/traject/personen/${dossier.personen.adviseur.id}/rollen`,
+          { rol: "drijvende_kracht" },
+        )
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await verzoek(
+          "a",
+          "POST",
+          `/api/traject/personen/${dossier.personen.adviseur.id}/rollen`,
+          { rol: "werkstroomleider" },
+        )
+      ).status,
+    ).toBe(400);
+  });
+
+  it("trekt een rol in, weigert een andere organisatie en weigert een ongeldig nummer", async () => {
+    const dossier = maakRechtendossier();
+    const lijst = await verzoek(
+      "a",
+      "GET",
+      `/api/traject/trajecten/${dossier.trajectId}/personen`,
+    );
+    const rolId = lijst.lichaam.find(
+      (persoon: any) => persoon.naam === "Lina Mertens",
+    ).rollen[0].id;
+
+    const gelukt = await verzoek(
+      "a",
+      "PATCH",
+      `/api/traject/rollen/${rolId}/intrekken`,
+      {},
+    );
+    expect(gelukt.status).toBe(200);
+    expect(gelukt.lichaam.ingetrokkenOp).toBeGreaterThan(0);
+    expect(gelukt.lichaam.ingetrokkenDoorBeheerderId).toBe(10);
+    expect(auditregelsMetActie("traject_rol_ingetrokken")).toHaveLength(1);
+
+    expect(
+      (await verzoek("a", "PATCH", `/api/traject/rollen/${rolId}/intrekken`, {}))
+        .status,
+    ).toBe(400);
+    expect(
+      (await verzoek("a", "PATCH", "/api/traject/rollen/nul/intrekken", {}))
+        .status,
+    ).toBe(400);
+
+    const tweedeDossier = maakTrajectMetLijn(20, 2, "Traject van B");
+    const persoonVanB = opslag.voegPersoonToe({
+      trajectId: tweedeDossier.traject.id,
+      beheerderId: 20,
+      naam: "Iemand van B",
+      email: "iemand@b.be",
+    });
+    const rolVanB = opslag.kenRolToe({
+      trajectId: tweedeDossier.traject.id,
+      beheerderId: 20,
+      persoonId: persoonVanB.id,
+      rol: "adviseur",
+    });
+    expect(
+      (
+        await verzoek(
+          "a",
+          "PATCH",
+          `/api/traject/rollen/${rolVanB.rol.id}/intrekken`,
+          {},
+        )
+      ).status,
+    ).toBe(404);
+  });
+});
+
+describe("wat elke rol via het echte webadres van een traject ziet", () => {
+  const verwacht = [
+    {
+      rol: "facilitator",
+      beheerder: ROLBEHEERDERS.facilitator,
+      lijnen: ["eerste", "tweede"],
+      vragen: ["eerste", "tweede"],
+      gebeurtenissen: ["eerste", "tweede", "derde"],
+      indrukken: [] as string[],
+    },
+    {
+      rol: "ankerpunt_investeerder",
+      beheerder: ROLBEHEERDERS.ankerpuntInvesteerder,
+      lijnen: ["eerste"],
+      vragen: ["eerste"],
+      gebeurtenissen: ["eerste", "tweede"],
+      indrukken: ["Indruk van de investeerder."],
+    },
+    {
+      rol: "ankerpunt_onderneming",
+      beheerder: ROLBEHEERDERS.ankerpuntOnderneming,
+      lijnen: ["eerste", "tweede"],
+      vragen: ["eerste", "tweede"],
+      gebeurtenissen: ["eerste", "tweede", "derde"],
+      indrukken: ["Indruk van de onderneming."],
+    },
+    {
+      rol: "werkstroomleider",
+      beheerder: ROLBEHEERDERS.werkstroomleider,
+      lijnen: ["eerste"],
+      vragen: ["eerste"],
+      gebeurtenissen: ["eerste", "tweede"],
+      indrukken: [],
+    },
+    {
+      rol: "adviseur",
+      beheerder: ROLBEHEERDERS.adviseur,
+      lijnen: ["tweede"],
+      vragen: [],
+      gebeurtenissen: ["derde"],
+      indrukken: ["Indruk van de adviseur."],
+    },
+    {
+      rol: "overlegorgaan",
+      beheerder: ROLBEHEERDERS.overlegorgaan,
+      lijnen: [],
+      vragen: [],
+      gebeurtenissen: [],
+      indrukken: [],
+    },
+    {
+      rol: "betrokkene",
+      beheerder: ROLBEHEERDERS.betrokkene,
+      lijnen: [],
+      vragen: [],
+      gebeurtenissen: [],
+      indrukken: [],
+    },
+  ] as const;
+
+  for (const geval of verwacht) {
+    it(`toont aan de rol ${geval.rol} precies wat het protocol toelaat`, async () => {
+      const dossier = maakRechtendossier();
+      const antwoord = await verzoekAlsBeheerder(
+        geval.beheerder,
+        "GET",
+        `/api/traject/trajecten/${dossier.trajectId}`,
+      );
+      expect(antwoord.status).toBe(200);
+      // Het geraamte blijft altijd staan: negen fasen, drie partijen, zes
+      // werkstromen.
+      expect(antwoord.lichaam.fasen).toHaveLength(9);
+      expect(antwoord.lichaam.partijen).toHaveLength(3);
+      expect(antwoord.lichaam.werkstromen).toHaveLength(6);
+
+      const verwachteLijnen = geval.lijnen.map((naam) =>
+        naam === "eerste" ? dossier.lijn.id : dossier.tweedeLijn.id,
+      );
+      expect(
+        antwoord.lichaam.lijnen.map((lijn: any) => lijn.id).sort(),
+      ).toEqual([...verwachteLijnen].sort());
+      const verwachteVragen = geval.vragen.map(
+        (naam) => (dossier.vragen as any)[naam].id,
+      );
+      expect(
+        antwoord.lichaam.vragen.map((vraag: any) => vraag.id).sort(),
+      ).toEqual([...verwachteVragen].sort());
+      const verwachteGebeurtenissen = geval.gebeurtenissen.map(
+        (naam) => (dossier.gebeurtenissen as any)[naam].id,
+      );
+      expect(
+        antwoord.lichaam.gebeurtenissen.map((g: any) => g.id).sort(),
+      ).toEqual([...verwachteGebeurtenissen].sort());
+      expect(
+        antwoord.lichaam.gebeurtenissen
+          .filter((g: any) => "indruk" in g)
+          .map((g: any) => g.indruk)
+          .sort(),
+      ).toEqual([...geval.indrukken].sort());
+
+      // Ook met de oude vraagparameter erbij verandert er niets meer.
+      const metParameter = await verzoekAlsBeheerder(
+        geval.beheerder,
+        "GET",
+        `/api/traject/trajecten/${dossier.trajectId}?metIndruk=true`,
+      );
+      expect(
+        metParameter.lichaam.gebeurtenissen
+          .filter((g: any) => "indruk" in g)
+          .map((g: any) => g.indruk)
+          .sort(),
+      ).toEqual([...geval.indrukken].sort());
+    });
+  }
+
+  it("opent met metIndruk=true niets meer, op geen enkel adres", async () => {
+    const dossier = maakRechtendossier();
+    for (const schrijfwijze of [
+      "?metIndruk=true",
+      "?metIndruk=TRUE",
+      "?metIndruk=1",
+      "?metindruk=true",
+    ]) {
+      const volledig = await verzoekAlsBeheerder(
+        ROLBEHEERDERS.werkstroomleider,
+        "GET",
+        `/api/traject/trajecten/${dossier.trajectId}${schrijfwijze}`,
+      );
+      expect(volledig.status, schrijfwijze).toBe(200);
+      expect(
+        volledig.lichaam.gebeurtenissen.filter((g: any) => "indruk" in g),
+        schrijfwijze,
+      ).toHaveLength(0);
+
+      const perLijn = await verzoekAlsBeheerder(
+        ROLBEHEERDERS.werkstroomleider,
+        "GET",
+        `/api/traject/trajecten/${dossier.trajectId}/lijnen/${dossier.lijn.id}/gebeurtenissen${schrijfwijze}`,
+      );
+      expect(perLijn.status, schrijfwijze).toBe(200);
+      expect(perLijn.lichaam, schrijfwijze).toHaveLength(2);
+      expect(
+        perLijn.lichaam.filter((g: any) => "indruk" in g),
+        schrijfwijze,
+      ).toHaveLength(0);
+    }
+  });
+
+  it("geeft een beheerder zonder persoon het geraamte zonder een enkele indruk", async () => {
+    const dossier = maakRechtendossier();
+    const antwoord = await verzoek(
+      "a",
+      "GET",
+      `/api/traject/trajecten/${dossier.trajectId}`,
+    );
+    expect(antwoord.status).toBe(200);
+    expect(antwoord.lichaam.lijnen).toHaveLength(2);
+    expect(antwoord.lichaam.vragen).toHaveLength(2);
+    expect(antwoord.lichaam.gebeurtenissen).toHaveLength(3);
+    expect(
+      antwoord.lichaam.gebeurtenissen.filter((g: any) => "indruk" in g),
+    ).toHaveLength(0);
+    expect(auditregelsMetActie("traject_indruk_vrijgegeven")).toHaveLength(0);
+  });
+
+  it("laat prior alles zien en legt elke vrijgegeven indruk vast in het auditspoor", async () => {
+    const dossier = maakRechtendossier();
+    const antwoord = await verzoek(
+      "prior",
+      "GET",
+      `/api/traject/trajecten/${dossier.trajectId}`,
+    );
+    expect(antwoord.status).toBe(200);
+    expect(
+      antwoord.lichaam.gebeurtenissen.map((g: any) => g.indruk).sort(),
+    ).toEqual([
+      "Indruk van de adviseur.",
+      "Indruk van de investeerder.",
+      "Indruk van de onderneming.",
+    ]);
+    const spoor = auditregelsMetActie("traject_indruk_vrijgegeven");
+    expect(spoor).toHaveLength(1);
+    expect(spoor[0]).toMatchObject({ adminId: 1, afnameId: dossier.trajectId });
+    expect(spoor[0]!.detail).toContain("3");
+    for (const gebeurtenis of Object.values(dossier.gebeurtenissen)) {
+      expect(spoor[0]!.detail).toContain(String(gebeurtenis.id));
+    }
+  });
+
+  it("laat de lijst van trajecten door dezelfde bril lopen en houdt de organisatiegrens", async () => {
+    const dossier = maakRechtendossier();
+    maakTrajectMetLijn(20, 2, "Traject van B");
+    const lijst = await verzoekAlsBeheerder(
+      ROLBEHEERDERS.betrokkene,
+      "GET",
+      "/api/traject/trajecten",
+    );
+    expect(lijst.status).toBe(200);
+    expect(lijst.lichaam.map((traject: any) => traject.id)).toEqual([
+      dossier.trajectId,
+    ]);
+  });
+});
+
+describe("de zichtbaarheidsbril op de server", () => {
+  it("toont door de ogen van een ander minder dan zonder bril", async () => {
+    const dossier = maakRechtendossier();
+    const zonderBril = await verzoek(
+      "a",
+      "GET",
+      `/api/traject/trajecten/${dossier.trajectId}`,
+    );
+    expect(zonderBril.lichaam.lijnen).toHaveLength(2);
+    expect(zonderBril.lichaam.vragen).toHaveLength(2);
+    expect(zonderBril.lichaam.bril).toBeNull();
+
+    const metBril = await verzoek(
+      "a",
+      "GET",
+      `/api/traject/trajecten/${dossier.trajectId}?alsPersoon=${dossier.personen.adviseur.id}`,
+    );
+    expect(metBril.status).toBe(200);
+    expect(metBril.lichaam.lijnen.map((lijn: any) => lijn.id)).toEqual([
+      dossier.tweedeLijn.id,
+    ]);
+    expect(metBril.lichaam.vragen).toHaveLength(0);
+    expect(metBril.lichaam.gebeurtenissen.map((g: any) => g.id)).toEqual([
+      dossier.gebeurtenissen.derde.id,
+    ]);
+    expect(metBril.lichaam.bril).toMatchObject({
+      actief: true,
+      persoonId: dossier.personen.adviseur.id,
+      persoonNaam: "Lina Mertens",
+    });
+  });
+
+  it("toont door de bril nooit meer dan de beheerder zelf mag zien", async () => {
+    const dossier = maakRechtendossier();
+
+    // De adviseur kijkt door de ogen van het ankerpunt van de onderneming, dat
+    // ruimer mag zien. De doorsnede blijft het eigen, kleinere zicht.
+    const doorRuimereOgen = await verzoekAlsBeheerder(
+      ROLBEHEERDERS.adviseur,
+      "GET",
+      `/api/traject/trajecten/${dossier.trajectId}?alsPersoon=${dossier.personen.ankerpuntOnderneming.id}`,
+    );
+    expect(doorRuimereOgen.status).toBe(200);
+    expect(doorRuimereOgen.lichaam.lijnen.map((lijn: any) => lijn.id)).toEqual([
+      dossier.tweedeLijn.id,
+    ]);
+    expect(doorRuimereOgen.lichaam.vragen).toHaveLength(0);
+    expect(doorRuimereOgen.lichaam.gebeurtenissen.map((g: any) => g.id)).toEqual(
+      [dossier.gebeurtenissen.derde.id],
+    );
+    // De indruk van de adviseur staat in geen van beide zichten samen: het
+    // ankerpunt van de onderneming mag ze niet zien, dus door de bril ook niet.
+    expect(
+      doorRuimereOgen.lichaam.gebeurtenissen.filter((g: any) => "indruk" in g),
+    ).toHaveLength(0);
+
+    // Een beheerder van een andere organisatie komt met de bril nergens.
+    const andereOrganisatie = await verzoek(
+      "b",
+      "GET",
+      `/api/traject/trajecten/${dossier.trajectId}?alsPersoon=${dossier.personen.ankerpuntOnderneming.id}`,
+    );
+    expect(andereOrganisatie.status).toBe(404);
+    expect(auditregelsMetActie("traject_bril_gebruikt")).toHaveLength(1);
+  });
+
+  it("weigert de bril bij een persoon van een ander traject", async () => {
+    const dossier = maakRechtendossier();
+    const ander = maakTrajectMetLijn(10, 1, "Ander traject");
+    const persoonElders = opslag.voegPersoonToe({
+      trajectId: ander.traject.id,
+      beheerderId: 10,
+      naam: "Iemand elders",
+      email: "elders@a.be",
+    });
+
+    const antwoord = await verzoek(
+      "a",
+      "GET",
+      `/api/traject/trajecten/${dossier.trajectId}?alsPersoon=${persoonElders.id}`,
+    );
+    expect(antwoord.status).toBe(404);
+    expect(auditregelsMetActie("traject_bril_gebruikt")).toHaveLength(0);
+
+    expect(
+      (
+        await verzoek(
+          "a",
+          "GET",
+          `/api/traject/trajecten/${dossier.trajectId}?alsPersoon=nul`,
+        )
+      ).status,
+    ).toBe(400);
+  });
+
+  it("laat van elk gebruik van de bril een spoor achter met beide namen", async () => {
+    const dossier = maakRechtendossier();
+    await verzoek(
+      "a",
+      "GET",
+      `/api/traject/trajecten/${dossier.trajectId}?alsPersoon=${dossier.personen.adviseur.id}`,
+    );
+    const spoor = auditregelsMetActie("traject_bril_gebruikt");
+    expect(spoor).toHaveLength(1);
+    expect(spoor[0]).toMatchObject({ adminId: 10, afnameId: dossier.trajectId });
+    expect(spoor[0]!.detail).toContain("Lina Mertens");
+    expect(spoor[0]!.detail).toContain(
+      String(dossier.personen.adviseur.id),
+    );
+  });
+
+  it("werkt ook op de gebeurtenissen van een lijn en meldt dat de bril aanstond", async () => {
+    const dossier = maakRechtendossier();
+    const zonderBril = await verzoek(
+      "a",
+      "GET",
+      `/api/traject/trajecten/${dossier.trajectId}/lijnen/${dossier.tweedeLijn.id}/gebeurtenissen`,
+    );
+    expect(zonderBril.status).toBe(200);
+    expect(zonderBril.lichaam).toHaveLength(1);
+
+    const metBril = await verzoekAlsBeheerder(
+      10,
+      "GET",
+      `/api/traject/trajecten/${dossier.trajectId}/lijnen/${dossier.lijn.id}/gebeurtenissen?alsPersoon=${dossier.personen.adviseur.id}`,
+    );
+    expect(metBril.status).toBe(404);
+
+    const eigenLijn = await verzoekAlsBeheerder(
+      10,
+      "GET",
+      `/api/traject/trajecten/${dossier.trajectId}/lijnen/${dossier.tweedeLijn.id}/gebeurtenissen?alsPersoon=${dossier.personen.adviseur.id}`,
+    );
+    expect(eigenLijn.status).toBe(200);
+    expect(eigenLijn.lichaam).toHaveLength(1);
+    expect(eigenLijn.kop.get("x-regiekamer-bril")).toBe(
+      String(dossier.personen.adviseur.id),
+    );
+  });
+
+  it("weigert de bril op de lijst van trajecten, want die gaat over meer dan een traject", async () => {
+    maakRechtendossier();
+    const antwoord = await verzoek(
+      "a",
+      "GET",
+      "/api/traject/trajecten?alsPersoon=1",
+    );
+    expect(antwoord.status).toBe(400);
   });
 });

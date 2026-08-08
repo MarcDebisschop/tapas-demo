@@ -10,8 +10,11 @@ import {
 } from "./afleiding";
 import type { VraagToestand } from "./afleiding";
 import { seedDemonstratietraject } from "./demo";
+import { filterTrajectVoorOproeper } from "./rechten";
+import type { OproeperVanTraject } from "./rechten";
+import { ROLLEN_VAN_TRAJECT } from "./schema";
 import { trajectOpslag } from "./storage";
-import type { VolledigTraject } from "./storage";
+import type { PersoonInTraject, VolledigTraject } from "./storage";
 import {
   schrijfOrganisatieId,
   scopeVanVerzoek,
@@ -74,6 +77,26 @@ const vraagkaartSchema = z
   })
   .strict();
 
+const persoonSchema = z
+  .object({
+    naam: tekst,
+    email: tekst,
+    partijId: positiefGetal.nullable().optional(),
+    persoonBeheerderId: positiefGetal.nullable().optional(),
+    persoonDeelnemerId: positiefGetal.nullable().optional(),
+  })
+  .strict();
+
+const rolSchema = z
+  .object({
+    rol: z.enum(ROLLEN_VAN_TRAJECT),
+    werkstroomId: positiefGetal.nullable().optional(),
+  })
+  .strict();
+
+/** Een verzoek zonder inhoud. Onbekende velden worden geweigerd. */
+const leegSchema = z.object({}).strict();
+
 const toestandSchema = z
   .object({
     toestand: z.enum(VRAAGTOESTANDEN),
@@ -87,21 +110,125 @@ function leesPositiefRoutegetal(waarde: string, naam: string): number {
   return uitkomst.data;
 }
 
-function wilIndrukZien(req: Request): boolean {
-  return req.query.metIndruk === "true";
+/**
+ * Leest de vraag om door de ogen van iemand anders te kijken. Leeg wanneer er
+ * niet om gevraagd wordt, en een fout bij een onbruikbaar nummer.
+ */
+function leesBrilVraag(req: Request): number | null {
+  const gevraagd = req.query.alsPersoon;
+  if (gevraagd === undefined) return null;
+  if (typeof gevraagd !== "string") throw new Error("Persoon is ongeldig.");
+  return leesPositiefRoutegetal(gevraagd, "Persoon");
 }
 
-function zonderIndruk<T extends { indruk: string }>(
-  gebeurtenissen: T[],
-  metIndruk: boolean,
-) {
-  if (metIndruk) return gebeurtenissen;
-  return gebeurtenissen.map(
-    ({ indruk: _indruk, ...vaststelling }) => vaststelling,
+/**
+ * Bouwt de oproeper voor de rechtenmodule. Dit is de enige plaats in de
+ * serverlaag waar een oproeper ontstaat, zodat de vraag wie iemand is maar een
+ * antwoord kent.
+ *
+ * De kring, de partij, de rollen en de geleide werkstromen komen alle uit de
+ * persoon die in dit traject aan de aangemelde beheerder hangt. Is er geen zo
+ * een persoon, dan blijven die velden leeg en beslist regel 8 van de module.
+ */
+function maakOproeper(
+  scope: ReturnType<typeof scopeVanVerzoek>,
+  personen: PersoonInTraject[],
+  beheerderId: number,
+): OproeperVanTraject {
+  const eigenPersoon =
+    personen.find((persoon) => persoon.beheerderId === beheerderId) ?? null;
+  return maakOproeperVanPersoon(
+    scope.soort === "prior" ? "prior" : "organisatie",
+    eigenPersoon,
   );
 }
 
-function verrijkTraject(volledig: VolledigTraject, metIndruk: boolean) {
+function maakOproeperVanPersoon(
+  scope: "prior" | "organisatie",
+  persoon: PersoonInTraject | null,
+): OproeperVanTraject {
+  if (persoon === null) {
+    return {
+      scope,
+      persoonId: null,
+      partijId: null,
+      kring: null,
+      rollen: [],
+      werkstroomIds: [],
+    };
+  }
+  return {
+    scope,
+    persoonId: persoon.id,
+    partijId: persoon.partijId,
+    kring: persoon.kring,
+    rollen: persoon.rollen.map((rol) => rol.rol),
+    werkstroomIds: persoon.rollen
+      .filter((rol) => rol.rol === "werkstroomleider" && rol.werkstroomId !== null)
+      .map((rol) => rol.werkstroomId as number),
+  };
+}
+
+/** Haalt het veld indruk werkelijk uit een gebeurtenis weg. */
+function zonderIndrukveld<T extends object>(gebeurtenis: T): Omit<T, "indruk"> {
+  const { indruk: _indruk, ...rest } = gebeurtenis as T & { indruk?: string };
+  return rest as Omit<T, "indruk">;
+}
+
+type GefilterdDossier = ReturnType<typeof filterDossier>;
+
+/**
+ * De doorsnede van twee zichten. Wie door de ogen van iemand anders kijkt, ziet
+ * wat die ander ziet en wat hij zelf al mocht zien, en nooit meer dan dat. Zo
+ * kan de bril nooit een weg worden om iets los te wrikken.
+ */
+function doorsnedeVanZichten(
+  eigen: GefilterdDossier,
+  door: GefilterdDossier,
+): GefilterdDossier {
+  const lijnIds = new Set(door.lijnen.map((lijn) => lijn.id));
+  const vraagIds = new Set(door.vragen.map((vraag) => vraag.id));
+  const gebeurtenisIds = new Set(
+    door.gebeurtenissen.map((gebeurtenis) => gebeurtenis.id),
+  );
+  const indrukInBeide = new Set(
+    door.indrukVrijgegevenVoor.filter((id) =>
+      eigen.indrukVrijgegevenVoor.includes(id),
+    ),
+  );
+
+  return {
+    ...eigen,
+    lijnen: eigen.lijnen.filter((lijn) => lijnIds.has(lijn.id)),
+    vragen: eigen.vragen.filter((vraag) => vraagIds.has(vraag.id)),
+    gebeurtenissen: eigen.gebeurtenissen
+      .filter((gebeurtenis) => gebeurtenisIds.has(gebeurtenis.id))
+      .map((gebeurtenis) =>
+        indrukInBeide.has(gebeurtenis.id)
+          ? gebeurtenis
+          : zonderIndrukveld(gebeurtenis),
+      ),
+    indrukVrijgegevenVoor: door.indrukVrijgegevenVoor.filter((id) =>
+      indrukInBeide.has(id),
+    ),
+  };
+}
+
+function filterDossier(
+  oproeper: OproeperVanTraject,
+  verrijkt: ReturnType<typeof verrijkTraject>,
+  personen: PersoonInTraject[],
+) {
+  return filterTrajectVoorOproeper(oproeper, {
+    ...verrijkt,
+    personen: personen.map((persoon) => ({
+      id: persoon.id,
+      partijId: persoon.partijId,
+    })),
+  });
+}
+
+function verrijkTraject(volledig: VolledigTraject) {
   const nu = Date.now();
   const gebeurtenissenPerLijn = new Map<
     number,
@@ -195,7 +322,7 @@ function verrijkTraject(volledig: VolledigTraject, metIndruk: boolean) {
         vraagtAandacht: isOpenstaand && termijn.isOverschreden,
       };
     }),
-    gebeurtenissen: zonderIndruk(gebeurtenissen, metIndruk),
+    gebeurtenissen,
   };
 }
 
@@ -239,6 +366,79 @@ function stuurFout(res: Response, fout: unknown): void {
   res.status(400).json({ error: boodschap });
 }
 
+/**
+ * Stelt het dossier samen zoals deze oproeper het mag zien, met de bril erop
+ * wanneer daarom gevraagd wordt. Elke vrijgegeven indruk en elk gebruik van de
+ * bril komt hier in het auditspoor terecht.
+ */
+async function bouwZichtbaarDossier(
+  req: Request,
+  opslag: TrajectOpslag,
+  trajectId: number,
+  beheerderId: number,
+  scope: ReturnType<typeof scopeVanVerzoek>,
+): Promise<{
+  dossier: GefilterdDossier;
+  bril: { actief: true; persoonId: number; persoonNaam: string } | null;
+}> {
+  const organisatieScope = organisatieScopeVanVerzoek(scope);
+  const brilPersoonId = leesBrilVraag(req);
+  const volledig = opslag.haalTrajectOp(trajectId, beheerderId, organisatieScope);
+  const personen = opslag.haalPersonenVanTraject(
+    trajectId,
+    beheerderId,
+    organisatieScope,
+  );
+  const verrijkt = verrijkTraject(volledig);
+  const eigenZicht = filterDossier(
+    maakOproeper(scope, personen, beheerderId),
+    verrijkt,
+    personen,
+  );
+
+  let dossier = eigenZicht;
+  let bril: { actief: true; persoonId: number; persoonNaam: string } | null = null;
+
+  if (brilPersoonId !== null) {
+    const doelpersoon =
+      personen.find((persoon) => persoon.id === brilPersoonId) ?? null;
+    if (doelpersoon === null) {
+      // Weigeren bij twijfel: een persoon van een ander dossier bestaat hier
+      // niet.
+      throw new Error("Persoon niet gevonden.");
+    }
+    // Door de ogen van een mens kijken geeft nooit de ruimte van prior: een mens
+    // in het dossier is geen prior.
+    const doorDeBril = filterDossier(
+      maakOproeperVanPersoon("organisatie", doelpersoon),
+      verrijkt,
+      personen,
+    );
+    dossier = doorsnedeVanZichten(eigenZicht, doorDeBril);
+    bril = { actief: true, persoonId: doelpersoon.id, persoonNaam: doelpersoon.naam };
+    opslag.schrijfAuditregel(
+      beheerderId,
+      "traject_bril_gebruikt",
+      trajectId,
+      `Beheerder ${beheerderId} keek naar dit dossier door de ogen van ` +
+        `${doelpersoon.naam} (persoon ${doelpersoon.id}).`,
+    );
+  }
+
+  if (dossier.indrukVrijgegevenVoor.length > 0) {
+    opslag.schrijfAuditregel(
+      beheerderId,
+      "traject_indruk_vrijgegeven",
+      trajectId,
+      `De indruk van ${dossier.indrukVrijgegevenVoor.length} gebeurtenissen is ` +
+        `vrijgegeven aan beheerder ${beheerderId}: ` +
+        `${dossier.indrukVrijgegevenVoor.join(", ")}.`,
+    );
+  }
+
+  return { dossier, bril };
+}
+
 export function registerTrajectRoutes(
   app: Express,
   opslag: TrajectOpslag = trajectOpslag,
@@ -249,6 +449,12 @@ export function registerTrajectRoutes(
   app.get("/api/traject/trajecten", async (req, res) => {
     try {
       const { beheerderId, scope } = await leesBeheerder(req);
+      if (req.query.alsPersoon !== undefined) {
+        res.status(400).json({
+          error: "De bril werkt op een enkel traject, niet op de lijst.",
+        });
+        return;
+      }
       res.json(
         opslag.haalTrajectenVoorBeheerder(
           beheerderId,
@@ -264,12 +470,15 @@ export function registerTrajectRoutes(
     try {
       const trajectId = leesPositiefRoutegetal(req.params.trajectId, "Traject");
       const { beheerderId, scope } = await leesBeheerder(req);
-      const volledig = opslag.haalTrajectOp(
+      const { dossier, bril } = await bouwZichtbaarDossier(
+        req,
+        opslag,
         trajectId,
         beheerderId,
-        organisatieScopeVanVerzoek(scope),
+        scope,
       );
-      res.json(verrijkTraject(volledig, wilIndrukZien(req)));
+      const { indrukVrijgegevenVoor: _spoor, ...zichtbaar } = dossier;
+      res.json({ ...zichtbaar, bril });
     } catch (fout) {
       stuurFout(res, fout);
     }
@@ -285,27 +494,149 @@ export function registerTrajectRoutes(
         );
         const lijnId = leesPositiefRoutegetal(req.params.lijnId, "Lijn");
         const { beheerderId, scope } = await leesBeheerder(req);
-        const organisatieScope = organisatieScopeVanVerzoek(scope);
-        const volledig = opslag.haalTrajectOp(
+        const { dossier, bril } = await bouwZichtbaarDossier(
+          req,
+          opslag,
           trajectId,
           beheerderId,
-          organisatieScope,
+          scope,
         );
-        if (!volledig.lijnen.some((lijn) => lijn.id === lijnId)) {
+        // Een lijn die deze oproeper niet mag zien bestaat voor hem niet.
+        if (!dossier.lijnen.some((lijn) => lijn.id === lijnId)) {
           res.status(404).json({ error: "Niet gevonden." });
           return;
         }
-        const gebeurtenissen = opslag.haalGebeurtenissenVanLijn(
-          lijnId,
-          beheerderId,
-          organisatieScope,
+        if (bril !== null) {
+          res.setHeader("X-Regiekamer-Bril", String(bril.persoonId));
+        }
+        res.json(
+          dossier.gebeurtenissen.filter(
+            (gebeurtenis) => gebeurtenis.lijnId === lijnId,
+          ),
         );
-        res.json(zonderIndruk(gebeurtenissen, wilIndrukZien(req)));
       } catch (fout) {
         stuurFout(res, fout);
       }
     },
   );
+
+  app.get("/api/traject/trajecten/:trajectId/personen", async (req, res) => {
+    try {
+      const trajectId = leesPositiefRoutegetal(req.params.trajectId, "Traject");
+      const { beheerderId, scope } = await leesBeheerder(req);
+      const personen = opslag.haalPersonenVanTraject(
+        trajectId,
+        beheerderId,
+        organisatieScopeVanVerzoek(scope),
+      );
+      // Wie de namenlijst van een dossier inkijkt, laat daarvan een spoor na.
+      opslag.schrijfAuditregel(
+        beheerderId,
+        "traject_personen_ingekeken",
+        trajectId,
+        `Beheerder ${beheerderId} bekeek de ${personen.length} personen van dit dossier.`,
+      );
+      res.json(personen);
+    } catch (fout) {
+      stuurFout(res, fout);
+    }
+  });
+
+  app.post("/api/traject/trajecten/:trajectId/personen", async (req, res) => {
+    const invoer = persoonSchema.safeParse(req.body);
+    if (!invoer.success) {
+      stuurValidatiefout(res, invoer.error);
+      return;
+    }
+    try {
+      const trajectId = leesPositiefRoutegetal(req.params.trajectId, "Traject");
+      const { beheerderId, scope } = await leesBeheerder(req);
+      res.status(201).json(
+        opslag.voegPersoonToe({
+          trajectId,
+          beheerderId,
+          naam: invoer.data.naam,
+          email: invoer.data.email,
+          partijId: invoer.data.partijId ?? null,
+          persoonBeheerderId: invoer.data.persoonBeheerderId ?? null,
+          persoonDeelnemerId: invoer.data.persoonDeelnemerId ?? null,
+          organisatieScope: organisatieScopeVanVerzoek(scope),
+        }),
+      );
+    } catch (fout) {
+      stuurFout(res, fout);
+    }
+  });
+
+  app.patch("/api/traject/personen/:persoonId/inactief", async (req, res) => {
+    const invoer = leegSchema.safeParse(req.body ?? {});
+    if (!invoer.success) {
+      stuurValidatiefout(res, invoer.error);
+      return;
+    }
+    try {
+      const persoonId = leesPositiefRoutegetal(req.params.persoonId, "Persoon");
+      const { beheerderId, scope } = await leesBeheerder(req);
+      res.json(
+        opslag.zetPersoonInactief({
+          persoonId,
+          beheerderId,
+          organisatieScope: organisatieScopeVanVerzoek(scope),
+        }),
+      );
+    } catch (fout) {
+      stuurFout(res, fout);
+    }
+  });
+
+  app.post("/api/traject/personen/:persoonId/rollen", async (req, res) => {
+    const invoer = rolSchema.safeParse(req.body);
+    if (!invoer.success) {
+      stuurValidatiefout(res, invoer.error);
+      return;
+    }
+    try {
+      const persoonId = leesPositiefRoutegetal(req.params.persoonId, "Persoon");
+      const { beheerderId, scope } = await leesBeheerder(req);
+      const organisatieScope = organisatieScopeVanVerzoek(scope);
+      const persoon = opslag.haalPersoonOp(persoonId, beheerderId, organisatieScope);
+      // De waarschuwing over belang is geen weigering: de toekenning slaagt en de
+      // opmerking gaat mee in het antwoord.
+      res.status(201).json(
+        opslag.kenRolToe({
+          trajectId: persoon.trajectId,
+          beheerderId,
+          persoonId: persoon.id,
+          rol: invoer.data.rol,
+          werkstroomId: invoer.data.werkstroomId ?? null,
+          organisatieScope,
+        }),
+      );
+    } catch (fout) {
+      stuurFout(res, fout);
+    }
+  });
+
+  app.patch("/api/traject/rollen/:rolId/intrekken", async (req, res) => {
+    const invoer = leegSchema.safeParse(req.body ?? {});
+    if (!invoer.success) {
+      stuurValidatiefout(res, invoer.error);
+      return;
+    }
+    try {
+      const rolId = leesPositiefRoutegetal(req.params.rolId, "Rol");
+      const { beheerderId, scope } = await leesBeheerder(req);
+      res.json(
+        opslag.trekRolIn({
+          rolId,
+          beheerderId,
+          organisatieScope: organisatieScopeVanVerzoek(scope),
+        }),
+      );
+    } catch (fout) {
+      stuurFout(res, fout);
+    }
+  });
 
   app.post("/api/traject/trajecten", async (req, res) => {
     const invoer = maakTrajectSchema.safeParse(req.body);

@@ -42,6 +42,10 @@ export const AUDIT_ACTIES = [
   "traject_rol_toegekend",
   "traject_rol_ingetrokken",
   "traject_rol_belangwaarschuwing",
+  "traject_personen_ingekeken",
+  "traject_indruk_vrijgegeven",
+  "traject_bril_gebruikt",
+  "traject_gebeurtenis_auteur_gezet",
 ] as const;
 
 export type AuditActie = (typeof AUDIT_ACTIES)[number];

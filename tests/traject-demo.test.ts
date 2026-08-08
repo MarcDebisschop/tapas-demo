@@ -27,6 +27,10 @@ function maakDatabank(): Database.Database {
       organisatie_id INTEGER,
       is_prior INTEGER NOT NULL DEFAULT 0
     );
+    CREATE TABLE deelnemers (
+      id INTEGER PRIMARY KEY,
+      naam TEXT NOT NULL
+    );
   `);
   databank.exec(migratie);
   databank
@@ -167,5 +171,134 @@ describe("demonstratietraject van de Regiekamer", () => {
     expect(new Set(werkstromen.map((werkstroom) => werkstroom.status))).toEqual(
       new Set(["niet_gestart", "lopend", "geblokkeerd", "afgerond"]),
     );
+  });
+
+  it("zet in het demonstratiedossier personen met rollen en geeft elke gebeurtenis een auteur", async () => {
+    const organisaties: Array<{ id: number; naam: string }> = [];
+    const platform = {
+      listBeheerders: async () => [{ id: 1, actief: true, isPrior: true }],
+      listOrganisaties: async () => organisaties,
+      createOrganisatie: async (invoer: { naam: string }) => {
+        const uitkomst = databank
+          .prepare("INSERT INTO organisaties (naam) VALUES (?)")
+          .run(invoer.naam);
+        const organisatie = {
+          id: Number(uitkomst.lastInsertRowid),
+          naam: invoer.naam,
+        };
+        organisaties.push(organisatie);
+        return organisatie;
+      },
+    };
+
+    await seedDemonstratietraject(platform as any, opslag, () => true);
+
+    const trajectId = opslag.haalTrajectenVoorBeheerder(1)[0]!.id;
+    const personen = opslag.haalPersonenVanTraject(trajectId, 1);
+    const rollenVan = (naam: string) =>
+      personen
+        .find((persoon) => persoon.naam === naam)!
+        .rollen.map((rol) => rol.rol);
+
+    expect(personen.length).toBeGreaterThanOrEqual(6);
+    // Een facilitator zonder partij, want wie belang heeft kan het gesprek niet
+    // leiden.
+    const facilitator = personen.find((persoon) =>
+      persoon.rollen.some((rol) => rol.rol === "facilitator"),
+    )!;
+    expect(facilitator.partijId).toBeNull();
+    expect(facilitator.kring).toBeNull();
+    // Een ankerpunt aan beide kanten.
+    expect(
+      personen.filter((persoon) =>
+        persoon.rollen.some((rol) => rol.rol === "ankerpunt_investeerder"),
+      ),
+    ).toHaveLength(1);
+    expect(
+      personen.filter((persoon) =>
+        persoon.rollen.some((rol) => rol.rol === "ankerpunt_onderneming"),
+      ),
+    ).toHaveLength(1);
+    // Een leider voor elk van de zes werkstromen.
+    const werkstromen = opslag.haalTrajectOp(trajectId, 1).werkstromen;
+    const geleideWerkstromen = new Set(
+      personen
+        .flatMap((persoon) => persoon.rollen)
+        .filter((rol) => rol.rol === "werkstroomleider")
+        .map((rol) => rol.werkstroomId),
+    );
+    expect(geleideWerkstromen.size).toBe(werkstromen.length);
+    // Een adviseur en een betrokkene.
+    expect(
+      personen.filter((persoon) =>
+        persoon.rollen.some((rol) => rol.rol === "adviseur"),
+      ).length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(
+      personen.filter((persoon) =>
+        persoon.rollen.some((rol) => rol.rol === "betrokkene"),
+      ).length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(rollenVan(facilitator.naam)).toEqual(["facilitator"]);
+
+    // Elke gebeurtenis heeft een auteur, anders schermt de indruk in de demo
+    // niets af maar verdwijnt hij bij iedereen.
+    const volledig = opslag.haalTrajectOp(trajectId, 1);
+    expect(volledig.gebeurtenissen).toHaveLength(9);
+    for (const gebeurtenis of volledig.gebeurtenissen) {
+      expect(
+        gebeurtenis.vastgelegdDoorPersoonId,
+        gebeurtenis.vaststelling,
+      ).not.toBeNull();
+    }
+    const auteurs = new Set(
+      volledig.gebeurtenissen.map(
+        (gebeurtenis) => gebeurtenis.vastgelegdDoorPersoonId,
+      ),
+    );
+    expect(auteurs.size).toBeGreaterThanOrEqual(3);
+  });
+
+  it("bouwt het demonstratiedossier tweemaal op zonder te breken op de uniciteitsregels", async () => {
+    const organisaties: Array<{ id: number; naam: string }> = [];
+    const platform = {
+      listBeheerders: async () => [{ id: 1, actief: true, isPrior: true }],
+      listOrganisaties: async () => organisaties,
+      createOrganisatie: async (invoer: { naam: string }) => {
+        const uitkomst = databank
+          .prepare("INSERT INTO organisaties (naam) VALUES (?)")
+          .run(invoer.naam);
+        const organisatie = {
+          id: Number(uitkomst.lastInsertRowid),
+          naam: invoer.naam,
+        };
+        organisaties.push(organisatie);
+        return organisatie;
+      },
+    };
+
+    await seedDemonstratietraject(platform as any, opslag, () => true);
+    const trajectId = opslag.haalTrajectenVoorBeheerder(1)[0]!.id;
+    const eerstePersonen = opslag.haalPersonenVanTraject(trajectId, 1);
+    const eersteAuteurs = opslag
+      .haalTrajectOp(trajectId, 1)
+      .gebeurtenissen.map((gebeurtenis) => gebeurtenis.vastgelegdDoorPersoonId);
+
+    await seedDemonstratietraject(platform as any, opslag, () => true);
+    await seedDemonstratietraject(platform as any, opslag, () => true);
+
+    expect(opslag.haalTrajectenVoorBeheerder(1)).toHaveLength(1);
+    const tweedePersonen = opslag.haalPersonenVanTraject(trajectId, 1);
+    expect(tweedePersonen).toHaveLength(eerstePersonen.length);
+    expect(
+      tweedePersonen.flatMap((persoon) => persoon.rollen).length,
+    ).toBe(eerstePersonen.flatMap((persoon) => persoon.rollen).length);
+    expect(
+      opslag
+        .haalTrajectOp(trajectId, 1)
+        .gebeurtenissen.map(
+          (gebeurtenis) => gebeurtenis.vastgelegdDoorPersoonId,
+        ),
+    ).toEqual(eersteAuteurs);
   });
 });

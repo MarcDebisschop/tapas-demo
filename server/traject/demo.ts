@@ -1,5 +1,6 @@
 import { isDemoModus } from "../demomodus";
 import { storage as platformOpslag } from "../storage";
+import type { TrajectRolnaam } from "./schema";
 import { trajectOpslag } from "./storage";
 
 const DAG = 24 * 60 * 60 * 1000;
@@ -75,6 +76,198 @@ function zetWerkstroomstanden(
   }
 }
 
+/**
+ * De mensen van het demonstratiedossier, met de partij waar ze bij horen en de
+ * rollen die ze dragen. De facilitator hoort bij geen enkele partij: het
+ * protocol vraagt iemand zonder belang bij de uitkomst. Elk van de zes
+ * werkstromen heeft een leider, en er is een ankerpunt aan beide zijden.
+ */
+const DEMO_PERSONEN: ReadonlyArray<{
+  naam: string;
+  email: string;
+  partij: string | null;
+  rollen: ReadonlyArray<{ rol: TrajectRolnaam; werkstroom?: string }>;
+}> = [
+  {
+    naam: "Ruth Vandewalle",
+    email: "ruth@regiekamer.example",
+    partij: null,
+    rollen: [{ rol: "facilitator" }],
+  },
+  {
+    naam: "Sofie Van Loon",
+    email: "sofie@noordzee.example",
+    partij: "Noordzee Participaties",
+    rollen: [{ rol: "ankerpunt_investeerder" }],
+  },
+  {
+    naam: "Tom Aerts",
+    email: "tom@asterra.example",
+    partij: "Asterra Machines",
+    rollen: [{ rol: "ankerpunt_onderneming" }],
+  },
+  {
+    naam: "Bram Coppens",
+    email: "bram@asterra.example",
+    partij: "Asterra Machines",
+    rollen: [
+      { rol: "werkstroomleider", werkstroom: "financieel" },
+      { rol: "werkstroomleider", werkstroom: "fiscaal" },
+    ],
+  },
+  {
+    naam: "Joris Baeten",
+    email: "joris@noordzee.example",
+    partij: "Noordzee Participaties",
+    rollen: [
+      { rol: "werkstroomleider", werkstroom: "juridisch" },
+      { rol: "werkstroomleider", werkstroom: "commercieel" },
+    ],
+  },
+  {
+    naam: "Wim Claes",
+    email: "wim@asterra.example",
+    partij: "Asterra Machines",
+    rollen: [{ rol: "werkstroomleider", werkstroom: "technisch" }],
+  },
+  {
+    naam: "Amira El Haddad",
+    email: "amira@asterra.example",
+    partij: "Kernteam Asterra",
+    rollen: [{ rol: "werkstroomleider", werkstroom: "menselijk" }],
+  },
+  {
+    naam: "Lina Mertens",
+    email: "lina@helder.example",
+    partij: "Helder & Partners",
+    rollen: [{ rol: "adviseur" }],
+  },
+  {
+    naam: "Jens Peeters",
+    email: "jens@metaalco.example",
+    partij: "Metaalco BV",
+    rollen: [{ rol: "betrokkene" }],
+  },
+];
+
+/**
+ * Wie welke gebeurtenis heeft neergeschreven. Zonder auteur kan een indruk bij
+ * niemand terechtkomen, en dan valt in het demonstratiedossier niet te zien dat
+ * de afscherming werkt. De auteur hoort altijd bij een van de twee partijen van
+ * de lijn waarop de gebeurtenis staat.
+ */
+const DEMO_AUTEURS: ReadonlyArray<{ vaststelling: string; email: string }> = [
+  {
+    vaststelling: "De eerste documentlijst is bevestigd.",
+    email: "sofie@noordzee.example",
+  },
+  {
+    vaststelling: "De termijn voor de eigendomsstructuur is verlopen.",
+    email: "tom@asterra.example",
+  },
+  {
+    vaststelling: "De adviseur heeft de financiële werkstroom toegelicht.",
+    email: "lina@helder.example",
+  },
+  {
+    vaststelling: "Een aanvulling op de cijfers is aangekondigd.",
+    email: "joris@noordzee.example",
+  },
+  {
+    vaststelling: "De leverancier heeft de contractlijst ontvangen.",
+    email: "jens@metaalco.example",
+  },
+  {
+    vaststelling: "De vertegenwoordiging heeft de uitgangspunten ontvangen.",
+    email: "amira@asterra.example",
+  },
+  {
+    vaststelling: "Het kernteam heeft zijn contactpersoon bevestigd.",
+    email: "wim@asterra.example",
+  },
+  {
+    vaststelling: "De technische risicoanalyse is gedeeld.",
+    email: "lina@helder.example",
+  },
+  {
+    vaststelling: "De volgende technische afstemming staat gepland.",
+    email: "amira@asterra.example",
+  },
+];
+
+/**
+ * Zet de personen, hun rollen en de auteurs van de gebeurtenissen. Deze
+ * handeling mag zo vaak lopen als nodig: wat er al staat blijft staan en wordt
+ * niet opnieuw aangemaakt. Dat is nodig omdat de databank een adres maar een
+ * keer per dossier toelaat en per dossier maar een facilitator.
+ */
+function zorgVoorPersonenEnRollen(
+  opslag: typeof trajectOpslag,
+  trajectId: number,
+  beheerderId: number,
+): void {
+  const volledig = opslag.haalTrajectOp(trajectId, beheerderId);
+  const partijPerNaam = new Map(
+    volledig.partijen.map((partij) => [partij.naam, partij.id]),
+  );
+  const werkstroomPerNaam = new Map(
+    volledig.werkstromen.map((werkstroom) => [werkstroom.naam, werkstroom.id]),
+  );
+  const bestaandePersonen = opslag.haalPersonenVanTraject(trajectId, beheerderId);
+  const nummerPerAdres = new Map(
+    bestaandePersonen.map((persoon) => [persoon.email, persoon.id]),
+  );
+
+  for (const opgave of DEMO_PERSONEN) {
+    let persoonId = nummerPerAdres.get(opgave.email);
+    if (persoonId === undefined) {
+      persoonId = opslag.voegPersoonToe({
+        trajectId,
+        beheerderId,
+        naam: opgave.naam,
+        email: opgave.email,
+        partijId:
+          opgave.partij === null ? null : partijPerNaam.get(opgave.partij) ?? null,
+      }).id;
+      nummerPerAdres.set(opgave.email, persoonId);
+    }
+    const alGedragenRollen =
+      bestaandePersonen.find((persoon) => persoon.id === persoonId)?.rollen ?? [];
+    for (const rolOpgave of opgave.rollen) {
+      const werkstroomId =
+        rolOpgave.werkstroom === undefined
+          ? null
+          : werkstroomPerNaam.get(rolOpgave.werkstroom) ?? null;
+      const staatEr = alGedragenRollen.some(
+        (rol) => rol.rol === rolOpgave.rol && rol.werkstroomId === werkstroomId,
+      );
+      if (staatEr) continue;
+      opslag.kenRolToe({
+        trajectId,
+        beheerderId,
+        persoonId,
+        rol: rolOpgave.rol,
+        werkstroomId,
+      });
+    }
+  }
+
+  for (const gebeurtenis of volledig.gebeurtenissen) {
+    if (gebeurtenis.vastgelegdDoorPersoonId !== null) continue;
+    const opgave = DEMO_AUTEURS.find(
+      (kandidaat) => kandidaat.vaststelling === gebeurtenis.vaststelling,
+    );
+    if (opgave === undefined) continue;
+    const persoonId = nummerPerAdres.get(opgave.email);
+    if (persoonId === undefined) continue;
+    opslag.zetAuteurVanGebeurtenis({
+      gebeurtenisId: gebeurtenis.id,
+      persoonId,
+      beheerderId,
+    });
+  }
+}
+
 type PlatformDemoOpslag = Pick<
   typeof platformOpslag,
   "listBeheerders" | "listOrganisaties" | "createOrganisatie"
@@ -126,6 +319,7 @@ export async function seedDemonstratietraject(
       // Het traject staat er al. De standen van de werkstromen worden wel
       // bijgewerkt, zodat een bestaande databank hetzelfde beeld geeft.
       zetWerkstroomstanden(opslag, bestaand.id, beheerder.id, Date.now());
+      zorgVoorPersonenEnRollen(opslag, bestaand.id, beheerder.id);
       return;
     }
 
@@ -380,6 +574,7 @@ export async function seedDemonstratietraject(
     });
 
     zetWerkstroomstanden(opslag, traject.id, beheerder.id, nu);
+    zorgVoorPersonenEnRollen(opslag, traject.id, beheerder.id);
 
     console.log("[regiekamer-demo] Demonstratietraject aangemaakt.");
   } catch (fout) {
