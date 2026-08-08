@@ -13,6 +13,7 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
 import { eq } from "drizzle-orm";
 import { pasEncryptieToe } from "../db-encryptie";
+import { vindDatabasePad } from "../db-pad";
 
 /**
  * Human Due Diligence-storage.
@@ -25,7 +26,7 @@ import { pasEncryptieToe } from "../db-encryptie";
  * instrumenten; de meet-/antwoorddata leeft in die instrumenten zelf.
  */
 
-const sqlite = new Database("data.db");
+const sqlite = new Database(vindDatabasePad());
 // FIX 6 (AVG art. 32): dezelfde encryptie-hook als in storage.ts. Bij Optie B
 // moet ELKE handle de sleutel toepassen; eén handle die het vergeet opent het
 // bestand zonder sleutel. No-op zolang TAPAS_DB_SLEUTEL niet gezet is.

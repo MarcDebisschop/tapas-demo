@@ -54,6 +54,7 @@ import { randomBytes } from "crypto";
 import { eq, desc, and } from "drizzle-orm";
 import { existsSync, readFileSync } from "fs";
 import { resolve } from "path";
+import { vindDatabasePad } from "./db-pad";
 import { renderRapportHtml } from "./rapportgenerator";
 import { kiesGenerator, heeftDedicatedGenerator } from "./rapport-registry";
 import { genereerAiDuiding, isLiveDuidingAan, DUIDING_INSTRUMENT } from "./duiding-manager";
@@ -87,26 +88,6 @@ import { neemFactuurnummer } from "./factuurnummer";
 // projectroot (één niveau boven de gebundelde `dist/`), zodat de publish-snapshot
 // hem altijd terugvindt.
 // -----------------------------------------------------------------------------
-function vindDatabasePad(): string {
-  // Expliciete override wint altijd (ook als het bestand nog niet bestaat).
-  if (process.env.TAPAS_DB_PATH) return resolve(process.env.TAPAS_DB_PATH);
-
-  // __dirname wijst in de CommonJS-bundle naar de map van dist/index.cjs (= dist/).
-  const distDir = typeof __dirname !== "undefined" ? __dirname : process.cwd();
-  const projectRoot = resolve(distDir, ".."); // projectroot = boven dist/
-  const kandidaten = [
-    resolve(projectRoot, "data.db"),           // projectroot (publish-snapshot) — eerst
-    resolve(process.cwd(), "data.db"),         // werkmap (lokale dev)
-    resolve(distDir, "data.db"),               // naast de bundle (vangnet)
-  ].filter(Boolean) as string[];
-
-  for (const p of kandidaten) {
-    if (existsSync(p)) return p;
-  }
-  // Niets gevonden: anker in de projectroot zodat de snapshot werkt.
-  return resolve(projectRoot, "data.db");
-}
-
 const DB_PAD = vindDatabasePad();
 // Zichtbaar in de serverlogs zodat we altijd weten welk bestand gebruikt wordt.
 console.log(`[tapas] SQLite database: ${DB_PAD}`);
