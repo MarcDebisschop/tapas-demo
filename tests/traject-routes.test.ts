@@ -5,6 +5,12 @@ import express from "express";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { maakTrajectOpslag } from "../server/traject/storage";
+import {
+  isOpenstaandeVraag,
+  TOESTANDEN_OPENSTAAND,
+  VRAAGTOESTANDEN,
+} from "../server/traject/afleiding";
+import type { VraagToestand } from "../server/traject/afleiding";
 
 const beheerdersVoorScope = vi.hoisted(() => new Map<number, any>());
 
@@ -647,5 +653,155 @@ describe("Regiekamer routes", () => {
       vrijgaveVragerDoorBeheerderId: 10,
       vrijgaveOntvangerDoorBeheerderId: 11,
     });
+  });
+});
+
+function zetVraagInToestand(
+  basis: ReturnType<typeof maakTrajectMetLijn>,
+  toestand: VraagToestand,
+  antwoordtermijnOp: number,
+  vraagtekst: string,
+) {
+  const werkstroom = opslag.haalTrajectOp(basis.traject.id, 10).werkstromen[0]!;
+  const vraag = opslag.maakVraagkaart({
+    trajectId: basis.traject.id,
+    beheerderId: 10,
+    lijnId: basis.lijn.id,
+    vragerPartijId: basis.partijEen.id,
+    ontvangerPartijId: basis.partijTwee.id,
+    werkstroomId: werkstroom.id,
+    vraagtekst,
+    kader: "Nodig voor de aandachtsmeting.",
+    antwoordtermijnOp,
+    antwoordKring: 1,
+    aangemaaktOp: NU - 10 * DAG,
+  });
+
+  const doelplaats = VRAAGTOESTANDEN.indexOf(toestand);
+  for (const stap of ["erkend", "in_behandeling", "beantwoord"] as const) {
+    if (VRAAGTOESTANDEN.indexOf(stap) > doelplaats) break;
+    opslag.veranderVraagtoestand({
+      vraagId: vraag.id,
+      beheerderId: 10,
+      toestand: stap,
+    });
+  }
+  if (toestand === "gedeeld") {
+    opslag.vraagkaartVrijgeven({
+      vraagId: vraag.id,
+      beheerderId: 10,
+      zijde: "vrager",
+      vrijgegevenOp: NU,
+    });
+    opslag.vraagkaartVrijgeven({
+      vraagId: vraag.id,
+      beheerderId: 11,
+      zijde: "ontvanger",
+      vrijgegevenOp: NU,
+    });
+  }
+  return vraag;
+}
+
+describe("aandacht per vraagkaart in het antwoord van het hoofdscherm", () => {
+  it("vraagt alleen aandacht wanneer de vraag openstaat en de termijn voorbij is", async () => {
+    const basis = maakTrajectMetLijn(10, 1, "Aandacht");
+    const nummers = new Map<VraagToestand, number>();
+    for (const toestand of VRAAGTOESTANDEN) {
+      nummers.set(
+        toestand,
+        zetVraagInToestand(
+          basis,
+          toestand,
+          NU - 3 * DAG,
+          `Verstreken termijn in toestand ${toestand}`,
+        ).id,
+      );
+    }
+    const ruimeTermijn = zetVraagInToestand(
+      basis,
+      "gesteld",
+      NU + 4 * DAG,
+      "Termijn ligt nog ruim voor ons",
+    );
+
+    const antwoord = await verzoek(
+      "a",
+      "GET",
+      `/api/traject/trajecten/${basis.traject.id}`,
+    );
+    expect(antwoord.status).toBe(200);
+    const perNummer = new Map<number, any>(
+      antwoord.lichaam.vragen.map((vraag: any) => [vraag.id, vraag]),
+    );
+
+    for (const toestand of VRAAGTOESTANDEN) {
+      const vraag = perNummer.get(nummers.get(toestand)!);
+      const openstaand = isOpenstaandeVraag({
+        toestand,
+        antwoordtermijnOp: NU - 3 * DAG,
+      });
+      expect(vraag, `toestand ${toestand}`).toMatchObject({
+        isOverschreden: true,
+        isOpenstaand: openstaand,
+        vraagtAandacht: openstaand,
+      });
+    }
+
+    expect(perNummer.get(nummers.get("beantwoord")!)).toMatchObject({
+      isOpenstaand: false,
+      vraagtAandacht: false,
+    });
+    expect(perNummer.get(nummers.get("gedeeld")!)).toMatchObject({
+      isOpenstaand: false,
+      vraagtAandacht: false,
+    });
+    expect(perNummer.get(nummers.get("gesteld")!)).toMatchObject({
+      isOpenstaand: true,
+      vraagtAandacht: true,
+    });
+    expect(perNummer.get(nummers.get("erkend")!)).toMatchObject({
+      isOpenstaand: true,
+      vraagtAandacht: true,
+    });
+    expect(perNummer.get(nummers.get("in_behandeling")!)).toMatchObject({
+      isOpenstaand: true,
+      vraagtAandacht: true,
+    });
+    expect(perNummer.get(ruimeTermijn.id)).toMatchObject({
+      isOverschreden: false,
+      isOpenstaand: true,
+      vraagtAandacht: false,
+    });
+  });
+
+  it("beslist op precies een plaats of een vraag openstaat", () => {
+    expect([...TOESTANDEN_OPENSTAAND]).toEqual([
+      "gesteld",
+      "erkend",
+      "in_behandeling",
+    ]);
+    for (const toestand of VRAAGTOESTANDEN) {
+      expect(
+        isOpenstaandeVraag({ toestand, antwoordtermijnOp: NU }),
+        `toestand ${toestand}`,
+      ).toBe((TOESTANDEN_OPENSTAAND as readonly string[]).includes(toestand));
+    }
+
+    const routesBron = readFileSync("server/traject/routes.ts", "utf8");
+    expect(routesBron).toContain("isOpenstaandeVraag");
+    for (const toestand of TOESTANDEN_OPENSTAAND) {
+      expect(routesBron, `toestand ${toestand} in routes.ts`).not.toContain(
+        `"${toestand}"`,
+      );
+    }
+
+    const afleidingBron = readFileSync("server/traject/afleiding.ts", "utf8");
+    expect(
+      afleidingBron.match(/TOESTANDEN_OPENSTAAND\s*=/g) ?? [],
+    ).toHaveLength(1);
+    expect(
+      afleidingBron.match(/function isOpenstaandeVraag/g) ?? [],
+    ).toHaveLength(1);
   });
 });

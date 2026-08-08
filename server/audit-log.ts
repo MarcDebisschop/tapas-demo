@@ -36,6 +36,7 @@ export const AUDIT_ACTIES = [
   "traject_gebeurtenis_toegevoegd",
   "traject_vraag_aangemaakt",
   "traject_vraag_toestand_gewijzigd",
+  "traject_werkstroom_bijgewerkt",
 ] as const;
 
 export type AuditActie = (typeof AUDIT_ACTIES)[number];

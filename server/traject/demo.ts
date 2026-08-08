@@ -6,6 +6,75 @@ const DAG = 24 * 60 * 60 * 1000;
 const DEMO_ORGANISATIE = "DEMO Regiekamer";
 const DEMO_TRAJECT = "DEMO - Overname Asterra Machines";
 
+/**
+ * Stand van elke werkstroom in het demonstratietraject. Alle vier de standen
+ * komen minstens een keer voor. Waar een oplevering zinvol is, staat ze in
+ * dagen vanaf nu.
+ */
+const DEMO_WERKSTROMEN = [
+  {
+    naam: "financieel",
+    status: "lopend",
+    oplevering: "Tussentijdse cijferbundel",
+    dagenTotOplevering: 6,
+  },
+  {
+    naam: "juridisch",
+    status: "lopend",
+    oplevering: "Ontwerp van de kaderafspraak",
+    dagenTotOplevering: 12,
+  },
+  {
+    naam: "fiscaal",
+    status: "niet_gestart",
+    oplevering: null,
+    dagenTotOplevering: null,
+  },
+  {
+    naam: "commercieel",
+    status: "geblokkeerd",
+    oplevering: null,
+    dagenTotOplevering: null,
+  },
+  {
+    naam: "technisch",
+    status: "lopend",
+    oplevering: "Verslag van de technische doorlichting",
+    dagenTotOplevering: 20,
+  },
+  {
+    naam: "menselijk",
+    status: "afgerond",
+    oplevering: null,
+    dagenTotOplevering: null,
+  },
+] as const;
+
+/**
+ * Zet de standen van de zes werkstromen. Deze handeling werkt bij, dus ze mag
+ * ook lopen op een demonstratietraject dat al in de databank staat.
+ */
+function zetWerkstroomstanden(
+  opslag: typeof trajectOpslag,
+  trajectId: number,
+  beheerderId: number,
+  nu: number,
+): void {
+  for (const werkstroom of DEMO_WERKSTROMEN) {
+    opslag.werkWerkstroomBij({
+      trajectId,
+      beheerderId,
+      naam: werkstroom.naam,
+      status: werkstroom.status,
+      eerstvolgendeOplevering: werkstroom.oplevering,
+      eerstvolgendeOpleveringOp:
+        werkstroom.dagenTotOplevering === null
+          ? null
+          : new Date(nu + werkstroom.dagenTotOplevering * DAG).toISOString(),
+    });
+  }
+}
+
 type PlatformDemoOpslag = Pick<
   typeof platformOpslag,
   "listBeheerders" | "listOrganisaties" | "createOrganisatie"
@@ -48,12 +117,17 @@ export async function seedDemonstratietraject(
 
     const bestaand = opslag
       .haalTrajectenVoorBeheerder(beheerder.id)
-      .some(
+      .find(
         (traject) =>
           traject.organisatieId === organisatieId &&
           traject.naam === DEMO_TRAJECT,
       );
-    if (bestaand) return;
+    if (bestaand) {
+      // Het traject staat er al. De standen van de werkstromen worden wel
+      // bijgewerkt, zodat een bestaande databank hetzelfde beeld geeft.
+      zetWerkstroomstanden(opslag, bestaand.id, beheerder.id, Date.now());
+      return;
+    }
 
     const nu = Date.now();
     const traject = opslag.maakTraject({
@@ -304,6 +378,8 @@ export async function seedDemonstratietraject(
       beheerderId: beheerder.id,
       toestand: "beantwoord",
     });
+
+    zetWerkstroomstanden(opslag, traject.id, beheerder.id, nu);
 
     console.log("[regiekamer-demo] Demonstratietraject aangemaakt.");
   } catch (fout) {

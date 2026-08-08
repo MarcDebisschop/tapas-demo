@@ -17,6 +17,16 @@ export const VRAAGTOESTANDEN = [
   "gedeeld",
 ] as const;
 
+/**
+ * De enige plaats waar staat welke toestanden een vraag openstaand houden.
+ * Zowel de lijntoestand als het aandachtveld van de route leest deze lijst.
+ */
+export const TOESTANDEN_OPENSTAAND = [
+  "gesteld",
+  "erkend",
+  "in_behandeling",
+] as const;
+
 export type VraagToestand = (typeof VRAAGTOESTANDEN)[number];
 export type Lijntoestand = "aandacht" | "lopend" | "stil" | "in_orde";
 
@@ -55,12 +65,12 @@ function controleerDrempel(drempelDagen: number): void {
   }
 }
 
-function isOpenstaandeVraag(vraag: AfleidingVraag): boolean {
-  return (
-    vraag.toestand === "gesteld" ||
-    vraag.toestand === "erkend" ||
-    vraag.toestand === "in_behandeling"
-  );
+/**
+ * Een vraag staat open zolang haar toestand in TOESTANDEN_OPENSTAAND staat.
+ * Een beantwoorde of gedeelde vraag is afgehandeld en weegt niet meer mee.
+ */
+export function isOpenstaandeVraag(vraag: Pick<AfleidingVraag, "toestand">): boolean {
+  return (TOESTANDEN_OPENSTAAND as readonly string[]).includes(vraag.toestand);
 }
 
 function laatsteGebeurtenisOp(gebeurtenissen: AfleidingGebeurtenis[]): number | null {

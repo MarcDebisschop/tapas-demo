@@ -6,6 +6,7 @@ import {
   ChevronRight,
   CircleAlert,
   Clock3,
+  MoveHorizontal,
   Network,
   PanelRightClose,
   ShieldCheck,
@@ -92,6 +93,8 @@ interface Vraag {
   toestand: VraagToestand;
   resterendeDagen: number | null;
   isOverschreden: boolean;
+  isOpenstaand: boolean;
+  vraagtAandacht: boolean;
 }
 
 interface Gebeurtenis {
@@ -171,6 +174,106 @@ const vastePosities = [
   { x: 50, y: 54 },
 ];
 
+/**
+ * Het tekenveld van het netwerkdiagram. De knopen staan op vaste plaatsen in
+ * het vak van 0 tot 100; het veld is ruimer, zodat de partijnamen buiten de
+ * cirkels passen zonder de rand te raken.
+ */
+const DIAGRAM_VELD = { xMin: -26, yMin: -14, breedte: 152, hoogte: 130 };
+const DIAGRAM_MARGE = 0.08;
+const KNOOPSTRAAL = 7.5;
+const LABEL_GROOTTE = 3.2;
+const LABEL_TEKENBREEDTE = 1.66;
+const LABEL_REGELHOOGTE = 4;
+const LABEL_AFSTAND = 3.2;
+
+const GRENS_LINKS = DIAGRAM_VELD.xMin + DIAGRAM_VELD.breedte * DIAGRAM_MARGE;
+const GRENS_RECHTS =
+  DIAGRAM_VELD.xMin + DIAGRAM_VELD.breedte * (1 - DIAGRAM_MARGE);
+
+interface PartijLabel {
+  regels: string[];
+  x: number;
+  y: number;
+  anker: "start" | "middle" | "end";
+}
+
+function breedteVanRegel(tekst: string): number {
+  return tekst.length * LABEL_TEKENBREEDTE;
+}
+
+/**
+ * Zet een partijnaam op een of twee regels. Bij twee regels wordt de langste
+ * regel zo kort mogelijk gehouden, zodat de naam nergens buiten het veld valt.
+ */
+function verdeelInRegels(naam: string, ruimte: number): string[] {
+  if (breedteVanRegel(naam) <= ruimte) return [naam];
+  const woorden = naam.split(" ").filter((woord) => woord.length > 0);
+  if (woorden.length < 2) return [naam];
+
+  let beste = { regels: [naam], langste: breedteVanRegel(naam) };
+  for (let punt = 1; punt < woorden.length; punt += 1) {
+    const eerste = woorden.slice(0, punt).join(" ");
+    const tweede = woorden.slice(punt).join(" ");
+    const langste = Math.max(breedteVanRegel(eerste), breedteVanRegel(tweede));
+    if (langste < beste.langste) beste = { regels: [eerste, tweede], langste };
+  }
+  return beste.regels;
+}
+
+/**
+ * Plaatst het label buiten de cirkel, in de richting weg van het midden van
+ * het diagram. Zijwaarts geplaatste labels krijgen een anker dat van het
+ * midden weg wijst; labels boven of onder de knoop staan gecentreerd en worden
+ * zo nodig naar binnen geschoven.
+ */
+function bepaalPartijLabel(
+  naam: string,
+  positie: { x: number; y: number },
+): PartijLabel {
+  const vanMiddenZijwaarts = positie.x - 50;
+  const vanMiddenVerticaal = positie.y - 50;
+
+  if (Math.abs(vanMiddenZijwaarts) > Math.abs(vanMiddenVerticaal)) {
+    const naarLinks = vanMiddenZijwaarts < 0;
+    const x = naarLinks
+      ? positie.x - KNOOPSTRAAL - LABEL_AFSTAND
+      : positie.x + KNOOPSTRAAL + LABEL_AFSTAND;
+    const ruimte = naarLinks ? x - GRENS_LINKS : GRENS_RECHTS - x;
+    const regels = verdeelInRegels(naam, ruimte);
+    return {
+      regels,
+      x,
+      y:
+        positie.y +
+        LABEL_GROOTTE * 0.34 -
+        ((regels.length - 1) * LABEL_REGELHOOGTE) / 2,
+      anker: naarLinks ? "end" : "start",
+    };
+  }
+
+  const naarBoven = vanMiddenVerticaal < 0;
+  const ruimte =
+    2 * Math.min(positie.x - GRENS_LINKS, GRENS_RECHTS - positie.x);
+  const regels = verdeelInRegels(naam, ruimte);
+  const breedste = Math.max(...regels.map(breedteVanRegel));
+  return {
+    regels,
+    x: Math.min(
+      Math.max(positie.x, GRENS_LINKS + breedste / 2),
+      GRENS_RECHTS - breedste / 2,
+    ),
+    y: naarBoven
+      ? positie.y -
+        KNOOPSTRAAL -
+        LABEL_AFSTAND -
+        LABEL_GROOTTE * 0.25 -
+        (regels.length - 1) * LABEL_REGELHOOGTE
+      : positie.y + KNOOPSTRAAL + LABEL_AFSTAND + LABEL_GROOTTE * 0.8,
+    anker: "middle",
+  };
+}
+
 function gewoneTekst(waarde: string | null | undefined, woorden: Record<string, string>) {
   if (!waarde) return "Nog te bepalen";
   return woorden[waarde] ?? "Nog te bepalen";
@@ -197,7 +300,9 @@ function lijnNaam(lijn: Lijn, partijen: Partij[]) {
 }
 
 function vraagTermijn(vraag: Vraag) {
-  if (vraag.isOverschreden) return "Termijn over termijn";
+  if (vraag.vraagtAandacht) return "Termijn over termijn";
+  // Een afgehandelde vraag meldt rustig dat de termijn voorbij was.
+  if (vraag.isOverschreden) return "Termijn was verstreken";
   if (vraag.resterendeDagen === null) return "Geen termijn vastgelegd";
   if (vraag.resterendeDagen === 0) return "Vandaag verwacht";
   if (vraag.resterendeDagen === 1) return "Nog 1 dag";
@@ -240,7 +345,11 @@ function VraagKaartInhoud({
       </div>
       <p
         className="mt-3 text-xs font-semibold"
-        style={{ color: vraag.isOverschreden ? "var(--regie-aandacht)" : "var(--regie-gedempt)" }}
+        style={{
+          color: vraag.vraagtAandacht
+            ? "var(--regie-aandacht)"
+            : "var(--regie-gedempt)",
+        }}
       >
         {vraagTermijn(vraag)}
       </p>
@@ -260,7 +369,7 @@ function VraagKaart({
   const basisKlasse =
     "rounded-[4px] border border-[var(--regie-rand)] bg-[var(--regie-vlak)] p-3 shadow-[0_1px_1px_rgba(40,37,29,0.04)]";
 
-  if (vraag.isOverschreden) {
+  if (vraag.vraagtAandacht) {
     return (
       <article
         data-testid="kaart-over-termijn"
@@ -327,6 +436,14 @@ function Vragenbord({ gegevens }: { gegevens: VolledigTraject }) {
           Leesbaar per toestand
         </p>
       </div>
+
+      <p
+        className="mb-2 flex items-center gap-1.5 text-xs text-[var(--regie-gedempt)] lg:hidden"
+        data-testid="vragenbord-schuifaanwijzing"
+      >
+        <MoveHorizontal className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        Schuif zijwaarts om alle vijf de kolommen te zien.
+      </p>
 
       <div className="overflow-x-auto pb-2" data-testid="vragenbord-horizontaal">
         <div className="grid min-w-[940px] grid-cols-5 gap-3">
@@ -429,8 +546,9 @@ function Lijnenkaart({
       </div>
 
       <svg
-        viewBox="0 0 100 100"
-        className="mt-2 h-[250px] w-full"
+        viewBox={`${DIAGRAM_VELD.xMin} ${DIAGRAM_VELD.yMin} ${DIAGRAM_VELD.breedte} ${DIAGRAM_VELD.hoogte}`}
+        className="mt-2 h-[300px] w-full"
+        data-testid="netwerkdiagram"
         aria-label="Netwerk van partijen en lijnen"
       >
         {zichtbareLijnen.map((lijn) => {
@@ -477,6 +595,7 @@ function Lijnenkaart({
                   cx={(van.x + naar.x) / 2}
                   cy={(van.y + naar.y) / 2}
                   r="2.4"
+                  data-testid="lijnpunt"
                   fill="var(--regie-aandacht)"
                 />
               ) : null}
@@ -486,12 +605,14 @@ function Lijnenkaart({
         {gegevens.partijen.map((partij) => {
           const positie = posities.get(partij.id);
           if (!positie) return null;
+          const label = bepaalPartijLabel(partij.naam, positie);
           return (
             <g key={partij.id} pointerEvents="none">
               <circle
                 cx={positie.x}
                 cy={positie.y}
-                r="7.5"
+                r={KNOOPSTRAAL}
+                data-testid="knoop"
                 fill="var(--regie-vlak)"
                 stroke="var(--regie-accent)"
                 strokeWidth="0.8"
@@ -506,15 +627,19 @@ function Lijnenkaart({
               >
                 {partij.naam.slice(0, 2).toUpperCase()}
               </text>
-              <text
-                x={positie.x}
-                y={positie.y + 11.5}
-                textAnchor="middle"
-                fontSize="3"
-                fill="var(--regie-gedempt)"
-              >
-                {partij.naam}
-              </text>
+              {label.regels.map((regel, nummer) => (
+                <text
+                  key={regel}
+                  x={label.x}
+                  y={label.y + nummer * LABEL_REGELHOOGTE}
+                  textAnchor={label.anker}
+                  fontSize={LABEL_GROOTTE}
+                  data-testid="partijlabel"
+                  fill="var(--regie-gedempt)"
+                >
+                  {regel}
+                </text>
+              ))}
             </g>
           );
         })}
@@ -653,7 +778,7 @@ function Vandaag({ gegevens }: { gegevens: VolledigTraject }) {
     gegevens.fasen[0];
   const aandacht = [
     ...gegevens.vragen
-      .filter((vraag) => vraag.isOverschreden)
+      .filter((vraag) => vraag.vraagtAandacht)
       .map((vraag) => ({
         sleutel: `vraag-${vraag.id}`,
         tekst: `Termijn over termijn: ${vraag.vraagtekst}`,
@@ -856,9 +981,10 @@ function RegiekamerLaden() {
         <Skeleton className="h-16 w-full" />
         <div className="grid gap-5 xl:grid-cols-[34fr_40fr_26fr]">
           <Skeleton className="h-[440px] w-full" />
-          <Skeleton className="h-[640px] w-full" />
+          <Skeleton className="h-[300px] w-full" />
           <Skeleton className="h-[530px] w-full" />
         </div>
+        <Skeleton className="h-[420px] w-full" />
       </div>
     </div>
   );
@@ -1042,11 +1168,14 @@ export function TrajectScherm() {
                 )
               }
             />
-            <Vragenbord gegevens={gefilterdeGegevens} />
           </div>
           <div className="min-w-0">
             <Vandaag gegevens={gefilterdeGegevens} />
           </div>
+        </div>
+
+        <div className="mt-5" data-testid="vragenstroom-volle-breedte">
+          <Vragenbord gegevens={gefilterdeGegevens} />
         </div>
       </main>
 

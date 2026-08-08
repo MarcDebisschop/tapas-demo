@@ -33,6 +33,8 @@ function maakDatabank(): Database.Database {
   return databank;
 }
 
+const DAG = 24 * 60 * 60 * 1000;
+
 describe("demonstratietraject van de Regiekamer", () => {
   let databank: Database.Database;
   let opslag: ReturnType<typeof maakTrajectOpslag>;
@@ -109,6 +111,57 @@ describe("demonstratietraject van de Regiekamer", () => {
     );
     expect(new Set(toestanden)).toEqual(
       new Set(["aandacht", "lopend", "stil", "in_orde"]),
+    );
+  });
+  it("zet voor de zes werkstromen een geloofwaardige stand", async () => {
+    const organisaties: Array<{ id: number; naam: string }> = [];
+    const platform = {
+      listBeheerders: async () => [{ id: 1, actief: true, isPrior: true }],
+      listOrganisaties: async () => organisaties,
+      createOrganisatie: async (invoer: { naam: string }) => {
+        const uitkomst = databank
+          .prepare("INSERT INTO organisaties (naam) VALUES (?)")
+          .run(invoer.naam);
+        const organisatie = {
+          id: Number(uitkomst.lastInsertRowid),
+          naam: invoer.naam,
+        };
+        organisaties.push(organisatie);
+        return organisatie;
+      },
+    };
+
+    await seedDemonstratietraject(platform as any, opslag, () => true);
+    await seedDemonstratietraject(platform as any, opslag, () => true);
+
+    const trajectId = opslag.haalTrajectenVoorBeheerder(1)[0]!.id;
+    const werkstromen = opslag.haalTrajectOp(trajectId, 1).werkstromen;
+    const perNaam = new Map(
+      werkstromen.map((werkstroom) => [werkstroom.naam, werkstroom]),
+    );
+    const dagenTot = (waarde: string | null) =>
+      Math.round((Date.parse(waarde!) - Date.now()) / DAG);
+
+    expect(perNaam.get("financieel")!.status).toBe("lopend");
+    expect(dagenTot(perNaam.get("financieel")!.eerstvolgendeOpleveringOp)).toBe(6);
+    expect(perNaam.get("juridisch")!.status).toBe("lopend");
+    expect(dagenTot(perNaam.get("juridisch")!.eerstvolgendeOpleveringOp)).toBe(12);
+    expect(perNaam.get("fiscaal")!.status).toBe("niet_gestart");
+    expect(perNaam.get("fiscaal")!.eerstvolgendeOplevering).toBeNull();
+    expect(perNaam.get("fiscaal")!.eerstvolgendeOpleveringOp).toBeNull();
+    expect(perNaam.get("commercieel")!.status).toBe("geblokkeerd");
+    expect(perNaam.get("commercieel")!.eerstvolgendeOpleveringOp).toBeNull();
+    expect(perNaam.get("technisch")!.status).toBe("lopend");
+    expect(dagenTot(perNaam.get("technisch")!.eerstvolgendeOpleveringOp)).toBe(20);
+    expect(perNaam.get("menselijk")!.status).toBe("afgerond");
+    expect(perNaam.get("menselijk")!.eerstvolgendeOpleveringOp).toBeNull();
+    for (const werkstroom of werkstromen) {
+      if (werkstroom.eerstvolgendeOpleveringOp !== null) {
+        expect(werkstroom.eerstvolgendeOplevering).toBeTruthy();
+      }
+    }
+    expect(new Set(werkstromen.map((werkstroom) => werkstroom.status))).toEqual(
+      new Set(["niet_gestart", "lopend", "geblokkeerd", "afgerond"]),
     );
   });
 });

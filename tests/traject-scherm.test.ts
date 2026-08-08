@@ -27,6 +27,25 @@ describe("hoofdscherm van de Regiekamer", () => {
     expect(schermBron).toContain("over termijn");
   });
 
+  it("baseert de AANDACHT-lijst en de kaartrand op het aandachtveld van de server", () => {
+    expect(schermBron).toContain("vraagtAandacht: boolean");
+    expect(schermBron).toContain("if (vraag.vraagtAandacht) {");
+    expect(schermBron).toContain(".filter((vraag) => vraag.vraagtAandacht)");
+    expect(schermBron).not.toContain(".filter((vraag) => vraag.isOverschreden)");
+    expect(schermBron).not.toContain("if (vraag.isOverschreden) {");
+  });
+
+  it("geeft de vragenstroom een eigen rij over de volle breedte", () => {
+    expect(schermBron).toContain('data-testid="vragenstroom-volle-breedte"');
+    expect(schermBron).toContain("Schuif zijwaarts");
+  });
+
+  it("zet de partijlabels buiten de knoop met ruimte voor twee regels", () => {
+    expect(schermBron).toContain("function bepaalPartijLabel");
+    expect(schermBron).toContain("textAnchor={label.anker}");
+    expect(schermBron).not.toContain('y={positie.y + 11.5}');
+  });
+
   it("legt voor ieder leeg onderdeel uit wat er is en wat er kan", () => {
     expect(schermBron).toContain("Er zijn nog geen lijnen in dit traject.");
     expect(schermBron).toContain("Er zijn nog geen gebeurtenissen op deze lijn.");

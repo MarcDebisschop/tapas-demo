@@ -73,6 +73,19 @@ export const NAMEN_VAN_WERKSTROMEN = [
   "menselijk",
 ] as const;
 
+/**
+ * De vier standen die een werkstroom kan hebben. Het scherm zet ze om in
+ * gewone taal.
+ */
+export const STANDEN_VAN_WERKSTROOM = [
+  "niet_gestart",
+  "lopend",
+  "geblokkeerd",
+  "afgerond",
+] as const;
+
+export type WerkstroomStand = (typeof STANDEN_VAN_WERKSTROOM)[number];
+
 export const trajecten = sqliteTable(
   "traject",
   {

@@ -8,6 +8,7 @@ import { vindDatabasePad } from "../db-pad";
 import {
   FASEN_VAN_TRAJECT,
   NAMEN_VAN_WERKSTROMEN,
+  STANDEN_VAN_WERKSTROOM,
   trajecten,
   trajectFasen,
   trajectGebeurtenissen,
@@ -17,6 +18,7 @@ import {
   trajectWerkstromen,
 } from "./schema";
 import type {
+  WerkstroomStand,
   Traject,
   TrajectFase,
   TrajectGebeurtenis,
@@ -83,6 +85,16 @@ export interface MaakVraagkaartInvoer {
   antwoordtermijnOp: number;
   antwoordKring: number;
   aangemaaktOp?: number;
+}
+
+export interface WerkWerkstroomBijInvoer {
+  trajectId: number;
+  beheerderId: number;
+  organisatieScope?: number | null;
+  naam: string;
+  status: WerkstroomStand;
+  eerstvolgendeOplevering?: string | null;
+  eerstvolgendeOpleveringOp?: string | null;
 }
 
 export interface VeranderVraagtoestandInvoer {
@@ -425,6 +437,63 @@ export function maakTrajectOpslag(
         `Gebeurtenis ${gebeurtenis.id} toegevoegd.`,
       );
       return gebeurtenis;
+    },
+
+    /**
+     * Zet de stand en de eerstvolgende oplevering van een bestaande werkstroom.
+     * De werkstromen zelf worden bij het traject aangemaakt, dus deze
+     * handeling werkt bij en maakt nooit een nieuwe rij aan.
+     */
+    werkWerkstroomBij(invoer: WerkWerkstroomBijInvoer): TrajectWerkstroom {
+      controleerBeheerderVoorTraject(
+        invoer.beheerderId,
+        invoer.trajectId,
+        invoer.organisatieScope,
+      );
+      if (!(STANDEN_VAN_WERKSTROOM as readonly string[]).includes(invoer.status)) {
+        throw new Error("De stand van de werkstroom is ongeldig.");
+      }
+      const naam = nietLegeTekst(invoer.naam, "Naam werkstroom");
+      const bestaand = db
+        .select()
+        .from(trajectWerkstromen)
+        .where(
+          and(
+            eq(trajectWerkstromen.trajectId, invoer.trajectId),
+            eq(trajectWerkstromen.naam, naam),
+          ),
+        )
+        .get();
+      if (!bestaand) throw new Error("Werkstroom hoort niet bij dit traject.");
+
+      const oplevering = invoer.eerstvolgendeOplevering?.trim() ?? null;
+      const opleveringOp = invoer.eerstvolgendeOpleveringOp?.trim() ?? null;
+      if ((oplevering === null) !== (opleveringOp === null)) {
+        throw new Error(
+          "Een oplevering heeft zowel een omschrijving als een moment nodig.",
+        );
+      }
+      if (opleveringOp !== null && Number.isNaN(Date.parse(opleveringOp))) {
+        throw new Error("Het moment van de oplevering is ongeldig.");
+      }
+
+      const werkstroom = db
+        .update(trajectWerkstromen)
+        .set({
+          status: invoer.status,
+          eerstvolgendeOplevering: oplevering,
+          eerstvolgendeOpleveringOp: opleveringOp,
+        })
+        .where(eq(trajectWerkstromen.id, bestaand.id))
+        .returning()
+        .get();
+      schrijfTrajectAudit(
+        invoer.beheerderId,
+        "traject_werkstroom_bijgewerkt",
+        invoer.trajectId,
+        `Werkstroom ${werkstroom.id} op stand ${werkstroom.status} gezet.`,
+      );
+      return werkstroom;
     },
 
     maakVraagkaart(invoer: MaakVraagkaartInvoer): TrajectVraag {

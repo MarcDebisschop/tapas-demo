@@ -5,6 +5,7 @@ import {
   berekenLijndikte,
   berekenStiltemeter,
   berekenVraagtermijn,
+  isOpenstaandeVraag,
   VRAAGTOESTANDEN,
 } from "./afleiding";
 import type { VraagToestand } from "./afleiding";
@@ -180,10 +181,20 @@ function verrijkTraject(volledig: VolledigTraject, metIndruk: boolean) {
             : Math.round((aantalAfgehandeld / aantalVragen) * 100),
       };
     }),
-    vragen: volledig.vragen.map((vraag) => ({
-      ...vraag,
-      ...berekenVraagtermijn(vraag.antwoordtermijnOp, nu),
-    })),
+    vragen: volledig.vragen.map((vraag) => {
+      const termijn = berekenVraagtermijn(vraag.antwoordtermijnOp, nu);
+      // Openstaand komt uit isOpenstaandeVraag, de enige bron voor die keuze.
+      // Aandacht vragen betekent openstaand en over termijn.
+      const isOpenstaand = isOpenstaandeVraag(
+        vraag as { toestand: VraagToestand },
+      );
+      return {
+        ...vraag,
+        ...termijn,
+        isOpenstaand,
+        vraagtAandacht: isOpenstaand && termijn.isOverschreden,
+      };
+    }),
     gebeurtenissen: zonderIndruk(gebeurtenissen, metIndruk),
   };
 }
