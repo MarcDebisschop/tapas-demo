@@ -2,6 +2,50 @@
 @tailwind components;
 @tailwind utilities;
 
+.regiekamer {
+  --regie-achtergrond: #f7f6f2;
+  --regie-vlak: #f9f8f5;
+  --regie-rand: #d4d1ca;
+  --regie-tekst: #28251d;
+  --regie-gedempt: #7a7974;
+  --regie-accent: #01696f;
+  --regie-orde: #437a22;
+  --regie-lopend: #964219;
+  --regie-aandacht: #a12c7b;
+  --regie-stil: #bab9b4;
+  background: var(--regie-achtergrond);
+  color: var(--regie-tekst);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.dark .regiekamer {
+  --regie-achtergrond: #171614;
+  --regie-vlak: #1c1b19;
+  --regie-rand: #393836;
+  --regie-tekst: #cdccca;
+  --regie-gedempt: #797876;
+  --regie-accent: #4f98a3;
+  --regie-orde: #6daa45;
+  --regie-lopend: #bb653b;
+  --regie-aandacht: #d163a7;
+  --regie-stil: #5a5957;
+}
+
+.regie-paneel {
+  border: 1px solid var(--regie-rand);
+  border-radius: 4px;
+  background: var(--regie-vlak);
+}
+
+.regie-label {
+  color: var(--regie-gedempt);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1rem;
+  text-transform: uppercase;
+}
+
 /* LIGHT MODE */
 :root {
   --button-outline: rgba(0, 0, 0, 0.1);

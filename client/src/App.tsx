@@ -55,6 +55,7 @@ import Koop from "@/pages/koop";
 import AdminPrijzen from "@/pages/admin-prijzen";
 import AdminBulkImport from "@/pages/admin-bulk-import";
 import AdminFactuurhuisstijl from "@/pages/admin-factuurhuisstijl";
+import TrajectScherm, { TrajectOverzicht } from "@/pages/traject-scherm";
 import { Redirect } from "wouter";
 import Studie, { StudieScholenPagina, StudieLeerlingenPagina, StudieInstrumentenPagina } from "@/pages/studie";
 import Werk from "@/pages/werk";
@@ -129,6 +130,8 @@ function AppRouter() {
       <Route path="/admin/prijzen">{() => <AdminLoginGate><AdminPrijzen /></AdminLoginGate>}</Route>
       <Route path="/admin/bulk-import">{() => <AdminLoginGate><AdminBulkImport /></AdminLoginGate>}</Route>
       <Route path="/admin/factuurhuisstijl">{() => <AdminLoginGate><AdminFactuurhuisstijl /></AdminLoginGate>}</Route>
+      <Route path="/admin/trajecten">{() => <AdminLoginGate><TrajectOverzicht /></AdminLoginGate>}</Route>
+      <Route path="/admin/trajecten/:trajectId">{() => <AdminLoginGate><TrajectScherm /></AdminLoginGate>}</Route>
       {/* Organisatieportaal (fase 7): eigen sessie, los van de admin-sessie.
           De organisatie komt uit die sessie en staat bewust niet in het pad. */}
       <Route path="/organisatie">{() => <OrganisatieLoginGate><OrganisatieDashboard /></OrganisatieLoginGate>}</Route>
