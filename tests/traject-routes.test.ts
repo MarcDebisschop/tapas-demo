@@ -516,6 +516,11 @@ describe("Regiekamer routes", () => {
     expect(antwoord.lichaam.fasen).toHaveLength(9);
     expect(antwoord.lichaam.partijen).toHaveLength(2);
     expect(antwoord.lichaam.werkstromen).toHaveLength(6);
+    expect(antwoord.lichaam.werkstromen[0]).toMatchObject({
+      aantalVragen: 1,
+      aantalAfgehandeld: 0,
+      voortgang: 0,
+    });
     expect(antwoord.lichaam.lijnen[0]).toMatchObject({
       id: lijn.id,
       toestand: "aandacht",

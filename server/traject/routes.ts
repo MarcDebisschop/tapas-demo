@@ -107,6 +107,7 @@ function verrijkTraject(volledig: VolledigTraject, metIndruk: boolean) {
     typeof volledig.gebeurtenissen
   >();
   const vragenPerLijn = new Map<number, typeof volledig.vragen>();
+  const vragenPerWerkstroom = new Map<number, typeof volledig.vragen>();
 
   for (const gebeurtenis of volledig.gebeurtenissen) {
     const verzameling = gebeurtenissenPerLijn.get(gebeurtenis.lijnId) ?? [];
@@ -117,6 +118,11 @@ function verrijkTraject(volledig: VolledigTraject, metIndruk: boolean) {
     const verzameling = vragenPerLijn.get(vraag.lijnId) ?? [];
     verzameling.push(vraag);
     vragenPerLijn.set(vraag.lijnId, verzameling);
+    if (vraag.werkstroomId !== null) {
+      const werkstroomVragen = vragenPerWerkstroom.get(vraag.werkstroomId) ?? [];
+      werkstroomVragen.push(vraag);
+      vragenPerWerkstroom.set(vraag.werkstroomId, werkstroomVragen);
+    }
   }
 
   const gebeurtenissen = [...volledig.gebeurtenissen].sort(
@@ -156,7 +162,24 @@ function verrijkTraject(volledig: VolledigTraject, metIndruk: boolean) {
         stiltemeter: berekenStiltemeter(laatsteGebeurtenisOp, nu),
       };
     }),
-    werkstromen: volledig.werkstromen,
+    werkstromen: volledig.werkstromen.map((werkstroom) => {
+      const werkstroomVragen = vragenPerWerkstroom.get(werkstroom.id) ?? [];
+      const aantalVragen = werkstroomVragen.length;
+      const aantalAfgehandeld = werkstroomVragen.filter(
+        (vraag) =>
+          vraag.toestand === "beantwoord" || vraag.toestand === "gedeeld",
+      ).length;
+
+      return {
+        ...werkstroom,
+        aantalVragen,
+        aantalAfgehandeld,
+        voortgang:
+          aantalVragen === 0
+            ? 0
+            : Math.round((aantalAfgehandeld / aantalVragen) * 100),
+      };
+    }),
     vragen: volledig.vragen.map((vraag) => ({
       ...vraag,
       ...berekenVraagtermijn(vraag.antwoordtermijnOp, nu),
