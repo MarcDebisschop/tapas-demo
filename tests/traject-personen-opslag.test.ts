@@ -7,6 +7,7 @@ import { SOORTEN_MET_BELANG } from "../server/traject/schema";
 const migraties = [
   "migrations/0002_clammy_talisman.sql",
   "migrations/0003_smiling_shape.sql",
+  "migrations/0004_supreme_freak.sql",
 ]
   .map((pad) => readFileSync(pad, "utf8"))
   .join("\n")

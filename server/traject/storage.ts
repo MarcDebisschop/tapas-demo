@@ -77,6 +77,11 @@ export interface VoegGebeurtenisToeInvoer {
   soort: "gesprek" | "bericht" | "rechtstreeks_contact";
   vaststelling: string;
   indruk?: string;
+  /**
+   * De persoon van dit traject die de gebeurtenis vastlegde. Mag wegblijven:
+   * bestaande aanroepen kennen geen auteur en houden een lege auteur.
+   */
+  vastgelegdDoorPersoonId?: number | null;
 }
 
 export interface MaakVraagkaartInvoer {
@@ -550,6 +555,14 @@ export function maakTrajectOpslag(
       );
       haalLijnVanTraject(invoer.lijnId, invoer.trajectId);
       tijdstipOfNu(invoer.tijdstip, "Tijdstip");
+      // Een auteur moet een persoon van dit traject zijn. Zonder deze controle
+      // zou een gebeurtenis naar een persoon van een ander dossier kunnen
+      // wijzen, en dan zou de rechtenmodule op een verkeerde partij rekenen.
+      const auteurId =
+        invoer.vastgelegdDoorPersoonId === undefined ||
+        invoer.vastgelegdDoorPersoonId === null
+          ? null
+          : haalPersoonVanTraject(invoer.vastgelegdDoorPersoonId, invoer.trajectId).id;
       const gebeurtenis = db
         .insert(trajectGebeurtenissen)
         .values({
@@ -559,6 +572,7 @@ export function maakTrajectOpslag(
           soort: invoer.soort,
           vaststelling: nietLegeTekst(invoer.vaststelling, "Vaststelling"),
           indruk: invoer.indruk?.trim() ?? "",
+          vastgelegdDoorPersoonId: auteurId,
         })
         .returning()
         .get();

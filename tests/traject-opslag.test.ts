@@ -6,7 +6,13 @@ import {
   maakTrajectOpslag,
 } from "../server/traject/storage";
 
-const migratie = readFileSync("migrations/0002_clammy_talisman.sql", "utf8")
+const migratie = [
+  "migrations/0002_clammy_talisman.sql",
+  "migrations/0003_smiling_shape.sql",
+  "migrations/0004_supreme_freak.sql",
+]
+  .map((pad) => readFileSync(pad, "utf8"))
+  .join("\n")
   .replaceAll("--> statement-breakpoint", "");
 
 function maakProefdatabank(): Database.Database {

@@ -7,6 +7,7 @@ import {
   text,
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
+import type { AnySQLiteColumn } from "drizzle-orm/sqlite-core";
 import { beheerders, deelnemers, organisaties } from "@shared/schema";
 
 /**
@@ -257,6 +258,13 @@ export const trajectGebeurtenissen = sqliteTable(
     soort: text("soort").notNull(),
     vaststelling: text("vaststelling").notNull(),
     indruk: text("indruk").notNull().default(""),
+    // Wie de gebeurtenis vastlegde. Mag leeg blijven: de rijen van voor deze
+    // kolom hebben geen bekende auteur, en een TaPasCity-beheerder die zelf geen
+    // persoon in het traject is, heeft er ook geen. De rechtenmodule leest dit
+    // veld om te beslissen wie de indruk mag zien.
+    vastgelegdDoorPersoonId: integer("vastgelegd_door_persoon_id").references(
+      (): AnySQLiteColumn => trajectPersonen.id,
+    ),
   },
   (tabel) => [
     index("idx_traject_gebeurtenissen_lijn_tijdstip").on(tabel.lijnId, tabel.tijdstip),
