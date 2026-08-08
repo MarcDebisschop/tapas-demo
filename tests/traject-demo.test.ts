@@ -9,6 +9,7 @@ const migratie = [
   "migrations/0002_clammy_talisman.sql",
   "migrations/0003_smiling_shape.sql",
   "migrations/0004_supreme_freak.sql",
+  "migrations/0005_soorten_gebeurtenis.sql",
 ]
   .map((pad) => readFileSync(pad, "utf8"))
   .join("\n")

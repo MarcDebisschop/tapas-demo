@@ -36,6 +36,13 @@
       "when": 1786193894469,
       "tag": "0004_supreme_freak",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1786194500000,
+      "tag": "0005_soorten_gebeurtenis",
+      "breakpoints": true
     }
   ]
 }

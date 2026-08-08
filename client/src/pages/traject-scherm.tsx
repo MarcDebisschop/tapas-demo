@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   ChevronRight,
@@ -10,6 +10,7 @@ import {
   MoveHorizontal,
   Network,
   PanelRightClose,
+  PencilLine,
   ShieldCheck,
   Users,
   X,
@@ -23,6 +24,7 @@ import {
   brilStrookTekst,
   heeftIndruk,
 } from "@/lib/regiekamer-bril";
+import { leesServermelding } from "@/lib/regiekamer-personen";
 import { PersonenPaneel } from "./regiekamer-personen";
 
 type LijnToestand = "aandacht" | "lopend" | "stil" | "in_orde";
@@ -175,6 +177,21 @@ const gebeurtenisTeksten: Record<string, string> = {
   overleg: "Overleg",
   vaststelling: "Vaststelling",
 };
+
+/**
+ * De soorten die het invulvenster aanbiedt, in de volgorde waarin ze op het
+ * scherm staan. De server houdt dezelfde lijst aan en weigert al de rest.
+ */
+const SOORTEN = ["gesprek", "bericht", "overleg", "vaststelling"] as const;
+
+const velddoos =
+  "w-full rounded-[4px] border border-[var(--regie-rand)] bg-[var(--regie-vlak)] px-2.5 py-2 text-sm text-[var(--regie-tekst)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--regie-accent)]";
+
+const vollekKnop =
+  "rounded-[4px] bg-[var(--regie-accent)] px-3 py-2 text-xs font-semibold text-white disabled:opacity-60";
+
+const stilleKnop =
+  "rounded-[4px] border border-[var(--regie-rand)] px-3 py-2 text-xs font-semibold text-[var(--regie-tekst)] hover:bg-[var(--regie-achtergrond)] disabled:opacity-60";
 
 const werkstroomTeksten: Record<string, string> = {
   niet_gestart: "Nog niet gestart",
@@ -897,6 +914,262 @@ function Vandaag({ gegevens }: { gegevens: VolledigTraject }) {
   );
 }
 
+/**
+ * Het invulvenster om een gebeurtenis op een lijn vast te leggen.
+ *
+ * Het venster splitst niets automatisch, stelt geen tekst voor en oordeelt
+ * nergens over wat waar hoort. De twee velden staan nadrukkelijk uit elkaar,
+ * elk in een eigen kader, omdat de scheiding een bewuste handeling van de mens
+ * is en niet iets wat het scherm voor hem doet.
+ *
+ * Wie mag schrijven wordt hier niet beslist. Het scherm biedt alle mensen van
+ * dit traject aan die nog meedoen; de server weigert wie niet mag, in gewone
+ * taal, en die zin komt ongewijzigd op het scherm te staan.
+ */
+function VastlegVenster({
+  lijn,
+  gegevens,
+  sluit,
+}: {
+  lijn: Lijn;
+  gegevens: VolledigTraject;
+  sluit: () => void;
+}) {
+  const geheugen = useQueryClient();
+  const trajectId = String(gegevens.traject.id);
+  const { data: gelezenMensen } = useQuery<MensInKeuze[]>({
+    queryKey: ["/api/traject/trajecten", trajectId, "personen"],
+  });
+  // Wie niet meer meedoet kan niets meer vastleggen. Zulke namen horen dus ook
+  // niet in de keuze te staan, anders belooft het scherm iets wat de server
+  // meteen weigert.
+  const mogelijkeAuteurs = (gelezenMensen ?? []).filter((mens) => mens.actief);
+  const enigeAuteur = mogelijkeAuteurs.length === 1 ? mogelijkeAuteurs[0] : null;
+
+  const [auteurKeuze, zetAuteurKeuze] = useState("");
+  const [soort, zetSoort] = useState<string>(SOORTEN[0]);
+  const [vaststelling, zetVaststelling] = useState("");
+  const [indruk, zetIndruk] = useState("");
+  const [fout, zetFout] = useState<string | null>(null);
+
+  // Zodra er precies één mens overblijft, staat die vast en hoeft er niets
+  // gekozen te worden. Het veld blijft dan nooit leeg achter.
+  useEffect(() => {
+    if (enigeAuteur !== null) zetAuteurKeuze(String(enigeAuteur.id));
+  }, [enigeAuteur]);
+
+  useEffect(() => {
+    const sluitBijEscape = (toets: KeyboardEvent) => {
+      if (toets.key === "Escape") sluit();
+    };
+    window.addEventListener("keydown", sluitBijEscape);
+    return () => window.removeEventListener("keydown", sluitBijEscape);
+  }, [sluit]);
+
+  const vastleggen = useMutation({
+    mutationFn: async () => {
+      const antwoord = await apiRequest(
+        "POST",
+        `/api/traject/trajecten/${trajectId}/gebeurtenissen`,
+        {
+          lijnId: lijn.id,
+          soort,
+          vaststelling,
+          indruk,
+          vastgelegdDoorPersoonId:
+            auteurKeuze === "" ? undefined : Number(auteurKeuze),
+        },
+      );
+      return (await antwoord.json()) as Gebeurtenis;
+    },
+    onSuccess: () => {
+      // Het dossier wordt opnieuw opgehaald, zodat de nieuwe gebeurtenis in de
+      // chronologie van deze lijn staat zonder dat iemand de pagina herlaadt.
+      void geheugen.invalidateQueries({
+        queryKey: ["/api/traject/trajecten", trajectId],
+      });
+      sluit();
+    },
+    onError: (reden: Error) => zetFout(leesServermelding(reden.message)),
+  });
+
+  return (
+    <>
+      <button
+        type="button"
+        aria-label="Sluit het vastleggen"
+        className="fixed inset-0 z-[60] cursor-default bg-black/30"
+        onClick={sluit}
+      />
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-label="Een gebeurtenis vastleggen"
+        data-testid="vastlegvenster"
+        className="fixed inset-y-0 right-0 z-[70] flex w-full flex-col border-l border-[var(--regie-rand)] bg-[var(--regie-vlak)] shadow-2xl md:w-[46vw]"
+      >
+        <header className="flex min-h-[64px] items-start justify-between gap-4 border-b border-[var(--regie-rand)] px-5 py-4">
+          <div className="min-w-0">
+            <p className="regie-label">Vastleggen op deze lijn</p>
+            <h2
+              data-testid="vastleggen-lijnnaam"
+              className="mt-1 break-words text-lg font-semibold text-[var(--regie-tekst)]"
+            >
+              {lijnNaam(lijn, gegevens.partijen)}
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={sluit}
+            aria-label="Sluit dit venster"
+            className="shrink-0 rounded-sm p-1 text-[var(--regie-gedempt)] hover:bg-[var(--regie-achtergrond)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--regie-accent)]"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </header>
+
+        <form
+          data-testid="vastlegformulier"
+          className="min-h-0 flex-1 overflow-y-auto px-5 py-5"
+          onSubmit={(voorval) => {
+            voorval.preventDefault();
+            zetFout(null);
+            vastleggen.mutate();
+          }}
+        >
+          <section className="space-y-3 border-b border-[var(--regie-rand)] pb-5">
+            {enigeAuteur !== null ? (
+              <div>
+                <p className="text-xs font-medium text-[var(--regie-gedempt)]">
+                  Wie dit vastlegt
+                </p>
+                <p
+                  data-testid="vaste-auteur"
+                  className="mt-1 break-words rounded-[4px] border border-[var(--regie-rand)] bg-[var(--regie-achtergrond)] px-2.5 py-2 text-sm font-semibold text-[var(--regie-tekst)]"
+                >
+                  {enigeAuteur.naam}
+                </p>
+              </div>
+            ) : (
+              <label className="block text-xs font-medium text-[var(--regie-gedempt)]">
+                Wie dit vastlegt
+                <select
+                  data-testid="keuze-auteur"
+                  className={`mt-1 ${velddoos}`}
+                  value={auteurKeuze}
+                  onChange={(voorval) => zetAuteurKeuze(voorval.target.value)}
+                  required
+                >
+                  <option value="">Nog te kiezen</option>
+                  {mogelijkeAuteurs.map((mens) => (
+                    <option key={mens.id} value={String(mens.id)}>
+                      {mens.naam}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+
+            <label className="block text-xs font-medium text-[var(--regie-gedempt)]">
+              Wat voor soort
+              <select
+                data-testid="keuze-soort"
+                className={`mt-1 ${velddoos}`}
+                value={soort}
+                onChange={(voorval) => zetSoort(voorval.target.value)}
+              >
+                {SOORTEN.map((keuze) => (
+                  <option key={keuze} value={keuze}>
+                    {gewoneTekst(keuze, gebeurtenisTeksten)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </section>
+
+          <section
+            data-testid="veld-vaststelling"
+            className="mt-5 rounded-[6px] border-l-[3px] border border-[var(--regie-rand)] bg-[var(--regie-achtergrond)] p-4"
+            style={{ borderLeftColor: "var(--regie-accent)" }}
+          >
+            <label className="block">
+              <span className="block text-sm font-semibold text-[var(--regie-tekst)]">
+                Wat er gebeurd is
+              </span>
+              <span className="mt-1 block text-xs leading-5 text-[var(--regie-gedempt)]">
+                Feitelijk, navertelbaar, zonder oordeel. Schrijf dit zo dat u
+                het aan de andere kant zou durven voorlezen.
+              </span>
+              <textarea
+                data-testid="invoer-vaststelling"
+                className={`mt-2 min-h-[120px] resize-y ${velddoos}`}
+                value={vaststelling}
+                onChange={(voorval) => zetVaststelling(voorval.target.value)}
+                required
+              />
+            </label>
+            <p className="mt-2 text-[11px] leading-5 text-[var(--regie-gedempt)]">
+              Dit gaat mee naar iedereen die deze lijn mag zien.
+            </p>
+          </section>
+
+          <section
+            data-testid="veld-indruk"
+            className="mt-6 rounded-[6px] border border-dashed border-[var(--regie-rand)] bg-[var(--regie-vlak)] p-4"
+          >
+            <label className="block">
+              <span className="block text-sm font-semibold text-[var(--regie-tekst)]">
+                Hoe het aanvoelde
+              </span>
+              <span className="mt-1 block text-xs leading-5 text-[var(--regie-gedempt)]">
+                Schrijf dit zo dat u het aan uw eigen kant zou durven voorlezen.
+              </span>
+              <textarea
+                data-testid="invoer-indruk"
+                className={`mt-2 min-h-[120px] resize-y ${velddoos}`}
+                value={indruk}
+                onChange={(voorval) => zetIndruk(voorval.target.value)}
+              />
+            </label>
+            <p className="mt-2 text-[11px] leading-5 text-[var(--regie-gedempt)]">
+              Dit verlaat uw eigen partij nooit. Ook de facilitator leest het
+              niet.
+            </p>
+          </section>
+
+          <div className="mt-6 flex flex-wrap gap-2">
+            <button
+              type="submit"
+              data-testid="knop-vastleggen"
+              className={vollekKnop}
+              disabled={vastleggen.isPending}
+            >
+              {vastleggen.isPending ? "Bezig met vastleggen" : "Vastleggen"}
+            </button>
+            <button type="button" className={stilleKnop} onClick={sluit}>
+              Laat maar
+            </button>
+          </div>
+
+          {fout ? (
+            <p
+              data-testid="melding-weigering-vastleggen"
+              role="alert"
+              className="mt-3 rounded-[4px] border-l-[3px] bg-[var(--regie-achtergrond)] px-3 py-2 text-xs font-semibold leading-5"
+              style={{
+                borderLeftColor: "var(--regie-aandacht)",
+                color: "var(--regie-aandacht)",
+              }}
+            >
+              {fout}
+            </p>
+          ) : null}
+        </form>
+      </aside>
+    </>
+  );
+}
+
 function LijnDetail({
   lijn,
   gegevens,
@@ -916,6 +1189,7 @@ function LijnDetail({
 
   const gebeurtenissen = gegevens.gebeurtenissen.filter((gebeurtenis) => gebeurtenis.lijnId === lijn.id);
   const stil = lijn.toestand === "stil";
+  const [vastleggenOpen, zetVastleggenOpen] = useState(false);
 
   return (
     <>
@@ -972,9 +1246,20 @@ function LijnDetail({
           </section>
 
           <section className="pt-5">
-            <div className="flex items-center gap-2">
-              <Clock3 className="h-4 w-4 text-[var(--regie-accent)]" />
-              <h3 className="text-base font-semibold text-[var(--regie-tekst)]">Chronologie</h3>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Clock3 className="h-4 w-4 text-[var(--regie-accent)]" />
+                <h3 className="text-base font-semibold text-[var(--regie-tekst)]">Chronologie</h3>
+              </div>
+              <button
+                type="button"
+                data-testid="knop-gebeurtenis-vastleggen"
+                className={`inline-flex items-center gap-1.5 ${stilleKnop}`}
+                onClick={() => zetVastleggenOpen(true)}
+              >
+                <PencilLine className="h-4 w-4" aria-hidden="true" />
+                Iets vastleggen
+              </button>
             </div>
             {gebeurtenissen.length === 0 ? (
               <p className="mt-4 rounded-[4px] border border-dashed border-[var(--regie-rand)] p-3 text-sm leading-6 text-[var(--regie-gedempt)]">
@@ -1009,6 +1294,13 @@ function LijnDetail({
           </section>
         </div>
       </aside>
+      {vastleggenOpen ? (
+        <VastlegVenster
+          lijn={lijn}
+          gegevens={gegevens}
+          sluit={() => zetVastleggenOpen(false)}
+        />
+      ) : null}
     </>
   );
 }

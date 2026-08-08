@@ -10,9 +10,9 @@ import {
 } from "./afleiding";
 import type { VraagToestand } from "./afleiding";
 import { seedDemonstratietraject } from "./demo";
-import { filterTrajectVoorOproeper } from "./rechten";
+import { filterTrajectVoorOproeper, magLijnZien } from "./rechten";
 import type { OproeperVanTraject } from "./rechten";
-import { ROLLEN_VAN_TRAJECT } from "./schema";
+import { ROLLEN_VAN_TRAJECT, SOORTEN_VAN_GEBEURTENIS } from "./schema";
 import { trajectOpslag } from "./storage";
 import type { PersoonInTraject, VolledigTraject } from "./storage";
 import {
@@ -54,13 +54,34 @@ const lijnSchema = z
   })
   .strict();
 
+/**
+ * Het vastleggen van een gebeurtenis.
+ *
+ * Twee velden zijn hier bewust anders dan in de andere schema's van dit
+ * bestand.
+ *
+ * `tijdstip` is optioneel. Het scherm geeft er geen mee en dan zet de server
+ * het moment van vastleggen. De bestaande aanroepen die wel een tijdstip
+ * meesturen blijven werken, want de opslaglaag valt met `tijdstipOfNu` al terug
+ * op de klok wanneer het veld ontbreekt.
+ *
+ * `vastgelegdDoorPersoonId` is verplicht, en de reden staat in rechtenregel 3:
+ * een gebeurtenis zonder bekende auteur geeft haar indruk aan niemand meer,
+ * ook niet aan wie ze opschreef. Zo een gebeurtenis toelaten is stil
+ * gegevensverlies. Weigeren is dan het minste kwaad.
+ *
+ * De boodschap bij een ontbrekende auteur staat er met de hand bij. De gewone
+ * weg, `stuurValidatiefout`, stuurt de tabel van zod door, en dat is geen zin
+ * die iemand op een scherm wil lezen.
+ */
 const gebeurtenisSchema = z
   .object({
     lijnId: positiefGetal,
-    tijdstip,
-    soort: z.enum(["gesprek", "bericht", "rechtstreeks_contact"]),
+    tijdstip: tijdstip.optional(),
+    soort: z.enum(SOORTEN_VAN_GEBEURTENIS),
     vaststelling: tekst,
     indruk: z.string().trim().optional(),
+    vastgelegdDoorPersoonId: positiefGetal,
   })
   .strict();
 
@@ -719,11 +740,47 @@ export function registerTrajectRoutes(
     }
   });
 
+  /**
+   * Legt een gebeurtenis vast op een lijn.
+   *
+   * Vier weigeringen, in deze volgorde. Eerst de vorm van het verzoek, dan de
+   * lijn, dan de auteur, dan het recht om op deze lijn te schrijven. De
+   * volgorde is niet toevallig: er wordt niets over het dossier prijsgegeven
+   * voordat vaststaat dat de oproeper de lijn mag zien.
+   *
+   * De vierde weigering hergebruikt `magLijnZien` uit de rechtenmodule. Dat is
+   * met opzet dezelfde functie als voor het lezen, en niet een tweede,
+   * gelijkende versie ervan: schrijfrecht mag nooit ruimer worden dan leesrecht,
+   * en dat blijft alleen waar wanneer er maar een regel bestaat.
+   *
+   * Wie mag er vandaag schrijven? Precies wie de lijn leest: beide partijen van
+   * de lijn, de facilitator, en de leider van een werkstroom met een kaart op
+   * die lijn. Dit is een open punt: het mag later smaller, nooit ruimer.
+   */
   app.post(
     "/api/traject/trajecten/:trajectId/gebeurtenissen",
     async (req, res) => {
       const invoer = gebeurtenisSchema.safeParse(req.body);
       if (!invoer.success) {
+        // Een ontbrekende auteur krijgt een zin en geen tabel, want dit is de
+        // fout die een mens aan het scherm het vaakst zal maken.
+        const velden = invoer.error.flatten().fieldErrors;
+        if (velden.vastgelegdDoorPersoonId) {
+          res
+            .status(400)
+            .json({ error: "Kies wie deze gebeurtenis vastlegt." });
+          return;
+        }
+        if (velden.vaststelling) {
+          res.status(400).json({
+            error: "Wat er gebeurd is, mag niet leeg blijven.",
+          });
+          return;
+        }
+        if (velden.soort) {
+          res.status(400).json({ error: "Kies een geldige soort." });
+          return;
+        }
         stuurValidatiefout(res, invoer.error);
         return;
       }
@@ -733,12 +790,66 @@ export function registerTrajectRoutes(
           "Traject",
         );
         const { beheerderId, scope } = await leesBeheerder(req);
+        const organisatieScope = organisatieScopeVanVerzoek(scope);
+        const volledig = opslag.haalTrajectOp(
+          trajectId,
+          beheerderId,
+          organisatieScope,
+        );
+        const personen = opslag.haalPersonenVanTraject(
+          trajectId,
+          beheerderId,
+          organisatieScope,
+        );
+
+        // Weigering 2. De lijn moet bij dit traject horen. De opslaglaag
+        // controleert dit ook, maar de rechtenvraag hieronder heeft de lijn
+        // zelf nodig, dus ze wordt hier al opgezocht.
+        const lijn = volledig.lijnen.find(
+          (kandidaat) => kandidaat.id === invoer.data.lijnId,
+        );
+        if (lijn === undefined) {
+          res
+            .status(404)
+            .json({ error: "Deze lijn hoort niet bij dit dossier." });
+          return;
+        }
+
+        // Weigering 4, het schrijfrecht. Dezelfde regel als voor het lezen.
+        const oproeper = maakOproeper(scope, personen, beheerderId);
+        if (!magLijnZien(oproeper, lijn, volledig.vragen)) {
+          res.status(403).json({
+            error: "U kunt op deze lijn geen gebeurtenis vastleggen.",
+          });
+          return;
+        }
+
+        // Weigering 1. De auteur moet een persoon van dit traject zijn en mag
+        // niet op inactief staan. Een inactieve mens schrijft niets meer bij,
+        // en zijn indruk zou bij de partij blijven hangen van iemand die niet
+        // meer meedoet.
+        const auteur = personen.find(
+          (persoon) => persoon.id === invoer.data.vastgelegdDoorPersoonId,
+        );
+        if (auteur === undefined) {
+          res.status(404).json({
+            error: "Deze persoon hoort niet bij dit dossier.",
+          });
+          return;
+        }
+        if (!auteur.actief) {
+          res.status(400).json({
+            error: `${auteur.naam} is niet meer actief in dit dossier en kan niets vastleggen.`,
+          });
+          return;
+        }
+
         res.status(201).json(
           opslag.voegGebeurtenisToe({
             ...invoer.data,
             trajectId,
             beheerderId,
-            organisatieScope: organisatieScopeVanVerzoek(scope),
+            organisatieScope,
           }),
         );
       } catch (fout) {

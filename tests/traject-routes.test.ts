@@ -41,6 +41,7 @@ const migratie = [
   "migrations/0002_clammy_talisman.sql",
   "migrations/0003_smiling_shape.sql",
   "migrations/0004_supreme_freak.sql",
+  "migrations/0005_soorten_gebeurtenis.sql",
 ]
   .map((pad) => readFileSync(pad, "utf8"))
   .join("\n")
@@ -676,6 +677,20 @@ describe("Regiekamer routes", () => {
       },
     );
     expect(lijn.status).toBe(201);
+    // Een gebeurtenis vastleggen kan sinds het vastlegscherm niet meer zonder
+    // te zeggen wie ze opschreef: zonder auteur zou de indruk volgens
+    // rechtenregel 3 aan niemand meer toekomen, ook niet aan de schrijver.
+    const auteur = await verzoek(
+      "a",
+      "POST",
+      `/api/traject/trajecten/${trajectId}/personen`,
+      {
+        naam: "Mila Vercammen",
+        email: "mila@korenberg.be",
+        partijId: eerstePartij.lichaam.id,
+      },
+    );
+    expect(auteur.status).toBe(201);
     const gebeurtenis = await verzoek(
       "a",
       "POST",
@@ -686,9 +701,11 @@ describe("Regiekamer routes", () => {
         soort: "gesprek",
         vaststelling: "De eerste afstemming is bevestigd.",
         indruk: "De partijen zijn zorgvuldig gestart.",
+        vastgelegdDoorPersoonId: auteur.lichaam.id,
       },
     );
     expect(gebeurtenis.status).toBe(201);
+    expect(gebeurtenis.lichaam.vastgelegdDoorPersoonId).toBe(auteur.lichaam.id);
     const volledig = await verzoek(
       "a",
       "GET",
