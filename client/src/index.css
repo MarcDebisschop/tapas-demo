@@ -270,8 +270,13 @@
  * Het wordt op het body-niveau geplaatst (fixed, achter alle content). De
  * pagina-wrappers krijgen daarom een transparante achtergrond zodat het
  * merkteken doorschemert; de basiskleur komt van de body zelf.
+ *
+ * De klasse `merkteken-modus` staat op elk eigen scherm, ook in de kale versie.
+ * Het merkteken hoort bij de maker en niet bij de sfeerlaag van het volledige
+ * platform. Waar het niet hoort, op het portaal van een klant en op schermen met
+ * een eigen achtergrond, wordt het verderop uitgeschakeld.
  */
-.belevings-modus body::after {
+.merkteken-modus body::after {
   content: "";
   position: fixed;
   right: -5vw;
@@ -294,7 +299,7 @@
   animation: earhart-drift 26s ease-in-out infinite alternate;
   will-change: transform;
 }
-.dark.belevings-modus body::after {
+.dark.merkteken-modus body::after {
   /* In dark mode duidelijker warm-rood: meer verzadiging en een wat verdere
    * hue-rotate richting rood, plus een lichte rode kleurlaag eroverheen via
    * een tweede achtergrond. En het toestel staat een tikje hoger geplaatst
@@ -317,7 +322,7 @@
 
 /* Respecteer de voorkeur voor minder beweging: dan staat het toestel stil. */
 @media (prefers-reduced-motion: reduce) {
-  .belevings-modus body::after {
+  .merkteken-modus body::after {
     animation: none;
   }
 }
@@ -489,7 +494,7 @@ body:has(.poort-pagina)::after { display: none !important }
  * is de effen basisachtergrond het antwoord, en dat is beter dan andermans
  * merkteken.
  *
- * De regel staat NA `.belevings-modus body::after` en is bovendien
+ * De regel staat NA `.merkteken-modus body::after` en is bovendien
  * `!important`, zodat de volgorde van de classes op documentElement niet
  * uitmaakt.
  * ------------------------------------------------------------------------- */
