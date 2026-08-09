@@ -7,7 +7,14 @@ import drizzleConfig from "../drizzle.config";
 import { vindDatabasePad } from "../server/db-pad";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const drizzleJournaalTabel = "__drizzle_migrations";
+/**
+ * Tabellen die de boekhouding van de databank zelf bijhouden en dus geen
+ * functionele gegevens bevatten. Ze horen niet in een schema thuis, want ze
+ * worden niet door de toepassing beschreven maar door het gereedschap dat de
+ * migraties uitvoert. De dekking van `migratie_register` wordt bewaakt in
+ * tests/migratieloper.test.ts.
+ */
+const boekhoudTabellen = new Set(["__drizzle_migrations", "migratie_register"]);
 
 function vindSchemaBestanden(): string[] {
   if (!Array.isArray(drizzleConfig.schema)) {
@@ -33,10 +40,7 @@ describe("Drizzle-schema en databank", () => {
       .prepare("SELECT name FROM sqlite_master WHERE type = ? ORDER BY name")
       .all("table")
       .map(({ name }: { name: string }) => name)
-      .filter(
-        (naam) =>
-          !naam.startsWith("sqlite_") && naam !== drizzleJournaalTabel,
-      );
+      .filter((naam) => !naam.startsWith("sqlite_") && !boekhoudTabellen.has(naam));
     databank.close();
 
     const schemaTabellen = new Set(
