@@ -28,6 +28,12 @@ import { isDemoModus } from "./demomodus";
 export const VOORBEELDDOSSIER_SCHAKELAAR = "TAPAS_VOORBEELDDOSSIER";
 
 /**
+ * De naam van het voorbeelddossier. Staat hier zodat het gezondheidsvenster en
+ * de demonstratiegegevens dezelfde naam gebruiken en die nooit uiteen kan lopen.
+ */
+export const VOORBEELDDOSSIER_TRAJECTNAAM = "DEMO - Overname Asterra Machines";
+
+/**
  * Waar wanneer deze omgeving om een voorbeelddossier vraagt.
  *
  * Enkel de waarde "1" telt. Een half ingevulde variabele zoals "true", "ja" of
@@ -37,6 +43,37 @@ export const VOORBEELDDOSSIER_SCHAKELAAR = "TAPAS_VOORBEELDDOSSIER";
 export function voorbeelddossierGevraagd(): boolean {
   if (process.env[VOORBEELDDOSSIER_SCHAKELAAR] === "1") return true;
   return isDemoModus();
+}
+
+/**
+ * Twee ja-of-nee-antwoorden op de enige twee vragen die tellen wanneer de
+ * Regiekamer leeg blijft:
+ *
+ *   gevraagd  - vraagt deze omgeving om een voorbeelddossier?
+ *   aanwezig  - staat het dossier ook werkelijk in de databank?
+ *
+ * Uit die twee volgt meteen waar het misloopt. Niet gevraagd betekent dat de
+ * schakelaar niet gezet is in de omgeving. Wel gevraagd maar niet aanwezig
+ * betekent dat het opbouwen niet gelukt is, en dan staat de reden in het
+ * opstartlogboek.
+ *
+ * Bewust twee losse ja-of-nee-antwoorden en geen aantallen: het venster is van
+ * buitenaf te bevragen en mag niets prijsgeven over wie of wat er in het
+ * platform staat.
+ */
+export function beschrijfVoorbeelddossier(
+  telVoorbeelddossiers: () => number,
+): { gevraagd: boolean; aanwezig: boolean } {
+  const gevraagd = voorbeelddossierGevraagd();
+  let aanwezig = false;
+  try {
+    aanwezig = telVoorbeelddossiers() > 0;
+  } catch {
+    // Een databank die nog niet klaar is, mag het venster niet omvergooien. Het
+    // venster meldt elders al apart dat de databank onbereikbaar is.
+    aanwezig = false;
+  }
+  return { gevraagd, aanwezig };
 }
 
 /**
