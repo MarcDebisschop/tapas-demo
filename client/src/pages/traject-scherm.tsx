@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "wouter";
+import { Link, useLocation, useParams } from "wouter";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { AppHeader } from "@/components/Brand";
 import { BrandedError } from "@/components/BrandedError";
+import { duidFout, opnieuwProberenHeeftZin } from "@/lib/foutduiding";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest } from "@/lib/queryClient";
 import {
@@ -1322,6 +1323,7 @@ function RegiekamerLaden() {
 }
 
 export function TrajectOverzicht() {
+  const [, gaNaar] = useLocation();
   const { data: trajecten, isLoading, error, refetch } = useQuery<KortTraject[]>({
     queryKey: ["/api/traject/trajecten"],
   });
@@ -1335,10 +1337,18 @@ export function TrajectOverzicht() {
   }
 
   if (error) {
+    // De melding zegt wat er werkelijk aan de hand is, niet altijd hetzelfde.
+    const duiding = duidFout(error);
     return (
       <BrandedError
-        type="netwerk"
-        actiePrimair={{ label: "Opnieuw laden", onClick: () => void refetch() }}
+        type={duiding.soort}
+        titel={duiding.titel}
+        beschrijving={duiding.beschrijving}
+        actiePrimair={
+          opnieuwProberenHeeftZin(duiding.soort)
+            ? { label: "Opnieuw laden", onClick: () => void refetch() }
+            : { label: "Terug naar beheer", onClick: () => gaNaar("/admin") }
+        }
       />
     );
   }
@@ -1392,6 +1402,7 @@ export function TrajectScherm() {
   const { trajectId } = useParams<{ trajectId: string }>();
   const [gekozenLijn, zetGekozenLijn] = useState<Lijn | null>(null);
   const [geselecteerdeWerkstroomId, zetGeselecteerdeWerkstroomId] = useState<number | null>(null);
+  const [, gaNaar] = useLocation();
   const [personenOpen, zetPersonenOpen] = useState(false);
   // De bril leeft alleen in dit bezoek. Wie het scherm opnieuw opent, begint
   // met zijn eigen ogen: er wordt niets over bewaard.
@@ -1422,10 +1433,19 @@ export function TrajectScherm() {
 
   if (isLoading) return <RegiekamerLaden />;
   if (error || !gegevens) {
+    // Ook het geval zonder fout maar zonder gegevens krijgt hier een eerlijke
+    // boodschap: dat is geen verbindingsprobleem.
+    const duiding = duidFout(error, { gegevensOntbreken: !gegevens });
     return (
       <BrandedError
-        type="netwerk"
-        actiePrimair={{ label: "Opnieuw laden", onClick: () => void refetch() }}
+        type={duiding.soort}
+        titel={duiding.titel}
+        beschrijving={duiding.beschrijving}
+        actiePrimair={
+          opnieuwProberenHeeftZin(duiding.soort)
+            ? { label: "Opnieuw laden", onClick: () => void refetch() }
+            : { label: "Terug naar overzicht", onClick: () => gaNaar("/admin/trajecten") }
+        }
       />
     );
   }
