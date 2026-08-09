@@ -23,6 +23,21 @@ services:
       mountPath: /data
       sizeGB: 1
 
+    # LEES DIT EERST, het heeft al een halve ochtend gekost.
+    #
+    # Dit bestand wordt door Render NIET gelezen voor de bestaande dienst
+    # tapas-demo. Die dienst is met de hand in het dashboard aangemaakt, en
+    # Render beschouwt zo'n dienst als volledig door het dashboard beheerd. Alles
+    # wat hieronder staat, is ooit met de hand overgenomen.
+    #
+    # Gevolg: een variabele hier bijzetten verandert niets aan de draaiende site.
+    # Wie een variabele toevoegt, moet die ook zelf in het Render-dashboard
+    # zetten, bij de dienst onder Environment. Doe dat altijd in dezelfde beurt,
+    # anders staat er hier iets wat nergens geldt.
+    #
+    # Dit bestand blijft wel de plek waar staat wat de dienst nodig heeft, en
+    # het geldt onverkort wanneer de dienst ooit opnieuw vanaf dit bestand wordt
+    # opgezet.
     envVars:
       - key: NODE_ENV
         value: production
