@@ -73,8 +73,17 @@ export interface VoegGebeurtenisToeInvoer {
   beheerderId: number;
   organisatieScope?: number | null;
   lijnId: number;
-  tijdstip: number;
-  soort: "gesprek" | "bericht" | "rechtstreeks_contact";
+  /**
+   * Wanneer het gebeurde. Mag wegblijven: dan neemt de opslag het moment van
+   * vastleggen zelf.
+   */
+  tijdstip?: number;
+  soort:
+    | "gesprek"
+    | "bericht"
+    | "overleg"
+    | "vaststelling"
+    | "rechtstreeks_contact";
   vaststelling: string;
   indruk?: string;
   /**
@@ -556,7 +565,11 @@ export function maakTrajectOpslag(
         invoer.organisatieScope,
       );
       haalLijnVanTraject(invoer.lijnId, invoer.trajectId);
-      tijdstipOfNu(invoer.tijdstip, "Tijdstip");
+      // De uitkomst hiervan wordt hieronder weggeschreven. Ze werd voordien
+      // berekend en weggegooid, waardoor een aanroep zonder tijdstip een lege
+      // waarde in een verplichte kolom probeerde te zetten. Elke andere
+      // handeling in dit bestand gebruikt de uitkomst wel; deze week af.
+      const tijdstip = tijdstipOfNu(invoer.tijdstip, "Tijdstip");
       // Een auteur moet een persoon van dit traject zijn. Zonder deze controle
       // zou een gebeurtenis naar een persoon van een ander dossier kunnen
       // wijzen, en dan zou de rechtenmodule op een verkeerde partij rekenen.
@@ -570,7 +583,7 @@ export function maakTrajectOpslag(
         .values({
           trajectId: invoer.trajectId,
           lijnId: invoer.lijnId,
-          tijdstip: invoer.tijdstip,
+          tijdstip,
           soort: invoer.soort,
           vaststelling: nietLegeTekst(invoer.vaststelling, "Vaststelling"),
           indruk: invoer.indruk?.trim() ?? "",

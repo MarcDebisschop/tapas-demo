@@ -270,10 +270,28 @@ export const trajectGebeurtenissen = sqliteTable(
     index("idx_traject_gebeurtenissen_lijn_tijdstip").on(tabel.lijnId, tabel.tijdstip),
     check(
       "traject_gebeurtenissen_soort_geldig",
-      sql`${tabel.soort} IN ('gesprek', 'bericht', 'rechtstreeks_contact')`,
+      sql`${tabel.soort} IN ('gesprek', 'bericht', 'overleg', 'vaststelling', 'rechtstreeks_contact')`,
     ),
   ],
 );
+
+/**
+ * De soorten gebeurtenis die vandaag vastgelegd kunnen worden. Deze vier staan
+ * in dezelfde volgorde als op het scherm, zodat een tikfout onmiddellijk opvalt.
+ *
+ * De controlebeperking van de databank laat er vijf toe. De vijfde,
+ * rechtstreeks_contact, staat met opzet niet in deze lijst: ze bestond voor het
+ * vastlegscherm er was, blijft leesbaar voor de rijen die haar dragen, maar
+ * wordt niet langer aangeboden. Zie migratie 0005.
+ */
+export const SOORTEN_VAN_GEBEURTENIS = [
+  "gesprek",
+  "bericht",
+  "overleg",
+  "vaststelling",
+] as const;
+
+export type SoortVanGebeurtenis = (typeof SOORTEN_VAN_GEBEURTENIS)[number];
 
 /**
  * De zeven rollen uit deel C3 van het protocol. Ze worden nergens hertaald en
