@@ -10,15 +10,14 @@
 // NIEUW BESTAND — geen bestaande code aangepast.
 // Gebruik naast de bestaande ErrorBoundary (die vangt render-crashes op).
 // =============================================================================
-import { AlertTriangle, CreditCard, Clock, Wifi, KeyRound, ArrowLeft, RefreshCw } from "lucide-react";
+import { AlertTriangle, CreditCard, Clock, Wifi, KeyRound, Lock, SearchX, ServerCrash, ArrowLeft, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import type { FoutSoort } from "@/lib/foutduiding";
 
-export type ErrorType =
-  | "sessie-verlopen"
-  | "onvoldoende-credits"
-  | "netwerk"
-  | "token-ongeldig"
-  | "algemeen";
+// De soorten leven in @/lib/foutduiding, zodat de keuze welke kaart bij welke
+// fout hoort los van React beproefd kan worden. Deze naam blijft bestaan voor
+// wie hem al gebruikte.
+export type ErrorType = FoutSoort;
 
 interface BrandedErrorProps {
   type?: ErrorType;
@@ -71,6 +70,33 @@ const ERROR_CONFIG: Record<
       "De server kon niet bereikt worden. Controleer je internetverbinding en probeer opnieuw. Als het probleem aanhoudt, vernieuw dan de pagina.",
     actiePrimair: "Opnieuw proberen",
     actieSecundair: "Pagina vernieuwen",
+  },
+  "geen-toegang": {
+    icoon: <Lock className="h-6 w-6" aria-hidden="true" />,
+    iconKleur: "text-[hsl(var(--gold))] bg-[hsl(var(--gold)/0.12)]",
+    titel: "Dit dossier is niet voor jou",
+    beschrijving:
+      "Je bent aangemeld, maar dit dossier valt buiten wat jij mag inzien. Vraag de beheerder van het dossier om je toegang te geven.",
+    actiePrimair: "Terug naar overzicht",
+    actieSecundair: "Beheerder contacteren",
+  },
+  "niet-gevonden": {
+    icoon: <SearchX className="h-6 w-6" aria-hidden="true" />,
+    iconKleur: "text-[hsl(var(--gold))] bg-[hsl(var(--gold)/0.12)]",
+    titel: "Dit dossier bestaat niet",
+    beschrijving:
+      "Het dossier dat je opvraagt, is er niet. Mogelijk is het verwijderd of klopt de link niet meer. Ga terug naar het overzicht en kies opnieuw.",
+    actiePrimair: "Terug naar overzicht",
+    actieSecundair: "Naar startpagina",
+  },
+  serverfout: {
+    icoon: <ServerCrash className="h-6 w-6" aria-hidden="true" />,
+    iconKleur: "text-[hsl(var(--destructive))] bg-[hsl(var(--destructive)/0.10)]",
+    titel: "De server liep vast",
+    beschrijving:
+      "Je verbinding is in orde, maar de server kon dit verzoek niet afwerken. Probeer het over een minuut opnieuw. Blijft het misgaan, meld het dan met het tijdstip erbij.",
+    actiePrimair: "Opnieuw proberen",
+    actieSecundair: "Naar startpagina",
   },
   "token-ongeldig": {
     icoon: <KeyRound className="h-6 w-6" aria-hidden="true" />,
@@ -149,7 +175,7 @@ export function BrandedError({
             className="gap-2"
             data-testid={`btn-error-primair-${type}`}
           >
-            {type === "netwerk" ? (
+            {type === "netwerk" || type === "serverfout" ? (
               <RefreshCw className="h-4 w-4" aria-hidden="true" />
             ) : (
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
