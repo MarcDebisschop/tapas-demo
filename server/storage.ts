@@ -55,6 +55,7 @@ import { eq, desc, and } from "drizzle-orm";
 import { existsSync, readFileSync } from "fs";
 import { resolve } from "path";
 import { vindDatabasePad } from "./db-pad";
+import { pasMigratiesToe } from "./migratieloper";
 import { renderRapportHtml } from "./rapportgenerator";
 import { kiesGenerator, heeftDedicatedGenerator } from "./rapport-registry";
 import { genereerAiDuiding, isLiveDuidingAan, DUIDING_INSTRUMENT } from "./duiding-manager";
@@ -102,6 +103,28 @@ pasEncryptieToe(sqlite, "server/storage.ts");
 sqlite.pragma("journal_mode = WAL");
 sqlite.pragma("synchronous = NORMAL");   // NP-5 fix 2026-06-30: veilig bij WAL
 sqlite.pragma("cache_size = -32000");    // NP-5 fix 2026-06-30: 32 MB pagina-cache
+
+// -----------------------------------------------------------------------------
+// De migratiebestanden toepassen, vóór alles wat hieronder de databank aanraakt.
+//
+// Waarom dit hier staat. De tabellen van sommige onderdelen worden alleen in een
+// migratiebestand beschreven en niet in het blok hieronder. Zolang niemand die
+// bestanden uitvoerde, ontbraken die tabellen op elke installatie die niet met de
+// hand was bijgewerkt. De Regiekamer viel daardoor om zodra iemand hem opende.
+//
+// De loper houdt bij wat al gelopen heeft en stopt met een duidelijke fout als de
+// map met migratiebestanden niet te vinden is. Stil doorgaan met een databank
+// waarvan niet vaststaat wat erin hoort, was juist het probleem.
+// -----------------------------------------------------------------------------
+const migratieUitkomst = pasMigratiesToe(sqlite);
+if (migratieUitkomst.toegepast.length > 0) {
+  console.log(`[tapas] migraties toegepast: ${migratieUitkomst.toegepast.join(", ")}`);
+}
+if (migratieUitkomst.alAanwezig.length > 0) {
+  console.log(
+    `[tapas] migraties waarvan het resultaat al aanwezig was: ${migratieUitkomst.alAanwezig.join(", ")}`,
+  );
+}
 
 export const db = drizzle(sqlite);
 export { sqlite }; // Directe export voor modules die raw SQLite nodig hebben
