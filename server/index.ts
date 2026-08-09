@@ -11,6 +11,7 @@ import { serveStatic } from "./static";
 import { sqlite } from "./storage";
 import { logEncryptieStatus } from "./db-encryptie";
 import { meldDemoModusBijOpstart } from "./demomodus";
+import { meldVoorbeelddossierBijOpstart } from "./voorbeelddossier";
 import { bepaalSessieCookieNaam } from "./sessie-cookie";
 import { VERSIE, COMMIT, BOUWDATUM, BRON } from "./versie";
 import { createServer } from "node:http";
@@ -428,6 +429,7 @@ app.get("/api/gezondheid", (_req, res) => {
       // geldt en dus of wachtwoorden afgedwongen worden. In productie is de
       // demomodus onmogelijk; staat de schakelaar er toch, dan zegt de melding dat.
       meldDemoModusBijOpstart();
+      meldVoorbeelddossierBijOpstart();
     },
   );
 })();

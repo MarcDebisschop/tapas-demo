@@ -1,5 +1,5 @@
-import { isDemoModus } from "../demomodus";
 import { storage as platformOpslag } from "../storage";
+import { voorbeelddossierGevraagd } from "../voorbeelddossier";
 import type { TrajectRolnaam } from "./schema";
 import { trajectOpslag } from "./storage";
 
@@ -268,6 +268,52 @@ function zorgVoorPersonenEnRollen(
   }
 }
 
+/**
+ * Kiest de beheerder die het voorbeelddossier op zijn naam krijgt.
+ *
+ * Bij voorkeur de prior: die kijkt over alle organisaties heen en ziet het
+ * voorbeelddossier dus hoe dan ook.
+ *
+ * Is er geen actieve prior, dan valt de keuze op de eerste actieve beheerder
+ * die aan een organisatie hangt. Die beperking is geen detail: een beheerder
+ * zonder priorstatus mag uitsluitend dossiers van zijn eigen organisatie zien.
+ * Iemand kiezen die aan geen enkele organisatie hangt, levert dus een dossier
+ * op dat niemand kan openen, en dat is precies het lege scherm dat we willen
+ * vermijden. Het dossier wordt in dat geval in de eigen organisatie van die
+ * beheerder gezet, niet in een aparte demonstratieorganisatie.
+ */
+function kiesEigenaar<
+  T extends { actief: boolean; isPrior: boolean; organisatieId?: number | null },
+>(
+  beheerders: ReadonlyArray<T>,
+  meld: (regel: string) => void = console.warn,
+): T | undefined {
+  const actieven = beheerders.filter((kandidaat) => kandidaat.actief);
+  const prior = actieven.find((kandidaat) => kandidaat.isPrior);
+  if (prior) return prior;
+
+  const metOrganisatie = actieven.find(
+    (kandidaat) =>
+      kandidaat.organisatieId !== null && kandidaat.organisatieId !== undefined,
+  );
+  if (metOrganisatie) {
+    meld(
+      "[regiekamer-demo] Geen actieve prior gevonden; het voorbeelddossier komt " +
+        "in de organisatie van de eerste actieve beheerder te staan.",
+    );
+    return metOrganisatie;
+  }
+
+  if (actieven.length > 0) {
+    meld(
+      "[regiekamer-demo] Geen actieve prior en geen beheerder met een " +
+        "organisatie; een voorbeelddossier zou voor niemand zichtbaar zijn en " +
+        "wordt daarom niet aangemaakt.",
+    );
+  }
+  return undefined;
+}
+
 type PlatformDemoOpslag = Pick<
   typeof platformOpslag,
   "listBeheerders" | "listOrganisaties" | "createOrganisatie"
@@ -276,37 +322,44 @@ type PlatformDemoOpslag = Pick<
 export async function seedDemonstratietraject(
   platform: PlatformDemoOpslag = platformOpslag,
   opslag: typeof trajectOpslag = trajectOpslag,
-  demoActief: () => boolean = isDemoModus,
+  demoActief: () => boolean = voorbeelddossierGevraagd,
 ): Promise<void> {
   if (!demoActief()) return;
 
   try {
     const beheerders = await platform.listBeheerders();
-    const beheerder = beheerders.find(
-      (kandidaat) => kandidaat.actief && kandidaat.isPrior,
-    );
+    const beheerder = kiesEigenaar(beheerders);
     if (!beheerder) {
       console.warn(
-        "[regiekamer-demo] Geen actieve prior gevonden; demonstratietraject niet aangemaakt.",
+        "[regiekamer-demo] Geen actieve beheerder gevonden; voorbeelddossier niet aangemaakt.",
       );
       return;
     }
 
-    const organisaties = await platform.listOrganisaties();
-    const bestaandeOrganisatie = organisaties.find(
-      (kandidaat) => kandidaat.naam === DEMO_ORGANISATIE,
-    );
-    const organisatieId =
-      bestaandeOrganisatie?.id ??
-      (
-        await platform.createOrganisatie({
-          naam: DEMO_ORGANISATIE,
-          type: "bedrijf",
-          contactpersoon: "Demonstratie Regiekamer",
-          email: "demo-regiekamer@tapascity.example",
-          peppolBereikbaar: false,
-        })
-      ).id;
+    // Een prior kijkt over de organisaties heen en krijgt daarom een eigen,
+    // duidelijk afgescheiden demonstratieorganisatie. Een gewone beheerder ziet
+    // enkel zijn eigen organisatie; voor hem hoort het voorbeelddossier daar
+    // thuis, anders blijft zijn scherm leeg.
+    let organisatieId: number;
+    if (!beheerder.isPrior && beheerder.organisatieId != null) {
+      organisatieId = beheerder.organisatieId;
+    } else {
+      const organisaties = await platform.listOrganisaties();
+      const bestaandeOrganisatie = organisaties.find(
+        (kandidaat) => kandidaat.naam === DEMO_ORGANISATIE,
+      );
+      organisatieId =
+        bestaandeOrganisatie?.id ??
+        (
+          await platform.createOrganisatie({
+            naam: DEMO_ORGANISATIE,
+            type: "bedrijf",
+            contactpersoon: "Demonstratie Regiekamer",
+            email: "demo-regiekamer@tapascity.example",
+            peppolBereikbaar: false,
+          })
+        ).id;
+    }
 
     const bestaand = opslag
       .haalTrajectenVoorBeheerder(beheerder.id)

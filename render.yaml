@@ -42,5 +42,14 @@ services:
       # dus nooit in git; de sleutel kan zo ook niet stil ontbreken.
       - key: GEMINI_API_KEY
         sync: false
+      # Vult de Regiekamer met een herkenbaar voorbeelddossier ("DEMO - Overname
+      # Asterra Machines"), zodat bij een demonstratie te zien is wat het scherm
+      # kan. Dit is bewust NIET dezelfde schakelaar als TAPAS_DEMO: die slaat de
+      # wachtwoordcontrole over en blijft in productie onmogelijk. Deze maakt
+      # enkel gegevens aan en raakt de aanmelding niet.
+      # Zet de waarde op 0 of verwijder de regel om het dossier weg te laten;
+      # wat al in de databank staat, blijft dan gewoon staan.
+      - key: TAPAS_VOORBEELDDOSSIER
+        value: "1"
       # VITE_DEMO_MODE is ingebakken via .env.production tijdens de build (DEMO_MODE=true)
       # PORT wordt automatisch door Render geïnjecteerd op 10000 — niet overschrijven
