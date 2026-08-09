@@ -82,18 +82,43 @@ describe("snelheidsbegrenzing op de gevoelige deelnemerspaden", () => {
   });
 });
 
+/**
+ * Knipt precies de handler van het gezondheidsvenster uit, van de openende
+ * haak tot de bijbehorende sluitende haak.
+ *
+ * Vroeger werd hier een vast venster van 900 tekens genomen. Dat werkte zolang
+ * de handler kort was, maar het is een willekeurige grens: bij elke regel die
+ * erbij komt, schuift een deel van de handler stilletjes buiten beeld en meet
+ * de test minder dan ze belooft. Haakjes tellen meet altijd de hele handler,
+ * hoe lang die ook wordt.
+ */
+function leesGezondheidsHandler(bron: string): string {
+  const start = bron.indexOf('app.get("/api/gezondheid"');
+  if (start === -1) return "";
+  let diepte = 0;
+  for (let plaats = start; plaats < bron.length; plaats += 1) {
+    const teken = bron[plaats];
+    if (teken === "(") diepte += 1;
+    if (teken === ")") {
+      diepte -= 1;
+      if (diepte === 0) return bron.slice(start, plaats + 1);
+    }
+  }
+  return bron.slice(start);
+}
+
 describe("gezondheidsendpoint voor monitoring", () => {
   it("bestaat en controleert de databank", () => {
     expect(index).toMatch(/app\.get\("\/api\/gezondheid"/);
-    const start = index.indexOf('app.get("/api/gezondheid"');
-    const blok = index.slice(start, start + 900);
+    const blok = leesGezondheidsHandler(index);
+    expect(blok, "de handler is niet teruggevonden").not.toBe("");
     expect(blok).toMatch(/sqlite\.prepare\(/);
     expect(blok).toMatch(/503/);
   });
 
   it("geeft geen persoonsgegevens of configuratie prijs", () => {
-    const start = index.indexOf('app.get("/api/gezondheid"');
-    const blok = index.slice(start, start + 900);
+    const blok = leesGezondheidsHandler(index);
+    expect(blok, "de handler is niet teruggevonden").not.toBe("");
     for (const verboden of ["email", "respondentCode", "SESSION_SECRET", "DATABASE_URL", "process.env.DB"]) {
       expect(blok.includes(verboden), `gezondheidsendpoint mag ${verboden} niet tonen`).toBe(false);
     }

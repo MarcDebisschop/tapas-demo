@@ -1,11 +1,14 @@
 import { storage as platformOpslag } from "../storage";
-import { voorbeelddossierGevraagd } from "../voorbeelddossier";
+import {
+  VOORBEELDDOSSIER_TRAJECTNAAM,
+  voorbeelddossierGevraagd,
+} from "../voorbeelddossier";
 import type { TrajectRolnaam } from "./schema";
 import { trajectOpslag } from "./storage";
 
 const DAG = 24 * 60 * 60 * 1000;
 const DEMO_ORGANISATIE = "DEMO Regiekamer";
-const DEMO_TRAJECT = "DEMO - Overname Asterra Machines";
+const DEMO_TRAJECT = VOORBEELDDOSSIER_TRAJECTNAAM;
 
 /**
  * Stand van elke werkstroom in het demonstratietraject. Alle vier de standen

@@ -11,7 +11,11 @@ import { serveStatic } from "./static";
 import { sqlite } from "./storage";
 import { logEncryptieStatus } from "./db-encryptie";
 import { meldDemoModusBijOpstart } from "./demomodus";
-import { meldVoorbeelddossierBijOpstart } from "./voorbeelddossier";
+import {
+  VOORBEELDDOSSIER_TRAJECTNAAM,
+  beschrijfVoorbeelddossier,
+  meldVoorbeelddossierBijOpstart,
+} from "./voorbeelddossier";
 import { bepaalSessieCookieNaam } from "./sessie-cookie";
 import { VERSIE, COMMIT, BOUWDATUM, BRON } from "./versie";
 import { createServer } from "node:http";
@@ -363,6 +367,19 @@ app.get("/api/gezondheid", (_req, res) => {
     bron: BRON,
     uptimeSeconden: Math.round((Date.now() - opgestartOp) / 1000),
     databank: "ok" as "ok" | "onbereikbaar",
+    // Twee ja-of-nee-antwoorden waarmee van buitenaf te zien is waarom de
+    // Regiekamer eventueel leeg blijft: vraagt deze omgeving om een
+    // voorbeelddossier, en staat dat dossier er ook echt. Geen aantallen en
+    // geen namen, dus nog steeds niets over mensen of over de opstelling.
+    voorbeelddossier: beschrijfVoorbeelddossier(() =>
+      Number(
+        (
+          sqlite
+            .prepare("select count(*) as aantal from traject where naam = ?")
+            .get(VOORBEELDDOSSIER_TRAJECTNAAM) as { aantal: number }
+        ).aantal,
+      ),
+    ),
   };
   try {
     sqlite.prepare("select 1").get();
