@@ -31,6 +31,7 @@ import {
   ORGANISATIE_BRANDING_KLASSE,
   QUOTE_MAX,
 } from "@shared/branding";
+import { MERKTEKEN_KLASSE } from "../client/src/lib/document-klassen";
 
 vi.mock("../server/storage", async () => {
   const { default: Db } = await import("better-sqlite3");
@@ -170,10 +171,20 @@ describe("het Earhart-watermerk is en blijft van TaPasCity", () => {
   it("wordt door de CSS daadwerkelijk uitgeschakeld onder de branding-class", () => {
     const css = readFileSync("client/src/index.css", "utf8");
     expect(css).toContain(`.${ORGANISATIE_BRANDING_KLASSE} body::after { display: none !important }`);
+
+    const watermerkRegel = `.${MERKTEKEN_KLASSE} body::after`;
+    const plaatsWatermerk = css.indexOf(watermerkRegel);
+    const plaatsSuppressor = css.indexOf(`.${ORGANISATIE_BRANDING_KLASSE} body::after`);
+
+    // Eerst vaststellen dat beide regels er echt staan. Zonder deze controle zou
+    // een ontbrekende watermerkregel de plaatsvergelijking hieronder laten
+    // slagen: een regel die niet gevonden wordt levert de waarde min een op, en
+    // dan is elke andere plaats daar groter dan.
+    expect(plaatsWatermerk, `${watermerkRegel} ontbreekt in de opmaak`).toBeGreaterThan(-1);
+    expect(plaatsSuppressor).toBeGreaterThan(-1);
+
     // De suppressor moet NA de watermerkregel staan, anders wint de eerste.
-    expect(css.indexOf(`.${ORGANISATIE_BRANDING_KLASSE} body::after`)).toBeGreaterThan(
-      css.indexOf(".belevings-modus body::after"),
-    );
+    expect(plaatsSuppressor).toBeGreaterThan(plaatsWatermerk);
   });
 
   it("wordt nergens als organisatielogo of org-achtergrond gebruikt", () => {

@@ -2,16 +2,16 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 import { BELEVING } from "./lib/features";
+import { documentKlassen } from "./lib/document-klassen";
 
 if (!window.location.hash) {
   window.location.hash = "#/";
 }
 
-// Belevingslaag (o.a. het driftende Earhart-vliegtuigmerkteken/de 'vlucht'-sfeer)
-// enkel in het volledige platform. In TaPas Core blijft de class achterwege,
-// waardoor de vlucht-animatie in index.css onzichtbaar is.
-if (BELEVING) {
-  document.documentElement.classList.add("belevings-modus");
-}
+// Het merkteken van TaPasCity, het vliegtuigje van Amelia Earhart, hoort op elk
+// eigen scherm en dus ook in de kale versie. De sfeerlaag van het volledige
+// platform komt daar enkel bovenop wanneer die aan staat. Welke klassen dat
+// precies zijn, staat in lib/document-klassen.ts.
+document.documentElement.classList.add(...documentKlassen(BELEVING));
 
 createRoot(document.getElementById("root")!).render(<App />);
