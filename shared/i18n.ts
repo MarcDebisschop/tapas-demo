@@ -605,6 +605,24 @@ export const STRINGS = {
     es: "En tu panel personal entiendes tu perfil, escuchas la explicación, profundizas y haces preguntas a tu asistente de perfil con IA.",
     ru: "На своей личной панели вы понимаете свой профиль, слушаете пояснения, углубляетесь и задаёте вопросы ИИ-ассистенту по профилю.",
   },
+  // Na het opgeven van een e-mailadres zegt het scherm eerlijk wat er gebeurd
+  // is: ofwel is het bericht met de persoonlijke toegang werkelijk verstuurd,
+  // ofwel is er niets verstuurd en zijn de link en de code hieronder de weg
+  // naar binnen. Er wordt nooit een verzending beweerd die niet plaatsvond.
+  klaar_mail_verstuurd: {
+    nl: "We hebben je persoonlijke toegang naar dat adres gestuurd. Zie je het bericht niet, kijk dan ook even bij de ongewenste post.",
+    fr: "Nous avons envoyé votre accès personnel à cette adresse. Si vous ne voyez pas le message, vérifiez aussi vos courriers indésirables.",
+    en: "We have sent your personal access to that address. If you do not see the message, please also check your spam folder.",
+    es: "Hemos enviado tu acceso personal a esa dirección. Si no ves el mensaje, revisa también la carpeta de correo no deseado.",
+    ru: "Мы отправили ваш личный доступ на этот адрес. Если письма нет, проверьте также папку со спамом.",
+  },
+  klaar_mail_niet_verstuurd: {
+    nl: "Er is op dit moment geen bericht verstuurd. Bewaar de link en de code hieronder: daarmee kom je altijd binnen.",
+    fr: "Aucun message n'a été envoyé pour le moment. Conservez le lien et le code ci-dessous : ils vous donnent toujours accès.",
+    en: "No message was sent at this time. Please keep the link and the code below: they always give you access.",
+    es: "Por ahora no se ha enviado ningún mensaje. Guarda el enlace y el código de abajo: siempre te dan acceso.",
+    ru: "Сейчас письмо не отправлено. Сохраните ссылку и код ниже: они всегда открывают доступ.",
+  },
   klaar_code_label: {
     nl: "Je toegangscode (bewaar deze)",
     fr: "Votre code d'accès (à conserver)",

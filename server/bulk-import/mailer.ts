@@ -19,6 +19,7 @@
 
 import nodemailer from "nodemailer";
 import { sqlite } from "../storage";
+import { bouwToegangsmail } from "../toegangsmail";
 
 const STANDAARD_AFZENDER = "info@tapascity.com";
 
@@ -29,6 +30,19 @@ export interface MailInput {
   link: string;
   instrument: string; // leesbare instrument-titel
   from?: string | null; // org-eigen afzender-override
+}
+
+export interface ToegangsmailVerzending {
+  naar: string;
+  taal: string;
+  naam: string;
+  /** De volledige, persoonlijke link naar het dashboard. */
+  link: string;
+  /** De toegangscode die bij dat dashboard hoort. */
+  code: string;
+  /** Leesbare naam van het ingevulde instrument. */
+  instrument: string;
+  from?: string | null;
 }
 
 export type MailStatus = "verstuurd" | "gesimuleerd" | "fout";
@@ -150,6 +164,51 @@ export async function verstuurUitnodiging(input: MailInput): Promise<MailResulta
   } catch (e) {
     const melding = e instanceof Error ? e.message : "Onbekende SMTP-fout";
     console.error(`[bulk-import/mailer] Verzending mislukt naar ${input.naar}: ${melding}`);
+    return { status: "fout", gesimuleerd: false, melding };
+  }
+}
+
+// -----------------------------------------------------------------------------
+// De toegangsmail: het bericht dat een deelnemer krijgt nadat hij aan het einde
+// van zijn afname een e-mailadres opgaf. Het eindscherm belooft dat bericht
+// uitdrukkelijk ("Stuur mij mijn persoonlijke toegang"), dus het moet er ook
+// werkelijk komen. De tekst staat in server/toegangsmail.ts; de weg naar buiten
+// is dezelfde als bij de uitnodiging: Brevo over HTTPS wanneer er een sleutel
+// staat, anders SMTP, en anders wordt er niets verstuurd en zegt de status dat.
+// -----------------------------------------------------------------------------
+export async function verstuurToegangsmail(input: ToegangsmailVerzending): Promise<MailResultaat> {
+  const { onderwerp, tekst } = bouwToegangsmail({
+    naam: input.naam,
+    link: input.link,
+    code: input.code,
+    instrument: input.instrument,
+    taal: input.taal,
+  });
+  const from = afzenderVoor(input.from);
+
+  if (isSimulatiemodus()) {
+    console.log(
+      `[mailer] SIMULATIE — toegangsmail NIET verstuurd. naar=${input.naar} van=${from} onderwerp="${onderwerp}"`,
+    );
+    return { status: "gesimuleerd", gesimuleerd: true };
+  }
+
+  if (brevoApiGeconfigureerd()) {
+    return verstuurViaBrevoApi({
+      from,
+      naar: input.naar,
+      naam: input.naam,
+      subject: onderwerp,
+      text: tekst,
+    });
+  }
+
+  try {
+    await getTransporter().sendMail({ from, to: input.naar, subject: onderwerp, text: tekst });
+    return { status: "verstuurd", gesimuleerd: false };
+  } catch (e) {
+    const melding = e instanceof Error ? e.message : "Onbekende SMTP-fout";
+    console.error(`[mailer] Toegangsmail mislukt naar ${input.naar}: ${melding}`);
     return { status: "fout", gesimuleerd: false, melding };
   }
 }
