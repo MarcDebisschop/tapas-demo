@@ -36,7 +36,7 @@
  *   GET  /api/bestuur/boekhoudexport.csv         — boekhoudexport CSV
  */
 
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { storage, CreditError, CREDITPAKKETTEN } from "../storage";
 import {
   insertOrganisatieSchema,
@@ -51,7 +51,6 @@ import {
 } from "@shared/schema";
 import { isTalentFocusConstruct } from "@shared/talent-constructs";
 import { renderFactuurPdf } from "../facturen/factuur-pdf";
-import { vereisAdmin } from "../admin-guard";
 import { vereisPrior, vereisScope, scopeVanVerzoek, valtBinnenScope } from "../scope-guard";
 
 // Facturatie-uitbreiding: leid de effectieve betaalstatus af. Een 'openstaande'
@@ -74,9 +73,55 @@ function creditsUitPayload(pakketId?: string, credits?: number): number | null {
   return null;
 }
 
+// ---------------------------------------------------------------------------
+// Twee gedeelde hulpjes voor de financiele paden.
+//
+// De reden dat ze hier staan en niet per route herhaald worden: een beperking
+// die op tien plaatsen los geschreven wordt, is een beperking die op de elfde
+// plaats vergeten wordt. Elke lijst gaat door `lijstFilter`, elk los document
+// door `magDocument`, en er is precies EEN plaats in dit bestand die
+// `req.query.organisatieId` leest.
+// ---------------------------------------------------------------------------
+
+/**
+ * Het organisatiefilter voor een lijstpad.
+ *
+ * De prior mag vrij filteren of alles opvragen. Een organisatie krijgt haar
+ * eigen nummer opgelegd; vraagt ze om een ander nummer, dan wordt dat
+ * GEWEIGERD en niet stil vervangen. Stil vervangen zou de oproeper laten
+ * denken dat zijn filter is toegepast terwijl er iets anders wordt getoond.
+ */
+function lijstFilter(req: Request): { ok: true; orgId?: number } | { ok: false } {
+  const scope = scopeVanVerzoek(req);
+  const ruw = req.query.organisatieId;
+  const gevraagd = ruw === undefined || ruw === "" ? undefined : Number(ruw);
+  if (scope.soort === "prior") return { ok: true, orgId: gevraagd };
+  // Scope "geen" hoort de middleware al te hebben afgewezen. Komt het hier
+  // toch, dan weigeren we; een terugval op "toon alles" zou het gat dat we
+  // dichten opnieuw openen.
+  if (scope.soort === "geen") return { ok: false };
+  if (gevraagd !== undefined && gevraagd !== scope.organisatieId) return { ok: false };
+  return { ok: true, orgId: scope.organisatieId };
+}
+
+/**
+ * Mag deze oproeper dit document zien? Een document van een andere organisatie
+ * bestaat voor hem niet: 404 en niet 403, want 403 zou verklappen DAT het
+ * document bestaat en dat is op zich al een gegeven over een andere klant.
+ */
+function magDocument(req: Request, record: { organisatieId?: number | null } | undefined): boolean {
+  if (!record) return false;
+  return valtBinnenScope(scopeVanVerzoek(req), record.organisatieId ?? null);
+}
+
+const NIET_GEVONDEN = { error: "Niet gevonden" };
+const VREEMD_FILTER = { error: "U kunt enkel de gegevens van uw eigen organisatie opvragen." };
+
 export function registerFinancieelRoutes(app: Express): void {
   // --- Creditpakketten (config) ---
-  app.get("/api/creditpakketten", vereisAdmin, (_req, res) => {
+  // Geen klantgegevens, maar wel achter een scope-bewuste guard: een
+  // organisatie mag zien wat ze kan afnemen, een onbekende bezoeker niet.
+  app.get("/api/creditpakketten", vereisScope, (_req, res) => {
     res.json(CREDITPAKKETTEN);
   });
 
@@ -105,7 +150,8 @@ export function registerFinancieelRoutes(app: Express): void {
   });
 
   // --- Organisatie aanmaken ---
-  app.post("/api/organisaties", vereisAdmin, async (req, res) => {
+  // Een nieuwe klant aanmaken is platformbeheer.
+  app.post("/api/organisaties", vereisPrior, async (req, res) => {
     const parsed = insertOrganisatieSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
@@ -221,7 +267,9 @@ export function registerFinancieelRoutes(app: Express): void {
   });
 
   // --- Credits handmatig opladen ---
-  app.post("/api/credits/opladen", vereisAdmin, async (req, res) => {
+  // Geld toekennen kan alleen de hoofdbeheerder. Zou een organisatie hier
+  // langs kunnen, dan kende ze zichzelf onbeperkt credits toe.
+  app.post("/api/credits/opladen", vereisPrior, async (req, res) => {
     const parsed = laadCreditsSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
@@ -234,7 +282,7 @@ export function registerFinancieelRoutes(app: Express): void {
   });
 
   // --- Credits overdragen tussen organisaties ---
-  app.post("/api/credits/overdracht", vereisAdmin, async (req, res) => {
+  app.post("/api/credits/overdracht", vereisPrior, async (req, res) => {
     const parsed = overdrachtSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
@@ -250,23 +298,26 @@ export function registerFinancieelRoutes(app: Express): void {
   });
 
   // --- Creditgrootboek (transacties), optioneel gefilterd op organisatie ---
-  app.get("/api/credits/transacties", vereisAdmin, async (req, res) => {
-    const orgId = req.query.organisatieId ? Number(req.query.organisatieId) : undefined;
-    res.json(await storage.listTransacties(orgId));
+  app.get("/api/credits/transacties", vereisScope, async (req, res) => {
+    const filter = lijstFilter(req);
+    if (!filter.ok) return res.status(403).json(VREEMD_FILTER);
+    res.json(await storage.listTransacties(filter.orgId));
   });
 
   // --- Billers (facturerende entiteiten) ---
-  app.get("/api/billers", vereisAdmin, async (_req, res) => {
+  // De facturerende entiteit is TaPasCity zelf; die gegevens gaan een klant
+  // niet aan.
+  app.get("/api/billers", vereisPrior, async (_req, res) => {
     res.json(await storage.listBillers());
   });
 
-  app.get("/api/billers/actief", vereisAdmin, async (_req, res) => {
+  app.get("/api/billers/actief", vereisPrior, async (_req, res) => {
     const b = await storage.getActieveBiller();
     if (!b) return res.status(404).json({ error: "Geen actieve biller" });
     res.json(b);
   });
 
-  app.post("/api/billers", vereisAdmin, async (req, res) => {
+  app.post("/api/billers", vereisPrior, async (req, res) => {
     const parsed = insertBillerSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
@@ -276,7 +327,7 @@ export function registerFinancieelRoutes(app: Express): void {
   });
 
   // Entiteitswissel: maak één biller actief (sluit de vorige af).
-  app.post("/api/billers/:id/activeer", vereisAdmin, async (req, res) => {
+  app.post("/api/billers/:id/activeer", vereisPrior, async (req, res) => {
     const id = Number(req.params.id);
     const b = await storage.activeerBiller(id);
     if (!b) return res.status(404).json({ error: "Biller niet gevonden" });
@@ -286,7 +337,7 @@ export function registerFinancieelRoutes(app: Express): void {
   // -------------------------------------------------------------------------
   // Facturatie-uitbreiding — huisstijl per biller (logo, kleur, footer)
   // -------------------------------------------------------------------------
-  app.put("/api/billers/:id/huisstijl", vereisAdmin, async (req, res) => {
+  app.put("/api/billers/:id/huisstijl", vereisPrior, async (req, res) => {
     const parsed = billerHuisstijlSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
@@ -299,12 +350,17 @@ export function registerFinancieelRoutes(app: Express): void {
   // -------------------------------------------------------------------------
   // Facturatie-uitbreiding — huisstijl-override per organisatie
   // -------------------------------------------------------------------------
-  app.put("/api/organisaties/:id/huisstijl", vereisAdmin, async (req, res) => {
+  app.put("/api/organisaties/:id/huisstijl", vereisScope, async (req, res) => {
+    const id = Number(req.params.id);
+    // Een organisatie past haar eigen huisstijl aan en die van niemand anders.
+    if (!valtBinnenScope(scopeVanVerzoek(req), id)) {
+      return res.status(404).json({ error: "Organisatie niet gevonden" });
+    }
     const parsed = organisatieHuisstijlSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
     }
-    const o = await storage.updateOrganisatieHuisstijl(Number(req.params.id), parsed.data);
+    const o = await storage.updateOrganisatieHuisstijl(id, parsed.data);
     if (!o) return res.status(404).json({ error: "Organisatie niet gevonden" });
     res.json(o);
   });
@@ -313,12 +369,17 @@ export function registerFinancieelRoutes(app: Express): void {
   // Fase C2 — Betaalintegratie (Mollie) & credits opladen via betaling
   // =========================================================================
 
-  app.post("/api/betalingen", vereisAdmin, async (req, res) => {
+  app.post("/api/betalingen", vereisScope, async (req, res) => {
     const parsed = startBetalingSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
     }
     const { organisatieId, pakketId, credits } = parsed.data;
+    // Een organisatie start een betaling voor zichzelf; een betaling op naam
+    // van een andere klant zou de facturatie op de verkeerde naam zetten.
+    if (!valtBinnenScope(scopeVanVerzoek(req), organisatieId)) {
+      return res.status(404).json({ error: "Organisatie niet gevonden" });
+    }
     const org = await storage.getOrganisatie(organisatieId);
     if (!org) return res.status(404).json({ error: "Organisatie niet gevonden" });
     const aantal = creditsUitPayload(pakketId, credits);
@@ -327,8 +388,9 @@ export function registerFinancieelRoutes(app: Express): void {
     res.json(betaling);
   });
 
-  // Webhook-equivalent: bevestig een geslaagde betaling.
-  app.post("/api/betalingen/:id/bevestig", vereisAdmin, async (req, res) => {
+  // Webhook-equivalent: bevestig een geslaagde betaling. Bevestigen kent
+  // credits toe en blijft daarom bij de hoofdbeheerder.
+  app.post("/api/betalingen/:id/bevestig", vereisPrior, async (req, res) => {
     const id = Number(req.params.id);
     const methode = typeof req.body?.methode === "string" ? req.body.methode : undefined;
     try {
@@ -342,21 +404,22 @@ export function registerFinancieelRoutes(app: Express): void {
   });
 
   // Markeer een betaling als mislukt.
-  app.post("/api/betalingen/:id/mislukt", vereisAdmin, async (req, res) => {
+  app.post("/api/betalingen/:id/mislukt", vereisPrior, async (req, res) => {
     const id = Number(req.params.id);
     const b = await storage.markeerBetalingMislukt(id);
     if (!b) return res.status(404).json({ error: "Betaling niet gevonden" });
     res.json(b);
   });
 
-  app.get("/api/betalingen", vereisAdmin, async (req, res) => {
-    const orgId = req.query.organisatieId ? Number(req.query.organisatieId) : undefined;
-    res.json(await storage.listBetalingen(orgId));
+  app.get("/api/betalingen", vereisScope, async (req, res) => {
+    const filter = lijstFilter(req);
+    if (!filter.ok) return res.status(403).json(VREEMD_FILTER);
+    res.json(await storage.listBetalingen(filter.orgId));
   });
 
-  app.get("/api/betalingen/:id", vereisAdmin, async (req, res) => {
+  app.get("/api/betalingen/:id", vereisScope, async (req, res) => {
     const b = await storage.getBetaling(Number(req.params.id));
-    if (!b) return res.status(404).json({ error: "Betaling niet gevonden" });
+    if (!magDocument(req, b)) return res.status(404).json({ error: "Betaling niet gevonden" });
     res.json(b);
   });
 
@@ -364,14 +427,15 @@ export function registerFinancieelRoutes(app: Express): void {
   // Fase C2-C3 — Facturen (provider-neutraal, Peppol-klaar)
   // =========================================================================
 
-  app.get("/api/facturen", vereisAdmin, async (req, res) => {
-    const orgId = req.query.organisatieId ? Number(req.query.organisatieId) : undefined;
-    res.json(await storage.listFacturen(orgId));
+  app.get("/api/facturen", vereisScope, async (req, res) => {
+    const filter = lijstFilter(req);
+    if (!filter.ok) return res.status(403).json(VREEMD_FILTER);
+    res.json(await storage.listFacturen(filter.orgId));
   });
 
-  app.get("/api/facturen/:id", vereisAdmin, async (req, res) => {
+  app.get("/api/facturen/:id", vereisScope, async (req, res) => {
     const f = await storage.getFactuur(Number(req.params.id));
-    if (!f) return res.status(404).json({ error: "Factuur niet gevonden" });
+    if (!magDocument(req, f) || !f) return res.status(404).json({ error: "Factuur niet gevonden" });
     res.json({
       ...f,
       billerSnapshot: JSON.parse(f.billerSnapshot),
@@ -382,8 +446,9 @@ export function registerFinancieelRoutes(app: Express): void {
   });
 
   // Download het Peppol/UBL-document als JSON-bestand.
-  app.get("/api/facturen/:id/peppol.json", vereisAdmin, async (req, res) => {
+  app.get("/api/facturen/:id/peppol.json", vereisScope, async (req, res) => {
     const f = await storage.getFactuur(Number(req.params.id));
+    if (!magDocument(req, f)) return res.status(404).json(NIET_GEVONDEN);
     if (!f || !f.peppolDocument) {
       return res.status(404).json({ error: "Geen Peppol-document beschikbaar voor deze factuur" });
     }
@@ -395,7 +460,9 @@ export function registerFinancieelRoutes(app: Express): void {
   // -------------------------------------------------------------------------
   // Facturatie-uitbreiding — betaalstatus handmatig wijzigen
   // -------------------------------------------------------------------------
-  app.patch("/api/facturen/:id/betaalstatus", vereisAdmin, async (req, res) => {
+  // De betaalstatus van een factuur wijzigen is boekhouding en blijft bij de
+  // hoofdbeheerder; een klant kan haar eigen factuur niet op betaald zetten.
+  app.patch("/api/facturen/:id/betaalstatus", vereisPrior, async (req, res) => {
     const parsed = betaalstatusSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
@@ -413,9 +480,9 @@ export function registerFinancieelRoutes(app: Express): void {
   // -------------------------------------------------------------------------
   // Facturatie-uitbreiding — visuele PDF-factuur (huisstijl toegepast)
   // -------------------------------------------------------------------------
-  app.get("/api/facturen/:id/pdf", vereisAdmin, async (req, res) => {
+  app.get("/api/facturen/:id/pdf", vereisScope, async (req, res) => {
     const f = await storage.getFactuur(Number(req.params.id));
-    if (!f) return res.status(404).json({ error: "Factuur niet gevonden" });
+    if (!magDocument(req, f) || !f) return res.status(404).json({ error: "Factuur niet gevonden" });
 
     // Snapshots (bevroren) voor de partij-gegevens; live biller/org voor huisstijl.
     let billerSnap: any = {};
@@ -465,7 +532,8 @@ export function registerFinancieelRoutes(app: Express): void {
   // Fase C4a — Creditnota's
   // =========================================================================
 
-  app.post("/api/creditnotas", vereisAdmin, async (req, res) => {
+  // Een creditnota boekt credits terug en is dus een geldhandeling.
+  app.post("/api/creditnotas", vereisPrior, async (req, res) => {
     const parsed = creditnotaSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
@@ -489,14 +557,17 @@ export function registerFinancieelRoutes(app: Express): void {
     }
   });
 
-  app.get("/api/creditnotas", vereisAdmin, async (req, res) => {
-    const orgId = req.query.organisatieId ? Number(req.query.organisatieId) : undefined;
-    res.json(await storage.listCreditnotas(orgId));
+  app.get("/api/creditnotas", vereisScope, async (req, res) => {
+    const filter = lijstFilter(req);
+    if (!filter.ok) return res.status(403).json(VREEMD_FILTER);
+    res.json(await storage.listCreditnotas(filter.orgId));
   });
 
-  app.get("/api/creditnotas/:id", vereisAdmin, async (req, res) => {
+  app.get("/api/creditnotas/:id", vereisScope, async (req, res) => {
     const c = await storage.getCreditnota(Number(req.params.id));
-    if (!c) return res.status(404).json({ error: "Creditnota niet gevonden" });
+    if (!magDocument(req, c) || !c) {
+      return res.status(404).json({ error: "Creditnota niet gevonden" });
+    }
     res.json({
       ...c,
       billerSnapshot: JSON.parse(c.billerSnapshot),
@@ -506,8 +577,9 @@ export function registerFinancieelRoutes(app: Express): void {
     });
   });
 
-  app.get("/api/creditnotas/:id/peppol.json", vereisAdmin, async (req, res) => {
+  app.get("/api/creditnotas/:id/peppol.json", vereisScope, async (req, res) => {
     const c = await storage.getCreditnota(Number(req.params.id));
+    if (!magDocument(req, c)) return res.status(404).json(NIET_GEVONDEN);
     if (!c || !c.peppolDocument) {
       return res.status(404).json({ error: "Geen Peppol-document beschikbaar voor deze creditnota" });
     }
