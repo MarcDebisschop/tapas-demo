@@ -46,7 +46,7 @@ import {
   bepaalScope,
   verzenderVanVerzoek,
 } from "../scope-guard";
-import { getDefaultDescriptor } from "../registry";
+import { getDefaultDescriptor, getDescriptor } from "../registry";
 import { controleerAfnameVolledig } from "../volledigheid-afname";
 import { schrijfAuditLog } from "../audit-log";
 import { dashboardCodeVanToken, voornaamVanNaam } from "../dashboard-code";
@@ -57,6 +57,12 @@ import { naarItemSleutels } from "../t4teens/antwoordsleutels";
 import { buildT4KidsContract } from "../t4kids/scoring";
 import { z } from "zod";
 import { isDemoModus } from "../demomodus";
+import {
+  instrumentVanAfname,
+  leesContract,
+  magRapportDirectNaAfronden,
+} from "../afname-instrument";
+import { verstuurToegangsmail } from "../bulk-import/mailer";
 
 // Het instrument dat geldt wanneer de client er geen meestuurt.
 //
@@ -573,21 +579,26 @@ export function registerAfnameRoutes(app: Express): void {
       completedAt: new Date().toISOString(),
     });
 
-    // Punt B: T4Teens leidde een afgeronde afname nooit vanzelf tot een
-    // rapport; het deelnemersdashboard bleef op "Rapport in voorbereiding"
-    // staan omdat POST /api/rapporten enkel bereikbaar is met een
-    // beheerderssessie (server/routes/rapporten.ts, vereisScope). Gemeten
-    // (bevindingen-punt-b-rapportontwerp.md): rapportgeneratie verbruikt geen
-    // credits (dat gebeurt al hierboven bij het afronden) en T4Teens heeft een
-    // eigen, synchrone generator zonder AI-duiding, dus dit kan hier veilig
-    // synchroon gebeuren. Enkel voor t4teens; andere instrumenten blijven op
-    // het bestaande, beheerder-gestuurde pad. Een rapportfout mag de afronding
-    // van de afname nooit blokkeren.
-    if (a.instrumentId === "t4teens") {
+    // Een afgeronde afname moet meteen tot een rapport leiden. Zonder rapport
+    // blijft het deelnemersdashboard op "Rapport in voorbereiding" staan en
+    // verschijnt er nooit een bekijk- of downloadknop, want die hangen aan
+    // `a.rapporten.length > 0` (client/src/pages/dashboard.tsx). Een deelnemer
+    // kan zelf niets bouwen: POST /api/rapporten staat achter een
+    // beheerderssessie (server/routes/rapporten.ts, vereisScope).
+    //
+    // Welke instrumenten hier mee mogen, staat in server/afname-instrument.ts:
+    // die met een eigen, synchrone generator. Rapportgeneratie verbruikt geen
+    // credits; dat gebeurt al hierboven bij het afronden. Een rapportfout mag de
+    // afronding van de afname nooit blokkeren.
+    const instrumentVoorRapport = instrumentVanAfname(contract, a.instrumentId);
+    if (magRapportDirectNaAfronden(instrumentVoorRapport)) {
       try {
         await storage.genereerRapport(id, "kompas");
       } catch (e) {
-        console.warn(`[rapport] automatische T4Teens-rapportgeneratie mislukt (afname ${id}):`, e);
+        console.warn(
+          `[rapport] automatische rapportgeneratie mislukt (afname ${id}, instrument ${instrumentVoorRapport}):`,
+          e,
+        );
       }
     }
 
@@ -677,10 +688,44 @@ export function registerAfnameRoutes(app: Express): void {
         await storage.koppelAfnameAanDeelnemer(id, emailRaw);
       }
       const deelnemer = await storage.vindOfMaakDeelnemer(emailRaw, a.taal);
+      const dashboardCode = dashboardCodeVanToken(deelnemer.dashboardToken);
+
+      // Het eindscherm belooft dat de persoonlijke toegang wordt opgestuurd.
+      // Hier wordt die belofte waargemaakt. De basis-URL komt van het scherm
+      // zelf mee, dezelfde afspraak als bij de uitnodigingsmail: de server
+      // kent het publieke adres niet uit zichzelf.
+      //
+      // Het versturen mag het koppelen nooit tegenhouden. Lukt het niet, of
+      // staat er geen verzendweg ingesteld, dan blijven de link en de code op
+      // het scherm de weg naar binnen; `mailStatus` vertelt het scherm welke
+      // van de twee het is, zodat er niets beweerd wordt dat niet waar is.
+      const origin =
+        typeof req.body?.origin === "string" ? req.body.origin.trim().replace(/\/+$/, "") : "";
+      const dashboardLink = `${origin}/#/dashboard/${deelnemer.dashboardToken}`;
+      const instrumentId = instrumentVanAfname(leesContract(a.generatorContract), a.instrumentId);
+      const descriptor = (instrumentId && getDescriptor(instrumentId)) || getDefaultDescriptor();
+
+      let mailStatus: "verstuurd" | "gesimuleerd" | "fout" = "fout";
+      try {
+        const resultaat = await verstuurToegangsmail({
+          naar: emailRaw,
+          taal: a.taal,
+          naam: deelnemer.naam ?? a.name ?? "",
+          link: dashboardLink,
+          code: dashboardCode,
+          instrument: descriptor.name,
+        });
+        mailStatus = resultaat.status;
+      } catch (e) {
+        console.warn(`[toegangsmail] versturen mislukt (afname ${id}):`, e);
+        mailStatus = "fout";
+      }
+
       return res.json({
         dashboardToken: deelnemer.dashboardToken,
-        dashboardCode: dashboardCodeVanToken(deelnemer.dashboardToken),
+        dashboardCode,
         voornaam: voornaamVanNaam(deelnemer.naam),
+        mailStatus,
       });
     } catch {
       return res.status(500).json({ error: "Koppelen aan dashboard mislukt." });

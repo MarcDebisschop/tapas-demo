@@ -35,6 +35,8 @@ import { bouwGalerij, galerijLabels } from "../galerij";
 import { bouwModule, MODULE_IDS } from "../modules";
 import { bouwUitlegScript, VLAAMSE_STEM_PROMPT, type Toon } from "../uitleg";
 import { isDemoModus } from "../demomodus";
+import { instrumentVanAfname, leesContract } from "../afname-instrument";
+import { getDescriptor, getDefaultDescriptor } from "../registry";
 
 // De Python-LLM-sidecar draait op poort 8000 binnen de sandbox.
 const CHAT_SIDECAR_URL = process.env.TAPAS_CHAT_SIDECAR ?? "http://127.0.0.1:8000";
@@ -210,6 +212,16 @@ export function registerDashboardRoutes(app: Express): void {
     const recentste = voltooid[0] ?? null;
     const dashboard = recentste ? bouwDashboardData(recentste.generatorContract, taal) : null;
 
+    // De kaart op het dashboard zet boven elke afname de naam van het
+    // instrument, gevolgd door de bedrijfsnaam (client/src/pages/dashboard.tsx).
+    // Zonder instrumentNaam blijft daar een losse punt met enkel het bedrijf
+    // staan. De naam komt uit server/registry.ts, dezelfde eenduidige bron als
+    // de vragenlijst- en rapportroutes.
+    //
+    // Welk instrument het is, staat in het bevroren contract; de kolom is de
+    // terugval, want in oudere gegevens is die leeg. Kent de registry het
+    // instrument niet, dan geldt de standaardbeschrijving, zodat er altijd een
+    // leesbare naam op de kaart staat.
     const afnameLijst = [] as Array<{
       id: number;
       naam: string;
@@ -217,10 +229,14 @@ export function registerDashboardRoutes(app: Express): void {
       status: string;
       taal: string;
       voltooidOp: string | null;
+      instrumentId: string;
+      instrumentNaam: string;
       rapporten: Array<{ id: number; variant: string; titel: string }>;
     }>;
     for (const a of afnames) {
       const raps = await storage.listRapporten(a.id);
+      const instrumentId = instrumentVanAfname(leesContract(a.generatorContract), a.instrumentId);
+      const descriptor = (instrumentId && getDescriptor(instrumentId)) || getDefaultDescriptor();
       afnameLijst.push({
         id: a.id,
         naam: a.name,
@@ -228,6 +244,8 @@ export function registerDashboardRoutes(app: Express): void {
         status: a.status,
         taal: a.taal,
         voltooidOp: a.completedAt ?? null,
+        instrumentId: descriptor.instrumentId,
+        instrumentNaam: descriptor.name,
         rapporten: raps.map((r) => ({ id: r.id, variant: r.variant, titel: r.titel })),
       });
     }

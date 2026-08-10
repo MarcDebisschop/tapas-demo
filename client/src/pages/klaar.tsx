@@ -16,6 +16,10 @@ interface KoppelResultaat {
   dashboardToken: string;
   dashboardCode: string;
   voornaam: string | null;
+  // Of het bericht met de persoonlijke toegang werkelijk de deur uit is.
+  // "gesimuleerd" en "fout" betekenen allebei: er is niets aangekomen, en dan
+  // zegt het scherm dat ook, in plaats van een verzending te beweren.
+  mailStatus?: "verstuurd" | "gesimuleerd" | "fout";
 }
 
 // K-1 (audit): het koppelpad eist een bezitsbewijs. Dat bewijs is sinds de derde
@@ -69,6 +73,10 @@ export default function Klaar() {
       const res = await apiRequest("POST", `/api/afnames/${id}/koppel-dashboard`, {
         email: adres,
         bezitsToken: bewijs,
+        // De server kent het publieke adres van deze omgeving niet uit
+        // zichzelf; zonder deze basis-URL zou de link in het bericht nergens
+        // heen wijzen. Dezelfde afspraak als bij de uitnodigingsmail.
+        origin: typeof window !== "undefined" ? window.location.origin : "",
       });
       return (await res.json()) as KoppelResultaat;
     },
@@ -161,6 +169,12 @@ export default function Klaar() {
             <CardContent className="p-5">
               <h2 className="text-base font-semibold text-foreground">{t("klaar_toegang_titel")}</h2>
               <p className="mt-1 text-sm text-muted-foreground">{t("klaar_dashboard_uitleg")}</p>
+
+              <p className="mt-3 text-sm text-muted-foreground" data-testid="text-mail-status">
+                {resultaat.mailStatus === "verstuurd"
+                  ? t("klaar_mail_verstuurd")
+                  : t("klaar_mail_niet_verstuurd")}
+              </p>
 
               <div className="mt-4">
                 <div className="text-xs text-muted-foreground">{t("klaar_dashboard_link_label")}</div>
