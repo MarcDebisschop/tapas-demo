@@ -1,0 +1,340 @@
+{
+  "regel": "Elke afleider is een onware variant van het feit waar de stam over gaat. Geen ware bewering over een ander feit. Elke afleider is een denkfout die iemand werkelijk kan maken, en is onjuist volgens ITEMBRON-T4P-KENNISCHECK.md.",
+  "valse_treffers": [
+    {
+      "nummer": "B04",
+      "corpusindex": 23,
+      "reden": "De opties zijn de drie labels van driverRisk (hoog, matig, laag) plus 'geen label'. Dat is de juiste vorm voor dit feit: alle vier gaan over dezelfde grens. Mijn meting sloeg aan omdat het woord 'hoog' ook bij B05 de sleutel is, maar labels zijn eenwoordig en moeten in beide items voorkomen. Ongewijzigd laten."
+    },
+    {
+      "nummer": "B05",
+      "corpusindex": 24,
+      "reden": "Zelfde grond als B04, nu voor de drie consistentielabels. De grens >= 80 wordt zuiver getoetst. Ongewijzigd laten."
+    },
+    {
+      "nummer": "D09",
+      "corpusindex": 56,
+      "reden": "De drie afleiders keren de richting van spreadPart om of beperken de berekening tot een andere selectie. Dat zijn precies denkfouten op de stam. Mijn meting sloeg aan omdat de sleutel de woorden 'spreadPart' en 'energie' uit de stam herhaalt, wat hier onvermijdelijk is. Ongewijzigd laten."
+    },
+    {
+      "nummer": "E02",
+      "corpusindex": 65,
+      "reden": "De vier opties zijn vier AVG-rechtsgronden, elk met een geloofwaardige motivering. Dit is een goed item. De meting sloeg aan op de woorden 'bekwaamheidsproef' en 'licentie'. Ongewijzigd laten."
+    }
+  ],
+  "voorstellen": [
+    {
+      "nummer": "A01",
+      "corpusindex": 0,
+      "stam_ongewijzigd": true,
+      "sleutel": "A",
+      "opties": [
+        "Drivers hebben energiemodus item; energie wordt alleen bij de gekozen meest en minst bevraagd.",
+        "Drivers hebben energiemodus block; energie wordt per blok bevraagd en niet per uitspraak.",
+        "Drivers hebben energiemodus item; energie wordt bij elke uitspraak van het blok bevraagd.",
+        "Drivers hebben energiemodus item; energie wordt alleen bij de gekozen minst herkenbare uitspraak bevraagd."
+      ],
+      "waarom_onjuist": {
+        "B": "§1.1: drivers hebben modus item, niet block.",
+        "C": "§1: de energievraag is beperkt tot de gekozen meest en minst, niet alle uitspraken.",
+        "D": "§1: het zijn beide gekozen uitspraken, meest én minst."
+      },
+      "nieuwe_toelichtingFout": "De denkfouten zijn: drivers een blokmodus geven, of de energievraag uitbreiden naar alle uitspraken van het blok in plaats van alleen de twee gekozen uitspraken."
+    },
+    {
+      "nummer": "A03",
+      "corpusindex": 2,
+      "stam_ongewijzigd": false,
+      "nieuwe_stam": "Bij welke families wordt de energie per blok bevraagd in plaats van per afzonderlijke uitspraak?",
+      "reden_nieuwe_stam": "De oude stam noemde de uitkomst al ('dat Talent-foci en Talent-versnellers dezelfde energiemodus hebben') en het juiste antwoord herhaalde die bewering woordelijk. Het item was te maken zonder kennis van het instrument.",
+      "sleutel": "B",
+      "opties": [
+        "Bij Drivers en Talent-foci.",
+        "Bij Talent-foci en Talent-versnellers.",
+        "Bij Drivers en Talent-versnellers.",
+        "Bij alle drie de families."
+      ],
+      "waarom_onjuist": {
+        "A": "§1.1: Drivers hebben modus item.",
+        "C": "§1.1: Drivers hebben modus item.",
+        "D": "§1.1: Drivers vormen de uitzondering."
+      }
+    },
+    {
+      "nummer": "A04",
+      "corpusindex": 3,
+      "stam_ongewijzigd": true,
+      "sleutel": "C",
+      "opties": [
+        "Na afronding van het blok waarin de uitspraak stond.",
+        "Bij elke uitspraak van het blok, ongeacht wat er gekozen is.",
+        "Bij de gekozen meest en minst herkenbare uitspraak.",
+        "Alleen bij de gekozen meest herkenbare uitspraak, niet bij de minst."
+      ],
+      "waarom_onjuist": {
+        "A": "§1.1: dat is de blokmodus van de twee talentfamilies.",
+        "B": "§1: de bevraging is beperkt tot de gekozen uitspraken.",
+        "D": "§1: ook bij de minst herkenbare uitspraak."
+      },
+      "nieuwe_toelichtingFout": "De denkfouten zijn: de blokmodus van de talentfamilies op een driver toepassen, de energievraag naar alle uitspraken uitbreiden, of hem tot de meest herkenbare beperken. Het zijn beide gekozen uitspraken."
+    },
+    {
+      "nummer": "A08",
+      "corpusindex": 7,
+      "stam_ongewijzigd": true,
+      "sleutel": "B",
+      "opties": [
+        "Talent-foci hebben zes constructen en veertien blokken; Talent-versnellers vijf constructen en tien blokken.",
+        "Talent-foci hebben vijf constructen en tien blokken; Talent-versnellers zes constructen en veertien blokken.",
+        "Beide families hebben vijf constructen; alleen het aantal blokken verschilt, tien tegenover veertien.",
+        "Talent-foci hebben vijf constructen en veertien blokken; Talent-versnellers zes constructen en tien blokken."
+      ],
+      "waarom_onjuist": {
+        "A": "§1.1: de aantallen staan omgekeerd.",
+        "C": "§1.1: Talent-versnellers hebben zes constructen, niet vijf.",
+        "D": "§1.1: de blokaantallen staan gekruist."
+      },
+      "nieuwe_toelichtingFout": "De denkfout is de aantallen omdraaien of kruisen. Talent-foci hebben vijf constructen en tien blokken, Talent-versnellers zes en veertien."
+    },
+    {
+      "nummer": "A17",
+      "corpusindex": 16,
+      "stam_ongewijzigd": true,
+      "sleutel": "B",
+      "opties": [
+        "0,63–0,84.",
+        "0,90–0,97.",
+        "0,70–0,89.",
+        "0,55–0,78."
+      ],
+      "waarom_onjuist": {
+        "A": "§3.1: dat is de reeks voor de energieschalen onder de talentversnellers.",
+        "C": "§3.1: geen gerapporteerde reeks.",
+        "D": "§3.1: geen gerapporteerde reeks."
+      },
+      "nieuwe_toelichtingFout": "De denkfout is de reeks van de energieschalen onder de talentversnellers voor die van de driverschalen houden, of een reeks noemen die de bron niet rapporteert."
+    },
+    {
+      "nummer": "C01",
+      "corpusindex": 32,
+      "stam_ongewijzigd": false,
+      "nieuwe_stam": "Een coach wil de factoranalyse aanhalen als bevestiging uit de wetenschappelijke literatuur. Wat is volgens de onderbouwing de stand van zaken?",
+      "reden_nieuwe_stam": "De oude stam bevatte de woorden 'extern gepubliceerd' die in het juiste antwoord terugkwamen, terwijl de drie afleiders over andere onderwerpen gingen.",
+      "sleutel": "D",
+      "opties": [
+        "De analyse is confirmatorisch en in een vaktijdschrift verschenen.",
+        "De analyse is exploratief en als bijlage bij een publicatie van de Universiteit Antwerpen verschenen.",
+        "De analyse is confirmatorisch, maar de resultaten zijn niet vrijgegeven.",
+        "De analyse is exploratief en niet extern gepubliceerd."
+      ],
+      "waarom_onjuist": {
+        "A": "§3.1: exploratief, en niet extern gepubliceerd.",
+        "B": "§3.1: niet extern gepubliceerd, ook niet als bijlage.",
+        "C": "§3.1: de analyse is exploratief, niet confirmatorisch."
+      },
+      "nieuwe_toelichtingFout": "De denkfouten zijn: de analyse confirmatorisch noemen, of haar als gepubliceerd voorstellen. Ze is exploratief en niet extern gepubliceerd."
+    },
+    {
+      "nummer": "C02",
+      "corpusindex": 33,
+      "stam_ongewijzigd": true,
+      "sleutel": "A",
+      "opties": [
+        "Er is geen betrouwbaarheidscoëfficiënt, zoals Cronbachs alfa of McDonalds omega, berekend of gerapporteerd.",
+        "Cronbachs alfa is berekend maar niet gerapporteerd.",
+        "De factorladingen mogen als ondergrens van Cronbachs alfa worden gelezen.",
+        "McDonalds omega is berekend voor de driverschalen, Cronbachs alfa niet."
+      ],
+      "waarom_onjuist": {
+        "B": "§3.2: geen enkele coëfficiënt is berekend.",
+        "C": "§3.1 en §3.2: een factorlading is geen betrouwbaarheidsmaat en de bron legt dat verband niet.",
+        "D": "§3.2: geen van beide is berekend."
+      },
+      "nieuwe_toelichtingFout": "De denkfouten zijn: aannemen dat een coëfficiënt wel berekend maar niet gerapporteerd is, of een factorlading als betrouwbaarheidsmaat lezen. Een lading en een coëfficiënt zijn verschillende grootheden."
+    },
+    {
+      "nummer": "C04",
+      "corpusindex": 35,
+      "stam_ongewijzigd": true,
+      "sleutel": "B",
+      "opties": [
+        "De stabiliteit over tijd is gemeten op de 1.858 profielen van de factoranalyse.",
+        "De stabiliteit over tijd is niet gemeten, omdat er geen test-hertestonderzoek is.",
+        "Een test-hertestonderzoek is uitgevoerd, maar de coëfficiënt is niet gerapporteerd.",
+        "De factorladingen van 0,90–0,97 tonen aan dat de uitkomst over tijd stabiel is."
+      ],
+      "waarom_onjuist": {
+        "A": "§3.2: stabiliteit over tijd is niet gemeten; de factoranalyse meet iets anders.",
+        "C": "§3.2: er is geen test-hertestonderzoek.",
+        "D": "§3.1 en §3.2: een factorlading zegt niets over stabiliteit over tijd."
+      },
+      "nieuwe_toelichtingFout": "De denkfouten zijn: een factoranalyse voor een stabiliteitsmeting houden, of een factorlading als bewijs van stabiliteit over tijd lezen. Er is geen test-hertestonderzoek."
+    },
+    {
+      "nummer": "C06",
+      "corpusindex": 37,
+      "stam_ongewijzigd": false,
+      "nieuwe_stam": "Een trainer verwijst een collega naar de technische verantwoording van de factoranalyse. Wat kan die collega volgens de onderbouwing inzien?",
+      "reden_nieuwe_stam": "De oude stam somde de drie onderdelen op die ook in het juiste antwoord stonden, terwijl de afleiders over IVOC en de expertvalidatie gingen.",
+      "sleutel": "D",
+      "opties": [
+        "Het extractiemodel en de fit-indices, maar niet de volledige factormatrix.",
+        "De volledige factormatrix, omdat die bij de Universiteit Antwerpen opvraagbaar is.",
+        "Alle drie de onderdelen, via het rapport van sectorfonds IVOC.",
+        "Geen van de drie: extractiemodel, fit-indices en volledige factormatrix zijn niet gepubliceerd."
+      ],
+      "waarom_onjuist": {
+        "A": "§3.1: alle drie zijn niet gepubliceerd.",
+        "B": "§3.1: de factormatrix is niet gepubliceerd; de bron noemt geen opvraagrecht.",
+        "C": "§3.1: IVOC keek de statistische vormgeving na en publiceerde geen rapport met deze onderdelen."
+      },
+      "nieuwe_toelichtingFout": "De denkfouten zijn: aannemen dat een deel van de technische verantwoording wel beschikbaar is, of haar bij de Universiteit Antwerpen of bij IVOC situeren. Alle drie de onderdelen zijn niet gepubliceerd."
+    },
+    {
+      "nummer": "C07",
+      "corpusindex": 38,
+      "stam_ongewijzigd": false,
+      "nieuwe_stam": "Een adviseur wil verwijzen naar de beoordeling door externe experts. Welke formulering blijft binnen wat de onderbouwing vermeldt?",
+      "reden_nieuwe_stam": "De oude stam noemde 'afzonderlijk gepubliceerd rapport', wat in het juiste antwoord terugkwam, terwijl de afleiders over IVOC, betrouwbaarheid en normgroep gingen.",
+      "sleutel": "A",
+      "opties": [
+        "Vier onafhankelijke experts voerden een externe inhoudsvalidatie uit; hun bevindingen zijn niet als afzonderlijk rapport gepubliceerd.",
+        "Vier onafhankelijke experts voerden een externe inhoudsvalidatie uit en publiceerden hun bevindingen in een afzonderlijk rapport.",
+        "Twee Vlaamse experts voerden de validatie uit; de twee Nederlandse keken alleen de taal na.",
+        "De externe inhoudsvalidatie werd uitgevoerd door sectorfonds IVOC onder supervisie van prof. dr. Peter Theuns."
+      ],
+      "waarom_onjuist": {
+        "B": "§3.1: de bevindingen zijn niet als afzonderlijk rapport gepubliceerd.",
+        "C": "§3.1: alle vier voerden de inhoudsvalidatie uit; de bron kent geen taalrol toe.",
+        "D": "§3.1: IVOC keek de statistische vormgeving na en deed de inhoudsvalidatie niet."
+      },
+      "nieuwe_toelichtingFout": "De denkfouten zijn: de bevindingen als gepubliceerd rapport voorstellen, de vier experts een verschillende rol toekennen, of de inhoudsvalidatie aan IVOC toeschrijven."
+    },
+    {
+      "nummer": "C08",
+      "corpusindex": 39,
+      "stam_ongewijzigd": true,
+      "sleutel": "B",
+      "opties": [
+        "IVOC heeft de exploratieve factoranalyse uitgevoerd.",
+        "IVOC heeft de statistische vormgeving nagekeken.",
+        "IVOC heeft de inhoudsvalidatie door de vier onafhankelijke experts gecoördineerd.",
+        "IVOC heeft de interpretatiedrempels geijkt op een normgroep."
+      ],
+      "waarom_onjuist": {
+        "A": "§3.1: de factoranalyse liep met de Universiteit Antwerpen.",
+        "C": "§3.1: de expertvalidatie stond onder supervisie van prof. dr. Peter Theuns.",
+        "D": "§3.2: er is geen normgroep; drempels rusten op inhoudelijk oordeel."
+      },
+      "nieuwe_toelichtingFout": "De denkfout is IVOC een rol geven die de bron elders belegt: de factoranalyse liep met de Universiteit Antwerpen, de inhoudsvalidatie onder prof. dr. Peter Theuns, en een ijking op een normgroep bestaat niet."
+    },
+    {
+      "nummer": "C09",
+      "corpusindex": 40,
+      "stam_ongewijzigd": true,
+      "sleutel": "C",
+      "opties": [
+        "De samenhang met functioneren is onderzocht, die met welbevinden en verloop niet.",
+        "De samenhang met verloop is aangetoond op de 1.858 profielen van de factoranalyse.",
+        "Samenhang met uitkomsten buiten het instrument, waaronder functioneren, welbevinden en verloop, is niet onderzocht.",
+        "De samenhang met deze drie uitkomsten is vastgesteld door de vier onafhankelijke experts."
+      ],
+      "waarom_onjuist": {
+        "A": "§3.2: geen van de drie is onderzocht.",
+        "B": "§3.2: verloop is niet onderzocht; de factoranalyse meet iets anders.",
+        "D": "§3.1: de experts deden inhoudsvalidatie, geen onderzoek naar uitkomsten."
+      },
+      "nieuwe_toelichtingFout": "De denkfouten zijn: één van de drie uitkomsten als wel onderzocht voorstellen, of de factoranalyse of de expertvalidatie voor onderzoek naar uitkomsten buiten het instrument houden."
+    },
+    {
+      "nummer": "C10",
+      "corpusindex": 41,
+      "stam_ongewijzigd": true,
+      "sleutel": "D",
+      "opties": [
+        "Het resultaat geldt als vaststaand oordeel zolang de vragenlijst zorgvuldig is ingevuld.",
+        "Het resultaat geldt als vaststaand oordeel wanneer een tweede afname hetzelfde beeld geeft.",
+        "Het resultaat is een momentopname, maar mag binnen zes maanden na afname als vaststaand oordeel gelden.",
+        "Een resultaat is een momentopname op het ogenblik van afname, geen vaststaand oordeel over iemands mogelijkheden."
+      ],
+      "waarom_onjuist": {
+        "A": "§3.3: zorgvuldig invullen verandert de claimgrens niet.",
+        "B": "§3.2 en §3.3: stabiliteit over tijd is niet gemeten, en de claimgrens kent geen bevestigingsregel.",
+        "C": "§3.3: de claimgrens noemt geen termijn waarna een momentopname vaststaand wordt."
+      },
+      "nieuwe_toelichtingFout": "De denkfouten zijn: een momentopname vaststaand maken door zorgvuldig invullen, door een tweede afname, of binnen een termijn. De claimgrens kent geen van die drie uitzonderingen."
+    },
+    {
+      "nummer": "C11",
+      "corpusindex": 42,
+      "stam_ongewijzigd": true,
+      "sleutel": "A",
+      "sleutel_ingekort": "Het oude juiste antwoord herhaalde de stam bijna woordelijk ('als enige basis', 'promotie'), waardoor het aanwijsbaar was op woordvorm. De ingekorte formulering staat woordelijk in §3.3: gespreksinstrument, geen beslissingsinstrument.",
+      "opties": [
+        "Nee: het gaat om een gespreksinstrument, niet om een beslissingsinstrument.",
+        "Dat mag, omdat het profiel voor promotiebeslissingen is ontworpen en niet voor aanwerving.",
+        "Dat mag, mits de deelnemer schriftelijk toestemming geeft voor dit gebruik.",
+        "Dat mag niet voor promotie, maar wel voor aanwerving en selectie."
+      ],
+      "waarom_onjuist": {
+        "B": "§3.3: het is geen beslissingsinstrument, voor geen van beide.",
+        "C": "§3.3: de claimgrens is inhoudelijk en wordt niet opgeheven door toestemming.",
+        "D": "§3.3: de claimgrens noemt aanwerving, selectie, promotie en ontslag samen."
+      },
+      "nieuwe_toelichtingFout": "De denkfouten zijn: het profiel voor promotie wél geschikt achten, denken dat toestemming de grens opheft, of de grens tot promotie beperken. De claimgrens noemt aanwerving, selectie, promotie en ontslag samen."
+    },
+    {
+      "nummer": "C14",
+      "corpusindex": 45,
+      "stam_ongewijzigd": true,
+      "sleutel": "C",
+      "opties": [
+        "Hoog begint bij 7,5 en die grens is geijkt op een normgroep.",
+        "Hoog begint bij 7,0; de grens 7,5 geldt alleen in het dashboard.",
+        "Hoog begint bij 7,5, maar alle bandgrenzen zijn conventies van de ontwikkelaar.",
+        "Hoog begint bij 7,5 en het verschil tussen 7,4 en 7,6 is empirisch aangetoond."
+      ],
+      "waarom_onjuist": {
+        "A": "§2.5 en §3.2: de grenzen zijn niet empirisch geijkt en er is geen normgroep.",
+        "B": "§2.5: hoog begint bij 7,5 in de enige bron van waarheid.",
+        "D": "§2.5, woordelijk: er bestaat geen onderzoek waaruit volgt dat een 7,4 wezenlijk anders is dan een 7,6."
+      }
+    },
+    {
+      "nummer": "C15",
+      "corpusindex": 46,
+      "stam_ongewijzigd": true,
+      "sleutel": "D",
+      "opties": [
+        "1.858 T4Professional-profielen en 395 sportprofielen, met prof. dr. Peter Theuns en prof. dr. Guido Van Hal.",
+        "395 T4Professional-profielen en 1.858 sportprofielen, met prof. dr. Guido Van Hal en prof. dr. Stefan Van Dongen.",
+        "1.858 T4Professional-profielen, met prof. dr. Guido Van Hal en prof. dr. Stefan Van Dongen; sportprofielen zijn niet meegenomen.",
+        "1.858 T4Professional-profielen en 395 profielen van het sportinstrument, met prof. dr. Guido Van Hal en prof. dr. Stefan Van Dongen."
+      ],
+      "waarom_onjuist": {
+        "A": "§3.1: prof. dr. Peter Theuns superviseerde de expertvalidatie, hij hoort niet bij de factoranalyse.",
+        "B": "§3.1: de aantallen staan omgekeerd.",
+        "C": "§3.1: de 395 sportprofielen zijn wel meegenomen."
+      },
+      "nieuwe_toelichtingFout": "De denkfouten zijn: de twee aantallen omdraaien, de sportprofielen weglaten, of prof. dr. Peter Theuns bij de factoranalyse plaatsen. Hij superviseerde de externe inhoudsvalidatie."
+    },
+    {
+      "nummer": "C16",
+      "corpusindex": 47,
+      "stam_ongewijzigd": true,
+      "sleutel": "A",
+      "opties": [
+        "Driverschalen 0,90–0,97; energieschalen onder de talentversnellers 0,63–0,84.",
+        "Driverschalen 0,63–0,84; energieschalen onder de talentversnellers 0,90–0,97.",
+        "Driverschalen 0,90–0,97; voor de energieschalen zijn geen ladingen gerapporteerd.",
+        "Beide reeksen liggen tussen 0,90 en 0,97; het verschil zit in het aantal constructen."
+      ],
+      "waarom_onjuist": {
+        "B": "§3.1: de reeksen staan omgekeerd.",
+        "C": "§3.1: voor de energieschalen is 0,63–0,84 gerapporteerd.",
+        "D": "§3.1: de twee reeksen verschillen wel degelijk."
+      },
+      "nieuwe_toelichtingFout": "De denkfouten zijn: de twee reeksen verwisselen, aannemen dat voor de energieschalen niets gerapporteerd is, of beide reeksen gelijkstellen."
+    }
+  ]
+}
