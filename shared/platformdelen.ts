@@ -165,6 +165,32 @@ export const PLATFORMDELEN: Platformdeel[] = [
     },
   },
   {
+    // Module Bekwaamheid — het licentieregister en de licentiecyclus.
+    //
+    // Dit deel regelt wie het beheerscherm van de bekwaamheidsmodule mag zien,
+    // en niet wie een licentie heeft. Dat tweede staat in
+    // `bekwaamheid_licenties` en wordt door `server/bekwaamheid/rechten.ts`
+    // beoordeeld. De twee verwarren zou betekenen dat wie het scherm niet mag
+    // openen, ook zijn licentie kwijt is.
+    id: "bekwaamheid",
+    type: "module",
+    route: "/admin/bekwaamheid",
+    naam: {
+      nl: "Bekwaamheid & licenties",
+      fr: "Compétence et licences",
+      en: "Competence & licences",
+      es: "Competencia y licencias",
+      ru: "Компетентность и лицензии",
+    },
+    omschrijving: {
+      nl: "Register van geaccrediteerden, licentiecyclus en tussentijdse toets.",
+      fr: "Registre des accrédités, cycle de licence et évaluation intermédiaire.",
+      en: "Register of accredited practitioners, licence cycle and interim review.",
+      es: "Registro de acreditados, ciclo de licencia y revisión intermedia.",
+      ru: "Реестр аккредитованных, лицензионный цикл и промежуточная проверка.",
+    },
+  },
+  {
     id: "t4p-profielen",
     type: "accreditatie",
     route: "/start",

@@ -1,0 +1,248 @@
+[
+  {
+    "code": "D-01",
+    "soort": "scenario",
+    "gedragsindicator": "W1",
+    "stam": "In een rapport staat: “Uit dit profiel blijkt dat Els beschikt over sterk leidinggevend vermogen en over goed ontwikkelde onderhandelingsvaardigheden.” Wat gaat hier mis?",
+    "opties": [
+      "Er wordt een vaardigheidsniveau gerapporteerd dat dit profiel niet vaststelt. Gemeten worden talentfoci, versnellers, drivers en de energie erbij — niet wat iemand aangeleerd beheerst.",
+      "De uitspraak is te absoluut geformuleerd; met een voorbehoud erbij, bijvoorbeeld “wijst in de richting van”, is dezelfde zin wel bruikbaar in een terugkoppeling aan Els.",
+      "Leidinggeven en onderhandelen zijn samengestelde rollen; het rapport had ze eerst moeten uitsplitsen naar de onderliggende versnellers voordat het deze conclusie trok.",
+      "Vaardigheden mogen pas in een rapport worden opgenomen wanneer de leidinggevende van Els de beschreven observaties uitdrukkelijk bevestigt, en die bevestiging ontbreekt hier."
+    ],
+    "sleutel": "A",
+    "toelichtingGoed": "Een competentie is aangeleerd, observeerbaar en toetsbaar aan een norm: je kunt een procedure correct toepassen zonder er veel talent voor te hebben. Wat dit instrument in kaart brengt is een andere laag — het samenspel van vermogens dat zich vanzelf en zonder veel energieverlies aandient. Een uitspraak over een beheersingsniveau hoort dus niet uit dit profiel te komen, met of zonder voorbehoud.",
+    "toelichtingFout": "B is de gevaarlijkste afleider en de fout die in de praktijk het vaakst wordt gemaakt: de claim blijft staan en er komt alleen een zachter werkwoord voor. C klinkt zorgvuldig en voert ondertussen de veronderstelling mee dat het profiel vaardigheidsniveaus zou kunnen leveren als je maar fijner uitsplitst.",
+    "bron": "H4 competentiekenmerken r.1019-1023 en werkdefinitie r.1039-1042; r.1151-1155 procedure toepassen zonder talent; talentdefinitie H17 r.5522-5524"
+  },
+  {
+    "code": "D-02",
+    "soort": "scenario",
+    "gedragsindicator": "W1",
+    "stam": "Een geaccrediteerde leest bij een versneller een lage energiebalans en zegt: “Analyse is dus geen talent van jou.” De coachee werkt al twaalf jaar met tevredenheid als analist. Wat is de juiste lezing?",
+    "opties": [
+      "De energiebalans weegt zwaarder dan de werkervaring: wie jarenlang tegen zijn energie in werkt, houdt dat vol maar bouwt onzichtbaar een tekort op.",
+      "Er zijn twee dimensies in het spel. Een lage energiebalans zegt wat iets kost, niet wat iemand kan — en juist wat iemand goed kan, vraagt soms veel.",
+      "De uitkomst is tegenstrijdig en daarmee onbruikbaar; het profiel moet opnieuw worden afgenomen voordat er iets over deze versneller gezegd kan worden.",
+      "Twaalf jaar ervaring heeft van Analyse een competentie gemaakt en niet langer een talent; de energiebalans beschrijft dan correct het oorspronkelijke talent eronder."
+    ],
+    "sleutel": "B",
+    "toelichtingGoed": "Het model kent hier twee gegevens die apart worden bepaald: hoe uitgesproken een construct zich aandient — een keuze binnen een blok — en wat het aan energie vraagt, apart bevraagd op een eigen schaal. Die twee lopen niet gelijk op. Iets waar iemand goed in is, kan een aanzienlijke energiekost hebben; dat is precies waarom energie afzonderlijk wordt bevraagd en niet uit het kunnen wordt afgeleid.",
+    "toelichtingFout": "A is de gevaarlijkste afleider: ze klinkt als de zorgvuldige lezing, kiest één van de twee gegevens als het echte en maakt van een gespreksvraag een vaststelling over een opgebouwd tekort. C ontwijkt de vraag door een tegenstrijdigheid te verzinnen die er niet is; de twee gegevens spreken elkaar niet tegen.",
+    "bron": "Voorwoord r.161-169 (ook wat we goed kunnen kan energie vreten); ITEMBRON §2.1 — `net` als uitgesprokenheid (scoring.ts r138) tegenover `avgEnergy` als energiekost (r140-142)"
+  },
+  {
+    "code": "D-03",
+    "soort": "scenario",
+    "gedragsindicator": "W1",
+    "stam": "Een rapport zet de talentfoci onder elkaar met de kop “Groeitraject in drie stappen”: stap 1 Strategie, stap 2 Operationeel, stap 3 Inter-relationeel. Wat is er mis?",
+    "opties": [
+      "De volgorde is juist maar de kop is ongelukkig gekozen; “Groeirichting” in plaats van “Groeitraject in drie stappen” volstaat al om de passage correct te maken.",
+      "De opsomming is onvolledig, en een ontwikkelpad kan pas kloppen wanneer alle gemeten foci er in de juiste orde in voorkomen.",
+      "De volgorde wordt als traject gelezen. Wat er staat is een configuratie met een ingang, geen reeks fasen die iemand achtereenvolgens doorloopt.",
+      "Een stappenplan hoort bij een competentiekader; het profiel mag zoiets alleen tonen wanneer de werkgever de rolvereisten vooraf heeft aangeleverd."
+    ],
+    "sleutel": "C",
+    "toelichtingGoed": "De opeenvolging is geen stappenplan. Ze zegt waar iemand van nature binnenkomt en hoe de rest zich van daaruit opent — geen rangorde van belangrijkheid, en geen fasering in de tijd. Een kop die stappen belooft, maakt van een configuratie een traject en nodigt de coachee uit om aan stap 2 te gaan werken.",
+    "toelichtingFout": "A is de gevaarlijkste afleider: alleen het opschrift verandert, de trajectlezing blijft. D voert een norm in die er niet is en verplaatst de vraag naar de werkgever.",
+    "bron": "H16 r.5284-5293 geen rangorde, geen sequentieel ontwikkelpad, meest uitgesproken focus als opener"
+  },
+  {
+    "code": "D-11",
+    "soort": "scenario",
+    "gedragsindicator": "W1",
+    "stam": "Een opdrachtgever heeft bij veertig medewerkers een korte scan laten afnemen en wil daarop een individueel ontwikkelplan per medewerker bouwen. Wat is het juiste antwoord?",
+    "opties": [
+      "Dat kan, op voorwaarde dat de scan bij alle veertig medewerkers door dezelfde begeleider is afgenomen en de omstandigheden onderling vergelijkbaar waren.",
+      "De scan is bewust beperkter gebouwd en pretendeert die grondigheid niet; ze opent wel een gesprek, maar draagt geen plan per persoon.",
+      "Dat kan niet: de korte scan is bedoeld om per team te rapporteren, dus over één medewerker valt er in het geheel niets uit af te leiden.",
+      "Dat kan wanneer de resultaten worden samengevoegd met de functioneringsgesprekken van het afgelopen jaar, zodat er ten minste twee bronnen onder elk plan liggen."
+    ],
+    "sleutel": "B",
+    "toelichtingGoed": "De korte scans zijn met opzet eenvoudiger van opzet dan het volledige instrument en pretenderen niet dezelfde psychometrische diepgang. Daarmee zijn ze bruikbaar om iets in beweging te brengen en een gesprek te openen, maar niet als onderbouwing van een plan per persoon. De juiste beweging is dus niet weigeren, maar het juiste instrument aanbieden voor wat de opdrachtgever wil bereiken. Let op voor de beoordelaar: de bron beschrijft de scan als eenvoudiger van opzet en als eerste ondersteuning van een gesprek. Dat een individueel ontwikkelplan daarom het volledige instrument vraagt, is de professionele gevolgtrekking daaruit en geen bepaling in de bron; een kandidaat die dat onderscheid zelf maakt, antwoordt sterker en niet zwakker.",
+    "toelichtingFout": "D is de gevaarlijkste afleider: twee zwakke bronnen samenvoegen voelt zorgvuldig en maakt de onderbouwing niet sterker, alleen ondoorzichtiger. C slaat door en gebruikt een juist gegeven — de scan heeft die diepgang niet — om te veel te verbieden: de scan levert wél iets op individueel niveau, alleen niet de onderbouwing die een ontwikkelplan vraagt.",
+    "bron": "r.7216-7223 korte scans, eenvoudiger van opzet, geen gelijke psychometrische diepgang"
+  },
+  {
+    "code": "D-04",
+    "soort": "scenario",
+    "gedragsindicator": "W2",
+    "stam": "In een rapport staat: “Haar meest uitgesproken talentfocus is Constructief onderscheidend; daarin komt zij het snelst in flow.” Wat gaat hier mis, en waarom is dat meer dan een naamfout?",
+    "opties": [
+      "Constructief onderscheidend is een versneller en geen focus. Daarmee wordt beschreven wat vanuit flow tot resultaat leidt, niet waarin iemand in flow komt.",
+      "De twee families mogen niet naast elkaar in één zin staan omdat ze op een verschillende manier bevraagd worden — de ene per blok, de andere per item.",
+      "Constructief onderscheidend hoort bij de drivers en niet bij de talentconstructen; de zin verwart daardoor een gedragspatroon dat onder druk aanslaat met een talent.",
+      "Er is geen probleem zolang duidelijk is welke versie van het rapport gebruikt is, want in oudere versies stond deze naam wel bij de foci vermeld."
+    ],
+    "sleutel": "A",
+    "toelichtingGoed": "De twee families doen verschillend werk. De ene beschrijft de manieren van kijken en werken waarin iemand van nature in flow komt; de andere de vermogens die maken dat er vanuit die flow ook resultaat komt dat verschil maakt. De zin belooft dus een flow-ingang op een plek waar het instrument die niet meet — en de coachee gaat op zoek naar flow in de verkeerde laag.",
+    "toelichtingFout": "B is de sterkste afleider en is zelf onjuist: energie wordt per item bevraagd bij de drivers en per blok bij zowel de foci als de versnellers. Er is dus geen bevragingsverschil tussen deze twee families, en zelfs als er een was, zou het de naamfout niet verklaren. D biedt een uitweg via versiebeheer en laat de inhoudelijke verwarring intact.",
+    "bron": "H16 r.5101-5104 onderscheid foci/versnellers; ITEMBRON §1.1 energiemodus `block` voor foci en versnellers, `item` voor drivers"
+  },
+  {
+    "code": "D-05",
+    "soort": "scenario",
+    "gedragsindicator": "W2",
+    "stam": "Een geaccrediteerde vat samen: “Jouw sterkste driver is Please Others. Zorg voor anderen is dus een van je kernwaarden.” Wat is er mis?",
+    "opties": [
+      "Please Others is hier niet de sterkste maar de meest zichtbare driver; kernwaarden komen juist voort uit de driver die in de bevraging het minst gekozen wordt.",
+      "Kernwaarden zijn nooit uit een vragenlijst af te leiden en horen daarom in geen enkele terugkoppeling aan een coachee thuis, in welke formulering dan ook.",
+      "De uitspraak verwart twee lagen. Een driver is een aangeleerd patroon dat onder druk aanslaat; wat iemand van waarde vindt, hoort bij de INNER WHY en wordt hier niet gemeten.",
+      "De formulering klopt inhoudelijk, maar ‘kernwaarde’ is jargon; in gewone taal spreken over ‘wat voor jou werkelijk belangrijk is’ neemt het bezwaar helemaal weg."
+    ],
+    "sleutel": "C",
+    "toelichtingGoed": "Drivers zijn aangeleerde overlevingsstrategieën die zich onder spanning vanzelf aandienen — ze vertellen hoe iemand reageert wanneer het moeilijk wordt. Wat iemand ten diepste belangrijk vindt, hoort bij de INNER WHY, en die valt buiten dit profiel: het instrument bevat alleen de bevraging van drivers, foci en versnellers en vier vragen over verbondenheid. De INNER WHY komt dus alleen in het gesprek aan de orde. Van een automatisch patroon een waarde maken, geeft de coachee een identiteit in plaats van een inzicht.",
+    "toelichtingFout": "D is de gevaarlijkste afleider: ze verklaart de inhoud correct en verplaatst het bezwaar naar het woordgebruik. B slaat door naar het andere uiterste — wat iemand belangrijk vindt is wél bespreekbaar in het gesprek, alleen niet af te leiden uit de drivers.",
+    "bron": "H5 r.1523-1545 INNER WHY tegenover drivers als automatische patronen; ITEMBRON §1 — het instrument bevat uitsluitend de secties `main` en `connection`"
+  },
+  {
+    "code": "D-06",
+    "soort": "scenario",
+    "gedragsindicator": "W2",
+    "stam": "Een profiel toont een hoge waarde op Analyse. Het rapport concludeert: “Geschikt voor complexe dossiers en diepgaand cijferwerk.” In het gesprek blijkt dat de coachee dat vermogen vooral inzet om mensen en verhoudingen te doorgronden. Wat gaat hier mis?",
+    "opties": [
+      "De conclusie is te smal geformuleerd; ze had beide componenten van de schaal moeten vermelden en daarna alsnog naar het complexe dossierwerk kunnen verwijzen.",
+      "De twee kanten van de schaal staan los van elkaar en hangen niet samen, dus een enkele waarde op Analyse zegt rekenkundig niets over welke kant het is.",
+      "Er is geen fout: de twee componenten meten in de kern hetzelfde, dus een conclusie over complex dossierwerk blijft bij deze waarde goed verdedigbaar.",
+      "Deze schaal dekt zowel het doorgronden van ingewikkelde materie als het doorgronden van mensen; dat onderscheid moet een verkeerde rolinschatting voorkomen."
+    ],
+    "sleutel": "D",
+    "toelichtingGoed": "Elke versneller heeft twee kanten: het uitpluizen van complexe materie, en het lezen van mensen en groepsdynamiek. Dat onderscheid bestaat precies om te vermijden dat ‘sterk analytisch’ te grof wordt uitgelegd. Wie de humane kant als dossiervaardigheid leest, plaatst iemand in het verkeerde soort werk. De bron gaat verder dan een leesregel: de twee varianten correleren sterk maar niet volledig, waardoor het volgens de bron zinvol blijft om beide apart te meten (r.6733-6735). Dat de conclusie hier verkeerd is, komt dus niet doordat het onderscheid onmeetbaar zou zijn, maar doordat de rapportzin één van de twee kanten stilzwijgend als de andere leest.",
+    "toelichtingFout": "C is de gevaarlijkste afleider: ze gebruikt een correct gegeven — de functionele en de humane variant van hetzelfde construct correleren sterk — als vrijbrief om het onderscheid te negeren. Sterk correleren is niet perfect correleren, en samenhang maakt de twee kanten niet uitwisselbaar. B draait dat gegeven precies om en beweert dat de twee kanten niet samenhangen; r.6734-6735 zegt het tegendeel, namelijk dat ze sterk maar niet volledig correleren en dat het daarom zinvol blijft beide apart te meten. A houdt de conclusie overeind en zet er alleen meer informatie naast.",
+    "bron": "r.6019-6022 functionele en humane kant per talentversneller; H18 r.5978-5983 het R&D-voorbeeld; r.6683-6689 functionele en humane varianten correleren sterk maar niet perfect; r.6733-6735 zinvol om beide apart te meten"
+  },
+  {
+    "code": "D-07",
+    "soort": "scenario",
+    "gedragsindicator": "W3",
+    "stam": "In een rapport staat: “Deze waarde ligt in de bovenste regionen vergeleken met professionals in dezelfde sector.” Wat is er mis?",
+    "opties": [
+      "De vergelijking kan wel, maar uitsluitend tegen de volledige databank; per sector afzonderlijk zijn er te weinig profielen om er een uitspraak op te bouwen.",
+      "Er bestaat geen normering. Het instrument plaatst iemand niet ten opzichte van anderen, ook niet tegen alle beschikbare profielen samen.",
+      "De vergelijking mag alleen wanneer de deelnemer daar bij de afname uitdrukkelijk toestemming voor heeft gegeven, en die toestemming ontbreekt.",
+      "De formulering is te stellig gekozen: “behoort tot de hogere waarden binnen de sector” dekt dezelfde lading en is in een rapport wel verantwoord."
+    ],
+    "sleutel": "B",
+    "toelichtingGoed": "Er is geen normgroep. De interpretatiedrempels in dit instrument zijn vastgesteld op inhoudelijk oordeel en de bandgrenzen zijn niet empirisch geijkt op een referentiegroep. Er is dus geen groep waartegen iemand geplaatst kan worden, en een positiebepaling ontbreekt niet bij toeval maar bestaat niet.",
+    "toelichtingFout": "A is de gevaarlijkste afleider: ze klinkt als een verstandige beperking en voert ondertussen een normgroep in die niet bestaat. Wie A kiest, houdt de vergelijkende taal en verplaatst haar alleen. C verwart een psychometrische kwestie met een toestemmingskwestie. Wie zich op H21 r.6586-6591 beroept — ‘er is gekeken naar de interne consistentie en de stabiliteit over tijd’ — leest daar een beschrijving van het onderzoeksprogramma zonder één getal en zonder normgroep; die passage levert geen referentiegroep en maakt A dus niet juist.",
+    "bron": "ITEMBRON §3.2 geen normgroep, drempels op inhoudelijk oordeel; ITEMBRON §2.5 bandgrenzen niet empirisch geijkt op een normgroep; H21 r.6857-6861 validatietraject onvolledig"
+  },
+  {
+    "code": "D-08",
+    "soort": "open",
+    "gedragsindicator": "W3",
+    "stam": "Een geaccrediteerde zegt tegen een coachee: “Je versnellervolgorde is Resultaatgericht, dan Constructief onderscheidend, en dan Analyse. Jouw brein werkt dus top-down, en daarom kost stapsgewijs werk je zoveel moeite.” Benoem wat hier misgaat en formuleer wat er wel gezegd kan worden.",
+    "opties": [],
+    "sleutel": "Vier elementen. (1) MODALITEIT: dat deze volgorde samenhangt met een route van beeld naar analyse is een hypothese, geen vaststelling over dit brein; “jouw brein werkt dus” geeft een werkmodel de status van feit. (2) VERIFICATIE: de hypothese moet aan de coachee worden voorgelegd in plaats van meegedeeld — herkent zij dat zij zich snel en met weinig energie een beeld vormt van hoe een oplossing eruit zou kunnen zien, en dat haar analytisch vermogen daarna op gang komt? Waar wel, waar niet, bij welk soort probleem? (3) CAUSALITEIT: de moeite met stapsgewijs werk wordt als gevolg gepresenteerd terwijl het een tweede, open vraag is; de hypothese gaat bovendien over de volgorde waarin het analytisch vermogen op volle kracht komt, niet over minder analytisch vermogen. (4) VERANTWOORDING: op de vraag waarop dit rust, hoort de geaccrediteerde het brede onderscheid tussen een beeldgestuurde en een analytische aanpak te kunnen situeren in de cognitieve psychologie, en tegelijk te zeggen dat de koppeling aan een specifieke versnellervolgorde in dit instrument werkmodel is.",
+    "toelichtingGoed": "SCHAAL 0-3. 3 = element (1) plus minstens twee van (2), (3), (4), met een herformulering die de uitspraak als te toetsen hypothese aanbiedt. 2 = element (1) plus één ander element. 1 = de causale zin wordt gecorrigeerd maar de vaststelling over het brein blijft staan, of omgekeerd. 0 = geen van beide, of één van de twee foute uitersten hieronder. VOORRANGSREGELS. Element (1) is voorwaardelijk: zonder (1) is de score nooit hoger dan 1. Element (1) alleen, zonder (2), (3) of (4), levert 1. Voor 3 moet de herformulering een verificatievraag aan de coachee bevatten die letterlijk als vraag geformuleerd is. Een antwoord dat de route uit de talentfoci in plaats van uit de versnellers leest, komt nooit hoger dan 1, ongeacht de overige elementen. GOEDGEKEURDE VOORBEELDFORMULERING: “Het profiel laat een volgorde zien waarin resultaat en onderscheid vóór analyse komen. Onze veronderstelling daarbij is dat jij eerst een beeld van de mogelijke oplossing vormt en dat je analytisch vermogen daarna aanslaat. Klopt dat voor jou, en waar dan wel en waar niet?”",
+    "toelichtingFout": "AFGEKEURDE VOORBEELDFORMULERINGEN. Verzachten zonder corrigeren: “Klopt in grote lijnen, al is het een voorkeur en geen vaste eigenschap” — de vaststelling blijft, alleen de toon verandert; dit is het meest voorkomende foute antwoord. En het tegenovergestelde uiterste: “Het profiel zegt niets over hoe je brein werkt” of “de volgorde heeft geen betekenis” — de volgorde is wél gemeten en de veronderstelling erover is wél bespreekbaar, alleen niet als mededeling. Ook af te keuren: een antwoord dat de route uit de talentfoci leest in plaats van uit de versnellers.",
+    "bron": "Regel vastgelegd door de auteur op 14-08-2026: de talentversnellers dragen de hersenroute, de talentfoci niet. Boekanker r.6015-6018 versnellervolgorde als startpunt bottom-up/top-down; onderzoekslijnen H17 r.5424-5440; bewijsniveaus H21 r.6545-6549. Let op: H17 r.5528-5540 illustreert dezelfde twee routes met talentfoci (Operationeel of Strategie als opener); de boekbronnen bevatten geen regel die één van beide lezingen uitsluit. De voorrang voor de versnellers berust op de door de auteur vastgelegde regel en niet op het boek; de beoordelaar moet dat aan de kandidaat zo kunnen uitleggen."
+  },
+  {
+    "code": "D-09",
+    "soort": "scenario",
+    "gedragsindicator": "W4",
+    "stam": "Een rapport verklaart een hoge waarde op Be Perfect zo: “Hij levert bijzonder nauwkeurig werk omdat hij de waardering van zijn team niet wil verspelen.” Wat is er mis?",
+    "opties": [
+      "Be Perfect gaat niet over nauwkeurigheid maar over tempo; de verklaring beschrijft in werkelijkheid het patroon dat bij de driver Hurry Up hoort.",
+      "Er is geen fout: nauwkeurigheid en waardering versterken elkaar, en de meeste drivers hebben nu eenmaal zowel een naar binnen als een naar buiten gerichte kant.",
+      "De verklaring is aannemelijk maar niet controleerbaar; drivers mogen alleen benoemd worden en niet van een reden worden voorzien in een rapport.",
+      "De verklaring legt de maatstaf buiten de persoon. Bij deze driver bepaalt iemand de lat waaraan hij zich meet in zichzelf, niet in het oordeel van een groep."
+    ],
+    "sleutel": "D",
+    "toelichtingGoed": "De vijf drivers verdelen zich naar waar het referentiepunt ligt. Bij drie ervan bepaalt iemand zelf de maatstaf — het referentiepunt ligt in hemzelf; bij twee andere hangt de spanning af van het oordeel van iemand anders. Be Perfect hoort bij de eerste groep: de lat ligt binnen. Wie er een verklaring bij zet die van waardering door het team afhangt, schuift de driver naar de andere groep en stuurt het hele gesprek de verkeerde kant op.",
+    "toelichtingFout": "B is de gevaarlijkste afleider: ze klinkt genuanceerd en maakt het onderscheid tussen de twee groepen ongedaan door alles een beetje van beide te noemen. Dan valt er niets meer te lezen aan het profiel. A verplaatst de fout naar een andere driver en houdt de verkeerde verklaring in stand.",
+    "bron": "H7 r.2393-2398 intern gefocust, “Je referentiepunt ligt in jezelf”; H12 r.3598-3613 drie tegenover twee"
+  },
+  {
+    "code": "D-10",
+    "soort": "scenario",
+    "gedragsindicator": "W4",
+    "stam": "Een coachee heeft een hoge waarde op Try Hard. De geaccrediteerde zegt: “Jij wil het voor de hele groep goed doen en cijfert jezelf weg om de sfeer te bewaren.” Wat is er mis?",
+    "opties": [
+      "De beschrijving hoort bij een andere driver. Try Hard gaat om de erkenning van één ander die veel betekent, niet om een hele groep.",
+      "Try Hard is intern gefocust, dus elke verklaring waarin een ander voorkomt is onjuist; het gaat hier zuiver om de lat die de coachee voor zichzelf legt.",
+      "De beschrijving klopt in grote lijnen, maar “cijfert jezelf weg” is een waardeoordeel dat in een terugkoppeling aan een coachee niet thuishoort.",
+      "Er is geen fout in de inhoud, alleen in de vorm: dit soort verklaring hoort pas te komen nadat de coachee zelf een herkenbaar voorbeeld uit zijn eigen werk heeft gegeven."
+    ],
+    "sleutel": "A",
+    "toelichtingGoed": "Beide drivers hebben hun referentiepunt buiten de persoon, maar niet op dezelfde plaats. De ene richt zich op de groep en op het bewaren van de verhouding met velen; de andere op de erkenning van één belangrijke ander — een ouder, een partner, een mentor. Wie die twee verwisselt, geeft een verklaring die de coachee niet herkent, en mist bovendien de vraag die telt: om wiens erkenning gaat het hier eigenlijk?",
+    "toelichtingFout": "C is de gevaarlijkste afleider: ze corrigeert een reële stijlfout en laat de inhoudelijke verwisseling onaangeroerd. B klinkt als parate kennis en is onjuist: deze driver hoort niet bij de groep met het referentiepunt in de persoon zelf.",
+    "bron": "r.2359-2361 en r.3589-3590 de erkenning van één belangrijke ander; H12 r.3598-3613"
+  },
+  {
+    "code": "D-16",
+    "soort": "scenario",
+    "gedragsindicator": "W5",
+    "stam": "De ouders van een zeventienjarige in het laatste jaar secundair willen een studiekeuze onderbouwen en vragen daarvoor de professionalversie. Welk instrument uit de reeks is op deze doelgroep en deze levensvraag gebouwd?",
+    "opties": [
+      "De jongerenvariant: die is gebouwd voor scholieren en studenten die een richting voor verder studeren of een eerste stap in werk moeten bepalen.",
+      "De professionalversie: die gaat na of het werk en de werkgever van een volwassene nog passen bij zijn talenten, waarden en drivers.",
+      "De sportvariant: die brengt de niet-fysieke vermogens in beeld waarmee iemand zich in een sportcontext ontwikkelt en op de moeilijke momenten blijft volhouden.",
+      "De aanwervingsvariant: die maakt de eisen in een vacature en het selectiegesprek bespreekbaar in termen van talenten, waarden en drivers bij een aanwerving."
+    ],
+    "sleutel": "A",
+    "toelichtingGoed": "De reeks bestaat uit instrumenten die elk op een eigen doelgroep en een eigen levensvraag zijn gebouwd: jongeren en jongvolwassenen bij studie- en eerste loopbaankeuzes, volwassenen bij de vraag of hun functie, organisatie of loopbaanpad nog bij hun talenten, waarden en drivers past, en daarnaast sport en aanwerving. Deze ouders stellen een studiekeuzevraag; de professionalversie is op een andere vraag gebouwd. Voor jongeren loopt bovendien een eigen onderzoekslijn waarin de kernconstructen naar de schoolcontext zijn vertaald — die vertaling is er niet voor niets.",
+    "toelichtingFout": "B, C en D noemen elk een bestaand instrument uit dezelfde reeks, maar telkens één dat op een andere doelgroep en een andere levensvraag is gebouwd. B is de gevaarlijkste afleider, omdat de ouders er zelf om vragen en de vragenlijst technisch gewoon afneembaar is. Let op voor de beoordelaar: de bron formuleert geen verbod op het gebruik van de professionalversie bij een minderjarige, wel een doelgroepomschrijving waar deze vraag niet in past. De kandidaat hoort dus te antwoorden op grond van waarvoor het instrument gebouwd is, niet op grond van een regel die er niet staat.",
+    "bron": "r.7205-7215 instrumentreeks per doelgroep en levensvraag (studie- en eerste loopbaankeuzes, professionals, sport, aanwerving); r.6700-6703 aparte onderzoekslijn voor jongeren met de kernconstructen vertaald naar de schoolcontext"
+  },
+  {
+    "code": "D-12",
+    "soort": "scenario",
+    "gedragsindicator": "W6",
+    "stam": "In een rapport staat onder de kop “Bevindingen”: “Deze driverconfiguratie wijst, samen met de uitgesproken focus Operationeel en de reactieve aard van deze functie, op een verhoogd burn-outrisico.” Wat moet er gebeuren?",
+    "opties": [
+      "Het woord “risico” vervangen door “aandachtspunt”, en de uitspraak kan verder blijven staan op de plaats in het rapport waar ze nu staat.",
+      "Er hoort een zin bij dat dit instrument geen voorspellingen doet over individuen; met dat voorbehoud erbij is de passage aanvaardbaar onder deze kop.",
+      "De uitspraak weghalen of omzetten in een te toetsen gespreksvraag: een combinatie op dit niveau is werkmodel en hoort niet onder bevindingen.",
+      "Niets — dit is precies het soort samenhang dat het instrument zichtbaar maakt, en de kop “Bevindingen” is daarvoor in een rapport de juiste plaats."
+    ],
+    "sleutel": "C",
+    "toelichtingGoed": "Over drivers en burn-out worden consistente verbanden gemeld, maar met de uitdrukkelijke kanttekening dat de datasets nog in opbouw zijn: uitspraken over tendensen in een groep zijn iets anders dan een uitspraak over deze persoon. Fijnmazige combinaties van een driverconfiguratie met een specifieke focus in een specifieke context worden met zoveel woorden als werkmodel aangeduid. De kop is hier de eigenlijke overtreding — die geeft een veronderstelling de status van vaststelling.",
+    "toelichtingFout": "A is de gevaarlijkste afleider en komt in echte rapporten het vaakst voor: de claim blijft, alleen het woord verandert. B is daar de variant van met een disclaimer erbij — een voorbehoud dat de voorspelling tegenspreekt en er niets aan afdoet.",
+    "bron": "H21 r.6918-6950 datasets in opbouw en hypothese/werkmodel; r.6545-6549 drie bewijsniveaus"
+  },
+  {
+    "code": "D-13",
+    "soort": "scenario",
+    "gedragsindicator": "W6",
+    "stam": "Een HR-directeur schrijft in het verslag van een talentreview: “Op basis van haar TaPas-profiel classificeren wij haar als high potential.” Wat is hier precies het probleem?",
+    "opties": [
+      "Het woord ‘potentieel’ hoort in geen enkele uitspraak over een profiel voor te komen, omdat het altijd een voorspelling over de toekomst inhoudt.",
+      "Het profiel wordt gebruikt om iemand in een categorie te plaatsen die haar verdere loopbaan gaat sturen. Meten mag hier, indelen niet.",
+      "De classificatie mag wel, maar alleen wanneer ze naast het profiel steunt op prestatiegegevens over minstens twee opeenvolgende jaren.",
+      "Het probleem is de vertrouwelijkheid: een uitspraak uit een individueel profiel hoort niet in een verslag dat binnen de organisatie wordt gedeeld."
+    ],
+    "sleutel": "B",
+    "toelichtingGoed": "De maatstaf is dat een instrument mag meten maar nooit mag verkleinen. Talent wordt in het kader zelf beschreven als iets dat zich ontvouwt op het snijpunt van aanleg en context — het woord potentieel is dus niet verboden. Wat niet kan, is het profiel omzetten in een categorie die deuren opent of sluit. Dat is de beweging waartegen het hele instrument is opgezet: van een beeld van iemand naar een etiket dat zijn pad vernauwt.",
+    "toelichtingFout": "A is de gevaarlijkste afleider en verklaart te veel verboden: wie zo leest, kan over ontplooiing niets meer zeggen en verliest de kern van het model. C is de klassieke schijnoplossing: extra bewijs erbij maakt de indeling niet aanvaardbaar, want het bezwaar gaat over indelen als zodanig. D benoemt een echte kwestie die hier niet de kern is.",
+    "bron": "r.4325-4326 en r.4636-4637 meten mag nooit verkleinen; r.4134-4135 talent als potentieel op het snijpunt van aanleg en context; r.4253-4256"
+  },
+  {
+    "code": "D-14",
+    "soort": "scenario",
+    "gedragsindicator": "W8",
+    "stam": "Een coachee leest de driverpagina en zegt: “Dit lijkt mij een horoscoop. Waarop is dit eigenlijk gebaseerd?” Wat is het juiste antwoord?",
+    "opties": [
+      "Uitleggen dat het instrument wetenschappelijk gevalideerd is en dat de resultaten in samenwerking met een universiteit zijn onderzocht, gerapporteerd en gepubliceerd.",
+      "Zeggen dat het geen test is maar een gespreksinstrument, en dat de vraag naar wetenschappelijke onderbouwing daarom bij dit soort profielen niet van toepassing is.",
+      "De vraag terugleggen: eerst vragen wat haar in het rapport precies aan een horoscoop doet denken, en pas op de onderbouwing ingaan wanneer zij daar zelf op terugkomt.",
+      "Benoemen waar het driverbegrip uit voortkomt, welke exploratieve factoranalyse op de eigen profielen is uitgevoerd en dat die niet gepubliceerd is, en zeggen wat nog niet onderzocht is."
+    ],
+    "sleutel": "D",
+    "toelichtingGoed": "Wie met mensen werkt, hoort te kunnen zeggen waarop een uitspraak rust en waar de grens ligt — juist omdat de ander de gevolgen draagt van het beeld dat van hem gevormd wordt. Een eerlijk antwoord noemt de herkomst van het begrip, verwijst naar de exploratieve factoranalyse die op de eigen profielen is uitgevoerd met een universitaire partner, en vermeldt dat die analyse niet extern gepubliceerd is. Dat is minder indrukwekkend dan optie A en het is wel waar.",
+    "toelichtingFout": "A is de gevaarlijkste afleider: ze klinkt professioneel en bevat twee onwaarheden — gepubliceerd is de analyse niet, en ‘gevalideerd’ dekt hier meer dan er is. C is een verdedigbare gesprekstechniek die op deze vraag ontwijkend uitpakt: de coachee vraagt niet om een wedervraag maar om verantwoording. B geeft de vraag weg.",
+    "bron": "H21 r.6979-6990 recht op eerlijkheid over sterkte en grens; r.4176-4182 drivers oorspronkelijk beschreven binnen de transactionele analyse en verder uitgewerkt door Taibi Kahler; ITEMBRON §3.1 exploratieve factoranalyse UAntwerpen, niet extern gepubliceerd; ITEMBRON §3.2 wat niet gemeten is; r.6884-6892 inhoudsvaliditeit en de koppeling tussen drivers en onderzoek naar stress, burn-out en zelfondermijning"
+  },
+  {
+    "code": "D-15",
+    "soort": "open",
+    "gedragsindicator": "W8",
+    "stam": "Een opdrachtgever vraagt voor de aankoop: “Wat is de betrouwbaarheid van dit instrument? Graag cijfers.” Formuleer het antwoord dat een geaccrediteerde hier hoort te geven.",
+    "opties": [],
+    "sleutel": "Vier elementen. (1) HET GEVRAAGDE CIJFER BESTAAT NIET: er is geen betrouwbaarheidscoëfficiënt berekend of gerapporteerd, en er is geen test-hertestonderzoek gedaan. Dat moet expliciet gezegd worden en niet omzeild. (2) WAT ER WÉL IS, correct benoemd: een exploratieve factoranalyse op 1.858 professionele profielen samen met de Universiteit Antwerpen, met hoge factorladingen op de driverschalen en lagere op de energieschalen onder de versnellers. (3) HET ONDERSCHEID: een factorlading is geen betrouwbaarheidscoëfficiënt; ze zegt of items zich groeperen zoals verwacht, niet hoe consistent of stabiel een schaal meet. Wie de ladingen als betrouwbaarheidscijfer aanbiedt, geeft een verkeerd antwoord. (4) DE OVERIGE WAARBORGEN, zonder ze op te blazen: externe inhoudsvalidatie door vier onafhankelijke experts onder supervisie van een hoogleraar methoden, en een nazicht van de statistische vormgeving door een sectorfonds — met de vermelding dat die bevindingen niet als afzonderlijk rapport gepubliceerd zijn.",
+    "toelichtingGoed": "SCHAAL 0-3. 3 = de elementen (1) en (3) plus minstens één van (2) en (4). 2 = (1) plus één ander element, zonder het onderscheid uit (3) te verhaspelen. 1 = het ontbreken van het cijfer wordt gemeld maar de rest blijft vaag, of de waarborgen worden genoemd zonder te zeggen dat het gevraagde cijfer er niet is. 0 = de factorladingen worden als betrouwbaarheid aangeboden, of het instrument wordt ‘gevalideerd’ genoemd zonder meer. VOORRANGSREGELS. Element (1) is voorwaardelijk: zonder (1) is de score nooit hoger dan 1. Wie de factorladingen als betrouwbaarheidscijfer aanbiedt, krijgt 0, ook wanneer element (1) genoemd is. Het getal 1.858 is facultatief; het ontbreken ervan verlaagt de score niet. Wie H21 r.6586-6591 aanhaalt (‘gekeken naar de interne consistentie en de stabiliteit over tijd’) krijgt daarvoor geen aftrek, maar moet er wel bij zeggen dat daaruit geen coëfficiënt is gerapporteerd; zonder die toevoeging telt element (1) niet als gegeven. GOEDGEKEURDE VOORBEELDFORMULERING: “Een betrouwbaarheidscoëfficiënt is voor dit instrument niet berekend en een test-hertestonderzoek is er niet. Wat er is, is een exploratieve factoranalyse op onze eigen profielen met een universitaire partner, waarin de schalen zich groeperen zoals het model voorspelt. Dat is iets anders dan een betrouwbaarheidscijfer en ik wil dat niet als hetzelfde presenteren.”",
+    "toelichtingFout": "AFGEKEURDE VOORBEELDFORMULERINGEN. “De betrouwbaarheid ligt tussen 0,63 en 0,97” — dat zijn factorladingen en geen betrouwbaarheidscoëfficiënten; dit is het meest voorkomende foute antwoord en het levert 0. “Het instrument is wetenschappelijk gevalideerd in samenwerking met de universiteit” — te ruim en niet gepubliceerd. En het andere uiterste: “betrouwbaarheid is bij dit soort instrumenten niet aan de orde” — de vraag is legitiem en het antwoord is dat het cijfer er niet is, niet dat de vraag niet telt.",
+    "bron": "ITEMBRON §3.1 en §3.2 op basis van shared/onderbouwing-t4professional.ts; H21 r.6857-6861 verdere rapportering van interne consistentie en test-hertestbetrouwbaarheid voor alle schalen als toekomstige onderzoeksstap"
+  }
+]

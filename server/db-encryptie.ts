@@ -44,7 +44,8 @@
  * ELKE handle dezelfde sleutel toepassen; eén handle die het vergeet opent het
  * bestand zonder sleutel en faalt (of, erger, schrijft klaartekst).
  *
- * Feitelijk nagegaan met `grep -rn "new Database(" server` op 26-07-2026.
+ * Feitelijk nagegaan met `grep -rn "new Database(" server` op 26-07-2026,
+ * opnieuw op 13-08-2026 bij het toevoegen van `server/bekwaamheid/storage.ts`.
  * `server/repositories/db.ts` staat er NIET bij: dat bestand hergebruikt de
  * handle van storage.ts via een re-export en opent niets zelf.
  */
@@ -58,6 +59,7 @@ export const GEKENDE_HANDLES = [
   "server/t4organizations/storage.ts",
   "server/t4sports/module-routes.ts",
   "server/traject/storage.ts",
+  "server/bekwaamheid/storage.ts",
 ] as const;
 
 /** Minimale vorm die de hook van een databank-handle nodig heeft. */

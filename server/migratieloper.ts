@@ -46,6 +46,25 @@ export const REEDS_TOEGEPAST: Record<string, (db: BetterSqlite3.Database) => boo
   // Gezocht wordt naar een soort die alleen 0005 toevoegt.
   "0005_soorten_gebeurtenis": (db) =>
     tabelOmschrijvingBevat(db, "traject_gebeurtenissen", "'overleg'"),
+  // 0006 is strikt additief: alleen CREATE TABLE en CREATE INDEX, allemaal met
+  // IF NOT EXISTS. Ze verdraagt dus wel een tweede loop. De toets staat er toch,
+  // omdat een registerregel duidelijker is dan een migratie die stil opnieuw
+  // over de databank gaat. Getoetst wordt op de laatste tabel van het bestand:
+  // wie die heeft, heeft alles wat ervoor komt ook.
+  "0006_bekwaamheid": (db) => tabelBestaat(db, "bekwaamheid_agenda"),
+  // 0007 herbouwt de tabel bekwaamheid_beslissingen om haar CHECK te wijzigen.
+  // Dat verdraagt GEEN tweede loop: hij zou de tabel afbreken en opnieuw
+  // opbouwen. De toets kijkt daarom naar de nieuwe toegestane waarde. Let op de
+  // aanhalingstekens, om dezelfde reden als bij 0005: zonder die tekens sloeg de
+  // toets ook aan op de kolomnaam.
+  "0007_beslisuitkomsten": (db) =>
+    tabelOmschrijvingBevat(db, "bekwaamheid_beslissingen", "'opgeschort'"),
+  // 0008 herbouwt bekwaamheid_items om er de kolom `blok` met twee CHECKs aan toe
+  // te voegen; SQLite kan een kolom met CHECK niet los toevoegen. Ook dit
+  // verdraagt geen tweede loop. De toets kijkt naar de kolom en niet naar de
+  // CHECK-tekst: de kolom is wat de rest van de module nodig heeft, en een
+  // kolomtoets blijft kloppen als een latere migratie de CHECK aanscherpt.
+  "0008_itemblokken": (db) => kolomBestaat(db, "bekwaamheid_items", "blok"),
 };
 
 export function tabelBestaat(db: BetterSqlite3.Database, naam: string): boolean {

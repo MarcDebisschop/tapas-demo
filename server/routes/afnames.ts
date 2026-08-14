@@ -38,6 +38,7 @@ import { leesItemTijden } from "../afnamekwaliteit";
 import { bewijsGeldig, bewijsUitBody, koppelBeslissing } from "../koppel-bewijs";
 import { vereisAfnameBewijs } from "../afname-bewijs";
 import { vereisAdmin, adminIdVanSessie } from "../admin-guard";
+import { beoordeelSchrijfweg, weigeringslichaam } from "../bekwaamheid/poortbrug";
 import {
   vereisScope,
   scopeVanVerzoek,
@@ -154,6 +155,28 @@ export function registerAfnameRoutes(app: Express): void {
       return res.status(400).json({ error: poort.fout });
     }
 
+    // Bekwaamheidspoort. Staat hier en niet lager: of iemand mag afnemen is een
+    // vraag die vooraf gaat aan of er credits voor zijn. Wie geen licentie heeft
+    // hoort dat te horen zonder eerst een saldofout te zien die de echte reden
+    // verbergt.
+    //
+    // Op deze route levert dit vandaag vrijwel altijd
+    // `zelfstart_buiten_licentiekader` op, want het deelnemerspad heeft per
+    // definitie geen sessie. Dat is beslissing 1 van blok 2 en die weigert nooit.
+    // De poort hangt hier toch, om twee redenen: een beheerder die deze route
+    // gebruikt hoort wel getoetst te worden, en het volume van het zelfstartpad
+    // moet meetbaar zijn voordat er iemand over beslist.
+    const verzenderAfname = await verzenderVanVerzoek(req);
+    const poortoordeel = await beoordeelSchrijfweg({
+      handeling: "afname_aanmaken",
+      instrumentId: data.instrumentId ?? standaardInstrumentId(),
+      verzender: verzenderAfname,
+      taal: normaliseerTaal(data.taal),
+    });
+    if (!poortoordeel.mag) {
+      return res.status(403).json(weigeringslichaam(poortoordeel));
+    }
+
     // Saldo-check vóór aanmaak: als er een organisatie is meegegeven, moet die
     // bestaan én minstens één beschikbaar credit hebben.
     if (data.organisatieId != null) {
@@ -181,8 +204,9 @@ export function registerAfnameRoutes(app: Express): void {
     const created = await storage.createAfname({
       organisatieId: data.organisatieId ?? null,
       // De verzender komt uit de sessie. Op het deelnemerspad is er geen
-      // sessie en blijven beide velden null.
-      ...(await verzenderVanVerzoek(req)),
+      // sessie en blijven beide velden null. Een keer bepaald, hierboven, omdat
+      // de bekwaamheidspoort hem ook nodig heeft.
+      ...verzenderAfname,
       respondentCode: tempCode,
       name: data.name,
       company: data.company ?? null,
@@ -266,6 +290,22 @@ export function registerAfnameRoutes(app: Express): void {
     const keuze = schrijfOrganisatieId(scopeVanVerzoek(req), gevraagd.organisatieId);
     if (!keuze.ok) return res.status(403).json({ error: keuze.fout });
     const data = { ...gevraagd, organisatieId: keuze.organisatieId ?? undefined };
+
+    // Bekwaamheidspoort, om dezelfde reden als op /api/afnames: vóór de
+    // saldo-check, want een licentievraag hoort niet als creditsfout te
+    // verschijnen. Deze route heeft wél `vereisScope`, dus hier is de keten naar
+    // een licentie meestal rond en doet de poort werkelijk haar werk.
+    const verzenderUitnodiging = await verzenderVanVerzoek(req);
+    const poortoordeel = await beoordeelSchrijfweg({
+      handeling: "uitnodiging_aanmaken",
+      instrumentId: data.instrumentId ?? standaardInstrumentId(),
+      verzender: verzenderUitnodiging,
+      taal: normaliseerTaal(data.taal),
+    });
+    if (!poortoordeel.mag) {
+      return res.status(403).json(weigeringslichaam(poortoordeel));
+    }
+
     // Saldo-check + reservering wanneer er een organisatie is.
     if (data.organisatieId != null) {
       const org = await storage.getOrganisatie(data.organisatieId);
@@ -280,7 +320,7 @@ export function registerAfnameRoutes(app: Express): void {
     }
     const inv = await storage.maakUitnodiging({
       organisatieId: data.organisatieId ?? null,
-      ...(await verzenderVanVerzoek(req)),
+      ...verzenderUitnodiging,
       name: data.name ?? null,
       company: data.company ?? null,
       role: data.role ?? null,

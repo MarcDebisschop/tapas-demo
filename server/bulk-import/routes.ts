@@ -22,6 +22,7 @@ import type { Express, Request, Response } from "express";
 import { randomBytes } from "node:crypto";
 import { storage, db, sqlite, CreditError } from "../storage";
 import { vereisScope, scopeVanVerzoek, schrijfOrganisatieId, verzenderVanVerzoek } from "../scope-guard";
+import { beoordeelSchrijfweg, weigeringslichaam } from "../bekwaamheid/poortbrug";
 import { afnames, type Afname } from "@shared/schema";
 import { getTemplate, alleTemplates, TEMPLATES } from "./templates";
 import { templateAlsBuffer, parseUpload, type ParseFout } from "./excel";
@@ -445,6 +446,29 @@ export function registerBulkImportRoutes(app: Express): void {
     if (instrumentId === "t4o") {
       const t4oOrigin = typeof req.body?.origin === "string" ? req.body.origin.replace(/\/+$/, "") : "";
       return verwerkT4O(req, res, tpl.titel, rijen, fouten, t4oOrigin);
+    }
+
+    // Bekwaamheidspoort. Eén oordeel voor de hele import, niet één per rij: bij
+    // een bulkverzending is de licentievraag één vraag — mag deze persoon dit
+    // instrument afnemen — en die verandert niet halverwege het bestand. Per rij
+    // toetsen zou honderden identieke opzoekingen doen en, erger, honderden
+    // identieke auditregels schrijven voor één handeling.
+    //
+    // Staat ná de T4O-aftakking hierboven en niet ervoor. T4O schrijft niet naar
+    // `afnames` maar naar `t4o_sessies`; dat is een eigen schrijfweg die in de
+    // inventarisatie van blok 2 apart is vastgelegd en in een latere ronde aan de
+    // beurt komt. Hem hier meenemen zou de poort laten oordelen over een pad dat
+    // niet onderzocht is.
+    //
+    // Staat vóór de saldo-check, zoals op de andere twee wegen: een licentievraag
+    // hoort niet als creditsfout te verschijnen.
+    const poortoordeel = await beoordeelSchrijfweg({
+      handeling: "uitnodiging_aanmaken",
+      instrumentId,
+      verzender,
+    });
+    if (!poortoordeel.mag) {
+      return res.status(403).json(weigeringslichaam(poortoordeel));
     }
 
     // Bepaal geldige rijen (rijen zonder validatiefout).

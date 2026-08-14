@@ -27,6 +27,9 @@ import { registerT4SportsModuleRoutes } from "./t4sports/module-routes";
 import { registerCoachContactRoutes } from "./routes-coach-contact";
 import { registerPriveAankoopRoutes } from "./prive-aankoop/routes";
 import { registerBulkImportRoutes } from "./bulk-import/routes";
+import { registerNormprofielRoutes } from "./bekwaamheid/routes-normprofiel";
+import { registerRegiekamerRoutes } from "./bekwaamheid/routes-regiekamer";
+import { registerLicentiebeeldRoutes } from "./bekwaamheid/routes-licentiebeeld";
 import { registerT4OrganizationsRoutes } from "./t4organizations/routes";
 import { registerDriverScanRoutes } from "./driverscan/routes";
 import { registerTwominscanRoutes } from "./twominscan/routes";
@@ -204,6 +207,29 @@ export async function registerRoutes(
   // eigen bestanden, hergebruikt de bestaande uitnodig-/creditlogica.
   // -------------------------------------------------------------------------
   registerBulkImportRoutes(app);
+
+  // -------------------------------------------------------------------------
+  // Bekwaamheid — de norm (scherm 9.5). Drie schrijfwegen: neerleggen,
+  // bijstellen zolang het concept is, en bevriezen. Er is met opzet geen weg
+  // terug: de onwijzigbaarheid van een bevroren cesuur staat in de datalaag.
+  // Nieuwe module (Regel 2): eigen bestanden.
+  // -------------------------------------------------------------------------
+  registerNormprofielRoutes(app);
+
+  // -------------------------------------------------------------------------
+  // Bekwaamheid — de regiekamer (scherm 9.6). Twee leeswegen: het beeld en de
+  // poortsimulatie. Geen schrijfweg: dit scherm kijkt en verandert niets, ook
+  // niet aan het auditlog. Nieuwe module (Regel 2): eigen bestanden.
+  // -------------------------------------------------------------------------
+  registerRegiekamerRoutes(app);
+
+  // -------------------------------------------------------------------------
+  // Bekwaamheid — het licentiebeeld (scherm 9.7). Eén leesweg die drie schermen
+  // bedient: de kolom "licentie" op /admin/toegang, de statussen per coach op
+  // /admin/coaches en de kaart op /coach/dashboard. Eén vraag, één antwoord.
+  // Nieuwe module (Regel 2): eigen bestanden.
+  // -------------------------------------------------------------------------
+  registerLicentiebeeldRoutes(app);
 
   // Credit-recovery job: verlopen afnames vrijgeven (item 1.6, 2026-06-30)
   startCreditRecoveryJob(6);

@@ -5,6 +5,7 @@ export default defineConfig({
   schema: [
     "./shared/schema.ts",
     "./server/audit/schema.ts",
+    "./server/bekwaamheid/schema.ts",
     "./server/hdd/schema.ts",
     "./server/prive-aankoop/schema.ts",
     "./server/stm/schema.ts",

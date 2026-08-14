@@ -46,6 +46,29 @@ export const AUDIT_ACTIES = [
   "traject_indruk_vrijgegeven",
   "traject_bril_gebruikt",
   "traject_gebeurtenis_auteur_gezet",
+  // Module Bekwaamheid. Alleen handelingen die een gevolg hebben voor een
+  // persoon staan hier. Het lezen van een dashboard is geen auditgebeurtenis;
+  // het vaststellen van een uitkomst over iemand wel.
+  "bekwaamheid_register_gewijzigd",
+  "bekwaamheid_licentie_gewijzigd",
+  "bekwaamheid_tussentijdse_toets_vastgesteld",
+  "bekwaamheid_tussentijdse_toets_gepubliceerd",
+  "bekwaamheid_coachingsplan_opgesteld",
+  "bekwaamheid_coachingsplan_afgesloten",
+  "bekwaamheid_poort_geweigerd",
+  "bekwaamheid_poort_zou_weigeren",
+  "bekwaamheid_normprofiel_vastgelegd",
+  "bekwaamheid_normprofiel_gewijzigd",
+  "bekwaamheid_normprofiel_bevroren",
+  // Itembank en kennischeck. Het wijzigen van `gebruik` staat er apart in en
+  // niet als gewone itemwijziging: dat is de enige handeling die een item uit de
+  // meting haalt of erin houdt, en bij een bezwaar over een itemset is de vraag
+  // altijd wanneer welk item van status wisselde.
+  "bekwaamheid_item_neergezet",
+  "bekwaamheid_item_gewijzigd",
+  "bekwaamheid_item_gebruik_gewijzigd",
+  "bekwaamheid_itemset_samengesteld",
+  "bekwaamheid_itemset_ingeleverd",
 ] as const;
 
 export type AuditActie = (typeof AUDIT_ACTIES)[number];

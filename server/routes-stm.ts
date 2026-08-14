@@ -25,6 +25,7 @@ import { kwaliteitOpslag, seedDemoKwaliteit } from "./kwaliteit-storage";
 import { verifieerWachtwoord } from "./auth/wachtwoord";
 import { zetSessieIdentiteit, wisSessieIdentiteit } from "./sessie-identiteit";
 import { isDemoModus } from "./demomodus";
+import { bekwaamheidOpslag } from "./bekwaamheid/storage";
 
 // Demo-modus: identiek criterium als in server/routes/admin.ts.
 // S-4 (audit): de demomodus komt uit één bron (server/demomodus.ts) en is in
@@ -883,37 +884,57 @@ export function registerStmRoutes(app: Express, storage: any): void {
     console.warn("[kwaliteit-demo-seed] overgeslagen:", (e as Error)?.message);
   }
 
-  // ── Extra practitioners: geaccrediteerde coaches (niet-beheerder) ───────────
-  // ID-reeks 1001+ om nooit te botsen met echte beheerder-ID's.
-  // Bron: routes-coaches-academy-mail.ts (actief: 1, opl: TaPas Jester Niveau 4
-  //        of TaPas Accreditatie Niveau 1/2). Roald Borré zit al in beheerders.
-  const EXTRA_PRACTITIONERS: Array<{ id: number; naam: string; email: string }> = [
-    { id: 1001, naam: "Kris Debisschop",    email: "kris.debisschop@tapascity.com" },
-    { id: 1002, naam: "Herman Van Esbroeck", email: "herman@tapas-demo.be" },
-    { id: 1003, naam: "Prof. Leen Adams",    email: "leen.adams@tapas-demo.be" },
-    { id: 1004, naam: "Alan Bakx",           email: "alan.bakx@tapas-demo.be" },
-    { id: 1005, naam: "An Mortelmans",       email: "an.mortelmans@tapas-demo.be" },
-    { id: 1006, naam: "Andrea Hoffmann",     email: "andrea.hoffmann@tapas-demo.be" },
-    { id: 1007, naam: "Carl De Geest",       email: "carl.degeest@tapas-demo.be" },
-    { id: 1008, naam: "Caroline Lachat",     email: "caroline.lachat@tapas-demo.be" },
-    { id: 1009, naam: "Erik Franck",         email: "erik.franck@tapas-demo.be" },
-    { id: 1010, naam: "Gerlinde Cooymans",   email: "gerlinde.cooymans@tapas-demo.be" },
-    { id: 1011, naam: "Gina Peeters",        email: "gina.peeters@tapas-demo.be" },
-    { id: 1012, naam: "Jaccolien Molenaar",  email: "jaccolien.molenaar@tapas-demo.nl" },
-    { id: 1013, naam: "Katrien Vanherpe",    email: "katrien.vanherpe@tapas-demo.be" },
-    { id: 1014, naam: "Nadja Bakx-Trimbos", email: "nadja.bakx@tapas-demo.nl" },
-    { id: 1015, naam: "Tony Ramboer",        email: "tony.ramboer@tapas-demo.be" },
-    { id: 1016, naam: "Vanessa Luyten",      email: "vanessa.luyten@tapas-demo.be" },
-    { id: 1017, naam: "Veerle Van de Paer",  email: "veerle.vandepaer@tapas-demo.be" },
-    { id: 1018, naam: "Jason-Louise Graham", email: "jl.graham@tapas-demo.be" },
-    { id: 1019, naam: "Anne-Sofie Bogaerts", email: "as.bogaerts@tapas-demo.be" },
-    { id: 1020, naam: "Karen Thiers",        email: "karen.thiers@tapas-demo.be" },
-    { id: 1021, naam: "Anthony Van Aerdebrugge", email: "anthony.vanaerdebrugge@tapas-demo.be" },
-  ];
+  // ── Practitioners zonder beheerdersaccount ─────────────────────────────────
+  //
+  // Hier stond een lijst van eenentwintig namen met e-mailadres, hard in de
+  // broncode, met ids 1001 en verder. Drie feiten over die lijst:
+  //
+  //   1. Alle eenentwintig namen staan al in de tabel `coach_register`
+  //      (geseed in server/routes-coaches-academy-mail.ts), allemaal met demo=1.
+  //      De namen stonden er dus dubbel in.
+  //   2. Negentien van de eenentwintig adressen bestonden niet. Het waren
+  //      @tapas-demo.be en @tapas-demo.nl adressen die alleen in dit ene
+  //      bestand voorkwamen. Het alerteringsendpoint stuurde daar mail naar.
+  //      Ze zijn niet meeverhuisd: wie geen adres heeft, wordt niet
+  //      aangeschreven, en dat is nu zichtbaar in plaats van weggewerkt.
+  //   3. De ids 1001 tot 1021 zijn wél behouden. `kwaliteit_normen`,
+  //      overrides en verstuurde alerteringen hangen aan die ids vast; het
+  //      migratiescript zet de registerrijen daarom op diezelfde nummers.
+  //
+  // Het register staat nu in `bekwaamheid_geaccrediteerden`, één bron voor het
+  // dashboard en voor de licentiecyclus. Een lijst van personen in een
+  // routebestand is niet te bewerken, niet te auditeren en niet te wissen op
+  // verzoek.
+  function practitionersZonderAccount(): Array<{ id: number; naam: string; email: string | null }> {
+    return bekwaamheidOpslag.register
+      .lijst()
+      .filter((p) => p.beheerderId === null)
+      .map((p) => ({ id: p.id, naam: p.naam, email: p.email }));
+  }
 
+  // ── Reparatie: de monitor telde oefensessies en noemde ze afnames ──────────
+  //
+  // Wat er stond: `stmSessieOpslagen.historiek(beheerderId)` gefilterd op het
+  // huidige jaar, en die uitkomst werd `afnames_count` genoemd en tegen een norm
+  // van twaalf afnames per jaar gelegd. `historiek()` levert afgeronde
+  // STM-quizsessies. Het dashboard toonde dus oefenpogingen onder de kop
+  // "afnames": wie tien keer de quiz deed en nooit een vragenlijst uitstuurde,
+  // stond op "norm gehaald"; wie veertig echte afnames deed en de quiz nooit
+  // aanraakte, stond op "achterstand 50" en kreeg drie alerteringsmails.
+  //
+  // Wat er nu staat: `bekwaamheidOpslag.tellers.telAfnames`, dat de tabel
+  // `afnames` bevraagt op voltooide afnames die deze beheerder heeft aangemaakt.
+  // Die functie is niet hier gedupliceerd maar geleend van de
+  // bekwaamheidsmodule, zodat het dashboard en de licentiecyclus per definitie
+  // hetzelfde tellen. Twee tellers voor hetzelfde begrip is hoe je een jaar
+  // later ontdekt dat het dashboard iets anders zegt dan het dossier.
+  //
+  // Wat níet verandert: de norm, de statusdrempels, de voorspelling en de
+  // alerteringstrappen. Alleen de gemeten waarde was fout.
   function berekenKwaliteitsStatus(beheerderId: number): {
     afnames_count: number; norm: number; verwacht: number;
     progressie_pct: number; status_berekend: string; voorspelling_einde_jaar: number;
+    oefensessies_count: number;
   } {
     const now = new Date();
     const startJaar = new Date(now.getFullYear(), 0, 1);
@@ -921,12 +942,20 @@ export function registerStmRoutes(app: Express, storage: any): void {
     const dagenVerstreken = Math.floor((now.getTime() - startJaar.getTime()) / 86400000);
     const dagenTotaal = Math.floor((eindJaar.getTime() - startJaar.getTime()) / 86400000);
 
-    const alleAfgerond = stmSessieOpslagen.historiek(beheerderId);
-    const jaarSessies = alleAfgerond
-      .filter(s => s?.afgerond_at && s.afgerond_at.startsWith(String(now.getFullYear())));
-
     const norm = kwaliteitOpslag.getNorm(beheerderId) ?? 12;
-    const afnames_count = jaarSessies.length;
+    const afnames_count = bekwaamheidOpslag.tellers.telAfnames({
+      beheerderId,
+      van: `${now.getFullYear()}-01-01`,
+      tot: now.toISOString().slice(0, 10),
+    });
+
+    // De oefensessies verdwijnen niet uit het beeld, ze krijgen hun eigen naam.
+    // Ze zeggen iets — of iemand zijn kennis onderhoudt — maar niet hetzelfde als
+    // praktijkactiviteit, en ze horen niet tegen de afnamenorm te worden gelegd.
+    const oefensessies_count = stmSessieOpslagen
+      .historiek(beheerderId)
+      .filter((s) => s?.afgerond_at && s.afgerond_at.startsWith(String(now.getFullYear())))
+      .length;
     const verwacht = Math.round((dagenVerstreken / dagenTotaal) * norm);
     const progressie_pct = norm > 0 ? Math.round((afnames_count / norm) * 100) : 0;
     const gemVsVerwacht = verwacht > 0 ? afnames_count / verwacht : 1;
@@ -947,7 +976,10 @@ export function registerStmRoutes(app: Express, storage: any): void {
 
     const dagelijksTempo = dagenVerstreken > 0 ? afnames_count / dagenVerstreken : 0;
     const voorspelling_einde_jaar = Math.round(dagelijksTempo * dagenTotaal);
-    return { afnames_count, norm, verwacht, progressie_pct, status_berekend, voorspelling_einde_jaar };
+    return {
+      afnames_count, norm, verwacht, progressie_pct, status_berekend,
+      voorspelling_einde_jaar, oefensessies_count,
+    };
   }
 
   // GET /api/kwaliteit/dashboard?jaar=
@@ -958,14 +990,17 @@ export function registerStmRoutes(app: Express, storage: any): void {
       const alleBeheerders = await storage.listBeheerders();
       const allePractitioners = [
         ...alleBeheerders.map((b: any) => ({ id: b.id, naam: b.naam, email: b.email })),
-        ...EXTRA_PRACTITIONERS,
+        ...practitionersZonderAccount(),
       ];
       const practitioners = allePractitioners.map((b) => {
         const stats = berekenKwaliteitsStatus(b.id);
         const alerts = kwaliteitOpslag.getAlerts(b.id);
-        // Laatste activiteit: nieuwste afgeronde sessie (indien aanwezig).
+        // Laatste activiteit: de nieuwste voltooide afname. Stond hier eerder als
+        // de nieuwste afgeronde oefensessie — zelfde reparatie als de teller
+        // hierboven. De oefenkant blijft zichtbaar onder een eigen naam.
+        const laatste_activiteit = bekwaamheidOpslag.tellers.laatsteAfname(b.id);
         const historiek = stmSessieOpslagen.historiek(b.id);
-        const laatste_activiteit = historiek.length > 0 ? historiek[0].afgerond_at : null;
+        const laatste_oefensessie = historiek.length > 0 ? historiek[0].afgerond_at : null;
         // Ontbrekende info + open vragen (nu in datamodel).
         const notities = kwaliteitOpslag.getNotities(b.id);
         const ontbrekende_info = notities
@@ -980,6 +1015,7 @@ export function registerStmRoutes(app: Express, storage: any): void {
           ...stats,
           override_reden: override?.reden ?? null,
           laatste_activiteit,
+          laatste_oefensessie,
           ontbrekende_info,
           open_vragen,
           alert_trap1_sent: alerts.trap1,
@@ -1018,9 +1054,17 @@ export function registerStmRoutes(app: Express, storage: any): void {
       if (beheerder) {
         naam = beheerder.naam; email = beheerder.email;
       } else {
-        const extra = EXTRA_PRACTITIONERS.find((p) => p.id === id);
-        if (!extra) return res.status(404).json({ error: "Practitioner niet gevonden." });
-        naam = extra.naam; email = extra.email;
+        const geaccrediteerde = bekwaamheidOpslag.register.vindOp(id);
+        if (!geaccrediteerde) return res.status(404).json({ error: "Practitioner niet gevonden." });
+        if (!geaccrediteerde.email) {
+          // Liever een leesbare weigering dan een mail naar een verzonnen adres.
+          return res.status(409).json({
+            error:
+              `Van ${geaccrediteerde.naam} is geen e-mailadres bekend in het register. ` +
+              "Vul het adres aan voordat er een alertering verstuurd wordt.",
+          });
+        }
+        naam = geaccrediteerde.naam; email = geaccrediteerde.email;
       }
       kwaliteitOpslag.logMail({ beheerderId: id, trap, verstuurdAt: new Date().toISOString(), email, naam });
       kwaliteitOpslag.setAlertTrap(id, trap as 1 | 2 | 3);
@@ -1068,7 +1112,7 @@ export function registerStmRoutes(app: Express, storage: any): void {
       const alleBeheerders = await storage.listBeheerders();
       const allePractitionersKwartaal = [
         ...alleBeheerders.map((b: any) => ({ id: b.id, naam: b.naam, email: b.email })),
-        ...EXTRA_PRACTITIONERS,
+        ...practitionersZonderAccount(),
       ];
       const practitioners = allePractitionersKwartaal.map((b) => {
         const stats = berekenKwaliteitsStatus(b.id);
