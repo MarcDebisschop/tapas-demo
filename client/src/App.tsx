@@ -73,6 +73,12 @@ import AcademyJester from "@/pages/academy-jester";
 import CoachAanvraag from "@/pages/coach-aanvraag";
 import AdminKwaliteit from "@/pages/admin-kwaliteit";
 import AdminBekwaamheidNormprofiel from "@/pages/admin-bekwaamheid-normprofiel";
+import AdminBekwaamheidRegister from "@/pages/admin-bekwaamheid-register";
+import AdminBekwaamheidItems from "@/pages/admin-bekwaamheid-items";
+import AdminBekwaamheidRondes from "@/pages/admin-bekwaamheid-rondes";
+import AdminBekwaamheidBeoordelen from "@/pages/admin-bekwaamheid-beoordelen";
+import AdminBekwaamheidBeslissingen from "@/pages/admin-bekwaamheid-beslissingen";
+import AdminBekwaamheidCyclus from "@/pages/admin-bekwaamheid-cyclus";
 import AdminBekwaamheid from "@/pages/admin-bekwaamheid";
 import Stm from "@/pages/stm";
 import Webinars from "@/pages/webinars";
@@ -128,6 +134,12 @@ function AppRouter() {
       <Route path="/admin/mailbeheer">{() => <AdminLoginGate><AdminMailbeheer /></AdminLoginGate>}</Route>
       <Route path="/admin/kwaliteit">{() => <AdminLoginGate><AdminKwaliteit /></AdminLoginGate>}</Route>
       <Route path="/admin/bekwaamheid/normprofiel">{() => <AdminLoginGate><AdminBekwaamheidNormprofiel /></AdminLoginGate>}</Route>
+      <Route path="/admin/bekwaamheid/register">{() => <AdminLoginGate><AdminBekwaamheidRegister /></AdminLoginGate>}</Route>
+      <Route path="/admin/bekwaamheid/items">{() => <AdminLoginGate><AdminBekwaamheidItems /></AdminLoginGate>}</Route>
+      <Route path="/admin/bekwaamheid/rondes">{() => <AdminLoginGate><AdminBekwaamheidRondes /></AdminLoginGate>}</Route>
+      <Route path="/admin/bekwaamheid/beoordelen">{() => <AdminLoginGate><AdminBekwaamheidBeoordelen /></AdminLoginGate>}</Route>
+      <Route path="/admin/bekwaamheid/beslissingen">{() => <AdminLoginGate><AdminBekwaamheidBeslissingen /></AdminLoginGate>}</Route>
+      <Route path="/admin/bekwaamheid/cyclus">{() => <AdminLoginGate><AdminBekwaamheidCyclus /></AdminLoginGate>}</Route>
       <Route path="/admin/bekwaamheid">{() => <AdminLoginGate><AdminBekwaamheid /></AdminLoginGate>}</Route>
       {/* Bouwplan §9.7: de oefenlaag heet wat ze is. Het oude pad blijft als
           omleiding bestaan, want links in bookmarks en in mails hoeven niet te
