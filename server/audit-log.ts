@@ -69,7 +69,6 @@ export const AUDIT_ACTIES = [
   "bekwaamheid_item_gebruik_gewijzigd",
   "bekwaamheid_itemset_samengesteld",
   "bekwaamheid_itemset_ingeleverd",
-  "bekwaamheid_itemset_nagekeken",
   // Blok 3 en 4. Het lezen van een ronde staat er niet in, het verzetten van
   // haar fase wel: dat is de handeling die bepaalt wat er daarna nog mag
   // gebeuren, en bij een bezwaar is de eerste vraag altijd wanneer welke fase

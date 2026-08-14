@@ -67,6 +67,7 @@ import {
   FASEN_MET_SCOREINVOER,
 } from "./rondeloop";
 import { BLOKNAMEN } from "./schema";
+import type { AfnameVoorActiviteit } from "./activiteit";
 import { magOvergang, valideerItem, blokdekking } from "./itembank";
 import type { Itemgebruik } from "./schema";
 import {
@@ -1080,6 +1081,42 @@ export function maakBekwaamheidOpslag(
           invoer.instrumentId ?? null,
         ) as { n: number };
       return rij.n;
+    },
+
+    /**
+     * De voltooide afnames van één persoon als ruwe rijen voor de
+     * activiteitsberekening.
+     *
+     * `telAfnames` geeft een getal en is genoeg voor een dashboard. De
+     * activiteitsmodule heeft meer nodig: ze bepaalt zelf haar venster, ze kijkt
+     * per instrument, en ze leest de tijdgegevens om te zien of er afnames bij
+     * zijn die verdacht snel zijn afgewerkt. Zou deze laag alvast filteren op
+     * venster of instrument, dan zou de berekening met een voorgeselecteerde
+     * verzameling werken en zou haar eigen venstergrens niets meer betekenen.
+     *
+     * Daarom: alles wat voltooid is, ongefilterd, en de module kiest.
+     */
+    afnamesVoorActiviteit(beheerderId: number): AfnameVoorActiviteit[] {
+      const rijen = db
+        .prepare(
+          `SELECT id, instrument_id, completed_at, item_tijden FROM afnames
+           WHERE aangemaakt_door_beheerder_id = ?
+             AND status = 'voltooid'
+             AND completed_at IS NOT NULL
+           ORDER BY completed_at ASC`,
+        )
+        .all(beheerderId) as {
+        id: number;
+        instrument_id: string | null;
+        completed_at: string | null;
+        item_tijden: unknown;
+      }[];
+      return rijen.map((r) => ({
+        id: r.id,
+        instrumentId: r.instrument_id,
+        voltooidOp: r.completed_at,
+        itemTijden: r.item_tijden,
+      }));
     },
 
     /**

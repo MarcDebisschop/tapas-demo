@@ -30,6 +30,11 @@ import { registerBulkImportRoutes } from "./bulk-import/routes";
 import { registerNormprofielRoutes } from "./bekwaamheid/routes-normprofiel";
 import { registerRegiekamerRoutes } from "./bekwaamheid/routes-regiekamer";
 import { registerLicentiebeeldRoutes } from "./bekwaamheid/routes-licentiebeeld";
+import { registerRegisterRoutes } from "./bekwaamheid/routes-register";
+import { registerItemRoutes } from "./bekwaamheid/routes-items";
+import { registerRondeRoutes } from "./bekwaamheid/routes-rondes";
+import { registerBeslissingRoutes } from "./bekwaamheid/routes-beslissingen";
+import { registerCyclusRoutes } from "./bekwaamheid/routes-cyclus";
 import { registerT4OrganizationsRoutes } from "./t4organizations/routes";
 import { registerDriverScanRoutes } from "./driverscan/routes";
 import { registerTwominscanRoutes } from "./twominscan/routes";
@@ -230,6 +235,23 @@ export async function registerRoutes(
   // Nieuwe module (Regel 2): eigen bestanden.
   // -------------------------------------------------------------------------
   registerLicentiebeeldRoutes(app);
+
+  // -------------------------------------------------------------------------
+  // Bekwaamheid — de vijf schrijfwegen van de module, in de volgorde waarin een
+  // dossier ze doorloopt: het register en de licenties, de itembank, de ronde
+  // met haar bewijsstukken en scores, de beslissing met het bezwaar, en de
+  // tweejarige cyclus met haar tussentijdse controlemoment.
+  //
+  // Vijf bestanden en niet één: de scheiding volgt de blokken van het draaiboek,
+  // zodat een wijziging in de beslisregels nooit een bestand raakt waarin het
+  // register staat. Elke registratie neemt een injecteerbare opslaglaag aan, wat
+  // de routetests op een databank in het geheugen laat lopen.
+  // -------------------------------------------------------------------------
+  registerRegisterRoutes(app);
+  registerItemRoutes(app);
+  registerRondeRoutes(app);
+  registerBeslissingRoutes(app);
+  registerCyclusRoutes(app);
 
   // Credit-recovery job: verlopen afnames vrijgeven (item 1.6, 2026-06-30)
   startCreditRecoveryJob(6);
