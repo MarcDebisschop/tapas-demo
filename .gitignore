@@ -17,3 +17,7 @@ data.db-journal
 .DS_Store
 backups/
 proef.db
+
+# Python-bytecode van de meetscripts — machineafval, geen bron
+__pycache__/
+*.pyc
