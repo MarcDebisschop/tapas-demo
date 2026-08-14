@@ -48,11 +48,24 @@ import {
 import type { Signaal, ToetsBerekening } from "./tussentijdse-toets";
 import type {
   Agendasoort,
+  As,
+  Beslisuitkomst,
+  Bewijsherkomst,
+  Bewijsstukroute,
+  Bewijsstukstatus,
+  Bezwaaruitspraak,
   Coachingsplanuitkomst,
   Kennischeckblok,
   Licentiestatus,
+  Rondefase,
+  Rondesoort,
   Toetsuitkomst,
 } from "./schema";
+import {
+  bezwaarTegenOvergang,
+  FASEN_MET_INLEVERRECHT,
+  FASEN_MET_SCOREINVOER,
+} from "./rondeloop";
 import { BLOKNAMEN } from "./schema";
 import { magOvergang, valideerItem, blokdekking } from "./itembank";
 import type { Itemgebruik } from "./schema";
@@ -399,6 +412,298 @@ function leesNormprofiel(rij: NormprofielRij): NormprofielRecord {
     vastgesteldDoor: rij.vastgesteld_door,
     bevrorenOp: rij.bevroren_op,
     onderbouwing: rij.onderbouwing,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Rijvormen en omzetters van blok 3 en 4
+//
+// Waarom hier eigen Record-types staan en niet de `$inferSelect`-types uit
+// schema.ts: die beschrijven wat Drizzle zou teruggeven, en deze laag leest met
+// `better-sqlite3` rechtstreeks. Wat er dan binnenkomt zijn kolomnamen met
+// liggende streepjes en getallen waar de rest van de module een boolean
+// verwacht. De omzetters hieronder zijn de enige plaats waar die twee vormen
+// elkaar raken.
+// ---------------------------------------------------------------------------
+
+type AccreditatieRij = {
+  id: number;
+  geaccrediteerde_id: number;
+  instrument_id: string;
+  niveau: number;
+  behaald_op: string;
+  opleiding_id: number | null;
+  bewijs_herkomst: string;
+  ingetrokken_op: string | null;
+  ingetrokken_reden: string | null;
+};
+
+export type AccreditatieRecord = {
+  id: number;
+  geaccrediteerdeId: number;
+  instrumentId: string;
+  niveau: number;
+  behaaldOp: string;
+  opleidingId: number | null;
+  bewijsHerkomst: Bewijsherkomst;
+  ingetrokkenOp: string | null;
+  ingetrokkenReden: string | null;
+};
+
+function leesAccreditatie(rij: AccreditatieRij): AccreditatieRecord {
+  return {
+    id: rij.id,
+    geaccrediteerdeId: rij.geaccrediteerde_id,
+    instrumentId: rij.instrument_id,
+    niveau: rij.niveau,
+    behaaldOp: rij.behaald_op,
+    opleidingId: rij.opleiding_id,
+    bewijsHerkomst: rij.bewijs_herkomst as Bewijsherkomst,
+    ingetrokkenOp: rij.ingetrokken_op,
+    ingetrokkenReden: rij.ingetrokken_reden,
+  };
+}
+
+type RondeRij = {
+  id: number;
+  geaccrediteerde_id: number;
+  instrument_id: string;
+  normprofiel_id: number;
+  soort: string;
+  codenummer: string;
+  fase: string;
+  geopend_op: string;
+  venster_tot: string;
+  afgerond_op: string | null;
+  aanpassingen: string | null;
+  aanpassingen_reden: string | null;
+  notitie_intern: string | null;
+  verwerkingsdoel: string;
+  rechtsgrond: string;
+  privacyverklaring_versie: string | null;
+};
+
+export type RondeRecord = {
+  id: number;
+  geaccrediteerdeId: number;
+  instrumentId: string;
+  normprofielId: number;
+  soort: Rondesoort;
+  codenummer: string;
+  fase: Rondefase;
+  geopendOp: string;
+  vensterTot: string;
+  afgerondOp: string | null;
+  aanpassingen: string | null;
+  aanpassingenReden: string | null;
+  notitieIntern: string | null;
+  verwerkingsdoel: string;
+  rechtsgrond: string;
+  privacyverklaringVersie: string | null;
+};
+
+function leesRonde(rij: RondeRij): RondeRecord {
+  return {
+    id: rij.id,
+    geaccrediteerdeId: rij.geaccrediteerde_id,
+    instrumentId: rij.instrument_id,
+    normprofielId: rij.normprofiel_id,
+    soort: rij.soort as Rondesoort,
+    codenummer: rij.codenummer,
+    fase: rij.fase as Rondefase,
+    geopendOp: rij.geopend_op,
+    vensterTot: rij.venster_tot,
+    afgerondOp: rij.afgerond_op,
+    aanpassingen: rij.aanpassingen,
+    aanpassingenReden: rij.aanpassingen_reden,
+    notitieIntern: rij.notitie_intern,
+    verwerkingsdoel: rij.verwerkingsdoel,
+    rechtsgrond: rij.rechtsgrond,
+    privacyverklaringVersie: rij.privacyverklaring_versie,
+  };
+}
+
+type BewijsstukRij = {
+  id: number;
+  ronde_id: number;
+  nummer: number;
+  as: string;
+  weging: number;
+  status: string;
+  ruwe_score: number | null;
+  itemset_id: number | null;
+  route: string | null;
+  opname_verklaring: number;
+  ingeleverd_op: string | null;
+  beoordeeld_op: string | null;
+};
+
+export type BewijsstukRecord = {
+  id: number;
+  rondeId: number;
+  nummer: number;
+  as: As;
+  weging: number;
+  status: Bewijsstukstatus;
+  ruweScore: number | null;
+  itemsetId: number | null;
+  route: Bewijsstukroute | null;
+  opnameVerklaring: boolean;
+  ingeleverdOp: string | null;
+  beoordeeldOp: string | null;
+};
+
+function leesBewijsstuk(rij: BewijsstukRij): BewijsstukRecord {
+  return {
+    id: rij.id,
+    rondeId: rij.ronde_id,
+    nummer: rij.nummer,
+    as: rij.as as As,
+    weging: rij.weging,
+    status: rij.status as Bewijsstukstatus,
+    ruweScore: rij.ruwe_score,
+    itemsetId: rij.itemset_id,
+    route: (rij.route as Bewijsstukroute | null) ?? null,
+    opnameVerklaring: rij.opname_verklaring === 1,
+    ingeleverdOp: rij.ingeleverd_op,
+    beoordeeldOp: rij.beoordeeld_op,
+  };
+}
+
+type ScoreRij = {
+  id: number;
+  bewijsstuk_id: number;
+  beoordelaar_id: number;
+  onderdeel: string;
+  score: number;
+  onderbouwing: string;
+  ingevoerd_op: string;
+  is_kalibratie: number;
+};
+
+export type ScoreRecord = {
+  id: number;
+  bewijsstukId: number;
+  beoordelaarId: number;
+  onderdeel: string;
+  score: number;
+  onderbouwing: string;
+  ingevoerdOp: string;
+  isKalibratie: boolean;
+};
+
+function leesScore(rij: ScoreRij): ScoreRecord {
+  return {
+    id: rij.id,
+    bewijsstukId: rij.bewijsstuk_id,
+    beoordelaarId: rij.beoordelaar_id,
+    onderdeel: rij.onderdeel,
+    score: rij.score,
+    onderbouwing: rij.onderbouwing,
+    ingevoerdOp: rij.ingevoerd_op,
+    isKalibratie: rij.is_kalibratie === 1,
+  };
+}
+
+type BeslissingRij = {
+  id: number;
+  ronde_id: number;
+  voorstel_uitkomst: string;
+  voorstel_berekening: string;
+  definitieve_uitkomst: string;
+  afwijking_motivering: string | null;
+  bekrachtiger_een_id: number;
+  bekrachtiger_twee_id: number;
+  bekrachtigd_op: string;
+  gepubliceerd_op: string | null;
+  debrief_op: string | null;
+  debrief_door: number | null;
+};
+
+export type BeslissingRecord = {
+  id: number;
+  rondeId: number;
+  voorstelUitkomst: Beslisuitkomst;
+  /** De volledige uitkomst van `beoordeel()` zoals ze bij de beslissing gold. */
+  voorstelBerekening: unknown;
+  definitieveUitkomst: Beslisuitkomst;
+  afwijkingMotivering: string | null;
+  bekrachtigerEenId: number;
+  bekrachtigerTweeId: number;
+  bekrachtigdOp: string;
+  gepubliceerdOp: string | null;
+  debriefOp: string | null;
+  debriefDoor: number | null;
+};
+
+function leesBeslissing(rij: BeslissingRij): BeslissingRecord {
+  let berekening: unknown = null;
+  try {
+    berekening = JSON.parse(rij.voorstel_berekening);
+  } catch {
+    // Een onleesbare berekening mag het lezen van de beslissing niet blokkeren.
+    // De uitkomst zelf staat in een eigen kolom en is het feit dat telt; de
+    // berekening is de verantwoording erbij. Liever de beslissing tonen met een
+    // lege verantwoording dan het hele scherm laten vallen.
+    berekening = null;
+  }
+  return {
+    id: rij.id,
+    rondeId: rij.ronde_id,
+    voorstelUitkomst: rij.voorstel_uitkomst as Beslisuitkomst,
+    voorstelBerekening: berekening,
+    definitieveUitkomst: rij.definitieve_uitkomst as Beslisuitkomst,
+    afwijkingMotivering: rij.afwijking_motivering,
+    bekrachtigerEenId: rij.bekrachtiger_een_id,
+    bekrachtigerTweeId: rij.bekrachtiger_twee_id,
+    bekrachtigdOp: rij.bekrachtigd_op,
+    gepubliceerdOp: rij.gepubliceerd_op,
+    debriefOp: rij.debrief_op,
+    debriefDoor: rij.debrief_door,
+  };
+}
+
+type BezwaarRij = {
+  id: number;
+  ronde_id: number;
+  ingediend_op: string;
+  grond: string;
+  ontvangstbevestigd_op: string | null;
+  behandelaar_intern: number | null;
+  behandelaar_extern_omschrijving: string | null;
+  uitspraak_op: string | null;
+  uitspraak: string | null;
+  uitspraak_motivering: string | null;
+  status_tijdens_bezwaar_ongewijzigd: number;
+};
+
+export type BezwaarRecord = {
+  id: number;
+  rondeId: number;
+  ingediendOp: string;
+  grond: string;
+  ontvangstbevestigdOp: string | null;
+  behandelaarIntern: number | null;
+  behandelaarExternOmschrijving: string | null;
+  uitspraakOp: string | null;
+  uitspraak: Bezwaaruitspraak | null;
+  uitspraakMotivering: string | null;
+  statusTijdensBezwaarOngewijzigd: boolean;
+};
+
+function leesBezwaar(rij: BezwaarRij): BezwaarRecord {
+  return {
+    id: rij.id,
+    rondeId: rij.ronde_id,
+    ingediendOp: rij.ingediend_op,
+    grond: rij.grond,
+    ontvangstbevestigdOp: rij.ontvangstbevestigd_op,
+    behandelaarIntern: rij.behandelaar_intern,
+    behandelaarExternOmschrijving: rij.behandelaar_extern_omschrijving,
+    uitspraakOp: rij.uitspraak_op,
+    uitspraak: (rij.uitspraak as Bezwaaruitspraak | null) ?? null,
+    uitspraakMotivering: rij.uitspraak_motivering,
+    statusTijdensBezwaarOngewijzigd: rij.status_tijdens_bezwaar_ongewijzigd === 1,
   };
 }
 
@@ -2071,9 +2376,944 @@ export function maakBekwaamheidOpslag(
     },
   };
 
+  // -------------------------------------------------------------------------
+  // Accreditaties — het historische feit, los van het recht van vandaag
+  // -------------------------------------------------------------------------
+
+  /**
+   * WAAROM DEZE GROEP ER TOCH KOMT, EN NIET GESCHRAPT IS.
+   *
+   * `bekwaamheid_accreditaties` was de enige tabel die door niets werd
+   * aangeraakt: geen opslag, geen script, geen scherm. Er lagen twee eerlijke
+   * uitwegen — bouwen of schrappen — en één slechte: laten staan met een
+   * docstring die beweert dat een script haar vult.
+   *
+   * Bouwen wint op één onderscheid dat in deze module echt bestaat. Een licentie
+   * VERVALT: ze heeft `geldig_tot`, ze kan opgeschort of beeindigd worden, en
+   * `STATUSSEN_MET_AFNAMERECHT` beslist of iemand vandaag mag afnemen. Een
+   * accreditatie vervalt niet — "deze persoon heeft in 2019 niveau 2 behaald"
+   * blijft waar, ook nadat de licentie is verlopen. Zou dat feit in de
+   * licentietabel worden geperst, dan zou het bij elke statuswijziging herschreven
+   * worden en was de historiek na twee cycli weg.
+   *
+   * Intrekken is daarom géén verwijdering maar een aantekening met datum en
+   * reden, precies zoals de CHECK `intrekking_volledig` afdwingt: allebei of
+   * geen van beide. Een ingetrokken accreditatie blijft leesbaar; dat is het
+   * verschil tussen een correctie en het uitwissen van een spoor.
+   */
+  const accreditaties = {
+    vindOp(id: number): AccreditatieRecord | undefined {
+      const rij = db
+        .prepare("SELECT * FROM bekwaamheid_accreditaties WHERE id = ?")
+        .get(id) as AccreditatieRij | undefined;
+      return rij ? leesAccreditatie(rij) : undefined;
+    },
+
+    vanPersoon(geaccrediteerdeId: number): AccreditatieRecord[] {
+      const rijen = db
+        .prepare(
+          `SELECT * FROM bekwaamheid_accreditaties
+           WHERE geaccrediteerde_id = ?
+           ORDER BY behaald_op DESC, instrument_id`,
+        )
+        .all(geaccrediteerdeId) as AccreditatieRij[];
+      return rijen.map(leesAccreditatie);
+    },
+
+    /**
+     * Legt een behaalde accreditatie vast.
+     *
+     * De unieke index staat op (persoon, instrument, niveau). Tweemaal hetzelfde
+     * niveau op hetzelfde instrument is geen tweede prestatie maar een dubbele
+     * invoer, en die wordt hier geweigerd met een leesbare tekst in plaats van
+     * met een SQLite-foutcode die het scherm niet kan tonen.
+     */
+    legVast(invoer: {
+      geaccrediteerdeId: number;
+      instrumentId: string;
+      niveau: number;
+      behaaldOp: string;
+      opleidingId?: number | null;
+      bewijsHerkomst: Bewijsherkomst;
+      doorBeheerderId?: number | null;
+    }): AccreditatieRecord {
+      if (!register.vindOp(invoer.geaccrediteerdeId)) {
+        throw new Error(`Geaccrediteerde ${invoer.geaccrediteerdeId} bestaat niet.`);
+      }
+      const bestaand = db
+        .prepare(
+          `SELECT id FROM bekwaamheid_accreditaties
+           WHERE geaccrediteerde_id = ? AND instrument_id = ? AND niveau = ?`,
+        )
+        .get(invoer.geaccrediteerdeId, invoer.instrumentId, invoer.niveau) as
+        | { id: number }
+        | undefined;
+      if (bestaand) {
+        throw new Error(
+          `Er staat al een accreditatie voor ${invoer.instrumentId} op niveau ${invoer.niveau}.`,
+        );
+      }
+      const res = db
+        .prepare(
+          `INSERT INTO bekwaamheid_accreditaties
+             (geaccrediteerde_id, instrument_id, niveau, behaald_op, opleiding_id, bewijs_herkomst)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          invoer.geaccrediteerdeId,
+          invoer.instrumentId,
+          invoer.niveau,
+          invoer.behaaldOp.slice(0, 10),
+          invoer.opleidingId ?? null,
+          invoer.bewijsHerkomst,
+        );
+      audit({
+        adminId: invoer.doorBeheerderId ?? null,
+        actie: "bekwaamheid_accreditatie_vastgelegd",
+        afnameId: null,
+        detail: `Accreditatie ${res.lastInsertRowid}: ${invoer.instrumentId} niveau ${invoer.niveau} voor persoon ${invoer.geaccrediteerdeId}, behaald ${invoer.behaaldOp.slice(0, 10)} (${invoer.bewijsHerkomst}).`,
+      });
+      return accreditaties.vindOp(res.lastInsertRowid as number)!;
+    },
+
+    /** Trekt een accreditatie in. Verwijdert niets; zet datum en reden. */
+    trekIn(invoer: { id: number; reden: string; doorBeheerderId?: number | null }): AccreditatieRecord {
+      const bestaand = accreditaties.vindOp(invoer.id);
+      if (!bestaand) throw new Error(`Accreditatie ${invoer.id} bestaat niet.`);
+      if (bestaand.ingetrokkenOp) {
+        throw new Error(`Accreditatie ${invoer.id} is al ingetrokken op ${bestaand.ingetrokkenOp}.`);
+      }
+      const reden = invoer.reden.trim();
+      if (reden.length < 10) {
+        throw new Error("Een intrekking vraagt een reden van minstens tien tekens.");
+      }
+      db.prepare(
+        `UPDATE bekwaamheid_accreditaties
+         SET ingetrokken_op = ?, ingetrokken_reden = ?
+         WHERE id = ?`,
+      ).run(vandaag(), reden, invoer.id);
+      audit({
+        adminId: invoer.doorBeheerderId ?? null,
+        actie: "bekwaamheid_accreditatie_ingetrokken",
+        afnameId: null,
+        detail: `Accreditatie ${invoer.id} ingetrokken: ${reden}`,
+      });
+      return accreditaties.vindOp(invoer.id)!;
+    },
+  };
+
+  // -------------------------------------------------------------------------
+  // Rondes — de loop van een bekrachtiging
+  // -------------------------------------------------------------------------
+
+  /**
+   * WAAROM EEN RONDE NIET OPENT ZONDER BEVROREN NORM.
+   *
+   * `open` weigert wanneer er voor het instrument geen bevroren normprofiel
+   * geldt. Dat is de belangrijkste regel in deze groep. Zou een ronde kunnen
+   * starten op een concept, dan kon de cesuur veranderen terwijl de kandidaat
+   * bezig was, en dan is achteraf niet vast te stellen waaraan hij is
+   * afgemeten. De ronde legt het `normprofiel_id` vast bij het openen en houdt
+   * dat vast; een latere versie van de norm raakt lopende rondes niet.
+   */
+  const rondes = {
+    vindOp(id: number): RondeRecord | undefined {
+      const rij = db
+        .prepare("SELECT * FROM bekwaamheid_rondes WHERE id = ?")
+        .get(id) as RondeRij | undefined;
+      return rij ? leesRonde(rij) : undefined;
+    },
+
+    vanPersoon(geaccrediteerdeId: number): RondeRecord[] {
+      const rijen = db
+        .prepare(
+          `SELECT * FROM bekwaamheid_rondes
+           WHERE geaccrediteerde_id = ?
+           ORDER BY geopend_op DESC`,
+        )
+        .all(geaccrediteerdeId) as RondeRij[];
+      return rijen.map(leesRonde);
+    },
+
+    lijst(filter: { fase?: Rondefase; instrumentId?: string } = {}): RondeRecord[] {
+      const rijen = db
+        .prepare(
+          `SELECT * FROM bekwaamheid_rondes
+           WHERE (? IS NULL OR fase = ?)
+             AND (? IS NULL OR instrument_id = ?)
+           ORDER BY geopend_op DESC`,
+        )
+        .all(
+          filter.fase ?? null,
+          filter.fase ?? null,
+          filter.instrumentId ?? null,
+          filter.instrumentId ?? null,
+        ) as RondeRij[];
+      return rijen.map(leesRonde);
+    },
+
+    /**
+     * Bouwt het codenummer waaronder de ronde in stukken naar buiten gaat.
+     *
+     * Vorm `R-2026-0007`: jaartal plus een teller binnen dat jaar. Geen naam en
+     * geen persoonsnummer, want dit nummer staat op documenten die beoordelaars
+     * zien en de module werkt zonder namenlijst. De unieke index op de kolom
+     * vangt een botsing af; de teller kijkt naar het hoogste bestaande nummer van
+     * het jaar en niet naar het aantal rijen, zodat een gestaakte ronde geen
+     * nummer teruggeeft dat al op papier staat.
+     */
+    volgendCodenummer(jaar?: string): string {
+      const jr = jaar ?? vandaag().slice(0, 4);
+      const rij = db
+        .prepare(
+          `SELECT codenummer FROM bekwaamheid_rondes
+           WHERE codenummer LIKE ?
+           ORDER BY codenummer DESC LIMIT 1`,
+        )
+        .get(`R-${jr}-%`) as { codenummer: string } | undefined;
+      const laatste = rij ? Number(rij.codenummer.slice(-4)) : 0;
+      return `R-${jr}-${String(laatste + 1).padStart(4, "0")}`;
+    },
+
+    open(invoer: {
+      geaccrediteerdeId: number;
+      instrumentId: string;
+      soort: Rondesoort;
+      geopendOp?: string;
+      vensterMaanden?: number;
+      notitieIntern?: string | null;
+      privacyverklaringVersie?: string | null;
+      doorBeheerderId?: number | null;
+    }): RondeRecord {
+      if (!register.vindOp(invoer.geaccrediteerdeId)) {
+        throw new Error(`Geaccrediteerde ${invoer.geaccrediteerdeId} bestaat niet.`);
+      }
+      const norm = normprofielen.geldend(invoer.instrumentId);
+      if (!norm) {
+        throw new Error(
+          `Voor ${invoer.instrumentId} geldt geen bevroren normprofiel; een ronde kan niet openen zonder cesuur.`,
+        );
+      }
+      const lopend = db
+        .prepare(
+          `SELECT id, codenummer FROM bekwaamheid_rondes
+           WHERE geaccrediteerde_id = ? AND instrument_id = ?
+             AND fase NOT IN ('afgesloten', 'gestaakt')`,
+        )
+        .get(invoer.geaccrediteerdeId, invoer.instrumentId) as
+        | { id: number; codenummer: string }
+        | undefined;
+      if (lopend) {
+        throw new Error(
+          `Er loopt al een ronde (${lopend.codenummer}) voor deze persoon op ${invoer.instrumentId}.`,
+        );
+      }
+      const geopendOp = (invoer.geopendOp ?? vandaag()).slice(0, 10);
+      const maanden = invoer.vensterMaanden ?? 3;
+      const codenummer = rondes.volgendCodenummer(geopendOp.slice(0, 4));
+      const res = db
+        .prepare(
+          `INSERT INTO bekwaamheid_rondes
+             (geaccrediteerde_id, instrument_id, normprofiel_id, soort, codenummer,
+              fase, geopend_op, venster_tot, notitie_intern, privacyverklaring_versie)
+           VALUES (?, ?, ?, ?, ?, 'voorbereiding', ?, ?, ?, ?)`,
+        )
+        .run(
+          invoer.geaccrediteerdeId,
+          invoer.instrumentId,
+          norm.id,
+          invoer.soort,
+          codenummer,
+          geopendOp,
+          telMaandenOp(geopendOp, maanden),
+          invoer.notitieIntern ?? null,
+          invoer.privacyverklaringVersie ?? null,
+        );
+      audit({
+        adminId: invoer.doorBeheerderId ?? null,
+        actie: "bekwaamheid_ronde_geopend",
+        afnameId: null,
+        detail: `Ronde ${codenummer} geopend voor persoon ${invoer.geaccrediteerdeId} op ${invoer.instrumentId} (${invoer.soort}), norm versie ${norm.versie}.`,
+      });
+      return rondes.vindOp(res.lastInsertRowid as number)!;
+    },
+
+    /**
+     * Verzet de fase, en alleen wanneer de loop dat toestaat.
+     *
+     * De toets staat in `rondeloop.ts` en niet hier. Deze methode kent de
+     * volgorde van de elf fasen dus niet; ze vraagt het na. Zo blijft er één
+     * plaats waar de loop beschreven staat, en die plaats heeft een uitputtende
+     * test over alle honderdeenentwintig paren.
+     */
+    verzetFase(invoer: {
+      id: number;
+      naar: Rondefase;
+      reden?: string | null;
+      doorBeheerderId?: number | null;
+    }): RondeRecord {
+      const ronde = rondes.vindOp(invoer.id);
+      if (!ronde) throw new Error(`Ronde ${invoer.id} bestaat niet.`);
+      const bezwaar = bezwaarTegenOvergang(ronde.fase, invoer.naar);
+      if (bezwaar) throw new Error(bezwaar);
+
+      const afgerondOp =
+        invoer.naar === "afgesloten" || invoer.naar === "gestaakt" ? vandaag() : null;
+      if (invoer.naar === "gestaakt" && (!invoer.reden || invoer.reden.trim().length < 10)) {
+        throw new Error("Een ronde staken vraagt een reden van minstens tien tekens.");
+      }
+      db.prepare(
+        `UPDATE bekwaamheid_rondes
+         SET fase = ?,
+             afgerond_op = COALESCE(?, afgerond_op),
+             aanpassingen_reden = COALESCE(?, aanpassingen_reden)
+         WHERE id = ?`,
+      ).run(invoer.naar, afgerondOp, invoer.reden?.trim() ?? null, invoer.id);
+      audit({
+        adminId: invoer.doorBeheerderId ?? null,
+        actie: "bekwaamheid_ronde_fase_verzet",
+        afnameId: null,
+        detail: `Ronde ${ronde.codenummer}: ${ronde.fase} -> ${invoer.naar}${invoer.reden ? ` (${invoer.reden.trim()})` : ""}.`,
+      });
+      return rondes.vindOp(invoer.id)!;
+    },
+
+    /** Legt een aanpassing (redelijke voorziening) vast op een lopende ronde. */
+    legAanpassingVast(invoer: {
+      id: number;
+      aanpassingen: string;
+      reden: string;
+      doorBeheerderId?: number | null;
+    }): RondeRecord {
+      const ronde = rondes.vindOp(invoer.id);
+      if (!ronde) throw new Error(`Ronde ${invoer.id} bestaat niet.`);
+      if (ronde.fase === "afgesloten" || ronde.fase === "gestaakt") {
+        throw new Error(`Ronde ${ronde.codenummer} is ${ronde.fase}; er verandert niets meer aan.`);
+      }
+      db.prepare(
+        "UPDATE bekwaamheid_rondes SET aanpassingen = ?, aanpassingen_reden = ? WHERE id = ?",
+      ).run(invoer.aanpassingen.trim(), invoer.reden.trim(), invoer.id);
+      audit({
+        adminId: invoer.doorBeheerderId ?? null,
+        actie: "bekwaamheid_ronde_aanpassing_vastgelegd",
+        afnameId: null,
+        detail: `Ronde ${ronde.codenummer}: aanpassing vastgelegd (${invoer.reden.trim()}).`,
+      });
+      return rondes.vindOp(invoer.id)!;
+    },
+  };
+
+  // -------------------------------------------------------------------------
+  // Bewijsstukken — waarop de assen gemeten worden
+  // -------------------------------------------------------------------------
+
+  const bewijsstukken = {
+    vindOp(id: number): BewijsstukRecord | undefined {
+      const rij = db
+        .prepare("SELECT * FROM bekwaamheid_bewijsstukken WHERE id = ?")
+        .get(id) as BewijsstukRij | undefined;
+      return rij ? leesBewijsstuk(rij) : undefined;
+    },
+
+    vanRonde(rondeId: number): BewijsstukRecord[] {
+      const rijen = db
+        .prepare("SELECT * FROM bekwaamheid_bewijsstukken WHERE ronde_id = ? ORDER BY nummer")
+        .all(rondeId) as BewijsstukRij[];
+      return rijen.map(leesBewijsstuk);
+    },
+
+    /**
+     * Legt één bewijsstuk neer op een ronde die nog in voorbereiding is.
+     *
+     * Na `voorbereiding` kan er geen bewijsstuk meer bij. Dat is niet
+     * administratief maar inhoudelijk: het dossier waarop iemand wordt
+     * beoordeeld, moet vaststaan voordat hij begint. Een bewijsstuk dat
+     * halverwege wordt toegevoegd, verandert de meting terwijl ze loopt.
+     */
+    zetNeer(invoer: {
+      rondeId: number;
+      nummer: number;
+      as: As;
+      weging: number;
+      route?: Bewijsstukroute | null;
+      opnameVerklaring?: boolean;
+    }): BewijsstukRecord {
+      const ronde = rondes.vindOp(invoer.rondeId);
+      if (!ronde) throw new Error(`Ronde ${invoer.rondeId} bestaat niet.`);
+      if (ronde.fase !== "voorbereiding") {
+        throw new Error(
+          `Ronde ${ronde.codenummer} staat in fase '${ronde.fase}'; bewijsstukken worden vastgelegd in de voorbereiding.`,
+        );
+      }
+      if (!Number.isInteger(invoer.nummer) || invoer.nummer < 1 || invoer.nummer > 5) {
+        throw new Error("Het nummer van een bewijsstuk ligt tussen 1 en 5.");
+      }
+      if (!(invoer.weging > 0)) {
+        throw new Error("De weging van een bewijsstuk is groter dan nul.");
+      }
+      const bezet = db
+        .prepare("SELECT id FROM bekwaamheid_bewijsstukken WHERE ronde_id = ? AND nummer = ?")
+        .get(invoer.rondeId, invoer.nummer) as { id: number } | undefined;
+      if (bezet) {
+        throw new Error(`Bewijsstuk ${invoer.nummer} bestaat al op ronde ${ronde.codenummer}.`);
+      }
+      const res = db
+        .prepare(
+          `INSERT INTO bekwaamheid_bewijsstukken
+             (ronde_id, nummer, "as", weging, status, route, opname_verklaring)
+           VALUES (?, ?, ?, ?, 'open', ?, ?)`,
+        )
+        .run(
+          invoer.rondeId,
+          invoer.nummer,
+          invoer.as,
+          invoer.weging,
+          invoer.route ?? null,
+          invoer.opnameVerklaring ? 1 : 0,
+        );
+      return bewijsstukken.vindOp(res.lastInsertRowid as number)!;
+    },
+
+    /** Markeert een bewijsstuk als ingeleverd. Alleen op een open ronde. */
+    leverIn(invoer: { id: number; ingeleverdOp?: string }): BewijsstukRecord {
+      const stuk = bewijsstukken.vindOp(invoer.id);
+      if (!stuk) throw new Error(`Bewijsstuk ${invoer.id} bestaat niet.`);
+      const ronde = rondes.vindOp(stuk.rondeId)!;
+      if (!FASEN_MET_INLEVERRECHT.includes(ronde.fase)) {
+        throw new Error(
+          `Ronde ${ronde.codenummer} staat in fase '${ronde.fase}'; inleveren kan alleen wanneer de ronde open staat.`,
+        );
+      }
+      if (stuk.status !== "open") {
+        throw new Error(`Bewijsstuk ${stuk.nummer} heeft status '${stuk.status}'.`);
+      }
+      db.prepare(
+        "UPDATE bekwaamheid_bewijsstukken SET status = 'ingeleverd', ingeleverd_op = ? WHERE id = ?",
+      ).run((invoer.ingeleverdOp ?? vandaag()).slice(0, 10), invoer.id);
+      return bewijsstukken.vindOp(invoer.id)!;
+    },
+
+    /**
+     * Verklaart een bewijsstuk niet van toepassing.
+     *
+     * `nvt` telt in `berekenAsscores` niet mee én niet als openstaand. Dat maakt
+     * dit de enige weg om een dossier volledig te krijgen zonder alle vijf de
+     * stukken. Precies daarom vraagt het een reden: zonder reden zou dit de
+     * makkelijke uitweg zijn om een lastig onderdeel weg te strepen.
+     */
+    markeerNvt(invoer: {
+      id: number;
+      reden: string;
+      doorBeheerderId?: number | null;
+    }): BewijsstukRecord {
+      const stuk = bewijsstukken.vindOp(invoer.id);
+      if (!stuk) throw new Error(`Bewijsstuk ${invoer.id} bestaat niet.`);
+      if (stuk.status === "beoordeeld") {
+        throw new Error(
+          `Bewijsstuk ${stuk.nummer} is al beoordeeld; een beoordeeld stuk wordt niet alsnog geschrapt.`,
+        );
+      }
+      const reden = invoer.reden.trim();
+      if (reden.length < 10) {
+        throw new Error("Niet van toepassing verklaren vraagt een reden van minstens tien tekens.");
+      }
+      const ronde = rondes.vindOp(stuk.rondeId)!;
+      db.prepare("UPDATE bekwaamheid_bewijsstukken SET status = 'nvt' WHERE id = ?").run(invoer.id);
+      audit({
+        adminId: invoer.doorBeheerderId ?? null,
+        actie: "bekwaamheid_bewijsstuk_nvt",
+        afnameId: null,
+        detail: `Ronde ${ronde.codenummer}, bewijsstuk ${stuk.nummer} niet van toepassing: ${reden}`,
+      });
+      return bewijsstukken.vindOp(invoer.id)!;
+    },
+  };
+
+  // -------------------------------------------------------------------------
+  // Scores — de rubriekinvoer van de beoordelaars
+  // -------------------------------------------------------------------------
+
+  /**
+   * WAAROM EEN SCORE HERZIEN WORDT EN NIET OVERSCHREVEN MET EEN TWEEDE RIJ.
+   *
+   * De unieke index staat op (bewijsstuk, beoordelaar, onderdeel). Eén
+   * beoordelaar heeft per onderdeel één oordeel. Zou een tweede invoer een
+   * tweede rij maken, dan zou de ICC dezelfde beoordelaar dubbel tellen en zou
+   * de overeenstemming tussen beoordelaars kunstmatig stijgen, want een mens is
+   * het altijd met zichzelf eens.
+   */
+  const scores = {
+    vanBewijsstuk(bewijsstukId: number): ScoreRecord[] {
+      const rijen = db
+        .prepare(
+          `SELECT * FROM bekwaamheid_scores
+           WHERE bewijsstuk_id = ?
+           ORDER BY beoordelaar_id, onderdeel`,
+        )
+        .all(bewijsstukId) as ScoreRij[];
+      return rijen.map(leesScore);
+    },
+
+    vanRonde(rondeId: number): ScoreRecord[] {
+      const rijen = db
+        .prepare(
+          `SELECT s.* FROM bekwaamheid_scores s
+           JOIN bekwaamheid_bewijsstukken b ON b.id = s.bewijsstuk_id
+           WHERE b.ronde_id = ?
+           ORDER BY b.nummer, s.beoordelaar_id, s.onderdeel`,
+        )
+        .all(rondeId) as ScoreRij[];
+      return rijen.map(leesScore);
+    },
+
+    voerIn(invoer: {
+      bewijsstukId: number;
+      beoordelaarId: number;
+      onderdeel: string;
+      score: number;
+      onderbouwing: string;
+      isKalibratie?: boolean;
+    }): ScoreRecord {
+      const stuk = bewijsstukken.vindOp(invoer.bewijsstukId);
+      if (!stuk) throw new Error(`Bewijsstuk ${invoer.bewijsstukId} bestaat niet.`);
+      const ronde = rondes.vindOp(stuk.rondeId)!;
+      if (!FASEN_MET_SCOREINVOER.includes(ronde.fase)) {
+        throw new Error(
+          `Ronde ${ronde.codenummer} staat in fase '${ronde.fase}'; scores worden ingevoerd tijdens de beoordeling.`,
+        );
+      }
+      if (stuk.status === "open") {
+        throw new Error(`Bewijsstuk ${stuk.nummer} is nog niet ingeleverd.`);
+      }
+      if (stuk.status === "nvt") {
+        throw new Error(`Bewijsstuk ${stuk.nummer} is niet van toepassing verklaard.`);
+      }
+      if (!Number.isInteger(invoer.score) || invoer.score < 0 || invoer.score > 3) {
+        throw new Error("Een rubriekscore is een geheel getal van 0 tot en met 3.");
+      }
+      const onderbouwing = invoer.onderbouwing.trim();
+      if (onderbouwing.length < 40) {
+        throw new Error("Een score vraagt een onderbouwing van minstens veertig tekens.");
+      }
+      const bestaand = db
+        .prepare(
+          `SELECT id FROM bekwaamheid_scores
+           WHERE bewijsstuk_id = ? AND beoordelaar_id = ? AND onderdeel = ?`,
+        )
+        .get(invoer.bewijsstukId, invoer.beoordelaarId, invoer.onderdeel) as
+        | { id: number }
+        | undefined;
+      if (bestaand) {
+        throw new Error(
+          `Deze beoordelaar heeft onderdeel '${invoer.onderdeel}' al gescoord. Herzien gaat via herzie().`,
+        );
+      }
+      const res = db
+        .prepare(
+          `INSERT INTO bekwaamheid_scores
+             (bewijsstuk_id, beoordelaar_id, onderdeel, score, onderbouwing, ingevoerd_op, is_kalibratie)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          invoer.bewijsstukId,
+          invoer.beoordelaarId,
+          invoer.onderdeel,
+          invoer.score,
+          onderbouwing,
+          nu(),
+          invoer.isKalibratie ? 1 : 0,
+        );
+      return scores.vindOp(res.lastInsertRowid as number)!;
+    },
+
+    vindOp(id: number): ScoreRecord | undefined {
+      const rij = db
+        .prepare("SELECT * FROM bekwaamheid_scores WHERE id = ?")
+        .get(id) as ScoreRij | undefined;
+      return rij ? leesScore(rij) : undefined;
+    },
+
+    /** Herziet een eigen score. De onderbouwing wordt vervangen, niet aangevuld. */
+    herzie(invoer: {
+      id: number;
+      beoordelaarId: number;
+      score: number;
+      onderbouwing: string;
+    }): ScoreRecord {
+      const bestaand = scores.vindOp(invoer.id);
+      if (!bestaand) throw new Error(`Score ${invoer.id} bestaat niet.`);
+      if (bestaand.beoordelaarId !== invoer.beoordelaarId) {
+        throw new Error("Een score wordt alleen herzien door de beoordelaar die haar invoerde.");
+      }
+      const stuk = bewijsstukken.vindOp(bestaand.bewijsstukId)!;
+      const ronde = rondes.vindOp(stuk.rondeId)!;
+      if (!FASEN_MET_SCOREINVOER.includes(ronde.fase)) {
+        throw new Error(
+          `Ronde ${ronde.codenummer} staat in fase '${ronde.fase}'; scores worden niet meer herzien.`,
+        );
+      }
+      if (!Number.isInteger(invoer.score) || invoer.score < 0 || invoer.score > 3) {
+        throw new Error("Een rubriekscore is een geheel getal van 0 tot en met 3.");
+      }
+      const onderbouwing = invoer.onderbouwing.trim();
+      if (onderbouwing.length < 40) {
+        throw new Error("Een score vraagt een onderbouwing van minstens veertig tekens.");
+      }
+      db.prepare(
+        "UPDATE bekwaamheid_scores SET score = ?, onderbouwing = ?, ingevoerd_op = ? WHERE id = ?",
+      ).run(invoer.score, onderbouwing, nu(), invoer.id);
+      return scores.vindOp(invoer.id)!;
+    },
+
+    /**
+     * Sluit een bewijsstuk af: middelt de scores en zet de ruwe score.
+     *
+     * De ruwe score is het gemiddelde over alle beoordelaars en onderdelen,
+     * gedeeld door drie zodat ze op de schaal 0 tot 1 komt die de CHECK en
+     * `berekenAsscores` verwachten. Kalibratiescores tellen NIET mee: die zijn
+     * gezet om de beoordelaars op één lijn te krijgen en zijn geen oordeel over
+     * deze kandidaat.
+     */
+    rondBewijsstukAf(invoer: {
+      bewijsstukId: number;
+      doorBeheerderId?: number | null;
+    }): BewijsstukRecord {
+      const stuk = bewijsstukken.vindOp(invoer.bewijsstukId);
+      if (!stuk) throw new Error(`Bewijsstuk ${invoer.bewijsstukId} bestaat niet.`);
+      const alle = scores.vanBewijsstuk(invoer.bewijsstukId).filter((s) => !s.isKalibratie);
+      if (alle.length === 0) {
+        throw new Error(`Bewijsstuk ${stuk.nummer} heeft nog geen enkele score.`);
+      }
+      const som = alle.reduce((t, s) => t + s.score, 0);
+      const ruwe = som / alle.length / 3;
+      const ronde = rondes.vindOp(stuk.rondeId)!;
+      db.prepare(
+        `UPDATE bekwaamheid_bewijsstukken
+         SET ruwe_score = ?, status = 'beoordeeld', beoordeeld_op = ?
+         WHERE id = ?`,
+      ).run(ruwe, vandaag(), invoer.bewijsstukId);
+      audit({
+        adminId: invoer.doorBeheerderId ?? null,
+        actie: "bekwaamheid_bewijsstuk_beoordeeld",
+        afnameId: null,
+        detail: `Ronde ${ronde.codenummer}, bewijsstuk ${stuk.nummer} afgerond op ${ruwe.toFixed(3)} uit ${alle.length} scores.`,
+      });
+      return bewijsstukken.vindOp(invoer.bewijsstukId)!;
+    },
+  };
+
+  // -------------------------------------------------------------------------
+  // Beslissingen — waar de machine een voorstel doet en een mens beslist
+  // -------------------------------------------------------------------------
+
+  /**
+   * WAAROM HET VOORSTEL VAN DE MACHINE MEE DE TABEL IN GAAT.
+   *
+   * `voorstel_uitkomst` en `voorstel_berekening` worden vastgelegd naast de
+   * definitieve uitkomst, en de CHECK `afwijking_gemotiveerd` eist een
+   * motivering van minstens veertig tekens zodra die twee verschillen. Dat is
+   * wat een beslissing verdedigbaar maakt: niet dat de machine gelijk kreeg,
+   * maar dat na te lezen is wanneer een mens ervan afweek en waarom. Zonder die
+   * vastlegging is de rekenkern decoratie.
+   *
+   * `voorstel_berekening` bewaart de volledige uitkomst van `beoordeel()` als
+   * JSON — asscores, toegepaste regels, activiteitsroute. Bij een bezwaar over
+   * een beslissing van twee jaar geleden is de vraag altijd wat de machine toen
+   * zag, niet wat ze vandaag met de huidige norm zou zeggen.
+   */
+  const beslissingen = {
+    vanRonde(rondeId: number): BeslissingRecord | undefined {
+      const rij = db
+        .prepare("SELECT * FROM bekwaamheid_beslissingen WHERE ronde_id = ?")
+        .get(rondeId) as BeslissingRij | undefined;
+      return rij ? leesBeslissing(rij) : undefined;
+    },
+
+    vindOp(id: number): BeslissingRecord | undefined {
+      const rij = db
+        .prepare("SELECT * FROM bekwaamheid_beslissingen WHERE id = ?")
+        .get(id) as BeslissingRij | undefined;
+      return rij ? leesBeslissing(rij) : undefined;
+    },
+
+    legVast(invoer: {
+      rondeId: number;
+      voorstelUitkomst: Beslisuitkomst;
+      voorstelBerekening: unknown;
+      definitieveUitkomst: Beslisuitkomst;
+      afwijkingMotivering?: string | null;
+      bekrachtigerEenId: number;
+      bekrachtigerTweeId: number;
+      bekrachtigdOp?: string;
+      doorBeheerderId?: number | null;
+    }): BeslissingRecord {
+      const ronde = rondes.vindOp(invoer.rondeId);
+      if (!ronde) throw new Error(`Ronde ${invoer.rondeId} bestaat niet.`);
+      if (ronde.fase !== "beslissing_voorstel" && ronde.fase !== "overleg") {
+        throw new Error(
+          `Ronde ${ronde.codenummer} staat in fase '${ronde.fase}'; een beslissing hoort na het voorstel of na overleg.`,
+        );
+      }
+      if (beslissingen.vanRonde(invoer.rondeId)) {
+        throw new Error(`Ronde ${ronde.codenummer} heeft al een beslissing.`);
+      }
+      if (invoer.bekrachtigerEenId === invoer.bekrachtigerTweeId) {
+        throw new Error("Een beslissing wordt door twee verschillende mensen bekrachtigd.");
+      }
+      const afwijkt = invoer.definitieveUitkomst !== invoer.voorstelUitkomst;
+      const motivering = invoer.afwijkingMotivering?.trim() ?? null;
+      if (afwijkt && (!motivering || motivering.length < 40)) {
+        throw new Error(
+          `De beslissing wijkt af van het voorstel ('${invoer.voorstelUitkomst}' werd '${invoer.definitieveUitkomst}'). Dat vraagt een motivering van minstens veertig tekens.`,
+        );
+      }
+      const res = db
+        .prepare(
+          `INSERT INTO bekwaamheid_beslissingen
+             (ronde_id, voorstel_uitkomst, voorstel_berekening, definitieve_uitkomst,
+              afwijking_motivering, bekrachtiger_een_id, bekrachtiger_twee_id, bekrachtigd_op)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          invoer.rondeId,
+          invoer.voorstelUitkomst,
+          JSON.stringify(invoer.voorstelBerekening ?? null),
+          invoer.definitieveUitkomst,
+          afwijkt ? motivering : null,
+          invoer.bekrachtigerEenId,
+          invoer.bekrachtigerTweeId,
+          (invoer.bekrachtigdOp ?? vandaag()).slice(0, 10),
+        );
+      rondes.verzetFase({
+        id: invoer.rondeId,
+        naar: "beslist",
+        doorBeheerderId: invoer.doorBeheerderId,
+      });
+      audit({
+        adminId: invoer.doorBeheerderId ?? null,
+        actie: "bekwaamheid_beslissing_vastgelegd",
+        afnameId: null,
+        detail: `Ronde ${ronde.codenummer}: voorstel '${invoer.voorstelUitkomst}', beslissing '${invoer.definitieveUitkomst}'${afwijkt ? ` — afwijking gemotiveerd` : ""}.`,
+      });
+      return beslissingen.vindOp(res.lastInsertRowid as number)!;
+    },
+
+    /**
+     * Legt het debriefgesprek vast en zet de ronde op `gedebrieft`.
+     *
+     * Publicatie kan pas hierna; de CHECK `publicatie_na_debrief` dwingt dat af.
+     * De volgorde is niet administratief: niemand hoort zijn uitkomst uit een
+     * document te vernemen voordat er iemand met hem over gesproken heeft.
+     */
+    legDebriefVast(invoer: {
+      rondeId: number;
+      debriefOp?: string;
+      debriefDoor: number;
+      doorBeheerderId?: number | null;
+    }): BeslissingRecord {
+      const beslissing = beslissingen.vanRonde(invoer.rondeId);
+      if (!beslissing) throw new Error(`Ronde ${invoer.rondeId} heeft nog geen beslissing.`);
+      if (beslissing.debriefOp) {
+        throw new Error(`De debrief is al vastgelegd op ${beslissing.debriefOp}.`);
+      }
+      db.prepare(
+        "UPDATE bekwaamheid_beslissingen SET debrief_op = ?, debrief_door = ? WHERE id = ?",
+      ).run((invoer.debriefOp ?? vandaag()).slice(0, 10), invoer.debriefDoor, beslissing.id);
+      const ronde = rondes.vindOp(invoer.rondeId)!;
+      if (ronde.fase === "beslist") {
+        rondes.verzetFase({
+          id: invoer.rondeId,
+          naar: "gedebrieft",
+          doorBeheerderId: invoer.doorBeheerderId,
+        });
+      }
+      return beslissingen.vanRonde(invoer.rondeId)!;
+    },
+
+    publiceer(invoer: {
+      rondeId: number;
+      gepubliceerdOp?: string;
+      doorBeheerderId?: number | null;
+    }): BeslissingRecord {
+      const beslissing = beslissingen.vanRonde(invoer.rondeId);
+      if (!beslissing) throw new Error(`Ronde ${invoer.rondeId} heeft nog geen beslissing.`);
+      if (!beslissing.debriefOp) {
+        throw new Error("Publiceren kan pas nadat het debriefgesprek is vastgelegd.");
+      }
+      if (beslissing.gepubliceerdOp) {
+        throw new Error(`De uitkomst is al gepubliceerd op ${beslissing.gepubliceerdOp}.`);
+      }
+      db.prepare("UPDATE bekwaamheid_beslissingen SET gepubliceerd_op = ? WHERE id = ?").run(
+        (invoer.gepubliceerdOp ?? vandaag()).slice(0, 10),
+        beslissing.id,
+      );
+      const ronde = rondes.vindOp(invoer.rondeId)!;
+      audit({
+        adminId: invoer.doorBeheerderId ?? null,
+        actie: "bekwaamheid_beslissing_gepubliceerd",
+        afnameId: null,
+        detail: `Ronde ${ronde.codenummer}: uitkomst '${beslissing.definitieveUitkomst}' gepubliceerd.`,
+      });
+      return beslissingen.vanRonde(invoer.rondeId)!;
+    },
+  };
+
+  // -------------------------------------------------------------------------
+  // Bezwaren
+  // -------------------------------------------------------------------------
+
+  /**
+   * WAAROM DE STATUS TIJDENS EEN BEZWAAR ONGEWIJZIGD BLIJFT.
+   *
+   * De kolom `status_tijdens_bezwaar_ongewijzigd` staat standaard op waar, en
+   * deze groep zet haar nergens op onwaar. Wie bezwaar maakt, mag daar niet
+   * slechter van worden zolang de zaak loopt; anders is het recht om bezwaar te
+   * maken een straf. De kolom bestaat als vastlegging van die belofte, niet als
+   * knop.
+   */
+  const bezwaren = {
+    vindOp(id: number): BezwaarRecord | undefined {
+      const rij = db
+        .prepare("SELECT * FROM bekwaamheid_bezwaren WHERE id = ?")
+        .get(id) as BezwaarRij | undefined;
+      return rij ? leesBezwaar(rij) : undefined;
+    },
+
+    vanRonde(rondeId: number): BezwaarRecord[] {
+      const rijen = db
+        .prepare("SELECT * FROM bekwaamheid_bezwaren WHERE ronde_id = ? ORDER BY ingediend_op DESC")
+        .all(rondeId) as BezwaarRij[];
+      return rijen.map(leesBezwaar);
+    },
+
+    openstaand(): BezwaarRecord[] {
+      const rijen = db
+        .prepare("SELECT * FROM bekwaamheid_bezwaren WHERE uitspraak IS NULL ORDER BY ingediend_op")
+        .all() as BezwaarRij[];
+      return rijen.map(leesBezwaar);
+    },
+
+    /**
+     * Neemt een bezwaar aan en zet de ronde op `bezwaar`.
+     *
+     * De termijn van dertig kalenderdagen wordt hier NIET getoetst. Een bezwaar
+     * dat te laat komt, is een bezwaar dat te laat komt — dat is een oordeel over
+     * ontvankelijkheid en dat hoort bij de behandelaar, niet bij een INSERT. Zou
+     * de opslag het weigeren, dan bestond er van dat bezwaar geen spoor en kon
+     * niemand nagaan dat het is afgewezen op de termijn.
+     */
+    dienIn(invoer: {
+      rondeId: number;
+      grond: string;
+      ingediendOp?: string;
+      doorBeheerderId?: number | null;
+    }): BezwaarRecord {
+      const ronde = rondes.vindOp(invoer.rondeId);
+      if (!ronde) throw new Error(`Ronde ${invoer.rondeId} bestaat niet.`);
+      const beslissing = beslissingen.vanRonde(invoer.rondeId);
+      if (!beslissing) {
+        throw new Error(
+          `Ronde ${ronde.codenummer} heeft nog geen beslissing; er is niets om bezwaar tegen te maken.`,
+        );
+      }
+      const grond = invoer.grond.trim();
+      if (grond.length < 20) {
+        throw new Error("Een bezwaar vraagt een grond van minstens twintig tekens.");
+      }
+      const res = db
+        .prepare(
+          `INSERT INTO bekwaamheid_bezwaren
+             (ronde_id, ingediend_op, grond, status_tijdens_bezwaar_ongewijzigd)
+           VALUES (?, ?, ?, 1)`,
+        )
+        .run(invoer.rondeId, (invoer.ingediendOp ?? vandaag()).slice(0, 10), grond);
+      if (ronde.fase === "gedebrieft" || ronde.fase === "afgesloten") {
+        rondes.verzetFase({
+          id: invoer.rondeId,
+          naar: "bezwaar",
+          doorBeheerderId: invoer.doorBeheerderId,
+        });
+      }
+      audit({
+        adminId: invoer.doorBeheerderId ?? null,
+        actie: "bekwaamheid_bezwaar_ingediend",
+        afnameId: null,
+        detail: `Ronde ${ronde.codenummer}: bezwaar ${res.lastInsertRowid} ingediend.`,
+      });
+      return bezwaren.vindOp(res.lastInsertRowid as number)!;
+    },
+
+    bevestigOntvangst(invoer: { id: number; op?: string }): BezwaarRecord {
+      const bezwaar = bezwaren.vindOp(invoer.id);
+      if (!bezwaar) throw new Error(`Bezwaar ${invoer.id} bestaat niet.`);
+      db.prepare("UPDATE bekwaamheid_bezwaren SET ontvangstbevestigd_op = ? WHERE id = ?").run(
+        (invoer.op ?? vandaag()).slice(0, 10),
+        invoer.id,
+      );
+      return bezwaren.vindOp(invoer.id)!;
+    },
+
+    /**
+     * Legt de uitspraak vast.
+     *
+     * Bij `gegrond` of `deels_gegrond` gaat de ronde terug naar `in_beoordeling`
+     * en niet naar `afgesloten`. Een gegrond bezwaar dat alleen tot een
+     * aantekening leidt, is geen bezwaarrecht; de beoordeling wordt overgedaan.
+     * Bij `ongegrond` sluit de ronde.
+     */
+    doeUitspraak(invoer: {
+      id: number;
+      uitspraak: Bezwaaruitspraak;
+      motivering: string;
+      op?: string;
+      behandelaarIntern?: number | null;
+      behandelaarExternOmschrijving?: string | null;
+      doorBeheerderId?: number | null;
+    }): BezwaarRecord {
+      const bezwaar = bezwaren.vindOp(invoer.id);
+      if (!bezwaar) throw new Error(`Bezwaar ${invoer.id} bestaat niet.`);
+      if (bezwaar.uitspraak) {
+        throw new Error(`Bezwaar ${invoer.id} heeft al een uitspraak (${bezwaar.uitspraak}).`);
+      }
+      const motivering = invoer.motivering.trim();
+      if (motivering.length < 40) {
+        throw new Error("Een uitspraak vraagt een motivering van minstens veertig tekens.");
+      }
+      db.prepare(
+        `UPDATE bekwaamheid_bezwaren SET
+           uitspraak = ?, uitspraak_op = ?, uitspraak_motivering = ?,
+           behandelaar_intern = ?, behandelaar_extern_omschrijving = ?
+         WHERE id = ?`,
+      ).run(
+        invoer.uitspraak,
+        (invoer.op ?? vandaag()).slice(0, 10),
+        motivering,
+        invoer.behandelaarIntern ?? null,
+        invoer.behandelaarExternOmschrijving ?? null,
+        invoer.id,
+      );
+      const ronde = rondes.vindOp(bezwaar.rondeId)!;
+      if (ronde.fase === "bezwaar") {
+        rondes.verzetFase({
+          id: bezwaar.rondeId,
+          naar: invoer.uitspraak === "ongegrond" ? "afgesloten" : "in_beoordeling",
+          doorBeheerderId: invoer.doorBeheerderId,
+        });
+      }
+      audit({
+        adminId: invoer.doorBeheerderId ?? null,
+        actie: "bekwaamheid_bezwaar_uitspraak",
+        afnameId: null,
+        detail: `Ronde ${ronde.codenummer}: bezwaar ${invoer.id} ${invoer.uitspraak}.`,
+      });
+      return bezwaren.vindOp(invoer.id)!;
+    },
+  };
+
   return {
     register,
     licenties,
+    accreditaties,
     normprofielen,
     tellers,
     agenda,
@@ -2081,6 +3321,11 @@ export function maakBekwaamheidOpslag(
     plannen,
     items,
     itemsets,
+    rondes,
+    bewijsstukken,
+    scores,
+    beslissingen,
+    bezwaren,
     /**
      * De onderliggende verbinding.
      *

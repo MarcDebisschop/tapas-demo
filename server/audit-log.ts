@@ -69,6 +69,24 @@ export const AUDIT_ACTIES = [
   "bekwaamheid_item_gebruik_gewijzigd",
   "bekwaamheid_itemset_samengesteld",
   "bekwaamheid_itemset_ingeleverd",
+  "bekwaamheid_itemset_nagekeken",
+  // Blok 3 en 4. Het lezen van een ronde staat er niet in, het verzetten van
+  // haar fase wel: dat is de handeling die bepaalt wat er daarna nog mag
+  // gebeuren, en bij een bezwaar is de eerste vraag altijd wanneer welke fase
+  // is ingegaan. De accreditatie staat er apart in naast de licentie, omdat het
+  // twee verschillende feiten zijn: wat iemand ooit behaalde tegenover wat hij
+  // vandaag mag.
+  "bekwaamheid_accreditatie_vastgelegd",
+  "bekwaamheid_accreditatie_ingetrokken",
+  "bekwaamheid_ronde_geopend",
+  "bekwaamheid_ronde_fase_verzet",
+  "bekwaamheid_ronde_aanpassing_vastgelegd",
+  "bekwaamheid_bewijsstuk_nvt",
+  "bekwaamheid_bewijsstuk_beoordeeld",
+  "bekwaamheid_beslissing_vastgelegd",
+  "bekwaamheid_beslissing_gepubliceerd",
+  "bekwaamheid_bezwaar_ingediend",
+  "bekwaamheid_bezwaar_uitspraak",
 ] as const;
 
 export type AuditActie = (typeof AUDIT_ACTIES)[number];
