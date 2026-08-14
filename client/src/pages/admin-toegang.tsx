@@ -36,6 +36,12 @@ import {
   type Taal,
 } from "@shared/i18n";
 import { PLATFORMDELEN, type Platformdeel } from "@shared/platformdelen";
+import {
+  LicentieCel,
+  LicentieSamenvatting,
+  type LicentiebeeldAntwoord,
+} from "@/components/bekwaamheid/LicentieKolom";
+import { maakKolomVertaler } from "@/components/bekwaamheid/licentiekolom-teksten";
 
 interface BeheerderMetToegang {
   id: number;
@@ -50,6 +56,7 @@ interface BeheerderMetToegang {
 }
 
 const QK = "/api/toegang/beheerders";
+const QK_LICENTIE = "/api/bekwaamheid/licentiebeeld";
 
 export default function AdminToegang() {
   const { toast } = useToast();
@@ -77,6 +84,32 @@ export default function AdminToegang() {
 
   const modules = PLATFORMDELEN.filter((d) => d.type === "module");
   const accreditaties = PLATFORMDELEN.filter((d) => d.type === "accreditatie");
+
+  // Bouwplan §9.7: de tweede voorwaarde. De schakelaar opent een platformdeel,
+  // de licentie geeft het recht om er een afname mee te doen. Tot de poort er
+  // kwam, las geen enkel eindpunt de schakelaars om iets te weigeren — ze waren
+  // decoratief. Nu doen ze iets, en dus moet ernaast staan dat ze het niet
+  // alleen doen.
+  //
+  // Deze query mag falen zonder het scherm mee te nemen: `isError` levert één
+  // regel uitleg en de schakelaars blijven werken. Een beheerscherm dat wit
+  // wordt omdat een leesweg hapert, is erger dan een beheerscherm zonder kolom.
+  const { data: licentiebeeld, isError: licentieFout } = useQuery<LicentiebeeldAntwoord>({
+    queryKey: [QK_LICENTIE],
+  });
+  const wKolom = maakKolomVertaler(uiTaal);
+
+  // Welke platformdelen hebben überhaupt een instrument achter zich? Die vraag
+  // hoort op de server thuis en het antwoord komt daar ook vandaan: elk deel dat
+  // bij iemand in `perPlatformdeel` voorkomt, heeft er minstens één. Zou de
+  // browser die afbeelding zelf bijhouden, dan bestaat ze op twee plaatsen.
+  const delenMetInstrument = useMemo(() => {
+    const uit = new Set<string>();
+    for (const beeld of Object.values(licentiebeeld?.perBeheerder ?? {})) {
+      for (const deelId of Object.keys(beeld.perPlatformdeel)) uit.add(deelId);
+    }
+    return uit;
+  }, [licentiebeeld]);
 
   // Nieuwe beheerder dialog.
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -189,6 +222,24 @@ export default function AdminToegang() {
         </div>
         <p className="mt-2 max-w-3xl text-sm text-muted-foreground">{t("tg_intro")}</p>
 
+        {/* Bouwplan §9.7: benoemen dat toegang twee voorwaarden heeft. */}
+        <div
+          className="mt-3 max-w-3xl rounded-md border border-accent/25 bg-accent/[0.07] px-3 py-2"
+          data-testid="uitleg-twee-voorwaarden"
+        >
+          <p className="text-xs leading-relaxed text-foreground/85">{wKolom("uitleg")}</p>
+          {licentiebeeld && (
+            <p className="mt-1 text-[11px] text-muted-foreground" data-testid="licentie-peildatum">
+              {wKolom("peildatum")}: {licentiebeeld.peildatum}
+            </p>
+          )}
+          {licentieFout && (
+            <p className="mt-1 text-[11px] text-destructive" data-testid="licentie-fout">
+              {wKolom("mislukt")}
+            </p>
+          )}
+        </div>
+
         {/* Actor-kiezer */}
         <Card className="mt-6">
           <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-end sm:justify-between">
@@ -244,6 +295,11 @@ export default function AdminToegang() {
                         {b.email} · {b.organisatie}
                         {b.toegevoegdDoor ? ` · ${t("tg_toegevoegd_door")}: ${b.toegevoegdDoor}` : ""}
                       </p>
+                      <LicentieSamenvatting
+                        beeld={licentiebeeld?.perBeheerder[String(b.id)]}
+                        taal={uiTaal}
+                        testid={`licentie-${b.id}`}
+                      />
                     </div>
                     <Button
                       variant="outline"
@@ -265,7 +321,18 @@ export default function AdminToegang() {
                           className="flex items-center justify-between gap-3 rounded-md border border-border bg-card/50 px-3 py-2"
                           data-testid={`row-${b.id}-${d.id}`}
                         >
-                          <span className="text-sm text-foreground">{naam(d)}</span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-sm text-foreground">{naam(d)}</span>
+                            <LicentieCel
+                              regels={
+                                licentiebeeld?.perBeheerder[String(b.id)]?.perPlatformdeel[d.id]
+                              }
+                              taal={uiTaal}
+                              heeftInstrument={delenMetInstrument.has(d.id)}
+                              binnenRegister={!!licentiebeeld?.perBeheerder[String(b.id)]}
+                              testid={`licentiecel-${b.id}-${d.id}`}
+                            />
+                          </span>
                           <Switch
                             checked={!!b.toegang[d.id]}
                             disabled={!b.actief || b.isPrior}

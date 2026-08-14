@@ -87,7 +87,7 @@ export default function AdminKwaliteit() {
     onSuccess: () => refetch(),
   });
 
-  // STM-modulevoortgang van de geselecteerde practitioner (lazy — enkel bij
+  // Oefenvoortgang van de geselecteerde practitioner (lazy — enkel bij
   // geopend detailpaneel). Read-only, gekeyd op dezelfde beheerder_id.
   const stmVoortgangQuery = useQuery({
     queryKey: ["/api/admin/stm-voortgang", geselecteerd],
@@ -95,7 +95,7 @@ export default function AdminKwaliteit() {
     enabled: geselecteerd !== null,
   });
 
-  // Compacte STM-voortgang voor ALLE practitioners in de tabel (batch, één
+  // Compacte oefenvoortgang voor ALLE practitioners in de tabel (batch, één
   // request). Hergebruikt dezelfde admin-endpoint; de ids komen uit het
   // dashboard zodat we de practitioner-enumeratie niet dupliceren.
   const stmIds = ((data?.practitioners || []) as any[]).map((p) => p.beheerder_id);
@@ -135,7 +135,7 @@ export default function AdminKwaliteit() {
               Kwaliteitsmonitor Practitioners
             </h1>
             <p style={{ color: "#d8c9a3", fontSize: 14, marginTop: 4, opacity: 0.8 }}>
-              Afname-monitoring {jaar} — M1
+              Praktijkactiviteit {jaar} — M1
             </p>
           </div>
           <div className="flex gap-2">
@@ -171,6 +171,30 @@ export default function AdminKwaliteit() {
 
       <div className="max-w-6xl mx-auto p-6">
 
+        {/* Bouwplan §9.7 en bevinding 1: dit scherm gaat over praktijkactiviteit
+            en niet over bekwaamheid. Tot deze ronde telde de kolom "Afnames"
+            afgeronde oefensessies uit de zelftrainingsmodule en niet de afnames
+            zelf, waardoor iemand die veel oefende en niets afnam op schema leek te
+            liggen. De teller in `berekenKwaliteitsStatus` leest nu
+            `tellers.telAfnames`; de oefenkant staat er nog, onder een eigen naam. */}
+        <div
+          style={{
+            background: "#fff",
+            border: "1px solid #d8c9a3",
+            borderRadius: 8,
+            padding: "12px 16px",
+            marginBottom: 20,
+          }}
+          data-testid="kwaliteit-afbakening"
+        >
+          <p style={{ fontSize: 13, color: "#14213d", margin: 0, lineHeight: 1.6 }}>
+            <strong>Dit scherm meet praktijkactiviteit, niet bekwaamheid.</strong> De kolom Afnames
+            telt voltooide afnames in {jaar} en legt die tegen de afnamenorm. Oefensessies staan er
+            apart, want ze zeggen iets anders: of iemand zijn kennis onderhoudt. Of iemand bekwaam
+            is, wordt vastgesteld in de module Bekwaamheid en niet hier.
+          </p>
+        </div>
+
         {/* Samenvatting tiles */}
         {kwartaal && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -198,7 +222,7 @@ export default function AdminKwaliteit() {
           <CardHeader style={{ borderBottom: "1px solid #e8e4dc", paddingBottom: 12 }}>
             <CardTitle style={{ color: "#14213d", fontSize: 16 }}>
               <BarChart2 className="inline w-4 h-4 mr-2" />
-              Afname-overzicht {jaar}
+              Afname-overzicht {jaar} — voltooide afnames tegen de norm
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
@@ -206,7 +230,7 @@ export default function AdminKwaliteit() {
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ background: "#f4f1ec", borderBottom: "1px solid #e8e4dc" }}>
-                    {["Naam", "Afnames", "Norm", "Verwacht", "Progressie", "Status", "Laatste activiteit", "Aandacht", "STM", "Alerts", "Acties"].map(h => (
+                    {["Naam", "Afnames", "Norm", "Verwacht", "Progressie", "Status", "Laatste afname", "Aandacht", "Oefenen", "Alerts", "Acties"].map(h => (
                       <th key={h} style={{ padding: "10px 12px", color: "#14213d", fontWeight: 600, textAlign: "left", fontSize: 12 }}>{h}</th>
                     ))}
                   </tr>
@@ -261,21 +285,41 @@ export default function AdminKwaliteit() {
                       </td>
                       <td style={{ padding: "10px 12px" }}>
                         {(() => {
+                          // De oefenkant, apart van de afnametelling. Bevinding 1:
+                          // deze twee stonden door elkaar en dat is nu gescheiden.
+                          // Het aantal en de datum komen uit het dashboard
+                          // (`oefensessies_count`, `laatste_oefensessie`), de lagen
+                          // uit de voortgangsroute.
                           const stm = stmPerId.get(p.beheerder_id);
+                          const aantal = p.oefensessies_count ?? 0;
                           if (!stm || stm.sessies_afgerond === 0) {
-                            return <span style={{ color: "#b8b2a7", fontSize: 12 }} title="Geen afgeronde STM-sessies">—</span>;
+                            return (
+                              <span style={{ color: "#b8b2a7", fontSize: 12 }} title="Geen afgeronde oefensessies">
+                                —
+                              </span>
+                            );
                           }
                           const op = stm.lagen_op_niveau;
                           const tot = stm.lagen_totaal;
                           const vol = op >= tot;
                           const kleur = vol ? { bg: "#dff3e8", fg: "#2E7D5A" } : { bg: "#fbf1d9", fg: "#8B6914" };
                           return (
-                            <span
-                              className="px-1.5 py-0.5 rounded text-xs font-semibold"
-                              style={{ background: kleur.bg, color: kleur.fg, whiteSpace: "nowrap" }}
-                              title={`${op} van ${tot} STM-lagen op niveau (${stm.sessies_afgerond} sessies)`}
-                            >
-                              {op}/{tot}
+                            <span style={{ display: "block", whiteSpace: "nowrap" }}>
+                              <span
+                                className="px-1.5 py-0.5 rounded text-xs font-semibold"
+                                style={{ background: kleur.bg, color: kleur.fg }}
+                                title={`${op} van ${tot} oefenlagen op niveau (${stm.sessies_afgerond} sessies). Oefenen levert geen bekwaamheidsbeslissing.`}
+                              >
+                                {op}/{tot}
+                              </span>
+                              <span style={{ display: "block", fontSize: 10, color: "#7a7468", marginTop: 2 }}>
+                                {aantal} {aantal === 1 ? "sessie" : "sessies"} in {jaar}
+                              </span>
+                              {p.laatste_oefensessie && (
+                                <span style={{ display: "block", fontSize: 10, color: "#b8b2a7" }}>
+                                  {formateerDatum(p.laatste_oefensessie)}
+                                </span>
+                              )}
                             </span>
                           );
                         })()}
@@ -401,9 +445,23 @@ export default function AdminKwaliteit() {
                       <div style={{ color: "#7a7468", fontSize: 11 }}>Voorspelling einde jaar</div>
                       <div style={{ color: "#14213d", fontWeight: 700 }}>{opgeSel.voorspelling_einde_jaar}</div>
                     </div>
-                    <div style={{ background: "#f4f1ec", borderRadius: 6, padding: "8px 12px", gridColumn: "span 2" }}>
-                      <div style={{ color: "#7a7468", fontSize: 11 }}>Laatste activiteit</div>
+                    <div style={{ background: "#f4f1ec", borderRadius: 6, padding: "8px 12px" }}>
+                      <div style={{ color: "#7a7468", fontSize: 11 }}>Laatste afname</div>
                       <div style={{ color: "#14213d", fontWeight: 700 }}>{formateerDatum(opgeSel.laatste_activiteit)}</div>
+                    </div>
+                    {/* Bevinding 1: de oefenkant staat er nog, maar apart en met een
+                        eigen naam. Ze telt niet mee voor de afnamenorm. */}
+                    <div style={{ background: "#f4f1ec", borderRadius: 6, padding: "8px 12px" }}>
+                      <div style={{ color: "#7a7468", fontSize: 11 }}>Oefensessies {jaar}</div>
+                      <div style={{ color: "#14213d", fontWeight: 700 }}>
+                        {opgeSel.oefensessies_count ?? 0}
+                        {opgeSel.laatste_oefensessie && (
+                          <span style={{ fontWeight: 400, fontSize: 11, color: "#7a7468" }}>
+                            {" · "}
+                            {formateerDatum(opgeSel.laatste_oefensessie)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -444,19 +502,23 @@ export default function AdminKwaliteit() {
                   )}
                 </div>
               </div>
-              {/* STM-modulevoortgang (additief) — per-practitioner voltooiing
-                  van de 4 STM-lagen op basis van afgeronde STM-sessies. */}
+              {/* Oefenvoortgang (additief) — per-practitioner voltooiing van de
+                  4 kennislagen op basis van afgeronde oefensessies. De
+                  API-paden heten nog stm-voortgang; die blijven ongemoeid,
+                  alleen de woorden op het scherm veranderen. */}
               <div className="mt-6 pt-6" style={{ borderTop: "1px solid #e8e4dc" }}>
                 <h3 style={{ color: "#14213d", fontWeight: 600, marginBottom: 4 }}>
-                  <GraduationCap className="inline w-4 h-4 mr-1" style={{ color: "#1a5fa8" }} /> STM-modulevoortgang
+                  <GraduationCap className="inline w-4 h-4 mr-1" style={{ color: "#1a5fa8" }} /> Oefenvoortgang
                 </h3>
                 <p style={{ color: "#7a7468", fontSize: 12, marginBottom: 12 }}>
-                  Zelf-trainingsmodule — voltooiing van de 4 kennislagen op basis van afgeronde STM-sessies.
+                  Oefenmodule — voltooiing van de 4 kennislagen op basis van afgeronde oefensessies.
+                  Dit is onderhoud van kennis, geen bekwaamheidsbeslissing en geen voorwaarde voor
+                  een licentie.
                 </p>
                 {stmVoortgangQuery.isLoading ? (
-                  <p style={{ color: "#7a7468", fontSize: 13 }}>STM-voortgang laden…</p>
+                  <p style={{ color: "#7a7468", fontSize: 13 }}>Oefenvoortgang laden…</p>
                 ) : !stmVoortgangQuery.data?.voortgang ? (
-                  <p style={{ color: "#7a7468", fontSize: 13 }}>Kon STM-voortgang niet laden.</p>
+                  <p style={{ color: "#7a7468", fontSize: 13 }}>Kon de oefenvoortgang niet laden.</p>
                 ) : (() => {
                   const v = stmVoortgangQuery.data.voortgang;
                   return (
@@ -467,7 +529,7 @@ export default function AdminKwaliteit() {
                           {v.lagen_op_niveau}/{v.lagen_totaal} lagen op niveau
                         </span>
                         <span style={{ background: "#f4f1ec", color: "#14213d", borderRadius: 6, padding: "4px 10px", fontSize: 12 }}>
-                          {v.sessies_afgerond} STM-{v.sessies_afgerond === 1 ? "sessie" : "sessies"} afgerond
+                          {v.sessies_afgerond} {v.sessies_afgerond === 1 ? "oefensessie" : "oefensessies"} afgerond
                         </span>
                         <span style={{ background: "#f4f1ec", color: "#7a7468", borderRadius: 6, padding: "4px 10px", fontSize: 12 }}>
                           Laatste sessie: {formateerDatum(v.laatste_sessie)}
@@ -475,7 +537,7 @@ export default function AdminKwaliteit() {
                       </div>
 
                       {v.sessies_afgerond === 0 ? (
-                        <p style={{ color: "#7a7468", fontSize: 13 }}>Nog geen afgeronde STM-sessies voor deze practitioner.</p>
+                        <p style={{ color: "#7a7468", fontSize: 13 }}>Nog geen afgeronde oefensessies voor deze practitioner.</p>
                       ) : (
                         <div className="grid gap-2">
                           {v.lagen.map((l: any) => (
@@ -507,7 +569,7 @@ export default function AdminKwaliteit() {
                           niet per sessie opgeslagen — daarom louter als context. */}
                       <div className="mt-3">
                         <p style={{ color: "#7a7468", fontSize: 11, marginBottom: 6 }}>
-                          Thema's in het STM-curriculum (voortgang wordt op laagniveau gemeten, niet per thema):
+                          Thema's in het oefencurriculum (voortgang wordt op laagniveau gemeten, niet per thema):
                         </p>
                         <div className="flex flex-wrap gap-1.5">
                           {v.themas.map((t: string) => (

@@ -1,6 +1,24 @@
 // ---------------------------------------------------------------------------
-// client/src/pages/stm.tsx — M2: Self-Training Module
-// Route: /stm (beschikbaar voor ingelogde practitioners)
+// client/src/pages/stm.tsx — de oefenlaag.
+// Route: /admin/oefenen (het oude /admin/stm leidt ernaartoe om)
+//
+// Bouwplan §9.7: dit scherm "wordt /admin/oefenen, expliciet oefenlaag, geen
+// koppeling naar beslissingen".
+//
+// Waarom dat nodig was. Bevinding 4 van het bouwplan stelt vast dat deze module
+// nooit een licentiebeslissing kan dragen, en noemt daar vier redenen voor: de
+// dertig vragen staan in publieke broncode, de cesuur 0,85 / 0,70 / 0,55 is
+// nergens onderbouwd, de vraagselectie is adaptief en zoekt de zwakke lagen op —
+// uitstekend om te leren, onbruikbaar om te meten — en er hangt geen enkel gevolg
+// aan de uitkomst. De conclusie was niet dat de module moet verdwijnen, maar dat
+// ze precies is wat het draaiboek een oefenset noemt, en dus naast de
+// bekwaamheidsmodule komt te staan en niet in de plaats.
+//
+// Wat er in dit bestand aan veranderd is, is dan ook geen rekenwerk maar taal.
+// De scores, de lagen, de adaptieve selectie en de feedback blijven exact zoals
+// ze waren. Wat verdwijnt, is de suggestie dat een percentage hier iets zegt over
+// bekwaamheid. Een oefenscherm dat "expert" op iemands scherm zet zonder erbij te
+// zeggen wat dat woord hier waard is, doet een uitspraak die het niet kan dragen.
 // ---------------------------------------------------------------------------
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -124,8 +142,8 @@ export default function Stm() {
             <p style={{ color: "#d8c9a3", fontSize: 12, textTransform: "uppercase", letterSpacing: 2, marginBottom: 4 }}>
               TaPas Platform
             </p>
-            <h1 style={{ color: "#fff", fontSize: 24, fontWeight: 700, margin: 0 }}>
-              Self-Training Module
+            <h1 style={{ color: "#fff", fontSize: 24, fontWeight: 700, margin: 0 }} data-testid="oefenen-titel">
+              Oefenen
             </h1>
             <p style={{ color: "#d8c9a3", fontSize: 14, marginTop: 4, opacity: 0.8 }}>
               Train je TaPas-kennis. Maximaal 15 minuten per sessie.
@@ -134,6 +152,26 @@ export default function Stm() {
         </div>
 
         <div className="max-w-3xl mx-auto p-6">
+          {/* Bouwplan §9.7: geen koppeling naar beslissingen, en dat hoort op het
+              scherm te staan en niet alleen in een document. */}
+          <div
+            style={{
+              background: "#fff",
+              border: "1px solid #d8c9a3",
+              borderRadius: 8,
+              padding: "12px 16px",
+              marginBottom: 20,
+            }}
+            data-testid="oefenen-afbakening"
+          >
+            <p style={{ fontSize: 13, color: "#14213d", margin: 0, lineHeight: 1.6 }}>
+              <strong>Dit is een oefenlaag.</strong> Wat je hier doet, telt niet mee voor je licentie
+              en levert geen bekwaamheidsbeslissing op. De vragen worden adaptief gekozen en zoeken
+              juist je zwakkere lagen op — goed om te leren, ongeschikt om te meten. Bekwaamheid
+              wordt vastgesteld in de module Bekwaamheid, op een eigen normprofiel.
+            </p>
+          </div>
+
           {/* Laagscores */}
           {scores && (
             <Card style={{ background: "#fff", border: "1px solid #e8e4dc", marginBottom: 20 }}>
@@ -328,7 +366,7 @@ export default function Stm() {
         <div style={{ background: "#14213d", padding: "24px 32px" }}>
           <div className="max-w-2xl mx-auto text-center">
             <Trophy className="w-10 h-10 mx-auto mb-3" style={{ color: "#d8c9a3" }} />
-            <h1 style={{ color: "#fff", fontSize: 22, fontWeight: 700 }}>Sessie afgerond</h1>
+            <h1 style={{ color: "#fff", fontSize: 22, fontWeight: 700 }}>Oefensessie afgerond</h1>
           </div>
         </div>
 
@@ -339,6 +377,17 @@ export default function Stm() {
               <div style={{ fontSize: 48, fontWeight: 800, color: kleur, lineHeight: 1 }}>{totalePct}%</div>
               <div style={{ fontSize: 18, color: kleur, fontWeight: 600, marginTop: 8 }}>
                 {resultaat.inschaling_label}
+              </div>
+              {/* Bouwplan §9.7 en bevinding 4: het label blijft staan, want het is
+                  nuttige oefenfeedback, maar het krijgt de grens erbij die het
+                  altijd al had. De cesuur eronder is niet onderbouwd; wie dat niet
+                  weet, leest het percentage als een cijfer op een rapport. */}
+              <div
+                style={{ fontSize: 12, color: "#7a7468", marginTop: 10, lineHeight: 1.5 }}
+                data-testid="oefenen-resultaat-afbakening"
+              >
+                Oefenuitkomst van deze sessie. Geen bekwaamheidsbeslissing en geen invloed op je
+                licentie.
               </div>
               {resultaat.reminder_over_dagen && (
                 <div style={{ marginTop: 12, fontSize: 13, color: "#7a7468" }}>

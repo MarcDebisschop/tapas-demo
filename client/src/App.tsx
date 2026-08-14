@@ -72,6 +72,8 @@ import Academy from "@/pages/academy";
 import AcademyJester from "@/pages/academy-jester";
 import CoachAanvraag from "@/pages/coach-aanvraag";
 import AdminKwaliteit from "@/pages/admin-kwaliteit";
+import AdminBekwaamheidNormprofiel from "@/pages/admin-bekwaamheid-normprofiel";
+import AdminBekwaamheid from "@/pages/admin-bekwaamheid";
 import Stm from "@/pages/stm";
 import Webinars from "@/pages/webinars";
 import CoachDashboard from "@/pages/coach-dashboard";
@@ -125,7 +127,13 @@ function AppRouter() {
       <Route path="/admin/academy">{() => <AdminLoginGate><AdminAcademy /></AdminLoginGate>}</Route>
       <Route path="/admin/mailbeheer">{() => <AdminLoginGate><AdminMailbeheer /></AdminLoginGate>}</Route>
       <Route path="/admin/kwaliteit">{() => <AdminLoginGate><AdminKwaliteit /></AdminLoginGate>}</Route>
-      <Route path="/admin/stm">{() => <AdminLoginGate><Stm /></AdminLoginGate>}</Route>
+      <Route path="/admin/bekwaamheid/normprofiel">{() => <AdminLoginGate><AdminBekwaamheidNormprofiel /></AdminLoginGate>}</Route>
+      <Route path="/admin/bekwaamheid">{() => <AdminLoginGate><AdminBekwaamheid /></AdminLoginGate>}</Route>
+      {/* Bouwplan §9.7: de oefenlaag heet wat ze is. Het oude pad blijft als
+          omleiding bestaan, want links in bookmarks en in mails hoeven niet te
+          sneuvelen om een naam recht te zetten. */}
+      <Route path="/admin/oefenen">{() => <AdminLoginGate><Stm /></AdminLoginGate>}</Route>
+      <Route path="/admin/stm">{() => <Redirect to="/admin/oefenen" />}</Route>
       <Route path="/admin/webinars">{() => <AdminLoginGate><Webinars /></AdminLoginGate>}</Route>
       <Route path="/admin/prijzen">{() => <AdminLoginGate><AdminPrijzen /></AdminLoginGate>}</Route>
       <Route path="/admin/bulk-import">{() => <AdminLoginGate><AdminBulkImport /></AdminLoginGate>}</Route>
