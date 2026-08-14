@@ -64,6 +64,22 @@ export interface LicentiebeeldAntwoord {
   peildatum: string;
   /** Beheerder-id (als tekst, want JSON-sleutels zijn tekst) naar beeld. */
   perBeheerder: Record<string, BeheerderLicentiebeeld>;
+  /**
+   * Coachregister-id naar hetzelfde beeld.
+   *
+   * Waarom er een tweede sleutel bij komt. `perBeheerder` is gebouwd voor
+   * `/admin/toegang`, waar de rijen beheerders zijn. Op `/admin/coaches` zijn de
+   * rijen coachregisterrijen met een eigen id, en het register koppelt daar met
+   * `coach_register_id`. Zou dat scherm `perBeheerder` gebruiken, dan moest het
+   * eerst zelf van coach naar beheerder springen — en die sprong bestaat niet
+   * altijd: het register laat uitdrukkelijk toe dat iemand een coachregister-id
+   * heeft zonder beheerder-id.
+   *
+   * Dezelfde lus, dezelfde rekenkern, alleen een tweede sleutel op hetzelfde
+   * beeld. Het is dus geen tweede antwoord op dezelfde vraag, en dat was de reden
+   * dat deze leesweg één eindpunt is.
+   */
+  perCoach: Record<string, BeheerderLicentiebeeld>;
 }
 
 /**
@@ -129,9 +145,17 @@ export function leesLicentiebeeld(
   opslag: BekwaamheidOpslag = bekwaamheidOpslag,
 ): LicentiebeeldAntwoord {
   const perBeheerder: Record<string, BeheerderLicentiebeeld> = {};
+  const perCoach: Record<string, BeheerderLicentiebeeld> = {};
 
   for (const persoon of opslag.register.lijst(false)) {
-    if (persoon.beheerderId === null) continue;
+    // Iemand zonder beide koppelingen is voor geen van de drie schermen te
+    // plaatsen: er is geen rij om het beeld naast te zetten. Zo'n registerrij
+    // bestaat legitiem — het register laat een rij met alleen een e-mailadres toe.
+    // `== null` en niet `=== null`: een aanroeper die het veld helemaal weglaat,
+    // moet hetzelfde behandeld worden als een aanroeper die er null in zet. Met de
+    // strikte vergelijking zou een ontbrekend veld door de controle glippen en
+    // hieronder als sleutel "undefined" in de afbeelding terechtkomen.
+    if (persoon.beheerderId == null && persoon.coachRegisterId == null) continue;
     const licenties: LicentieVoorBeeld[] = opslag.licenties
       .vanPersoon(persoon.id)
       .map((l) => ({
@@ -143,13 +167,61 @@ export function leesLicentiebeeld(
         voorwaardeVoor: l.voorwaardeVoor,
       }));
     const beeld = maakLicentieBeeld(licenties, peildatum, true);
-    perBeheerder[String(persoon.beheerderId)] = {
+    const volledig: BeheerderLicentiebeeld = {
       ...beeld,
       perPlatformdeel: bundelPerPlatformdeel(beeld),
     };
+    if (persoon.beheerderId != null) perBeheerder[String(persoon.beheerderId)] = volledig;
+    if (persoon.coachRegisterId != null) perCoach[String(persoon.coachRegisterId)] = volledig;
   }
 
-  return { peildatum, perBeheerder };
+  return { peildatum, perBeheerder, perCoach };
+}
+
+/**
+ * Het beeld van één beheerder, of null wanneer die niet in het register staat.
+ *
+ * Bestaat voor `/coach/dashboard`. Dat scherm heeft geen adminsessie en mag de
+ * volle lijst dus niet lezen — die lijst gaat over alle andere practitioners.
+ * Wat het wél mag lezen, is het eigen beeld, en dat is precies wat hier uitkomt.
+ *
+ * Er wordt niet gefilterd op een lijst die al is opgebouwd: dat zou betekenen dat
+ * alle beelden eerst berekend worden om er één te houden. Deze weg zoekt de
+ * registerrij op en rekent één beeld.
+ */
+export function leesEigenLicentiebeeld(
+  beheerderId: number,
+  peildatum: string,
+  opslag: BekwaamheidOpslag = bekwaamheidOpslag,
+): BeheerderLicentiebeeld | null {
+  const persoon = opslag.register
+    .lijst(false)
+    .find((p) => p.beheerderId === beheerderId);
+  if (persoon === undefined) return null;
+
+  const licenties: LicentieVoorBeeld[] = opslag.licenties.vanPersoon(persoon.id).map((l) => ({
+    instrumentId: l.instrumentId,
+    status: l.status,
+    geldigVan: l.geldigVan,
+    geldigTot: l.geldigTot,
+    alertActief: l.alertActief,
+    voorwaardeVoor: l.voorwaardeVoor,
+  }));
+  const beeld = maakLicentieBeeld(licenties, peildatum, true);
+  return { ...beeld, perPlatformdeel: bundelPerPlatformdeel(beeld) };
+}
+
+/**
+ * De identiteit achter een practitionersessie.
+ *
+ * Woordelijk dezelfde afleiding als `getPractitionerId` in `routes-stm.ts`:
+ * `coachId`, en anders `adminId`. Een coachsessie ís een beheerderrij — daar
+ * kijkt `/api/coach/me` ook naar. Een tweede, afwijkende afleiding zou betekenen
+ * dat het dashboard iemand anders kan tonen dan wie er is ingelogd.
+ */
+function practitionerIdVanSessie(req: Request): number | null {
+  const s = req.session as unknown as { coachId?: number; adminId?: number } | undefined;
+  return s?.coachId ?? s?.adminId ?? null;
 }
 
 export function registerLicentiebeeldRoutes(app: Express): void {
@@ -166,6 +238,40 @@ export function registerLicentiebeeldRoutes(app: Express): void {
         res.json(leesLicentiebeeld(peildatum));
       } catch (err) {
         console.error("[bekwaamheid/licentiebeeld] lezen mislukt:", err);
+        res.status(500).json({ error: "Het licentiebeeld kon niet worden opgebouwd." });
+      }
+    },
+  );
+
+  // -------------------------------------------------------------------------
+  // GET /api/coach/licentiebeeld — het eigen beeld, voor /coach/dashboard.
+  //
+  // Staat níet achter `vereisAdmin`. Dat is geen versoepeling: het eindpunt geeft
+  // uitsluitend het beeld van de ingelogde persoon terug, en het beheerder-id
+  // komt uit de sessie en nooit uit de vraag. Wie een ander id in de URL zet,
+  // krijgt daar niets mee — er is geen id in de URL.
+  //
+  // Een persoon die niet in het register staat, krijgt 200 met `beeld: null` en
+  // geen 404. Buiten het register staan is voor een practitioner een normale
+  // toestand, niet een fout; het dashboard hoort dat rustig te kunnen tonen.
+  // -------------------------------------------------------------------------
+  app.get(
+    "/api/coach/licentiebeeld",
+    async (req: Request, res: Response): Promise<void> => {
+      const id = practitionerIdVanSessie(req);
+      if (id === null) {
+        res.status(401).json({ error: "Niet ingelogd." });
+        return;
+      }
+      const peildatum = leesPeildatum(req.query.peildatum);
+      if (peildatum === null) {
+        res.status(400).json({ error: "Peildatum onleesbaar; verwacht JJJJ-MM-DD." });
+        return;
+      }
+      try {
+        res.json({ peildatum, beeld: leesEigenLicentiebeeld(Number(id), peildatum) });
+      } catch (err) {
+        console.error("[coach/licentiebeeld] lezen mislukt:", err);
         res.status(500).json({ error: "Het licentiebeeld kon niet worden opgebouwd." });
       }
     },

@@ -34,6 +34,11 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import {
+  LicentieSamenvatting,
+  type LicentiebeeldAntwoord,
+} from "@/components/bekwaamheid/LicentieKolom";
+import { STANDAARD_TAAL } from "@shared/i18n";
+import {
   Users,
   Plus,
   Pencil,
@@ -283,6 +288,21 @@ export default function AdminCoaches() {
   const qc = useQueryClient();
   const { data, isLoading } = useQuery<Coach[]>({ queryKey: [COACHES_API] });
 
+  // Het licentiebeeld van alle coaches in één leesbeweging.
+  //
+  // Sleutel is `perCoach`, niet `perBeheerder`: de rijen op dit scherm zijn
+  // coachregisterrijen. Een coach kan in het register staan zonder ooit een
+  // beheerderrij te hebben gehad, en dan zou `perBeheerder` hem niet bevatten.
+  //
+  // Een mislukte vraag laat de coachlijst met opzet ongemoeid. Het licentiebeeld
+  // is aanvullende informatie; wie een coach moet bewerken of deactiveren, mag
+  // daar niet in geblokkeerd worden omdat een tweede eindpunt hapert. Bij een
+  // fout blijft de kolom eenvoudig weg — hetzelfde gedrag als op /admin/toegang.
+  const { data: licentiebeeld } = useQuery<LicentiebeeldAntwoord>({
+    queryKey: ["/api/bekwaamheid/licentiebeeld"],
+    retry: false,
+  });
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bewerkId, setBewerkId] = useState<number | null>(null);
   const [form, setForm] = useState({ ...DEFAULT_FORM });
@@ -453,6 +473,11 @@ export default function AdminCoaches() {
                       {coach.plaats} · {coach.regioSleutel}
                       {coach.email ? ` · ${coach.email}` : ""}
                     </p>
+                    <LicentieSamenvatting
+                      beeld={licentiebeeld?.perCoach[String(coach.id)]}
+                      taal={STANDAARD_TAAL}
+                      testid={`licentie-coach-${coach.id}`}
+                    />
                     {(coach.expertise ?? []).length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {coach.expertise.map((ex, i) => (

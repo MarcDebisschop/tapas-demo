@@ -14,6 +14,12 @@ import { Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { AppHeader } from "@/components/Brand";
 import { useCoachAuth } from "@/components/CoachLoginGate";
+import {
+  LicentieSamenvatting,
+  type EigenLicentiebeeldAntwoord,
+} from "@/components/bekwaamheid/LicentieKolom";
+import { STANDAARD_TAAL } from "@shared/i18n";
+import { maakKolomVertaler } from "@/components/bekwaamheid/licentiekolom-teksten";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -371,6 +377,125 @@ function StmModule() {
 export default function CoachDashboard() {
   const { coach, afmelden } = useCoachAuth();
 
+/**
+ * De licentiekaart op het practitioner-dashboard.
+ *
+ * Drie dingen die deze kaart bewust NIET doet.
+ *
+ * Ze rekent niets na. Stand, samenvatting, afnamerecht en reden komen als gegeven
+ * binnen uit `/api/coach/licentiebeeld` en worden getoond zoals ze aankwamen. De
+ * poort weigert of laat door op grond van diezelfde rekenkern; een tweede
+ * rekenplaats in de browser zou betekenen dat een practitioner op zijn dashboard
+ * iets anders leest dan wat de poort straks doet.
+ *
+ * Ze legt niets vast en zegt niets over de volgende ronde. Wie kijkt hoe hij
+ * ervoor staat, verandert daarmee niets — de leesweg schrijft ook geen auditregel.
+ * Wat er moet gebeuren en wanneer, komt van de beheerder via de gewone weg; een
+ * dashboard dat zelf een datum voorstelt, wekt een verwachting die niemand heeft
+ * toegezegd.
+ *
+ * Ze verbergt niets bij een lege stand. Buiten het register staan of geen licentie
+ * hebben is voor een practitioner een normale toestand en geen fout. De kaart
+ * verdwijnt dus niet; ze zegt in woorden wat de stand is. Een kaart die alleen
+ * opduikt als er iets is, laat iemand in het ongewisse over wat er niet is.
+ */
+function LicentieKaart() {
+  const w = maakKolomVertaler(STANDAARD_TAAL);
+  const { data, isLoading, isError } = useQuery<EigenLicentiebeeldAntwoord>({
+    queryKey: ["/api/coach/licentiebeeld"],
+    retry: false,
+  });
+
+  const rand = "1px solid #e8e4dc";
+
+  if (isLoading) {
+    return (
+      <Card style={{ background: "#fff", border: rand, marginBottom: 28 }}>
+        <CardContent className="p-5">
+          <p style={{ color: "#7a7468", fontSize: 13, margin: 0 }}>{w("laden")}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Card style={{ background: "#fff", border: rand, marginBottom: 28 }}>
+        <CardContent className="p-5">
+          <p style={{ color: "#7a7468", fontSize: 13, margin: 0 }}>{w("mislukt")}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const beeld = data?.beeld ?? undefined;
+
+  return (
+    <Card style={{ background: "#fff", border: rand, marginBottom: 28 }}>
+      <CardHeader style={{ borderBottom: rand, paddingBottom: 12 }}>
+        <CardTitle style={{ color: "#14213d", fontSize: 16 }}>{w("kop")}</CardTitle>
+      </CardHeader>
+      <CardContent className="pt-4">
+        <LicentieSamenvatting beeld={beeld} taal={STANDAARD_TAAL} testid="licentie-eigen" />
+
+        {beeld && beeld.perInstrument.length > 0 && (
+          <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 8 }}>
+            {beeld.perInstrument.map((r) => (
+              <div
+                key={r.instrumentId}
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  alignItems: "baseline",
+                  gap: 8,
+                  borderTop: rand,
+                  paddingTop: 8,
+                }}
+                data-testid={`licentie-instrument-${r.instrumentId}`}
+              >
+                <span style={{ color: "#14213d", fontSize: 13, fontWeight: 600 }}>
+                  {r.instrumentId}
+                </span>
+                <span
+                  style={{
+                    fontSize: 12,
+                    color: r.afnamerecht ? "#2E7D5A" : "#A13544",
+                    fontWeight: 500,
+                  }}
+                >
+                  {r.afnamerecht ? w("recht") : w("geen_recht")}
+                </span>
+                <span style={{ fontSize: 12, color: "#7a7468" }}>
+                  {r.status.replace(/_/g, " ")}
+                </span>
+                {r.geldigTot && (
+                  <span style={{ fontSize: 12, color: "#7a7468" }}>
+                    {w("verloopt")} {r.geldigTot}
+                  </span>
+                )}
+                {r.alertActief && (
+                  <span style={{ fontSize: 12, color: "#A13544" }}>{w("alert_open")}</span>
+                )}
+                {r.reden && (
+                  <span style={{ fontSize: 12, color: "#7a7468", flexBasis: "100%" }}>
+                    {r.reden}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {data?.peildatum && (
+          <p style={{ color: "#7a7468", fontSize: 11, marginTop: 14, marginBottom: 0 }}>
+            {w("peildatum")}: {data.peildatum}
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
   return (
     <div className="min-h-[100dvh] bg-background">
       <AppHeader
@@ -412,6 +537,9 @@ export default function CoachDashboard() {
             </p>
           </div>
         </div>
+
+        {/* Licentie — dezelfde standen en dezelfde woorden als op /admin/toegang */}
+        <LicentieKaart />
 
         {/* STM sectie */}
         <div style={{ marginBottom: 8 }}>

@@ -1,149 +1,88 @@
 /**
  * De teksten van de kolom "licentie" op `/admin/toegang`, in vijf talen.
  *
- * Waarom dit bestand bestaat en de teksten niet in `shared/i18n.ts` staan. Het
- * scherm `/admin/toegang` is vijftalig en dat mag niet halveren omdat er een
- * kolom bij komt: één Nederlandse regel tussen vijf vertaalde regels is een
- * regressie die niemand opmerkt tot een Franstalige beheerder ernaar kijkt. De
- * teksten horen dus vertaald te zijn. Ze staan hier en niet in de gedeelde
- * woordenlijst omdat deze bouwronde een harde grens heeft op het aantal
- * bestaande bestanden dat mag wijzigen, en `shared/i18n.ts` valt daarbuiten.
+ * De teksten staan hier niet meer. Ze zijn verhuisd naar `shared/i18n.ts` met het
+ * prefix `lk_`, zoals de vorige versie van dit bestand als vervolgstap had
+ * aangekondigd. Wat hier overblijft, is de aansluiting: de drie namen waarmee
+ * `LicentieKolom.tsx`, `admin-toegang.tsx` en de toetsen de kolom al aanspraken,
+ * nu afgeleid uit de gedeelde woordenlijst.
  *
- * Dat is uitdrukkelijk een tijdelijke plaatsing. Bij de volgende ronde waarin
- * `shared/i18n.ts` open mag, horen deze sleutels daar naartoe te verhuizen, met
- * het prefix `lk_`. Zolang ze hier staan, gelden dezelfde regels: elke sleutel
- * in alle vijf de talen, geen sleutel zonder vertaling.
+ * Waarom dit bestand niet gewoon verdwijnt. De namen `maakKolomVertaler`,
+ * `KOLOM_SLEUTELS` en `KOLOM_WOORDEN` staan in drie andere bestanden. Ze hier
+ * laten staan als afgeleide betekent dat de verhuizing precies één inhoudelijke
+ * wijziging is — de plek van de teksten — en niet ook nog een aanpassing van
+ * schermen die verder niets met de verhuizing te maken hebben. Wie later de
+ * aanroepen wil rechttrekken, kan dat doen zonder dat de verhuizing zelf opnieuw
+ * beoordeeld hoeft te worden.
  *
- * De statusnamen worden bewust niet vertaald. `bekrachtigd_met_aandachtspunt` is
- * een term uit het draaiboek en staat zo in de databank, in het auditspoor en in
- * de beslisdocumenten. Wie hem in vijf varianten vertaalt, maakt het onmogelijk
- * om een scherm en een auditregel naast elkaar te leggen. Wat wél vertaald wordt,
- * is alles eromheen: de kop, de standen en de uitleg.
+ * De teksten zijn woordelijk overgenomen. Geen vertaling is bij de verhuizing
+ * herschreven: zou er ook maar één zin veranderd zijn, dan was bij een verschil
+ * tussen voor en na niet meer te zeggen of het aan de verhuizing lag.
+ *
+ * De statusnamen worden nog steeds niet vertaald.
+ * `bekrachtigd_met_aandachtspunt` is een term uit het draaiboek en staat zo in de
+ * databank, in het auditspoor en in de beslisdocumenten.
  */
 
-import type { Taal } from "@shared/i18n";
+import { STRINGS, TALEN, t, type Taal } from "@shared/i18n";
 
-type Woordenlijst = Record<string, string>;
+/** De sleutels van de kolom, zonder het `lk_`-prefix waarmee ze in STRINGS staan. */
+const SLEUTELS = [
+  "kop",
+  "uitleg",
+  "buiten_het_register",
+  "geen_licenties",
+  "in_orde",
+  "let_op",
+  "geen_afnamerecht",
+  "geen_licentie_voor_deel",
+  "geen_instrument",
+  "recht",
+  "geen_recht",
+  "peildatum",
+  "laden",
+  "mislukt",
+  "alert_open",
+  "voorwaarde_open",
+  "verloopt",
+] as const;
 
-const NL: Woordenlijst = {
-  kop: "Licentie",
-  uitleg:
-    "Toegang heeft twee voorwaarden. De schakelaar opent het platformdeel; de licentie geeft het recht om er een afname mee te doen. Beide moeten kloppen.",
-  buiten_het_register: "Niet in het register",
-  geen_licenties: "Geen licentie",
-  in_orde: "Licentie in orde",
-  let_op: "Licentie: let op",
-  geen_afnamerecht: "Geen afnamerecht",
-  geen_licentie_voor_deel: "Geen licentie voor dit deel",
-  geen_instrument: "Geen instrument achter dit deel",
-  recht: "afnamerecht",
-  geen_recht: "geen afnamerecht",
-  peildatum: "Peildatum",
-  laden: "Licentiebeeld wordt opgehaald…",
-  mislukt: "Het licentiebeeld kon niet worden opgehaald. De schakelaars werken wel.",
-  alert_open: "alert open",
-  voorwaarde_open: "voorwaarde open",
-  verloopt: "verloopt",
-};
+export type Kolomsleutel = (typeof SLEUTELS)[number];
 
-const FR: Woordenlijst = {
-  kop: "Licence",
-  uitleg:
-    "L'accès a deux conditions. Le commutateur ouvre le module ; la licence donne le droit d'y réaliser une passation. Les deux doivent être en ordre.",
-  buiten_het_register: "Pas au registre",
-  geen_licenties: "Aucune licence",
-  in_orde: "Licence en ordre",
-  let_op: "Licence : attention",
-  geen_afnamerecht: "Pas de droit de passation",
-  geen_licentie_voor_deel: "Aucune licence pour ce module",
-  geen_instrument: "Aucun instrument derrière ce module",
-  recht: "droit de passation",
-  geen_recht: "pas de droit de passation",
-  peildatum: "Date de référence",
-  laden: "Chargement de l'état des licences…",
-  mislukt: "L'état des licences n'a pu être chargé. Les commutateurs fonctionnent.",
-  alert_open: "alerte ouverte",
-  voorwaarde_open: "condition ouverte",
-  verloopt: "expire le",
-};
-
-const EN: Woordenlijst = {
-  kop: "Licence",
-  uitleg:
-    "Access has two conditions. The switch opens the platform module; the licence grants the right to administer with it. Both must hold.",
-  buiten_het_register: "Not in the register",
-  geen_licenties: "No licence",
-  in_orde: "Licence in order",
-  let_op: "Licence: attention",
-  geen_afnamerecht: "No right to administer",
-  geen_licentie_voor_deel: "No licence for this module",
-  geen_instrument: "No instrument behind this module",
-  recht: "may administer",
-  geen_recht: "may not administer",
-  peildatum: "Reference date",
-  laden: "Loading licence status…",
-  mislukt: "The licence status could not be loaded. The switches still work.",
-  alert_open: "alert open",
-  voorwaarde_open: "condition open",
-  verloopt: "expires",
-};
-
-const ES: Woordenlijst = {
-  kop: "Licencia",
-  uitleg:
-    "El acceso tiene dos condiciones. El interruptor abre el módulo; la licencia otorga el derecho a realizar una aplicación. Ambas deben cumplirse.",
-  buiten_het_register: "No está en el registro",
-  geen_licenties: "Sin licencia",
-  in_orde: "Licencia en orden",
-  let_op: "Licencia: atención",
-  geen_afnamerecht: "Sin derecho de aplicación",
-  geen_licentie_voor_deel: "Sin licencia para este módulo",
-  geen_instrument: "Sin instrumento detrás de este módulo",
-  recht: "derecho de aplicación",
-  geen_recht: "sin derecho de aplicación",
-  peildatum: "Fecha de referencia",
-  laden: "Cargando el estado de las licencias…",
-  mislukt: "No se pudo cargar el estado de las licencias. Los interruptores funcionan.",
-  alert_open: "alerta abierta",
-  voorwaarde_open: "condición abierta",
-  verloopt: "vence el",
-};
-
-const RU: Woordenlijst = {
-  kop: "Лицензия",
-  uitleg:
-    "У доступа два условия. Переключатель открывает модуль платформы; лицензия даёт право проводить с ним обследование. Оба условия должны быть выполнены.",
-  buiten_het_register: "Нет в реестре",
-  geen_licenties: "Лицензии нет",
-  in_orde: "Лицензия в порядке",
-  let_op: "Лицензия: внимание",
-  geen_afnamerecht: "Нет права проведения",
-  geen_licentie_voor_deel: "Нет лицензии для этого модуля",
-  geen_instrument: "За этим модулем нет инструмента",
-  recht: "право проведения",
-  geen_recht: "нет права проведения",
-  peildatum: "Дата отсчёта",
-  laden: "Загрузка состояния лицензий…",
-  mislukt: "Не удалось загрузить состояние лицензий. Переключатели работают.",
-  alert_open: "открытое предупреждение",
-  voorwaarde_open: "открытое условие",
-  verloopt: "истекает",
-};
-
-const WOORDEN: Record<Taal, Woordenlijst> = { nl: NL, fr: FR, en: EN, es: ES, ru: RU };
+/** Zet een kolomsleutel om naar de sleutel zoals `shared/i18n.ts` hem kent. */
+function volledig(sleutel: Kolomsleutel): keyof typeof STRINGS {
+  return `lk_${sleutel}` as keyof typeof STRINGS;
+}
 
 /**
  * Maakt een vertaler voor deze kolom.
  *
- * Valt terug op het Nederlands en niet op de sleutel zelf: een scherm dat
- * `geen_afnamerecht` laat lezen in plaats van een zin, is erger dan een scherm
- * dat één regel in het Nederlands laat lezen.
+ * De terugval op het Nederlands zit nu in `t()` en niet meer hier: één
+ * terugvalregel voor de hele woordenlijst is beter dan twee die kunnen gaan
+ * afwijken. Het gedrag blijft hetzelfde — een onbekende taal leest Nederlands en
+ * nooit een sleutel.
  */
-export function maakKolomVertaler(taal: Taal): (sleutel: keyof typeof NL) => string {
-  const lijst = WOORDEN[taal] ?? NL;
-  return (sleutel) => lijst[sleutel] ?? NL[sleutel] ?? String(sleutel);
+export function maakKolomVertaler(taal: Taal): (sleutel: Kolomsleutel) => string {
+  return (sleutel) => t(volledig(sleutel), taal);
 }
 
-/** Voor de test die bewaakt dat er geen sleutel zonder vertaling bestaat. */
-export const KOLOM_SLEUTELS = Object.keys(NL) as ReadonlyArray<keyof typeof NL>;
-export const KOLOM_WOORDEN = WOORDEN;
+/** Voor de toets die bewaakt dat er geen sleutel zonder vertaling bestaat. */
+export const KOLOM_SLEUTELS: ReadonlyArray<Kolomsleutel> = SLEUTELS;
+
+/**
+ * De woorden per taal, opgebouwd uit de gedeelde woordenlijst.
+ *
+ * Blijft de vorm `taal → sleutel → tekst` houden, want dat is de vorm waarin de
+ * toets die de vijf talen bewaakt hem al leest. Zou die vorm hier veranderen, dan
+ * moest de toets mee wijzigen, en dan bewaakt de toets na de verhuizing iets
+ * anders dan ervoor.
+ */
+export const KOLOM_WOORDEN: Record<Taal, Record<Kolomsleutel, string>> = Object.fromEntries(
+  TALEN.map((taal) => [
+    taal,
+    Object.fromEntries(SLEUTELS.map((s) => [s, t(volledig(s), taal)])) as Record<
+      Kolomsleutel,
+      string
+    >,
+  ]),
+) as Record<Taal, Record<Kolomsleutel, string>>;

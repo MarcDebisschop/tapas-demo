@@ -1852,6 +1852,37 @@ export const STRINGS = {
   hdd_ctx_ma_kort: { nl: "M&A-overname", fr: "Acquisition M&A", en: "M&A acquisition", es: "Adquisición M&A", ru: "Поглощение M&A" },
   hdd_ctx_self_kort: { nl: "Self-screening", fr: "Auto-évaluation", en: "Self-screening", es: "Autoevaluación", ru: "Самооценка" },
   hdd_status_prefix: { nl: "status:", fr: "statut :", en: "status:", es: "estado:", ru: "статус:" },
+  // -------------------------------------------------------------------------
+  // lk_ — de kolom "licentie" op /admin/toegang.
+  //
+  // Verhuisd uit client/src/components/bekwaamheid/licentiekolom-teksten.ts,
+  // waar ze tijdelijk stonden omdat dit bestand in die bouwronde dicht zat. De
+  // teksten zijn woordelijk overgenomen; de verhuizing verandert geen vertaling,
+  // want dan zou bij een verschil niet meer te zeggen zijn of het aan de
+  // verhuizing lag.
+  //
+  // De statusnamen zelf staan hier niet. `bekrachtigd_met_aandachtspunt` is een
+  // term uit het draaiboek en staat zo in de databank, in het auditspoor en in de
+  // beslisdocumenten; wie hem in vijf varianten vertaalt, maakt het onmogelijk om
+  // een scherm en een auditregel naast elkaar te leggen.
+  // -------------------------------------------------------------------------
+  lk_kop: { nl: "Licentie", fr: "Licence", en: "Licence", es: "Licencia", ru: "Лицензия" },
+  lk_uitleg: { nl: "Toegang heeft twee voorwaarden. De schakelaar opent het platformdeel; de licentie geeft het recht om er een afname mee te doen. Beide moeten kloppen.", fr: "L'accès a deux conditions. Le commutateur ouvre le module ; la licence donne le droit d'y réaliser une passation. Les deux doivent être en ordre.", en: "Access has two conditions. The switch opens the platform module; the licence grants the right to administer with it. Both must hold.", es: "El acceso tiene dos condiciones. El interruptor abre el módulo; la licencia otorga el derecho a realizar una aplicación. Ambas deben cumplirse.", ru: "У доступа два условия. Переключатель открывает модуль платформы; лицензия даёт право проводить с ним обследование. Оба условия должны быть выполнены." },
+  lk_buiten_het_register: { nl: "Niet in het register", fr: "Pas au registre", en: "Not in the register", es: "No está en el registro", ru: "Нет в реестре" },
+  lk_geen_licenties: { nl: "Geen licentie", fr: "Aucune licence", en: "No licence", es: "Sin licencia", ru: "Лицензии нет" },
+  lk_in_orde: { nl: "Licentie in orde", fr: "Licence en ordre", en: "Licence in order", es: "Licencia en orden", ru: "Лицензия в порядке" },
+  lk_let_op: { nl: "Licentie: let op", fr: "Licence : attention", en: "Licence: attention", es: "Licencia: atención", ru: "Лицензия: внимание" },
+  lk_geen_afnamerecht: { nl: "Geen afnamerecht", fr: "Pas de droit de passation", en: "No right to administer", es: "Sin derecho de aplicación", ru: "Нет права проведения" },
+  lk_geen_licentie_voor_deel: { nl: "Geen licentie voor dit deel", fr: "Aucune licence pour ce module", en: "No licence for this module", es: "Sin licencia para este módulo", ru: "Нет лицензии для этого модуля" },
+  lk_geen_instrument: { nl: "Geen instrument achter dit deel", fr: "Aucun instrument derrière ce module", en: "No instrument behind this module", es: "Sin instrumento detrás de este módulo", ru: "За этим модулем нет инструмента" },
+  lk_recht: { nl: "afnamerecht", fr: "droit de passation", en: "may administer", es: "derecho de aplicación", ru: "право проведения" },
+  lk_geen_recht: { nl: "geen afnamerecht", fr: "pas de droit de passation", en: "may not administer", es: "sin derecho de aplicación", ru: "нет права проведения" },
+  lk_peildatum: { nl: "Peildatum", fr: "Date de référence", en: "Reference date", es: "Fecha de referencia", ru: "Дата отсчёта" },
+  lk_laden: { nl: "Licentiebeeld wordt opgehaald…", fr: "Chargement de l'état des licences…", en: "Loading licence status…", es: "Cargando el estado de las licencias…", ru: "Загрузка состояния лицензий…" },
+  lk_mislukt: { nl: "Het licentiebeeld kon niet worden opgehaald. De schakelaars werken wel.", fr: "L'état des licences n'a pu être chargé. Les commutateurs fonctionnent.", en: "The licence status could not be loaded. The switches still work.", es: "No se pudo cargar el estado de las licencias. Los interruptores funcionan.", ru: "Не удалось загрузить состояние лицензий. Переключатели работают." },
+  lk_alert_open: { nl: "alert open", fr: "alerte ouverte", en: "alert open", es: "alerta abierta", ru: "открытое предупреждение" },
+  lk_voorwaarde_open: { nl: "voorwaarde open", fr: "condition ouverte", en: "condition open", es: "condición abierta", ru: "открытое условие" },
+  lk_verloopt: { nl: "verloopt", fr: "expire le", en: "expires", es: "vence el", ru: "истекает" },
 } as const satisfies Record<string, Vertaling>;
 
 export type StringSleutel = keyof typeof STRINGS;

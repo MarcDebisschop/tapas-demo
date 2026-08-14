@@ -71,7 +71,23 @@ export interface BeheerderLicentiebeeld {
 
 export interface LicentiebeeldAntwoord {
   peildatum: string;
+  /** Beheerder-id naar beeld. De sleutel voor `/admin/toegang`. */
   perBeheerder: Record<string, BeheerderLicentiebeeld>;
+  /**
+   * Coachregister-id naar hetzelfde beeld. De sleutel voor `/admin/coaches`.
+   *
+   * Twee sleutels op één beeld, want de twee schermen hebben verschillende rijen:
+   * beheerders op het ene, coachregisterrijen op het andere. De server vult beide
+   * in dezelfde lus, dus het is niet twee keer rekenen.
+   */
+  perCoach: Record<string, BeheerderLicentiebeeld>;
+}
+
+/** Het antwoord van `/api/coach/licentiebeeld` — alleen het eigen beeld. */
+export interface EigenLicentiebeeldAntwoord {
+  peildatum: string;
+  /** `null` betekent: niet in het register. Voor een practitioner een normale stand. */
+  beeld: BeheerderLicentiebeeld | null;
 }
 
 /**

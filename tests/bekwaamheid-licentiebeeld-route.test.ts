@@ -32,6 +32,7 @@ import express from "express";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import {
+  leesEigenLicentiebeeld,
   leesLicentiebeeld,
   registerLicentiebeeldRoutes,
 } from "/home/user/workspace/core/server/bekwaamheid/routes-licentiebeeld";
@@ -50,6 +51,31 @@ function maakApp(adminId: number | null) {
   });
   registerLicentiebeeldRoutes(app);
   return app;
+}
+
+function maakCoachApp(coachId: number | null) {
+  const app = express();
+  app.use((req, _res, next) => {
+    if (coachId !== null) (req as any).session = { coachId };
+    next();
+  });
+  registerLicentiebeeldRoutes(app);
+  return app;
+}
+
+async function coachVerzoek(
+  coachId: number | null,
+  pad: string,
+): Promise<{ status: number; lichaam: any }> {
+  const server = createServer(maakCoachApp(coachId));
+  await new Promise<void>((klaar) => server.listen(0, klaar));
+  const poort = (server.address() as AddressInfo).port;
+  try {
+    const antwoord = await fetch(`http://127.0.0.1:${poort}${pad}`);
+    return { status: antwoord.status, lichaam: await antwoord.json().catch(() => null) };
+  } finally {
+    await new Promise<void>((klaar) => server.close(() => klaar()));
+  }
 }
 
 async function verzoek(
@@ -75,7 +101,11 @@ async function verzoek(
  * staan, dan zou een falende test niet vertellen wélke laag stuk is.
  */
 function proefopslag(
-  personen: Array<{ id: number; beheerderId: number | null }>,
+  personen: Array<{
+    id: number;
+    beheerderId: number | null;
+    coachRegisterId?: number | null;
+  }>,
   licentiesPerPersoon: Record<number, Array<Record<string, unknown>>>,
 ): BekwaamheidOpslag {
   return {
@@ -255,5 +285,139 @@ describe("de woorden van de kolom", () => {
         expect(woord.length).toBeGreaterThan(3);
       }
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// De tweede sleutel en de eigen leesweg.
+//
+// Waarom hier twee dingen bij komen die er eerder niet stonden. Het bouwplan nam
+// aan dat `/admin/coaches` en `/coach/dashboard` het bestaande beeld konden
+// hergebruiken. Dat bleek niet te kloppen op twee punten die alleen in de code te
+// zien zijn: de afbeelding was uitsluitend op beheerder-id gesleuteld terwijl het
+// coachscherm coachregisterrijen toont, en de route hing achter `vereisAdmin`
+// terwijl een practitionersessie geen adminsessie is.
+//
+// Beide zijn opgelost zonder een tweede rekenkern. Wat hier onder toezicht staat,
+// is precies dat: dat de twee sleutels hetzelfde beeld aanwijzen, en dat de eigen
+// leesweg niets meer teruggeeft dan het eigen beeld.
+// ---------------------------------------------------------------------------
+
+describe("de tweede sleutel op hetzelfde beeld", () => {
+  it("zet iemand met beide koppelingen onder beide sleutels, met hetzelfde beeld", () => {
+    const uit = leesLicentiebeeld(
+      "2026-08-14",
+      proefopslag([{ id: 1, beheerderId: 11, coachRegisterId: 55 }], { 1: [licentie()] }),
+    );
+    expect(Object.keys(uit.perBeheerder)).toEqual(["11"]);
+    expect(Object.keys(uit.perCoach)).toEqual(["55"]);
+    // Niet alleen gelijk van inhoud: het is één en hetzelfde object, want het is
+    // één berekening. Twee gelijke maar losse beelden zouden na een latere
+    // wijziging uit elkaar kunnen lopen.
+    expect(uit.perCoach["55"]).toBe(uit.perBeheerder["11"]);
+  });
+
+  it("neemt een coach zonder beheerderrij wel op, maar alleen onder de coachsleutel", () => {
+    // Dit is de rij waarvoor de tweede sleutel bestaat. Het register laat
+    // uitdrukkelijk toe dat iemand een coachregister-id heeft zonder beheerder-id;
+    // vóór deze uitbreiding viel zo iemand volledig uit het antwoord.
+    const uit = leesLicentiebeeld(
+      "2026-08-14",
+      proefopslag([{ id: 1, beheerderId: null, coachRegisterId: 55 }], { 1: [licentie()] }),
+    );
+    expect(uit.perBeheerder).toEqual({});
+    expect(Object.keys(uit.perCoach)).toEqual(["55"]);
+    expect(uit.perCoach["55"].perPlatformdeel.kompas).toHaveLength(1);
+  });
+
+  it("laat een rij zonder beide koppelingen weg en maakt er geen sleutel van", () => {
+    const uit = leesLicentiebeeld(
+      "2026-08-14",
+      proefopslag(
+        [
+          { id: 1, beheerderId: 11, coachRegisterId: null },
+          { id: 2, beheerderId: null, coachRegisterId: null },
+        ],
+        { 1: [licentie()], 2: [licentie()] },
+      ),
+    );
+    expect(Object.keys(uit.perBeheerder)).toEqual(["11"]);
+    expect(uit.perCoach).toEqual({});
+  });
+
+  it("maakt geen sleutel 'undefined' wanneer het coachveld helemaal ontbreekt", () => {
+    // Een aanroeper die het veld weglaat, moet hetzelfde behandeld worden als een
+    // aanroeper die er null in zet. Met een strikte vergelijking zou hier de
+    // sleutel "undefined" in de afbeelding verschijnen.
+    const uit = leesLicentiebeeld(
+      "2026-08-14",
+      proefopslag([{ id: 1, beheerderId: 11 }], { 1: [licentie()] }),
+    );
+    expect(Object.keys(uit.perCoach)).toEqual([]);
+    expect(uit.perCoach["undefined"]).toBeUndefined();
+  });
+});
+
+describe("de eigen leesweg", () => {
+  it("geeft het beeld van de gevraagde beheerder", () => {
+    const beeld = leesEigenLicentiebeeld(
+      11,
+      "2026-08-14",
+      proefopslag(
+        [
+          { id: 1, beheerderId: 11 },
+          { id: 2, beheerderId: 12 },
+        ],
+        { 1: [licentie()], 2: [licentie({ instrumentId: "hdd" })] },
+      ),
+    );
+    expect(beeld?.perInstrument.map((r) => r.instrumentId)).toEqual(["t4p-business-kompas"]);
+  });
+
+  it("geeft null en niet een leeg beeld voor iemand buiten het register", () => {
+    // Het verschil telt: buiten het register staan is iets anders dan in het
+    // register staan zonder licentie, en het dashboard zegt dat in andere woorden.
+    const beeld = leesEigenLicentiebeeld(
+      99,
+      "2026-08-14",
+      proefopslag([{ id: 1, beheerderId: 11 }], { 1: [licentie()] }),
+    );
+    expect(beeld).toBeNull();
+  });
+
+  it("bundelt ook op de eigen weg per platformdeel", () => {
+    const beeld = leesEigenLicentiebeeld(
+      11,
+      "2026-08-14",
+      proefopslag([{ id: 1, beheerderId: 11 }], { 1: [licentie()] }),
+    );
+    expect(Object.keys(beeld?.perPlatformdeel ?? {})).toEqual(["kompas"]);
+  });
+});
+
+describe("de wacht voor de eigen route", () => {
+  it("weigert zonder sessie met 401 en geeft geen beeld mee", async () => {
+    const { status, lichaam } = await coachVerzoek(null, "/api/coach/licentiebeeld");
+    expect(status).toBe(401);
+    expect(lichaam?.beeld).toBeUndefined();
+  });
+
+  it("weigert een onleesbare peildatum met 400, ook met een geldige sessie", async () => {
+    const { status, lichaam } = await coachVerzoek(
+      7,
+      "/api/coach/licentiebeeld?peildatum=14-08-2026",
+    );
+    expect(status).toBe(400);
+    expect(lichaam?.error).toContain("JJJJ-MM-DD");
+  });
+
+  it("neemt geen beheerder-id uit de vraag aan", async () => {
+    // Er is geen id in de URL, en dat is de hele beveiliging: het beheerder-id komt
+    // uit de sessie. Deze toets legt vast dat een toegevoegde parameter niets doet
+    // en zeker geen ander beeld oplevert dan dat van de ingelogde persoon.
+    const metParameter = await coachVerzoek(7, "/api/coach/licentiebeeld?beheerderId=8");
+    const zonder = await coachVerzoek(7, "/api/coach/licentiebeeld");
+    expect(metParameter.status).toBe(zonder.status);
+    expect(metParameter.lichaam).toEqual(zonder.lichaam);
   });
 });
