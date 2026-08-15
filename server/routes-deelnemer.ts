@@ -24,6 +24,7 @@ import { dashboardCodeVanToken, voornaamVanNaam } from "./dashboard-code";
 import { getDescriptor, getDefaultDescriptor } from "./registry";
 import { renderRapportPdf } from "./rapport-pdf";
 import { isDemoModus } from "./demomodus";
+import { maakMagicLink, wisselMagicLink, LINK_GELDIG_MIN } from "./magic-link";
 import {
   deelnemerLoginSchema,
   magicLinkAanvraagSchema,
@@ -124,6 +125,8 @@ function makeRespondentCode(name: string, id: number): string {
 }
 
 
+// De aanmeldlink zelf staat in een apart bestand (server/magic-link.ts):
+// eigen tabel, eenmalig token van 15 minuten, geen accountaanmaak.
 export function registerDeelnemerRoutes(app: Express): void {
 
   // ---------------------------------------------------------------------------
@@ -217,10 +220,18 @@ export function registerDeelnemerRoutes(app: Express): void {
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldig e-mailadres" });
     }
-    const result = await storage.maakMagicLink(parsed.data.email);
-    // Security: altijd 200, ook als e-mail onbekend is.
+    const result = await maakMagicLink(parsed.data.email);
+    // Security: altijd 200, ook als e-mail onbekend is. Het antwoord mag ook
+    // niet AFLEESBAAR verschillen; daarom staat het veld `gevonden` en de link
+    // enkel in de demostand. Buiten de demo krijgt elke aanvraag exact
+    // hetzelfde antwoord, zodat niemand adressen kan aftasten.
+    const demo = isDemoModus();
     if (!result) {
-      return res.json({ ok: true, gevonden: false });
+      return res.json(
+        demo
+          ? { ok: true, gevonden: false, geldigMinuten: LINK_GELDIG_MIN }
+          : { ok: true, geldigMinuten: LINK_GELDIG_MIN },
+      );
     }
     // Bouw de in-app link (hash-routing).
     // Ronde 30i — zelfde fix als /api/go/: interne E2B host vermijden
@@ -230,7 +241,12 @@ export function registerDeelnemerRoutes(app: Express): void {
         ? "https://tapas-platform-2.pplx.app"
         : `${req.protocol}://${_host}`);
     const link = `${base}/#/magic/${result.token}`;
-    return res.json({ ok: true, gevonden: true, link, verlooptOp: result.verlooptOp });
+    if (!demo) {
+      // In productie gaat de link per e-mail naar de deelnemer; ze staat nooit
+      // in het HTTP-antwoord.
+      return res.json({ ok: true, geldigMinuten: LINK_GELDIG_MIN });
+    }
+    return res.json({ ok: true, gevonden: true, link, verlooptOp: result.verlooptOp, geldigMinuten: LINK_GELDIG_MIN });
   });
 
   app.get("/api/deelnemers/magic/:token", async (req, res) => {
@@ -238,7 +254,7 @@ export function registerDeelnemerRoutes(app: Express): void {
     if (!token || token.length < 10) {
       return res.status(400).json({ error: "Ongeldig token" });
     }
-    const deelnemer = await storage.wisselMagicLink(token);
+    const deelnemer = await wisselMagicLink(token);
     if (!deelnemer) {
       return res.status(400).json({ error: "Link verlopen of al gebruikt. Vraag een nieuwe link aan." });
     }
