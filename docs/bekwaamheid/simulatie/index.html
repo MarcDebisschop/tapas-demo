@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bekwaamheidsmodule — werkende simulatie</title>
+<link rel="preconnect" href="https://api.fontshare.com">
+<link href="https://api.fontshare.com/v2/css?f[]=gambetta@400,500,600&f[]=satoshi@400,500,700&f[]=jet-brains-mono@400,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230e1116'/%3E%3Cpath d='M16 5l9 5v8c0 5-4 8-9 9-5-1-9-4-9-9v-8z' fill='none' stroke='%23d8c9a3' stroke-width='2'/%3E%3Cpath d='M16 5v22' stroke='%23d8c9a3' stroke-width='1.2' opacity='.5'/%3E%3C/svg%3E">
+</head>
+<body>
+
+<a class="skip" href="#hoofd">Naar de inhoud</a>
+
+<header class="kop">
+  <div class="kop-in">
+    <div class="merk">
+      <svg class="logo" viewBox="0 0 32 32" aria-label="Tapas Bekwaamheid" role="img">
+        <path d="M16 3.5l10.5 5.6v9c0 5.9-4.6 9.3-10.5 10.4C10.1 27.4 5.5 24 5.5 18.1v-9z" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M16 3.5v25" stroke="currentColor" stroke-width="1" opacity=".45"/>
+        <path d="M5.5 14.2h21" stroke="currentColor" stroke-width="1" opacity=".45"/>
+        <circle cx="16" cy="14.2" r="2.6" fill="currentColor"/>
+      </svg>
+      <div class="merk-tekst">
+        <strong>Bekwaamheid</strong>
+        <span>module CORE &middot; werkende simulatie</span>
+      </div>
+    </div>
+    <div class="navbalk">
+    <nav class="hoofdnav" aria-label="Hoofdstukken">
+      <button class="navlink actief" data-doel="s-start">Start</button>
+      <button class="navlink" data-doel="s-ronde">De ronde</button>
+      <button class="navlink" data-doel="s-motor">De motor</button>
+      <button class="navlink" data-doel="s-jaar1">Jaar 1</button>
+      <button class="navlink" data-doel="s-poort">De poort</button>
+      <button class="navlink" data-doel="s-kaart">Fasenkaart</button>
+      <button class="navlink" data-doel="s-grens">Grenzen</button>
+      <button class="navlink" data-doel="s-naslag">Naslag</button>
+    </nav>
+    </div>
+  </div>
+</header>
+
+<main id="hoofd">
+
+<!-- ================= START ================= -->
+<section id="s-start" class="paneel actief">
+  <div class="wrap">
+    <p class="oog">Simulatie</p>
+    <h1>Wat deze module doet, door haar te gebruiken.</h1>
+    <p class="lead">
+      Deze simulatie draait de echte regels van de module na. De fasenloop, de drempels,
+      de lengte-eisen, de weigeringsteksten en de voorstelmotor zijn overgenomen uit de
+      broncode, niet nagebouwd op gevoel. Waar de simulatie een weigering geeft, is dat
+      woordelijk de tekst die de server geeft.
+    </p>
+
+    <div class="grid vier">
+      <article class="kaart">
+        <p class="klein">Wat de module is</p>
+        <h3>Een dossier, geen scoreboard</h3>
+        <p>Elke uitspraak over iemands bekwaamheid staat vast met de cijfers waarop ze rustte, wie haar nam, en waarom er van het voorstel is afgeweken. Dat is de reden dat de module bestaat.</p>
+      </article>
+      <article class="kaart">
+        <p class="klein">De kernscheiding</p>
+        <h3>De motor stelt voor, mensen beslissen</h3>
+        <p>De rekenkern levert een <em>voorstel</em>. Twee verschillende bekrachtigers maken er een beslissing van. Wijken ze af, dan eist de databank een motivering van minstens veertig tekens.</p>
+      </article>
+      <article class="kaart">
+        <p class="klein">De cyclus</p>
+        <h3>Twee jaar, met een halte na één</h3>
+        <p>24 maanden tussen twee bekrachtigingen. Na 12 maanden een tussentijdse toets die naar de afnames en de oefensessies kijkt en bij twee signalen een <em>alert</em> geeft met een verplicht coachingsplan.</p>
+      </article>
+      <article class="kaart">
+        <p class="klein">De grens</p>
+        <h3>Alert schorst niets</h3>
+        <p>De tussentijdse toets raakt de licentiestatus niet en de poort kent het begrip alert niet. Een ontwikkelmoment dat kan schorsen, is een controlemoment — en dan stopt men met oefenen.</p>
+      </article>
+    </div>
+
+    <h2>De vier lagen</h2>
+    <p class="uitleg">Elke laag kent alleen de laag eronder. Dat is geen stijlkeuze: het is de reden dat een dossier bij een bezwaar navertelbaar blijft.</p>
+    <div class="lagen">
+      <div class="laag">
+        <span class="laagnr">1</span>
+        <div>
+          <h4>De rekenkernen — zuivere functies</h4>
+          <p><code>beslisregels.ts</code>, <code>rondeloop.ts</code>, <code>tussentijdse-toets.ts</code>, <code>normprofiel.ts</code>, <code>statistiek.ts</code>. Geen databank, geen Express. Getallen in, uitspraak uit. Uitputtend te toetsen: de fasentabel wordt in de tests over alle 11×11 paren afgelopen.</p>
+        </div>
+      </div>
+      <div class="laag">
+        <span class="laagnr">2</span>
+        <div>
+          <h4>De opslaglaag — waar geweigerd wordt</h4>
+          <p><code>storage.ts</code>. 91 weigeringen met een eigen tekst. Dit is de enige plaats waar een regel over gegevens staat; de schermen kennen die regels niet en hoeven ze niet te kennen.</p>
+        </div>
+      </div>
+      <div class="laag">
+        <span class="laagnr">3</span>
+        <div>
+          <h4>De eindpunten — 60 adressen</h4>
+          <p>Zeven routebestanden onder <code>server/bekwaamheid/</code>, alle achter <code>vereisAdmin</code>, alle met prefix <code>/api/bekwaamheid</code>. Eén uitzondering: <code>/api/coach/licentiebeeld</code>, waar een practitioner zijn eigen beeld leest.</p>
+        </div>
+      </div>
+      <div class="laag">
+        <span class="laagnr">4</span>
+        <div>
+          <h4>De zeven schermen — die niets narekenen</h4>
+          <p>Geen scherm rekent iets na dat de server al rekent. Beslisvelden staan leeg en worden niet voorgevuld met het motorvoorstel. Wie een voorgevulde keuze ziet, bevestigt haar.</p>
+        </div>
+      </div>
+    </div>
+
+    <h2>De zeven schermen</h2>
+    <div class="schermen" id="schermenlijst"></div>
+
+    <div class="voetnoot">
+      <p><strong>Hoe u dit gebruikt.</strong> Loop de hoofdstukken op volgorde af. <em>De ronde</em> is de kern: daar doorloopt u een compleet dossier van openen tot publiceren, en kunt u opzettelijk fouten maken om de weigeringen te zien. <em>De motor</em>, <em>Jaar 1</em> en <em>De poort</em> zijn schuifpanelen waarin u zelf ziet waar een uitkomst kantelt.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= DE RONDE ================= -->
+<section id="s-ronde" class="paneel">
+  <div class="wrap breed">
+    <p class="oog">Simulatie 1</p>
+    <h1>Eén ronde, van openen tot publiceren.</h1>
+    <p class="lead">
+      Links het dossier zoals de databank het ziet. Rechts de handelingen die op dit moment
+      mogelijk zijn. Handelingen die de server zou weigeren, staan er ook bij — met een
+      <span class="mini-waarschuw">waarschuwingsteken</span>. Klik ze aan om de echte weigeringstekst te zien.
+    </p>
+
+    <div class="sim-lay">
+
+      <!-- dossier -->
+      <aside class="dossier">
+        <div class="dossierkop">
+          <div>
+            <p class="klein">Ronde</p>
+            <h3 id="d-code">—</h3>
+          </div>
+          <span class="fase" id="d-fase">voorbereiding</span>
+        </div>
+
+        <dl class="feiten">
+          <div><dt>Persoon</dt><dd id="d-persoon">—</dd></div>
+          <div><dt>Instrument</dt><dd id="d-instr">—</dd></div>
+          <div><dt>Soort</dt><dd id="d-soort">—</dd></div>
+          <div><dt>Venster</dt><dd id="d-venster">—</dd></div>
+          <div><dt>Licentiestatus</dt><dd id="d-status">—</dd></div>
+        </dl>
+
+        <h4 class="dkop">Bewijsstukken</h4>
+        <table class="tabel" id="d-stukken"><tbody></tbody></table>
+
+        <h4 class="dkop">Asscores <span class="klein-inline">gemiddelde rubriek ÷ 3</span></h4>
+        <div id="d-assen" class="assen"></div>
+
+        <h4 class="dkop">Voorstel van de motor</h4>
+        <div id="d-voorstel" class="voorstelvak"><p class="leeg">Nog geen voorstel.</p></div>
+
+        <h4 class="dkop">Beslissing</h4>
+        <div id="d-beslissing" class="voorstelvak"><p class="leeg">Nog geen beslissing.</p></div>
+
+        <h4 class="dkop">Auditspoor</h4>
+        <ol class="audit" id="d-audit"></ol>
+      </aside>
+
+      <!-- handelingen -->
+      <div class="handelvak">
+        <div class="stapkop">
+          <p class="klein">Stap <span id="d-stapnr">1</span> van 12</p>
+          <h3 id="d-staptitel">—</h3>
+          <p id="d-stapuitleg" class="stapuitleg">—</p>
+          <p class="scherm-wijzer">Dit gebeurt op <code id="d-scherm">—</code></p>
+        </div>
+
+        <div id="d-acties" class="acties"></div>
+
+        <div id="d-melding" class="melding" hidden></div>
+
+        <div class="handelvoet">
+          <button class="knop terug" id="btn-herstart">Simulatie opnieuw beginnen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= DE MOTOR ================= -->
+<section id="s-motor" class="paneel">
+  <div class="wrap breed">
+    <p class="oog">Simulatie 2</p>
+    <h1>De vijf regels, en welke bindt.</h1>
+    <p class="lead">
+      Vijf regels kunnen tegelijk van toepassing zijn. De motor loopt ze af van zwaar naar licht
+      en de eerste die aanslaat, bindt. Verschuif de assen en kijk waar de uitkomst kantelt.
+      Let vooral op het geval hieronder in de knop <em>twee zwakke assen, totaal haalt</em>: dat is
+      precies waarvoor een cesuur per as bestaat.
+    </p>
+
+    <div class="motor-lay">
+      <div class="schuifvak">
+        <h3>De vier assen</h3>
+        <p class="noot">Asscore op 0–1. De drempel per as is 0,60; de aandachtszone loopt tot en met 0,65.</p>
+        <div id="m-schuiven" class="schuiven"></div>
+
+        <h3 class="mt">Het dossier</h3>
+        <label class="checkrij">
+          <input type="checkbox" id="m-leemte">
+          <span>Er is een administratieve leemte <em>(ontbrekend stuk — de motor kan dit niet zelf vaststellen, het wordt benoemd meegegeven)</em></span>
+        </label>
+
+        <h3 class="mt">Activiteit <span class="klein-inline">buiten de keten om</span></h3>
+        <label class="schuifrij">
+          <span class="schuiflabel">Afnames in 24 maanden <output id="m-afn-uit">7</output></span>
+          <input type="range" id="m-afnames" min="0" max="20" value="7">
+        </label>
+        <p class="noot">Drempel 6. Onderschrijding is <strong>geen tekortkoming</strong> — het is de route naar een slapende licentie en kan de uitkomst niet drukken.</p>
+
+        <div class="voorbeelden">
+          <p class="klein">Grensgevallen uit de tabel</p>
+          <button class="knop klein-knop" data-vb="grens1">Twee assen 0,50 — totaal haalt exact</button>
+          <button class="knop klein-knop" data-vb="grens2">Alle assen 0,69 — totaal 0,69</button>
+          <button class="knop klein-knop" data-vb="grens3">Eén as op 0,63 — aandachtszone</button>
+          <button class="knop klein-knop" data-vb="grens4">Norm ruim gehaald</button>
+        </div>
+      </div>
+
+      <div class="uitkomstvak">
+        <div class="uitkomstkop">
+          <p class="klein">Voorgestelde uitkomst</p>
+          <h2 id="m-uitkomst">—</h2>
+          <p class="bindend">bindende regel: <code id="m-regel">—</code></p>
+        </div>
+
+        <div class="rekenblok">
+          <div class="totaalrij">
+            <span>Totaal <span class="klein-inline">gewogen, elk 0,25</span></span>
+            <strong id="m-totaal">—</strong>
+            <span class="drempel">drempel 0,70</span>
+          </div>
+          <div id="m-balken" class="balken"></div>
+        </div>
+
+        <h4 class="dkop">De keten, van zwaar naar licht</h4>
+        <ol class="keten" id="m-keten"></ol>
+
+        <div class="grensnoot" id="m-noot"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= JAAR 1 ================= -->
+<section id="s-jaar1" class="paneel">
+  <div class="wrap breed">
+    <p class="oog">Simulatie 3</p>
+    <h1>Het moment na het eerste jaar.</h1>
+    <p class="lead">
+      Twee signalen, één regel die ze combineert. Geen signaal is <em>geen&nbsp;signaal</em>. Eén signaal is
+      een <em>aandachtspunt</em>: benoemd in het gesprek en in het dossier, zonder verplichting. Twee of meer
+      is een <em>alert</em>, en dan is een coachingsplan verplicht voordat de toets kan worden afgesloten.
+    </p>
+
+    <div class="motor-lay">
+      <div class="schuifvak">
+        <h3>Wat de opslaglaag heeft gelezen</h3>
+        <label class="schuifrij">
+          <span class="schuiflabel">Afnames in 12 maanden <output id="j-afn-uit">2</output></span>
+          <input type="range" id="j-afnames" min="0" max="10" value="2">
+        </label>
+        <p class="noot">Drempel <strong>3</strong> — de helft van de tweejaarsdrempel van 6, naar boven afgerond. Berekend in <code>cyclus.ts</code>, niet apart gezet: twee losse getallen gaan uit elkaar lopen.</p>
+
+        <label class="schuifrij mt">
+          <span class="schuiflabel">Afgeronde oefensessies <output id="j-ses-uit">4</output></span>
+          <input type="range" id="j-sessies" min="0" max="12" value="4">
+        </label>
+
+        <label class="schuifrij">
+          <span class="schuiflabel">Gemiddelde van die sessies <output id="j-gem-uit">62</output></span>
+          <input type="range" id="j-gem" min="0" max="100" value="62">
+        </label>
+        <p class="noot">Ondergrens <strong>55</strong> op een schaal van 0–100. Dat getal is niet gekozen maar overgenomen: het platform noemt 0,55 al jaren de grens tussen "onvoldoende" en "net voldoende". Bij nul sessies is het gemiddelde <em>leeg</em>, niet nul — nul zou een score suggereren die niemand haalde.</p>
+      </div>
+
+      <div class="uitkomstvak">
+        <div class="uitkomstkop">
+          <p class="klein">Uitkomst van de toets</p>
+          <h2 id="j-uitkomst">—</h2>
+          <p class="bindend" id="j-regel">—</p>
+        </div>
+
+        <h4 class="dkop">Signalen</h4>
+        <div id="j-signalen" class="signalen"></div>
+
+        <div id="j-plan" class="planvak"></div>
+
+        <div class="grensnoot">
+          <p><strong>Wat een alert niet doet.</strong> Deze module raakt de licentiestatus niet en levert geen waarde op die de poort leest. <code>mag_afnemen</code> staat in <code>rechten.ts</code> en kent het begrip alert niet. Wat een alert wél doet: een gesprek en een plan vragen, met een evaluatie op 6 maanden.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= DE POORT ================= -->
+<section id="s-poort" class="paneel">
+  <div class="wrap breed">
+    <p class="oog">Simulatie 4</p>
+    <h1>De poort: wie mag wat, en wanneer.</h1>
+    <p class="lead">
+      De poort is het enige punt waar een licentie iets tegenhoudt. Ze weigert alleen het
+      <em>aanmaken</em> van iets nieuws — een lopende afname voortzetten, een rapport of de historiek
+      bekijken valt er buiten. Iemand mag nooit een afname kwijtraken door een status die verandert.
+    </p>
+
+    <div class="poort-lay">
+      <div class="schuifvak">
+        <h3>Licentiestatus</h3>
+        <div class="keuzerij" id="p-statussen"></div>
+
+        <h3 class="mt">Handeling</h3>
+        <div class="keuzerij" id="p-handelingen"></div>
+
+        <h3 class="mt">Stand van de poort</h3>
+        <div class="keuzerij" id="p-standen"></div>
+        <p class="noot">Standaard <code>log</code>, uit de omgevingsvariabele <code>BEKWAAMHEID_POORT</code>. In die stand wordt de uitkomst vastgelegd maar niets geweigerd. Een poort die weigert voordat iemand een eerlijke kans heeft gehad om erdoor te komen, is geen poort maar een val.</p>
+      </div>
+
+      <div class="uitkomstvak">
+        <div class="uitkomstkop">
+          <p class="klein">Uitspraak</p>
+          <h2 id="p-uitspraak">—</h2>
+          <p class="bindend" id="p-grond">—</p>
+        </div>
+
+        <div id="p-effect" class="effectvak"></div>
+
+        <h4 class="dkop">De zeven statussen</h4>
+        <div class="tabelrol">
+        <table class="tabel statustabel">
+          <thead><tr><th>Status</th><th>Afnamerecht</th></tr></thead>
+          <tbody id="p-statustabel"></tbody>
+        </table>
+        </div>
+        <p class="noot"><code>voorwaardelijk</code> geeft afnamerecht, en dat is geen slordigheid: een voorwaarde is een opdracht met een datum, geen verbod. <code>STATUSSEN_MET_AFNAMERECHT</code> in <code>schema.ts</code> is de enige plaats waar dit antwoord staat; de poort leest die verzameling en rekent niets zelf.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FASENKAART ================= -->
+<section id="s-kaart" class="paneel">
+  <div class="wrap breed">
+    <p class="oog">Naslag, interactief</p>
+    <h1>Elf fasen, en wat erop mag volgen.</h1>
+    <p class="lead">
+      Klik een fase aan om te zien waar u vandaar naartoe kunt. De tabel staat in
+      <code>rondeloop.ts</code> als zuivere functie, en de tests lopen alle honderdeenentwintig
+      paren af. Zonder die tabel kon een ronde van <code>afgesloten</code> terug naar
+      <code>voorbereiding</code> springen, of van <code>voorbereiding</code> rechtstreeks naar
+      <code>beslist</code> — een beslissing zonder dat er ooit een bewijsstuk was ingeleverd.
+    </p>
+
+    <div class="kaart-lay">
+      <div class="fasenrij" id="k-fasen"></div>
+      <div class="fase-detail" id="k-detail"></div>
+    </div>
+
+    <div class="grid drie mt">
+      <article class="kaart">
+        <h3>Één stap terug, en niet meer</h3>
+        <p><code>ingeleverd → open</code> is de enige toegestane stap terug in de hele loop. Een beoordelaar die vaststelt dat een bewijsstuk onbruikbaar is opgenomen, moet de kandidaat kunnen laten aanvullen zonder de ronde te staken.</p>
+      </article>
+      <article class="kaart">
+        <h3>Staken kan tot en met overleg</h3>
+        <p>Vanaf <code>beslist</code> is er een uitkomst over een persoon vastgelegd. Die laten verdwijnen door de ronde te staken zou het spoor uitwissen. Wie een genomen beslissing wil aanvechten, gaat via <code>bezwaar</code>.</p>
+      </article>
+      <article class="kaart">
+        <h3>Bezwaar gaat terug door de beoordeling</h3>
+        <p><code>bezwaar → in_beoordeling</code> bestaat, want een gegrond bezwaar dat alleen tot een aantekening leidt, is geen bezwaarrecht. De ronde gaat opnieuw door de beoordeling heen — <em>en loopt daar vast, zie Grenzen.</em></p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ================= GRENZEN ================= -->
+<section id="s-grens" class="paneel">
+  <div class="wrap">
+    <p class="oog">Eerlijk over de stand</p>
+    <h1>Waar de module ophoudt.</h1>
+    <p class="lead">
+      Een simulatie die alleen laat zien wat werkt, is een verkooppraatje. Dit zijn de plaatsen
+      waar de keten breekt of nog niet gelegd is — gemeten in de code, niet vermoed.
+    </p>
+
+    <div class="bevindingen" id="bevindingenlijst"></div>
+  </div>
+</section>
+
+<!-- ================= NASLAG ================= -->
+<section id="s-naslag" class="paneel">
+  <div class="wrap breed">
+    <p class="oog">Naslag</p>
+    <h1>Getallen, lijsten en adressen.</h1>
+
+    <h2>De drempels en termijnen</h2>
+    <div class="cijfergrid" id="n-cijfers"></div>
+
+    <h2>De weigeringen die u het vaakst zult zien</h2>
+    <p class="uitleg">Woordelijk uit <code>storage.ts</code>. Er zijn er 91; dit zijn de elf die in een normale werkweek voorbijkomen.</p>
+    <ul class="weigerlijst" id="n-weigeringen"></ul>
+
+    <h2>De zestig eindpunten</h2>
+    <p class="uitleg">Negenenvijftig ervan staan achter <code>vereisAdmin</code> en dragen het prefix <code>/api/bekwaamheid</code>. De zestigste staat onderaan.</p>
+    <div class="eindpunten" id="n-eindpunten"></div>
+
+    <div class="voetnoot">
+      <p><strong>Herkomst.</strong> Elke constante, drempel, weigeringstekst en fase-overgang in deze simulatie is gelezen uit de broncode op commit <code>c24d7c1</code> van <code>tapas-demo</code>, branch <code>main</code>. De casusgegevens — de naam, de data, de scores — zijn verzonnen; de regels die erop toegepast worden, niet. Waar de simulatie een aanname doet die niet uit de code volgt, staat dat er bij.</p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
