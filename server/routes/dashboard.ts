@@ -6,7 +6,8 @@
  * Geëxtraheerd uit server/routes.ts (item 1.1, Fase 5).
  *
  * Routes:
- *   POST /api/deelnemers/login                      — magic-link login
+ *   POST /api/deelnemers/login                      — belevingspoort, alleen
+ *                                                       buiten productie
  *   GET  /api/dashboard/:token                      — dashboard-data
  *   PATCH /api/dashboard/:token                     — profiel bijwerken
  *   GET  /api/dashboard/:token/chat                 — chatberichten + limiet
@@ -21,6 +22,7 @@
 
 import type { Express } from "express";
 import { storage } from "../storage";
+import { isBelevingsmodus } from "../belevingsmodus";
 import { normaliseerTaal } from "@shared/i18n";
 import {
   deelnemerLoginSchema,
@@ -186,20 +188,58 @@ export function registerDashboardRoutes(app: Express): void {
   // TaPas Persoonlijk — Fase 1: deelnemer-login (magic-link) & dashboard.
   // -------------------------------------------------------------------------
 
-  app.post("/api/deelnemers/login", async (req, res) => {
-    const parsed = deelnemerLoginSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldig e-mailadres" });
-    }
-    const deelnemer = await storage.vindOfMaakDeelnemer(parsed.data.email, parsed.data.taal);
-    // Fase 3 stuurt hier een echte e-mail; nu geven we het token direct terug.
-    res.json({
-      ok: true,
-      dashboardToken: deelnemer.dashboardToken,
-      taal: deelnemer.taal,
-      heeftAfnames: (await storage.listAfnamesVoorDeelnemer(deelnemer.email)).length > 0,
+  // -------------------------------------------------------------------------
+  // POST /api/deelnemers/login — de belevingspoort, en ALLEEN die.
+  //
+  // Deze route geeft het dashboardToken van een deelnemer terug op basis van
+  // een ingetikt e-mailadres. Er is geen enkele controle dat de aanvrager dat
+  // adres bezit: wie het adres van een collega kent, opent daarmee diens
+  // profiel en rapporten. Dat is de open weg naast de aanmeldlink die op /mijn
+  // loopt, en ze mag op een omgeving met echte deelnemersgegevens niet bestaan.
+  //
+  // Ze staat er nog om één reden: client/src/pages/poort.tsx — de poort met de
+  // vier draaischijven — roept ze aan. Die pagina is geen dode code; ze staat
+  // achter de clientvlag BELEVING, die runtime aan te zetten is. En
+  // client/src/lib/features.ts belooft uitdrukkelijk dat de belevingscode in de
+  // repo blijft.
+  //
+  // Daarom exact het patroon van server/demomodus.ts (auditbevinding S-4): de
+  // route wordt alleen geregistreerd wanneer isBelevingsmodus() waar is, en in
+  // productie is dat ONVOORWAARDELIJK onwaar. In productie bestaat dit pad dus
+  // niet en geeft de router 404 — poort.tsx toont dan haar bestaande
+  // foutmelding (data-testid="text-fout") in plaats van stil te falen.
+  //
+  // Twee dingen zijn ook binnen de belevingsmodus rechtgezet:
+  //   1. Geen accountaanmaak meer. `vindOfMaakDeelnemer` maakte bij een
+  //      onbekend adres een nieuwe deelnemer aan — gegevens aanleggen zonder
+  //      dat iemand daarom vroeg. Nu wordt een BESTAANDE deelnemer opgezocht.
+  //      Dat volgt de eigen verantwoording van poort.tsx, die zichzelf een
+  //      "toegangsschil voor het persoonlijk dashboard" noemt: wie daar nog
+  //      geen dossier heeft, heeft er niets te openen.
+  //   2. Hetzelfde antwoord bij een onbekend adres als bij een bekend adres kan
+  //      hier niet: de poort heeft het token nodig om te werken. De route
+  //      antwoordt daarom 404 en verklapt dus wél of een adres bestaat. Dat is
+  //      aanvaardbaar zolang ze in productie afwezig is, en het is precies de
+  //      reden waarom ze dat moet blijven.
+  // -------------------------------------------------------------------------
+  if (isBelevingsmodus()) {
+    app.post("/api/deelnemers/login", async (req, res) => {
+      const parsed = deelnemerLoginSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldig e-mailadres" });
+      }
+      const deelnemer = await storage.getDeelnemerByEmail(parsed.data.email);
+      if (!deelnemer) {
+        return res.status(404).json({ error: "Geen dossier gevonden voor dit e-mailadres" });
+      }
+      res.json({
+        ok: true,
+        dashboardToken: deelnemer.dashboardToken,
+        taal: deelnemer.taal,
+        heeftAfnames: (await storage.listAfnamesVoorDeelnemer(deelnemer.email)).length > 0,
+      });
     });
-  });
+  }
 
   // Het persoonlijk dashboard: deelnemer + afnames + afgeleide dashboard-data.
   app.get("/api/dashboard/:token", async (req, res) => {

@@ -11,6 +11,7 @@ import { serveStatic } from "./static";
 import { sqlite } from "./storage";
 import { logEncryptieStatus } from "./db-encryptie";
 import { meldDemoModusBijOpstart } from "./demomodus";
+import { meldBelevingsmodusBijOpstart } from "./belevingsmodus";
 import {
   VOORBEELDDOSSIER_TRAJECTNAAM,
   beschrijfVoorbeelddossier,
@@ -446,6 +447,10 @@ app.get("/api/gezondheid", (_req, res) => {
       // geldt en dus of wachtwoorden afgedwongen worden. In productie is de
       // demomodus onmogelijk; staat de schakelaar er toch, dan zegt de melding dat.
       meldDemoModusBijOpstart();
+      // Zelfde reden, voor de tweede deur: maak zichtbaar of
+      // POST /api/deelnemers/login bestaat. Die route geeft een dashboardtoken
+      // op basis van een e-mailadres alleen; in productie bestaat ze niet.
+      meldBelevingsmodusBijOpstart();
       meldVoorbeelddossierBijOpstart();
     },
   );

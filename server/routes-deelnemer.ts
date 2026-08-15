@@ -27,7 +27,6 @@ import { isDemoModus } from "./demomodus";
 import { maakMagicLink, wisselMagicLink, LINK_GELDIG_MIN } from "./magic-link";
 import { verstuurAanmeldlink } from "./bulk-import/mailer";
 import {
-  deelnemerLoginSchema,
   magicLinkAanvraagSchema,
   updateDeelnemerSchema,
   chatVraagSchema,
@@ -167,40 +166,22 @@ export function registerDeelnemerRoutes(app: Express): void {
     });
   });
 
-  app.post("/api/deelnemers/login", async (req, res) => {
-    const parsed = deelnemerLoginSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldig e-mailadres" });
-    }
-    const deelnemer = await storage.vindOfMaakDeelnemer(parsed.data.email, parsed.data.taal);
-    const afnames = await storage.listAfnamesVoorDeelnemer(deelnemer.email);
-
-    // Skin bepalen op basis van het meest recente instrument van de deelnemer.
-    // Volgorde: t4p-teens → 'teens', t4p-students → 'students', alles anders → 'business'.
-    const recentsteInstrument = afnames[0]?.instrumentId ?? null;
-    const skin =
-      recentsteInstrument === "t4p-teens" ? "teens" :
-      recentsteInstrument === "t4p-students" ? "students" :
-      "business";
-
-    // dashboardCode: deterministisch 4-cijferig slot afgeleid van het dashboard-token
-    // (gedeelde helper, zodat het eindscherm exact dezelfde code toont).
-    const dashboardCode = dashboardCodeVanToken(deelnemer.dashboardToken);
-
-    // Voornaam: eerste woord van de naam ("Marc Debisschop" → "Marc").
-    const voornaam = voornaamVanNaam(deelnemer.naam);
-
-    // Fase 3 stuurt hier een echte e-mail; nu geven we het token direct terug.
-    res.json({
-      ok: true,
-      dashboardToken: deelnemer.dashboardToken,
-      taal: deelnemer.taal,
-      skin,
-      voornaam,
-      dashboardCode,
-      heeftAfnames: afnames.length > 0,
-    });
-  });
+  // -------------------------------------------------------------------------
+  // VERWIJDERD — POST /api/deelnemers/login
+  //
+  // Hier stond een tweede registratie van dat pad. Ze was onbereikbaar: in
+  // server/routes.ts wordt registerDashboardRoutes(app) op regel 87 aangeroepen
+  // en registerDeelnemerRoutes(app) pas op regel 193, en in Express wint de
+  // eerst geregistreerde handler. Elke aanvraag kwam dus bij de versie in
+  // server/routes/dashboard.ts terecht; deze veertig regels zijn nooit
+  // uitgevoerd. Ze gaven bovendien het dashboardToken terug op basis van een
+  // ingetikt e-mailadres alleen, en maakten bij een onbekend adres een nieuwe
+  // deelnemer aan.
+  //
+  // De overgebleven registratie in server/routes/dashboard.ts staat nu achter
+  // server/belevingsmodus.ts en bestaat in productie niet meer. Deelnemers
+  // komen binnen via POST /api/deelnemers/magic-link, verderop in dit bestand.
+  // -------------------------------------------------------------------------
 
   // -------------------------------------------------------------------------
   // Ronde 7 — Magic-link: aanmaken (POST) + inwisselen (GET)
