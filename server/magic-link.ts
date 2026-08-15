@@ -37,6 +37,11 @@
 //      aanvraag opgeruimd, zodat de tabel niet blijft groeien.
 //   7. Geen bevestiging of een adres bestaat: de route geeft altijd 200 terug.
 //      Dat gebeurt in routes-deelnemer.ts en blijft daar.
+//   8. Begrenzing per e-mailadres: hoogstens MAX_PER_VENSTER aanvragen per
+//      VENSTER_MIN minuten. Zonder die grens kan iemand de mailbox van een
+//      deelnemer volspammen met aanmeldlinks. De algemene authLimiter in
+//      server/index.ts begrenst per IP-adres; deze grens werkt per adres en
+//      vangt dus ook een aanvaller die van IP wisselt.
 // ---------------------------------------------------------------------------
 
 import { randomBytes, timingSafeEqual } from "node:crypto";
@@ -49,6 +54,10 @@ export const LINK_GELDIG_MIN = 15;
 
 // Hoe lang gebruikte of verlopen rijen bewaard blijven, in uren.
 const OPRUIM_NA_UUR = 24;
+
+// Begrenzing per e-mailadres: hoogstens dit aantal aanvragen per venster.
+export const MAX_PER_VENSTER = 3;
+export const VENSTER_MIN = 15;
 
 const TABEL = "deelnemer_magic_links";
 
@@ -105,6 +114,12 @@ function gelijkInConstanteTijd(a: string, b: string): boolean {
 export type MagicLinkResultaat = {
   token: string;
   verlooptOp: string;
+  /** Het adres waarnaar de link verstuurd moet worden, zoals in de databank. */
+  email: string;
+  /** Naam van de deelnemer, voor de aanspreking in het bericht. Mag leeg zijn. */
+  naam: string;
+  /** Taal van de deelnemer, voor de taal van het bericht. */
+  taal: string;
 };
 
 // ---------------------------------------------------------------------------
@@ -115,14 +130,38 @@ export type MagicLinkResultaat = {
 // ---------------------------------------------------------------------------
 
 // Schrijf een nieuw token weg voor een e-mailadres dat al gecontroleerd is.
-export function bewaarToken(sq: any, email: string, nu = new Date()): MagicLinkResultaat {
+export function bewaarToken(
+  sq: any,
+  email: string,
+  nu = new Date(),
+  naam = "",
+  taal = "nl",
+): MagicLinkResultaat {
   const token = randomBytes(32).toString("hex");
   const verlooptOp = new Date(nu.getTime() + LINK_GELDIG_MIN * 60 * 1000).toISOString();
   sq.prepare(
     `INSERT INTO ${TABEL} (token, deelnemer_email, verloopt_op, gebruikt_op, aangemaakt_op)
      VALUES (?, ?, ?, NULL, ?)`,
   ).run(token, email, verlooptOp, nu.toISOString());
-  return { token, verlooptOp };
+  return { token, verlooptOp, email, naam, taal };
+}
+
+// Hoeveel aanvragen er voor dit adres in het lopende venster zijn gedaan.
+// Kijkt naar aangemaakt_op, dus ook naar links die al gebruikt zijn: wie drie
+// keer een link vraagt, heeft er drie gekregen, gebruikt of niet.
+export function aantalRecenteAanvragen(sq: any, email: string, nu = new Date()): number {
+  const grens = new Date(nu.getTime() - VENSTER_MIN * 60 * 1000).toISOString();
+  const rij = sq
+    .prepare(
+      `SELECT COUNT(*) AS n FROM ${TABEL} WHERE deelnemer_email = ? AND aangemaakt_op >= ?`,
+    )
+    .get(email, grens) as { n: number } | undefined;
+  return rij?.n ?? 0;
+}
+
+// Mag er voor dit adres nog een link aangemaakt worden?
+export function magNogAanvragen(sq: any, email: string, nu = new Date()): boolean {
+  return aantalRecenteAanvragen(sq, email, nu) < MAX_PER_VENSTER;
 }
 
 // Zoek een token op en markeer het meteen als gebruikt. Geeft het e-mailadres
@@ -169,7 +208,23 @@ export async function maakMagicLink(email: string): Promise<MagicLinkResultaat |
   if (!sq) return null;
   ruimOp(sq);
 
-  return bewaarToken(sq, deelnemer.email);
+  // Begrenzing per adres. Bij overschrijding komt er geen nieuwe link en dus
+  // ook geen nieuw bericht. De route geeft naar buiten toe hetzelfde antwoord
+  // als altijd, zodat de begrenzing niets verklapt.
+  if (!magNogAanvragen(sq, deelnemer.email)) {
+    console.warn(
+      `[magic-link] Te veel aanvragen voor één adres binnen ${VENSTER_MIN} minuten; geen nieuwe link aangemaakt.`,
+    );
+    return null;
+  }
+
+  return bewaarToken(
+    sq,
+    deelnemer.email,
+    new Date(),
+    deelnemer.naam ?? "",
+    deelnemer.taal ?? "nl",
+  );
 }
 
 // ---------------------------------------------------------------------------

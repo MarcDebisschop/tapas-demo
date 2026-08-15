@@ -11,7 +11,16 @@
 
 import Database from "better-sqlite3";
 import { beforeEach, describe, expect, it } from "vitest";
-import { maakTabel, bewaarToken, gebruikToken, LINK_GELDIG_MIN } from "../server/magic-link";
+import {
+  maakTabel,
+  bewaarToken,
+  gebruikToken,
+  aantalRecenteAanvragen,
+  magNogAanvragen,
+  LINK_GELDIG_MIN,
+  MAX_PER_VENSTER,
+  VENSTER_MIN,
+} from "../server/magic-link";
 
 const EMAIL = "deelnemer@voorbeeld.be";
 
@@ -126,5 +135,62 @@ describe("De aanmeldlink — scheiding tussen deelnemers", () => {
     const a = bewaarToken(db, "een@voorbeeld.be");
     bewaarToken(db, "twee@voorbeeld.be");
     expect(gebruikToken(db, a.token)).toBe("een@voorbeeld.be");
+  });
+});
+
+describe("De aanmeldlink — begrenzing per e-mailadres", () => {
+  const nu = new Date("2026-08-15T12:00:00.000Z");
+
+  it("telt de aanvragen binnen het venster", () => {
+    bewaarToken(db, EMAIL, nu);
+    bewaarToken(db, EMAIL, nu);
+    expect(aantalRecenteAanvragen(db, EMAIL, nu)).toBe(2);
+  });
+
+  it("laat de eerste drie aanvragen door", () => {
+    for (let i = 0; i < MAX_PER_VENSTER; i++) {
+      expect(magNogAanvragen(db, EMAIL, nu)).toBe(true);
+      bewaarToken(db, EMAIL, nu);
+    }
+  });
+
+  it("weigert de vierde aanvraag binnen het venster", () => {
+    for (let i = 0; i < MAX_PER_VENSTER; i++) bewaarToken(db, EMAIL, nu);
+    expect(magNogAanvragen(db, EMAIL, nu)).toBe(false);
+  });
+
+  it("laat na het venster weer een aanvraag toe", () => {
+    for (let i = 0; i < MAX_PER_VENSTER; i++) bewaarToken(db, EMAIL, nu);
+    const later = new Date(nu.getTime() + (VENSTER_MIN * 60 + 1) * 1000);
+    expect(magNogAanvragen(db, EMAIL, later)).toBe(true);
+  });
+
+  it("telt ook links die al gebruikt zijn", () => {
+    const eerste = bewaarToken(db, EMAIL, nu);
+    gebruikToken(db, eerste.token, nu);
+    bewaarToken(db, EMAIL, nu);
+    bewaarToken(db, EMAIL, nu);
+    expect(magNogAanvragen(db, EMAIL, nu)).toBe(false);
+  });
+
+  it("begrenst per adres, niet over alle deelnemers heen", () => {
+    for (let i = 0; i < MAX_PER_VENSTER; i++) bewaarToken(db, EMAIL, nu);
+    expect(magNogAanvragen(db, EMAIL, nu)).toBe(false);
+    expect(magNogAanvragen(db, "iemand.anders@voorbeeld.be", nu)).toBe(true);
+  });
+});
+
+describe("De aanmeldlink — het bericht kan opgemaakt worden", () => {
+  it("geeft adres, naam en taal mee, zodat de mail in de juiste taal kan", () => {
+    const r = bewaarToken(db, EMAIL, new Date(), "Jana", "fr");
+    expect(r.email).toBe(EMAIL);
+    expect(r.naam).toBe("Jana");
+    expect(r.taal).toBe("fr");
+  });
+
+  it("valt terug op een lege naam en het Nederlands", () => {
+    const r = bewaarToken(db, EMAIL);
+    expect(r.naam).toBe("");
+    expect(r.taal).toBe("nl");
   });
 });

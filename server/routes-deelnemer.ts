@@ -25,6 +25,7 @@ import { getDescriptor, getDefaultDescriptor } from "./registry";
 import { renderRapportPdf } from "./rapport-pdf";
 import { isDemoModus } from "./demomodus";
 import { maakMagicLink, wisselMagicLink, LINK_GELDIG_MIN } from "./magic-link";
+import { verstuurAanmeldlink } from "./bulk-import/mailer";
 import {
   deelnemerLoginSchema,
   magicLinkAanvraagSchema,
@@ -206,8 +207,11 @@ export function registerDeelnemerRoutes(app: Express): void {
   //
   // POST /api/deelnemers/magic-link
   //   Body: { email }  →  genereert 15-minuten-token voor terugkerende deelnemer.
-  //   In Fase 1 (demo): token + link worden IN-APP getoond (geen e-mailsending).
-  //   In Fase 3: zelfde endpoint, maar dan stuurt de server een e-mail.
+  //   De link gaat per e-mail naar de deelnemer, over dezelfde weg als de
+  //   uitnodiging en de toegangsmail (server/bulk-import/mailer.ts: Brevo over
+  //   HTTPS wanneer BREVO_API_KEY staat, anders SMTP, anders niets).
+  //   In demostand wordt de link daarnaast in de pagina getoond, zodat de demo
+  //   bruikbaar blijft zonder mailbox.
   //   Geeft 200 terug ook als e-mail onbekend is (security: nooit bevestigen
   //   of een e-mailadres bestaat). De frontend toont altijd dezelfde boodschap.
   //
@@ -241,9 +245,31 @@ export function registerDeelnemerRoutes(app: Express): void {
         ? "https://tapas-platform-2.pplx.app"
         : `${req.protocol}://${_host}`);
     const link = `${base}/#/magic/${result.token}`;
+
+    // Versturen. De uitkomst van het versturen mag het antwoord NIET
+    // veranderen: zou een mislukte verzending een andere status geven, dan is
+    // aan het antwoord af te lezen dat het adres bestaat. Een fout wordt dus
+    // gelogd en niet doorgegeven. De link komt nooit in een logregel.
+    try {
+      const mail = await verstuurAanmeldlink({
+        naar: result.email,
+        taal: result.taal,
+        naam: result.naam,
+        link,
+        geldigMinuten: LINK_GELDIG_MIN,
+      });
+      if (mail.status === "fout") {
+        console.error(`[deelnemers/magic-link] Verzending mislukt: ${mail.melding ?? "onbekend"}`);
+      }
+    } catch (e) {
+      console.error(
+        `[deelnemers/magic-link] Verzending gooide een fout: ${e instanceof Error ? e.message : "onbekend"}`,
+      );
+    }
+
     if (!demo) {
-      // In productie gaat de link per e-mail naar de deelnemer; ze staat nooit
-      // in het HTTP-antwoord.
+      // In productie gaat de link uitsluitend per e-mail naar de deelnemer; ze
+      // staat nooit in het HTTP-antwoord.
       return res.json({ ok: true, geldigMinuten: LINK_GELDIG_MIN });
     }
     return res.json({ ok: true, gevonden: true, link, verlooptOp: result.verlooptOp, geldigMinuten: LINK_GELDIG_MIN });

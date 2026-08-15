@@ -20,6 +20,7 @@
 import nodemailer from "nodemailer";
 import { sqlite } from "../storage";
 import { bouwToegangsmail } from "../toegangsmail";
+import { bouwAanmeldmail } from "../aanmeldmail";
 
 const STANDAARD_AFZENDER = "info@tapascity.com";
 
@@ -30,6 +31,17 @@ export interface MailInput {
   link: string;
   instrument: string; // leesbare instrument-titel
   from?: string | null; // org-eigen afzender-override
+}
+
+export interface AanmeldlinkVerzending {
+  naar: string;
+  taal: string;
+  naam: string;
+  /** De volledige aanmeldlink naar /#/magic/<token>. */
+  link: string;
+  /** Hoeveel minuten de link geldig blijft. */
+  geldigMinuten: number;
+  from?: string | null;
 }
 
 export interface ToegangsmailVerzending {
@@ -209,6 +221,54 @@ export async function verstuurToegangsmail(input: ToegangsmailVerzending): Promi
   } catch (e) {
     const melding = e instanceof Error ? e.message : "Onbekende SMTP-fout";
     console.error(`[mailer] Toegangsmail mislukt naar ${input.naar}: ${melding}`);
+    return { status: "fout", gesimuleerd: false, melding };
+  }
+}
+
+// -----------------------------------------------------------------------------
+// De aanmeldmail: het bericht met de link waarmee een deelnemer zijn eigen
+// ruimte opent. De pagina /mijn belooft dat bericht uitdrukkelijk, dus het moet
+// er ook werkelijk komen. De tekst staat in server/aanmeldmail.ts; de weg naar
+// buiten is dezelfde als bij de uitnodiging en de toegangsmail: Brevo over
+// HTTPS wanneer er een sleutel staat, anders SMTP, en anders wordt er niets
+// verstuurd en zegt de status dat.
+//
+// LET OP — de link mag nooit in een logregel belanden. Wie de logs kan lezen,
+// zou dan de deur van een deelnemer kunnen openen. De simulatie- en foutregels
+// hieronder vermelden daarom het adres en het onderwerp, maar nooit de link.
+// -----------------------------------------------------------------------------
+export async function verstuurAanmeldlink(input: AanmeldlinkVerzending): Promise<MailResultaat> {
+  const { onderwerp, tekst } = bouwAanmeldmail({
+    naam: input.naam,
+    link: input.link,
+    geldigMinuten: input.geldigMinuten,
+    taal: input.taal,
+  });
+  const from = afzenderVoor(input.from);
+
+  if (isSimulatiemodus()) {
+    console.log(
+      `[mailer] SIMULATIE — aanmeldlink NIET verstuurd. naar=${input.naar} van=${from} onderwerp="${onderwerp}"`,
+    );
+    return { status: "gesimuleerd", gesimuleerd: true };
+  }
+
+  if (brevoApiGeconfigureerd()) {
+    return verstuurViaBrevoApi({
+      from,
+      naar: input.naar,
+      naam: input.naam,
+      subject: onderwerp,
+      text: tekst,
+    });
+  }
+
+  try {
+    await getTransporter().sendMail({ from, to: input.naar, subject: onderwerp, text: tekst });
+    return { status: "verstuurd", gesimuleerd: false };
+  } catch (e) {
+    const melding = e instanceof Error ? e.message : "Onbekende SMTP-fout";
+    console.error(`[mailer] Aanmeldlink mislukt naar ${input.naar}: ${melding}`);
     return { status: "fout", gesimuleerd: false, melding };
   }
 }
