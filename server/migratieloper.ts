@@ -140,6 +140,14 @@ function maakRegister(db: BetterSqlite3.Database): void {
   `);
 }
 
+/**
+ * Staat deze migratie al vastgelegd? Wordt binnen de transactie van de migratie
+ * zelf opnieuw gesteld, zodat het antwoord van vóór het slot niet meetelt.
+ */
+function staatInRegister(db: BetterSqlite3.Database, naam: string): boolean {
+  return !!db.prepare(`SELECT 1 FROM ${REGISTERTABEL} WHERE naam = ?`).get(naam);
+}
+
 function reedsInRegister(db: BetterSqlite3.Database): Set<string> {
   const rijen = db.prepare(`SELECT naam FROM ${REGISTERTABEL}`).all() as { naam: string }[];
   return new Set(rijen.map(({ naam }) => naam));
@@ -156,9 +164,41 @@ export interface MigratieUitkomst {
 }
 
 /**
+ * Hoe lang een tweede proces wacht op het schrijfslot van het eerste voordat
+ * SQLite opgeeft met "database is locked". Vijftien seconden is ruim: de negen
+ * migraties samen lopen in minder dan een seconde.
+ */
+const SLOT_WACHTTIJD_MS = 15_000;
+
+/**
  * Voert de openstaande migraties uit. Elke migratie loopt in één transactie
  * samen met haar registerregel, zodat er nooit een half toegepaste migratie
  * achterblijft.
+ *
+ * DE WEDLOOP DIE HIER DICHTGEZET IS
+ * Het register werd één keer vooraf uitgelezen, buiten elk slot, en daarna werd
+ * per migratie een eigen transactie geopend. Openen twee processen tegelijk
+ * dezelfde verse databank, dan zien ze beide een leeg register, besluiten beide
+ * dat alles nog moet lopen, en valt de tweede om op zijn registerregel:
+ * "UNIQUE constraint failed: migratie_register.naam". Dat is de fout waarop de
+ * bouwpijplijn onregelmatig rood sloeg; met twee processen op één verse databank
+ * was ze in twee van zes proefrondes uit te lokken.
+ *
+ * Twee dingen samen zetten hem dicht, en met opzet niet meer dan dat:
+ *
+ *   1. Elke migratie neemt haar schrijfslot meteen bij het openen van haar
+ *      transactie (`immediate`) in plaats van pas bij de eerste schrijfopdracht.
+ *      Een tweede proces wacht dan, in plaats van ondertussen door te lezen.
+ *   2. De vraag "staat deze migratie al in het register?" wordt opnieuw gesteld
+ *      BINNEN die transactie. Het antwoord van vóór het slot kan verouderd zijn;
+ *      het antwoord erbinnen niet. Wie te laat komt, ziet de regel van de ander
+ *      en slaat over.
+ *
+ * Wat uitdrukkelijk NIET verandert: de reeks loopt niet in één grote transactie.
+ * Dat zou het slot ook dichtzetten, maar het zou bij een fout in de derde
+ * migratie ook de eerste twee terugdraaien. `tests/migratieloper.test.ts` eist
+ * het tegendeel — wat gelukt is, blijft staan — en dat is de juiste eis: een
+ * gedeeltelijk gevorderde databank is te hervatten, een teruggedraaide niet.
  *
  * Wordt de map met migratiebestanden niet gevonden, dan stopt dit met een fout.
  * Dat is met opzet luid: een databank waarvan niet vaststaat welke tabellen
@@ -176,6 +216,23 @@ export function pasMigratiesToe(
     );
   }
 
+  // Zonder wachttijd geeft SQLite meteen "database is locked" zodra een ander
+  // proces het slot heeft. De oude waarde wordt achteraf teruggezet: deze functie
+  // mag geen blijvende instelling achterlaten op de verbinding van de aanroeper.
+  const oudeWachttijd = Number(db.pragma("busy_timeout", { simple: true })) || 0;
+  if (oudeWachttijd < SLOT_WACHTTIJD_MS) db.pragma(`busy_timeout = ${SLOT_WACHTTIJD_MS}`);
+  try {
+    return loopMigraties(db, migratieMap);
+  } finally {
+    if (oudeWachttijd < SLOT_WACHTTIJD_MS) db.pragma(`busy_timeout = ${oudeWachttijd}`);
+  }
+}
+
+/**
+ * De eigenlijke reeks. Staat apart zodat pasMigratiesToe alleen over de
+ * wachttijd gaat en deze functie alleen over de migraties.
+ */
+function loopMigraties(db: BetterSqlite3.Database, migratieMap: string): MigratieUitkomst {
   maakRegister(db);
   const alGeregistreerd = reedsInRegister(db);
   const uitkomst: MigratieUitkomst = { toegepast: [], alAanwezig: [] };
@@ -195,10 +252,16 @@ export function pasMigratiesToe(
     if (alGeregistreerd.has(naam)) continue;
 
     if (wasErAlBijBinnenkomst.get(naam)) {
-      db.prepare(
-        `INSERT INTO ${REGISTERTABEL} (naam, toegepast_op, overgeslagen) VALUES (?, ?, 1)`,
-      ).run(naam, new Date().toISOString());
-      uitkomst.alAanwezig.push(naam);
+      const vastleggen = db.transaction(() => {
+        // Kwam een ander proces ons voor tussen het uitlezen en dit slot, dan
+        // staat de regel er al en valt er niets vast te leggen.
+        if (staatInRegister(db, naam)) return false;
+        db.prepare(
+          `INSERT INTO ${REGISTERTABEL} (naam, toegepast_op, overgeslagen) VALUES (?, ?, 1)`,
+        ).run(naam, new Date().toISOString());
+        return true;
+      });
+      if (vastleggen.immediate()) uitkomst.alAanwezig.push(naam);
       continue;
     }
 
@@ -209,20 +272,26 @@ export function pasMigratiesToe(
       .filter((stap) => stap.length > 0);
 
     const voerUit = db.transaction(() => {
+      // Zelfde vraag als hierboven, nu mét het slot in de hand. Heeft een ander
+      // proces deze migratie al gedaan, dan zou onze SQL erbovenop lopen en
+      // onze registerregel botsen. Dus: overslaan.
+      if (staatInRegister(db, naam)) return false;
       for (const stap of stappen) db.exec(stap);
       db.prepare(
         `INSERT INTO ${REGISTERTABEL} (naam, toegepast_op, overgeslagen) VALUES (?, ?, 0)`,
       ).run(naam, new Date().toISOString());
+      return true;
     });
 
+    let uitgevoerd: boolean;
     try {
-      voerUit();
+      uitgevoerd = voerUit.immediate();
     } catch (oorzaak) {
       const melding = oorzaak instanceof Error ? oorzaak.message : String(oorzaak);
       throw new Error(`Migratie ${naam} is niet toegepast: ${melding}`);
     }
 
-    uitkomst.toegepast.push(naam);
+    if (uitgevoerd) uitkomst.toegepast.push(naam);
   }
 
   return uitkomst;
