@@ -12,13 +12,13 @@ import {
   maakLicentieBeeld,
   LICENTIESTANDEN,
   type LicentieVoorBeeld,
-} from "/home/user/workspace/core/server/bekwaamheid/licentiebeeld";
-import { magAfnemen } from "/home/user/workspace/core/server/bekwaamheid/rechten";
+} from "../server/bekwaamheid/licentiebeeld";
+import { magAfnemen } from "../server/bekwaamheid/rechten";
 import {
   LICENTIESTATUSSEN,
   STATUSSEN_MET_AFNAMERECHT,
   type Licentiestatus,
-} from "/home/user/workspace/core/server/bekwaamheid/schema";
+} from "../server/bekwaamheid/schema";
 
 const PEIL = "2026-08-14";
 

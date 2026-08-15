@@ -20,7 +20,7 @@
 // ---------------------------------------------------------------------------
 
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 
 function bron(pad: string): string {
@@ -211,5 +211,28 @@ describe("De randvoorwaarden blijven staan", () => {
   it("de veilige weg op /mijn is niet aangeraakt", () => {
     expect(code("client/src/pages/mijn.tsx")).toMatch(/\/api\/deelnemers\/magic-link/);
     expect(code("client/src/pages/mijn.tsx")).not.toMatch(/\/api\/deelnemers\/login/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Vangnet buiten deze opdracht, aangetroffen bij de push naar main.
+//
+// De CI-loop op main stond rood: tests/bekwaamheid-licentiebeeld.test.ts en
+// tests/bekwaamheid-licentiebeeld-route.test.ts importeerden hun bronbestanden
+// via een absoluut pad uit de ontwikkelzandbak
+// ("/home/user/workspace/core/server/..."). Lokaal werkt dat; op elke andere
+// machine — de CI-loop, een collega, een verse checkout — bestaat dat pad niet
+// en faalt het hele testbestand met "Cannot find module".
+//
+// Zeven imports zijn omgezet naar relatieve paden. Deze toets houdt vast dat er
+// geen achtste bijkomt.
+// ---------------------------------------------------------------------------
+describe("Geen absolute zandbakpaden in de tests", () => {
+  it("geen enkel testbestand importeert via /home/user/workspace", () => {
+    const map = resolve(__dirname);
+    const overtreders = readdirSync(map)
+      .filter((n) => n.endsWith(".test.ts"))
+      .filter((n) => /from\s+["']\/home\/user\//.test(readFileSync(resolve(map, n), "utf8")));
+    expect(overtreders).toEqual([]);
   });
 });

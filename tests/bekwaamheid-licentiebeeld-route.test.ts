@@ -35,13 +35,13 @@ import {
   leesEigenLicentiebeeld,
   leesLicentiebeeld,
   registerLicentiebeeldRoutes,
-} from "/home/user/workspace/core/server/bekwaamheid/routes-licentiebeeld";
-import type { BekwaamheidOpslag } from "/home/user/workspace/core/server/bekwaamheid/storage";
+} from "../server/bekwaamheid/routes-licentiebeeld";
+import type { BekwaamheidOpslag } from "../server/bekwaamheid/storage";
 import {
   KOLOM_SLEUTELS,
   KOLOM_WOORDEN,
-} from "/home/user/workspace/core/client/src/components/bekwaamheid/licentiekolom-teksten";
-import { TALEN } from "/home/user/workspace/core/shared/talen";
+} from "../client/src/components/bekwaamheid/licentiekolom-teksten";
+import { TALEN } from "../shared/talen";
 
 function maakApp(adminId: number | null) {
   const app = express();
