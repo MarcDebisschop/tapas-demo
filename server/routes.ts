@@ -25,6 +25,7 @@ import { registerOrganisatieBeheerRoutes } from "./routes/organisatie-beheer";
 import { registerT4SportsRoutes } from "./t4sports/routes";
 import { registerT4SportsModuleRoutes } from "./t4sports/module-routes";
 import { registerCoachContactRoutes } from "./routes-coach-contact";
+import { registerOnthaalContactRoutes } from "./routes-onthaal-contact";
 import { registerPriveAankoopRoutes } from "./prive-aankoop/routes";
 import { registerBulkImportRoutes } from "./bulk-import/routes";
 import { registerNormprofielRoutes } from "./bekwaamheid/routes-normprofiel";
@@ -182,6 +183,10 @@ export async function registerRoutes(
   // Publiek coach-contactformulier (NIEUW, aparte module — Regel 2).
   // Hergebruikt coach_register.email (admin-beheerbaar); fallback info@tapascity.com.
   registerCoachContactRoutes(app);
+
+  // Het contactformulier van de onthaalpagina (aparte module). Slaat de vraag
+  // op en verstuurt ze naar info@tapascity.com, met de verzendstatus erbij.
+  registerOnthaalContactRoutes(app);
 
   // Extra routes: coach-login + Self-Training Module (STM)
   registerStmRoutes(app, storage);

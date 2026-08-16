@@ -10,6 +10,7 @@
 // =============================================================================
 import { createPortal } from "react-dom";
 import { BELEVING, zetBeleving } from "@/lib/features";
+import { schakelaarZichtbaarNu } from "@/lib/schakelaar-zichtbaar";
 import { Switch } from "@/components/ui/switch";
 import { Sparkles, Layers } from "lucide-react";
 
@@ -26,6 +27,12 @@ export function BelevingSchakelaar() {
   // uitkomt. Zonder portal kan de intro-canvas de klikken opvangen doordat de
   // schakelaar in een lagere stacking-context van de app-boom zit.
   if (typeof document === "undefined") return null;
+
+  // De schakelaar is een werkinstrument. Een bezoeker die voor het eerst op de
+  // onthaalpagina landt, ziet hem niet. Hij komt tevoorschijn met ?schakelaar=1
+  // of met ?beleving=... in de URL, en die keuze blijft bewaard. Zie
+  // lib/schakelaar-zichtbaar.ts voor de volledige regel.
+  if (!schakelaarZichtbaarNu()) return null;
 
   return createPortal(
     <div

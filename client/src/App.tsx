@@ -11,6 +11,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import PoortenIntro from "@/pages/poorten-intro";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
+import Onthaal from "@/pages/onthaal";
 import Start from "@/pages/start";
 import Deel1 from "@/pages/deel1";
 import Deel2 from "@/pages/deel2";
@@ -89,7 +90,7 @@ import T4SportsDashboard from "@/pages/t4sports-dashboard";
 import T4SportsModules from "@/pages/t4sports-modules";
 import ScrollNaarBoven from "@/components/ScrollNaarBoven";
 import { TaalProvider } from "@/contexts/TaalContext";
-import { BELEVING } from "@/lib/features";
+import { BELEVING, CORE_MODE } from "@/lib/features";
 import { BelevingSchakelaar } from "@/components/BelevingSchakelaar";
 
 function AdminStub({ titel, omschrijving }: { titel: string; omschrijving: string }) {
@@ -110,7 +111,11 @@ function AdminStub({ titel, omschrijving }: { titel: string; omschrijving: strin
 function AppRouter() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
+      {/* De voordeur. In TaPas Core staat daar de onthaalpagina: de pagina die
+          uitlegt wat het platform is, voor wie het bedoeld is en waar het
+          ophoudt. In het volledige belevingsplatform blijft de bestaande
+          startpagina staan, met de rondleiding, de werelden en de Lounge. */}
+      <Route path="/" component={CORE_MODE ? Onthaal : Home} />
       <Route path="/start" component={Start} />
       <Route path="/deelnemer/:token" component={Deelnemer} />
       <Route path="/mijn" component={Mijn} />

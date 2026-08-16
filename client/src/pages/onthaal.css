@@ -1,0 +1,267 @@
+/* ===========================================================================
+ * onthaal.css: de opmaak van de onthaalpagina van TaPas Core.
+ *
+ * Elke regel staat binnen .onthaal. Buiten die pagina verandert er dus
+ * niets: geen enkel bestaand scherm wordt geraakt.
+ *
+ * De kleuren staan in twee standen, licht en donker, en volgen dezelfde
+ * waarden als index.css. De donkere stand hangt aan html.dark, precies de
+ * klasse die ThemeProvider.tsx zet. De pagina wisselt dus mee met het thema
+ * van de app.
+ *
+ * Het merkteken van TaPasCity staat NIET in dit bestand. Dat komt uit
+ * index.css via de klasse merkteken-modus, die main.tsx op elk scherm zet.
+ * =========================================================================== */
+
+.onthaal{/* ---------------------------------------------------------------------
+     Twee standen, beide letterlijk uit core/client/src/index.css.
+     Het platform staat volgens ThemeProvider.tsx STANDAARD donker, dus deze
+     pagina opent ook donker: de klasse `dark` staat op <html>.
+     :root = het lichte :root-blok van index.css.
+     html.dark = het .dark-blok van index.css, hsl omgerekend naar hex.
+     --------------------------------------------------------------------- */
+  --primary:#16374B; --primary-dp:#0E2532;      /* 203 54% 19% */
+  --accent:#3F7D6E; --accent-dk:#356A5D;        /* 165 33% 37% */
+  --gold:#967336; --werk:#23768B; --studie:#B47522; --lounge:#CA5421;
+  --studie-dk:#96611A;          /* okervlak met witte tekst, AA-veilig */
+  --tb:#8C5A16;                 /* de TB-markeringen */
+  --fg:#171717; --fg-2:#3C3C3C; --muted:#666666;
+  --line:#E8E8E8; --card:#FAFAFA; --bg:#FFFFFF;
+  --tint:rgba(23,23,23,.02); --tint-2:rgba(23,23,23,.025);
+  --rand:#8A959D;               /* velden en lichte knoppen */
+  --label:#4A4A4A; --plaats:#6E6E6E; --pijl:#5A6672;
+  --taal-aan:#EDF1F3; --f-cr:#585858;
+  --nota-bg:#FBF7EF; --nota-fg:#4A4238; --nota-line:#E4DCCB;
+  --op-kleur:#FFFFFF;           /* tekst op een gevuld kleurvlak */
+  --accent-zacht:rgba(63,125,110,.14); --accent-mid:rgba(63,125,110,.42);
+  --serif:"Source Serif 4",Georgia,serif; --sans:"DM Sans",system-ui,sans-serif;
+  --wrap:1140px;}
+html.dark .onthaal{--primary:#5EAEBA; --primary-dp:#8ACAD3;      /* 188 40% 55% */
+  --accent:#4D9986; --accent-dk:#62B39E;        /* 165 33% 45% */
+  --gold:#D4B77D; --werk:#64C0CE; --studie:#E5B561; --lounge:#EB8B5C;
+  --studie-dk:#E5B561;
+  --tb:#D4B77D;
+  --fg:#FAFAFA; --fg-2:#E2E2E2; --muted:#A6A6A6;   /* 0 0% 98% / 65% */
+  --line:#292929; --card:#171717; --bg:#121212;    /* 0 0% 16% / 9% / 7% */
+  --tint:rgba(255,255,255,.04); --tint-2:rgba(255,255,255,.05);
+  --rand:#6A6A6A;
+  --label:#C9C9C9; --plaats:#8F8F8F; --pijl:#9AA6AE;
+  --taal-aan:#24333A; --f-cr:#9A9A9A;
+  --nota-bg:rgba(212,183,125,.08); --nota-fg:#E6D8BA; --nota-line:rgba(212,183,125,.24);
+  --op-kleur:#171717;                              /* --primary-foreground 0 0% 9% */
+  --accent-zacht:rgba(77,153,134,.16); --accent-mid:rgba(77,153,134,.5);
+  color-scheme:dark;}
+.onthaal *{box-sizing:border-box}
+.onthaal{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:17px;line-height:1.62;font-weight:400;-webkit-font-smoothing:antialiased}
+.onthaal section,.onthaal .hero,.onthaal footer{position:relative;z-index:1;background:transparent}
+.onthaal h1,.onthaal h2,.onthaal h3{font-family:var(--serif);font-weight:600;line-height:1.18;letter-spacing:-.012em;margin:0}
+.onthaal p{margin:0}
+.onthaal a{color:inherit}
+.onthaal .wrap{max-width:var(--wrap);margin:0 auto;padding:0 32px}
+.onthaal .eyebrow{font-size:12.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.onthaal .deuren{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.onthaal .deur{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);
+  border-radius:12px;padding:26px 24px 22px;text-decoration:none;color:inherit;transition:border-color .18s,transform .18s}
+.onthaal .deur:hover{border-color:var(--primary);transform:translateY(-2px)}
+.onthaal .deur .dr{font-family:var(--sans);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--primary);margin:0 0 12px}
+.onthaal .deur h3{font-family:var(--serif);font-size:20px;line-height:1.25;margin:0 0 10px;color:var(--fg)}
+.onthaal .deur p{font-size:14.5px;line-height:1.62;color:var(--fg-2);margin:0}
+.onthaal .deur .pad-uit{margin-top:16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:12px;color:var(--plaats);letter-spacing:.02em}
+.onthaal .deur-vol{background:var(--tint-2);border-style:dashed}
+.onthaal .deur .deurstap{list-style:none;margin:14px 0 14px;padding:0;counter-reset:st}
+.onthaal .deur .deurstap li{counter-increment:st;position:relative;padding-left:26px;margin-bottom:8px;
+  font-size:13.5px;line-height:1.55;color:var(--fg-2)}
+.onthaal .deur .deurstap li:last-child{margin-bottom:0}
+.onthaal .deur .deurstap li::before{content:counter(st);position:absolute;left:0;top:1px;
+  width:17px;height:17px;border-radius:50%;background:var(--tint);color:var(--primary);
+  font-family:var(--sans);font-size:10.5px;font-weight:600;display:flex;align-items:center;
+  justify-content:center;letter-spacing:0}
+.onthaal .deur .nodig{margin-top:auto;padding-top:12px;border-top:1px solid var(--line);
+  font-family:var(--sans);font-size:12px;color:var(--muted)}
+.onthaal .deur .nodig b{color:var(--fg-2);font-weight:600}
+@media(max-width:980px){
+  .onthaal .deuren{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:620px){
+  .onthaal .deuren{grid-template-columns:1fr}
+}
+.onthaal .veilig{margin:26px 0 0;background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:28px 26px}
+.onthaal .veilig .vk{font-family:var(--sans);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--studie);margin:0 0 10px}
+.onthaal .veilig h3{font-family:var(--serif);font-size:22px;line-height:1.25;margin:0 0 8px;color:var(--fg)}
+.onthaal .veilig>p{font-size:15px;line-height:1.65;color:var(--fg-2);margin:0 0 22px;max-width:64ch}
+.onthaal .vstap{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.onthaal .vstap>div{background:var(--tint-2);border:1px solid var(--line);border-radius:9px;padding:16px 16px 15px}
+.onthaal .vstap .nr{font-family:var(--sans);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--studie);margin:0 0 7px}
+.onthaal .vstap p.t{font-family:var(--sans);font-size:13.5px;font-weight:600;color:var(--fg);margin:0 0 5px;line-height:1.35}
+.onthaal .vstap p.b{font-size:13px;line-height:1.55;color:var(--fg-2);margin:0}
+.onthaal .veilig .waarborg{list-style:none;margin:22px 0 0;padding:0;display:grid;
+  grid-template-columns:repeat(2,1fr);gap:8px 22px}
+.onthaal .veilig .waarborg li{position:relative;padding-left:19px;font-size:13.5px;line-height:1.55;color:var(--fg-2)}
+.onthaal .veilig .waarborg li::before{content:"";position:absolute;left:0;top:7px;width:7px;height:7px;
+  border-radius:50%;background:var(--studie)}
+@media(max-width:980px){
+  .onthaal .vstap{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:620px){
+  .onthaal .vstap,.onthaal .veilig .waarborg{grid-template-columns:1fr}
+}
+.onthaal header.bar{background:var(--card);color:var(--primary);position:relative;z-index:50;border-bottom:1px solid var(--line)}
+.onthaal .bar .wrap{display:flex;align-items:center;gap:20px 26px;min-height:76px;padding-top:14px;padding-bottom:14px;flex-wrap:wrap}
+.onthaal .merk{display:flex;align-items:center;gap:13px;text-decoration:none;margin-right:auto}
+.onthaal .merk .naam{font-family:var(--serif);font-size:20px;font-weight:600;letter-spacing:.005em;line-height:1.1}
+.onthaal .merk .onder{font-size:11.5px;color:var(--muted);letter-spacing:.03em;line-height:1.1;margin-top:3px}
+.onthaal .knop{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:var(--sans);font-size:15px;font-weight:500;padding:12px 22px;border-radius:6px;text-decoration:none;border:1px solid transparent;cursor:pointer;transition:background .18s,border-color .18s,color .18s;white-space:nowrap}
+.onthaal .knop-1{background:var(--accent);color:var(--op-kleur)}
+.onthaal .knop-1:hover{background:var(--accent-dk)}
+.onthaal .knop-2{background:transparent;color:var(--primary);border-color:var(--rand)}
+.onthaal .knop-2:hover{border-color:var(--primary);background:var(--card)}
+.onthaal .knop-3{background:var(--primary);color:var(--op-kleur)}
+.onthaal .knop-3:hover{background:var(--primary-dp)}
+.onthaal .knop-l{background:transparent;color:var(--primary);border-color:var(--rand)}
+.onthaal .knop-l:hover{border-color:var(--primary)}
+.onthaal .hero{background:transparent;color:var(--fg);padding:80px 0 0;position:relative;overflow:hidden}
+.onthaal .hero .wrap{position:relative;z-index:2}
+.onthaal .hero-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:64px;align-items:start}
+.onthaal .hero .eyebrow{color:var(--muted)}
+.onthaal .hero h1{font-size:clamp(38px,4.9vw,60px);margin:20px 0 0;letter-spacing:-.02em}
+.onthaal .hero h1 em{font-style:italic;color:var(--accent);font-weight:400}
+.onthaal .zin{margin-top:30px;padding-left:20px;border-left:2px solid var(--accent);max-width:640px}
+.onthaal .zin b{font-weight:500;color:var(--primary)}
+.onthaal .zin span{color:var(--fg-2)}
+.onthaal .toon{margin-top:22px;max-width:600px;color:var(--muted);font-size:16px}
+.onthaal .hero-acties{display:flex;flex-wrap:wrap;gap:12px;margin-top:34px}
+.onthaal .kompas{width:100%;height:auto;opacity:.9}
+.onthaal .feiten{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);margin-top:60px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.onthaal .feit{background:var(--tint);padding:24px 22px 30px}
+.onthaal .feit .n{font-family:var(--serif);font-size:30px;font-weight:600;line-height:1;color:var(--primary)}
+.onthaal .feit .l{font-size:13.5px;color:var(--muted);margin-top:8px;line-height:1.4}
+.onthaal section{padding:88px 0}
+.onthaal .sec-kop{max-width:660px;margin-bottom:48px}
+.onthaal .sec-kop h2{font-size:clamp(27px,3vw,35px);margin-top:14px}
+.onthaal .sec-kop p{color:var(--muted);margin-top:16px;font-size:17px}
+.onthaal .grijs{background:var(--tint);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.onthaal .namen{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--line);background:var(--bg)}
+.onthaal .naam-k{padding:34px 30px 36px;border-right:1px solid var(--line)}
+.onthaal .naam-k:last-child{border-right:0}
+.onthaal .naam-k h3{font-size:21px;display:flex;align-items:baseline;gap:9px}
+.onthaal .naam-k h3 i{font-style:normal;font-family:var(--sans);font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.onthaal .naam-k p{margin-top:13px;font-size:15.5px;color:var(--fg-2)}
+.onthaal .naam-k .streep{width:34px;height:3px;margin-bottom:20px;border-radius:2px}
+.onthaal .paden{display:grid;grid-template-columns:repeat(6,1fr);gap:22px}
+.onthaal .pad.p2{grid-column:span 2}
+.onthaal .pad.p3{grid-column:span 3}
+.onthaal .pad{background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:32px 28px 28px;display:flex;flex-direction:column}
+.onthaal .pad .tag{font-size:11.5px;font-weight:500;letter-spacing:.11em;text-transform:uppercase;padding:5px 10px;border-radius:4px;align-self:flex-start;color:var(--op-kleur)}
+.onthaal .pad h3{font-size:22px;margin-top:18px}
+.onthaal .pad .wil{margin-top:14px;font-size:15.5px;color:var(--fg-2);font-family:var(--serif);font-style:italic}
+.onthaal .pad .lijst{margin:20px 0 auto;padding:20px 0 0;border-top:1px solid var(--line);font-size:14.5px;color:var(--muted);line-height:1.75}
+.onthaal .pad .lijst b{display:block;color:var(--fg);font-family:var(--sans);font-size:11.5px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+.onthaal .pad .knop{margin-top:26px;align-self:flex-start}
+.onthaal .opbr{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.onthaal .op{border:1px solid var(--line);border-radius:9px;background:var(--bg);padding:30px 28px;display:flex;flex-direction:column}
+.onthaal .op .inst{font-size:12px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.onthaal .op blockquote{margin:16px 0 0;font-family:var(--serif);font-size:19px;line-height:1.45;color:var(--fg)}
+.onthaal .op .uit{margin-top:auto;padding-top:22px;font-size:14.5px;color:var(--muted);border-top:1px solid var(--line);margin-top:24px}
+.onthaal .op .uit b{color:var(--fg);font-weight:500}
+.onthaal .stappen{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:2px solid var(--primary)}
+.onthaal .stap{padding:30px 26px 8px 0}
+.onthaal .stap .nr{font-family:var(--serif);font-size:14px;font-weight:600;color:var(--accent);letter-spacing:.08em}
+.onthaal .stap h3{font-size:19px;margin-top:12px}
+.onthaal .stap p{margin-top:11px;font-size:15px;color:var(--muted)}
+.onthaal .bewijs{display:grid;grid-template-columns:1.15fr .85fr;gap:0;border:1px solid var(--line);background:var(--bg)}
+.onthaal .bw{padding:40px 40px 44px}
+.onthaal .bw:first-child{border-right:1px solid var(--line)}
+.onthaal .bewijs .bw:last-child{background:var(--tint)}
+.onthaal .bw .cijfer{font-family:var(--serif);font-size:56px;font-weight:600;line-height:1;color:var(--gold);letter-spacing:-.02em}
+.onthaal .bw h3{font-size:20px;margin-top:6px}
+.onthaal .bw p{margin-top:16px;font-size:15.5px;color:var(--fg-2)}
+.onthaal .bw .beperking{margin-top:20px;padding:18px 20px;background:var(--nota-bg);border-left:3px solid var(--gold);font-size:14.5px;color:var(--nota-fg)}
+.onthaal .grens{width:38px;height:38px;border-radius:50%;border:2px solid var(--primary);display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:19px;color:var(--primary)}
+.onthaal .geen{margin-top:20px;list-style:none;padding:0;font-size:15.5px}
+.onthaal .geen li{padding:9px 0 9px 24px;position:relative;border-bottom:1px solid var(--line);color:var(--fg-2)}
+.onthaal .geen li:last-child{border-bottom:0}
+.onthaal .geen li::before{content:"×";position:absolute;left:2px;top:8px;color:#A33;font-size:16px}
+.onthaal .contact{background:var(--tint);color:var(--fg);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.onthaal .c-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:72px;align-items:start}
+.onthaal .contact h2{font-size:clamp(27px,3vw,35px);color:var(--fg)}
+.onthaal .contact .eyebrow{color:var(--muted)}
+.onthaal .contact .lead{margin-top:16px;color:var(--muted);font-size:17px;max-width:440px}
+.onthaal .veldrij{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.onthaal label{display:block;font-size:13px;font-weight:500;letter-spacing:.04em;color:var(--label);margin-bottom:7px}
+.onthaal input,.onthaal select,.onthaal textarea{width:100%;font-family:var(--sans);font-size:15.5px;color:var(--fg);background:var(--bg);border:1px solid var(--rand);border-radius:6px;padding:12px 14px;outline:none}
+.onthaal input::placeholder,.onthaal textarea::placeholder{color:var(--plaats)}
+.onthaal input:focus,.onthaal select:focus,.onthaal textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-zacht)}
+.onthaal select{appearance:none;padding-right:40px;text-overflow:ellipsis;background-image:linear-gradient(45deg,transparent 50%,var(--pijl) 50%),linear-gradient(135deg,var(--pijl) 50%,transparent 50%);background-position:calc(100% - 19px) 21px,calc(100% - 13px) 21px;background-size:6px 6px,6px 6px;background-repeat:no-repeat}
+.onthaal option{color:var(--fg)}
+.onthaal textarea{min-height:112px;resize:vertical}
+.onthaal .veld{margin-top:18px}
+.onthaal .na{margin-top:16px;font-size:14px;color:var(--muted)}
+.onthaal .diepte{margin-top:52px;display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.onthaal .diepte>div{padding:30px 30px 28px}
+.onthaal .diepte>div+div{border-left:1px solid var(--line);background:var(--bg)}
+.onthaal .diepte .nr{font-family:var(--serif);font-size:13px;font-weight:600;letter-spacing:.09em;text-transform:uppercase}
+.onthaal .diepte h3{font-size:19px;margin-top:11px}
+.onthaal .diepte p{margin-top:11px;font-size:15.5px;color:var(--muted)}
+@media(max-width:760px){
+  .onthaal .diepte{grid-template-columns:1fr}
+  .onthaal .diepte>div+div{border-left:0;border-top:1px solid var(--line)}
+}
+.onthaal .c-blok{padding:26px 0;border-top:1px solid var(--line)}
+.onthaal .c-blok:first-child{padding-top:0;border-top:0}
+.onthaal .c-blok h3{font-size:17px;color:var(--primary)}
+.onthaal .c-blok p{margin-top:11px;font-size:15.5px;color:var(--muted)}
+.onthaal .c-blok a{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--accent-mid)}
+.onthaal footer{background:transparent;color:var(--muted);padding:50px 0 40px;font-size:14.5px}
+.onthaal .f-top{display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start;padding-bottom:26px;border-bottom:1px solid var(--line)}
+.onthaal .f-drie{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:14px}
+.onthaal .f-drie span b{color:var(--primary);font-weight:500}
+.onthaal .f-note{margin-top:24px;max-width:640px;color:var(--muted)}
+.onthaal .f-cr{margin-top:22px;font-size:13.5px;color:var(--f-cr)}
+@media(max-width:900px){
+  .onthaal .bar .knop-1{display:none}
+}
+@media(max-width:1000px){
+  .onthaal .hero-grid{grid-template-columns:1fr;gap:44px}
+  .onthaal .hero-grid > div:last-child{display:flex;justify-content:center}
+  .onthaal .kompas{max-width:230px}
+  .onthaal .namen,.onthaal .paden,.onthaal .opbr{grid-template-columns:1fr}
+  .onthaal .pad.p2,.onthaal .pad.p3{grid-column:auto}
+  .onthaal .naam-k{border-right:0;border-bottom:1px solid var(--line)}
+  .onthaal .naam-k:last-child{border-bottom:0}
+  .onthaal .stappen{grid-template-columns:1fr 1fr}
+  .onthaal .bewijs,.onthaal .c-grid{grid-template-columns:1fr;gap:0}
+  .onthaal .bw:first-child{border-right:0;border-bottom:1px solid var(--line)}
+  .onthaal .c-grid{gap:52px}
+  .onthaal .feiten{grid-template-columns:1fr 1fr}
+}
+@media(max-width:620px){
+  .onthaal{font-size:16px}
+  .onthaal .wrap{padding:0 24px}
+  .onthaal select{font-size:14.5px}
+  .onthaal section{padding:60px 0}
+  .onthaal .hero{padding-top:56px}
+  .onthaal .bar .wrap{padding:14px 24px;gap:14px}
+  .onthaal .bar .knop-2{font-size:14px;padding:10px 16px}
+  .onthaal .merk .onder{display:none}
+  .onthaal .hero-acties{flex-direction:column;align-items:stretch}
+  .onthaal .hero-acties .knop{width:100%}
+  .onthaal .feit{padding:22px 18px 26px}
+  .onthaal .stappen{grid-template-columns:1fr}
+  .onthaal .veldrij{grid-template-columns:1fr}
+  .onthaal .bw{padding:30px 24px}
+}
+
+/* --- Herstellingen op de mockup ------------------------------------------- */
+
+/* In de kopbalk staan de naam en de ondertitel in twee spans binnen een
+   flexdoos. Als inline-tekst lopen ze aan elkaar vast: "Tapas COREeen platform
+   van TaPasCity". Ze horen onder elkaar. */
+.onthaal .merk .naam,
+.onthaal .merk .onder {
+  display: block;
+}

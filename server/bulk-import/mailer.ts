@@ -281,6 +281,9 @@ async function verstuurViaBrevoApi(args: {
   naam: string;
   subject: string;
   text: string;
+  /** Optioneel antwoordadres. Wordt alleen meegestuurd als het gevuld is, dus
+   *  bestaande aanroepen veranderen niet van gedrag. */
+  antwoordNaar?: string | null;
 }): Promise<MailResultaat> {
   const apiKey = process.env.BREVO_API_KEY!.trim();
   // Splits "Naam <email@x>" of val terug op puur e-mailadres.
@@ -292,6 +295,9 @@ async function verstuurViaBrevoApi(args: {
     to: [{ email: args.naar, name: args.naam || undefined }],
     subject: args.subject,
     textContent: args.text,
+    ...(args.antwoordNaar && args.antwoordNaar.trim()
+      ? { replyTo: { email: args.antwoordNaar.trim() } }
+      : {}),
   };
   try {
     const controller = new AbortController();
@@ -328,6 +334,68 @@ async function verstuurViaBrevoApi(args: {
   } catch (e) {
     const melding = e instanceof Error ? e.message : "Onbekende Brevo-API-fout";
     console.error(`[bulk-import/mailer] Brevo-API-fout naar ${args.naar}: ${melding}`);
+    return { status: "fout", gesimuleerd: false, melding };
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Een gewoon bericht versturen.
+//
+// De drie functies hierboven maken elk hun eigen tekst op: een uitnodiging, een
+// toegangsmail, een aanmeldlink. Voor een vraag die iemand via een publiek
+// formulier stelt, bestaat die opmaak niet: onderwerp en tekst komen dan van de
+// route zelf. Deze functie voegt niets nieuws toe aan de weg naar buiten, ze
+// gebruikt precies dezelfde: Brevo over HTTPS wanneer er een sleutel staat,
+// anders SMTP, en zonder een van beide wordt er niets verstuurd en zegt de
+// status dat eerlijk.
+//
+// antwoordNaar zet het antwoordadres op de mail, zodat een antwoord bij de
+// bezoeker aankomt en niet bij de afzender van het platform.
+// -----------------------------------------------------------------------------
+export interface BerichtVerzending {
+  naar: string;
+  naam: string;
+  onderwerp: string;
+  tekst: string;
+  from?: string | null;
+  antwoordNaar?: string | null;
+}
+
+export async function verstuurBericht(input: BerichtVerzending): Promise<MailResultaat> {
+  const from = afzenderVoor(input.from);
+
+  if (isSimulatiemodus()) {
+    console.log(
+      `[mailer] SIMULATIE, bericht NIET verstuurd. naar=${input.naar} van=${from} onderwerp="${input.onderwerp}"`,
+    );
+    return { status: "gesimuleerd", gesimuleerd: true };
+  }
+
+  if (brevoApiGeconfigureerd()) {
+    return verstuurViaBrevoApi({
+      from,
+      naar: input.naar,
+      naam: input.naam,
+      subject: input.onderwerp,
+      text: input.tekst,
+      antwoordNaar: input.antwoordNaar ?? null,
+    });
+  }
+
+  try {
+    await getTransporter().sendMail({
+      from,
+      to: input.naar,
+      subject: input.onderwerp,
+      text: input.tekst,
+      ...(input.antwoordNaar && input.antwoordNaar.trim()
+        ? { replyTo: input.antwoordNaar.trim() }
+        : {}),
+    });
+    return { status: "verstuurd", gesimuleerd: false };
+  } catch (e) {
+    const melding = e instanceof Error ? e.message : "Onbekende SMTP-fout";
+    console.error(`[mailer] Bericht mislukt naar ${input.naar}: ${melding}`);
     return { status: "fout", gesimuleerd: false, melding };
   }
 }
