@@ -36,6 +36,24 @@ export function Logo({ className = "" }: { className?: string }) {
   );
 }
 
+/**
+ * Zet de merknaam in een verwijzing wanneer er ergens te gaan valt, en laat ze
+ * anders staan zoals ze is. Zo blijft er precies één plaats waar de merknaam
+ * getekend wordt.
+ */
+function MerkOmhulsel({
+  href,
+  actief,
+  children,
+}: {
+  href: string;
+  actief: boolean;
+  children: React.ReactNode;
+}) {
+  if (!actief) return <span className="cursor-default">{children}</span>;
+  return <Link href={href}>{children}</Link>;
+}
+
 export function AppHeader({ right }: { right?: React.ReactNode }) {
   const { theme, toggle } = useTheme();
   // Binnen een afgeschermde omgeving blijft de merknaam binnen die omgeving.
@@ -43,6 +61,9 @@ export function AppHeader({ right }: { right?: React.ReactNode }) {
   // onthaalpagina.
   const [pad] = useLocation();
   const bestemming = merkBestemming(pad);
+  // Sta je al op de bestemming, dan valt er niets te gaan. Een knop die niets
+  // doet voelt stuk aan; daarom is de merknaam daar gewoon een naam.
+  const staErAl = pad === bestemming || pad.replace(/\/+$/, "") === bestemming;
   // De organisatie van de sessie, indien er een is. Null voor de prior en voor
   // iedereen zonder organisatiesessie; dan blijft de header ongewijzigd.
   const { data: mij } = useOrganisatieMij();
@@ -57,7 +78,7 @@ export function AppHeader({ right }: { right?: React.ReactNode }) {
     )}
     <header className="border-b border-border bg-card">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
-        <Link href={bestemming}>
+        <MerkOmhulsel href={bestemming} actief={!staErAl}>
           <a className="flex items-center gap-2 text-primary" data-testid="link-home">
             {/* Het eigen logo van de organisatie vervangt de kompasroos. Nooit
                 het Earhart-vliegtuig: dat is het merkteken van TaPasCity. */}
@@ -78,7 +99,7 @@ export function AppHeader({ right }: { right?: React.ReactNode }) {
               {titel}
             </span>
           </a>
-        </Link>
+        </MerkOmhulsel>
         <div className="flex items-center gap-2">
           {right}
           <button

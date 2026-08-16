@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { AppHeader } from "@/components/Brand";
+import { useAdminAuth } from "@/components/AdminLoginGate";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,7 +35,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Afname, OrganisatieMetSaldo } from "@/lib/types";
-import { Copy, Check, Send, UserPlus, Bell, Languages, Settings2, ChartColumn, GraduationCap, Mail, KeyRound, Users, CreditCard, BarChart2, Building2, ArrowRight, Layers, Euro, FileSpreadsheet, Sparkles, Power, MonitorPlay, Palette, Network } from "lucide-react";
+import { Copy, Check, Send, UserPlus, Bell, Languages, Settings2, ChartColumn, GraduationCap, Mail, KeyRound, Users, CreditCard, BarChart2, Building2, ArrowRight, Layers, Euro, FileSpreadsheet, Sparkles, Power, MonitorPlay, Palette, Network, LogOut } from "lucide-react";
 import { LegeStaat } from "@/components/LegeStaat";
 import {
   TALEN,
@@ -120,6 +121,8 @@ function deelnemerLink(token: string): string {
 
 export default function Admin() {
   const { toast } = useToast();
+  // De afmeldweg komt uit de poort zelf: die kent de sessie en wist ze.
+  const { afmelden } = useAdminAuth();
 
   // Admin-interfacetaal = losse voorkeur (React-state, geen localStorage), zonder data-impact.
   const { uiTaal, setUiTaal, t } = useUiTaal();
@@ -309,6 +312,17 @@ export default function Admin() {
               data-testid="button-open-wachtwoord"
             >
               <KeyRound className="mr-1.5 h-4 w-4" /> {t("admin_pw_nav")}
+            </Button>
+            {/* Afmelden. Zonder deze knop bleef een sessie 24 uur openstaan en
+                was er geen enkele weg terug naar de aanmeldpoort: wie eenmaal
+                binnen was, kwam een dag lang zonder wachtwoord binnen. */}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => { void afmelden(); }}
+              data-testid="button-admin-afmelden"
+            >
+              <LogOut className="mr-1.5 h-4 w-4" /> Afmelden
             </Button>
           </div>
         }

@@ -18,7 +18,7 @@
 import type { Express } from "express";
 import { storage, db } from "../storage";
 import { verifieerWachtwoord } from "../auth/wachtwoord";
-import { vereisAdmin, adminIdVanSessie } from "../admin-guard";
+import { vereisAdmin, adminIdVanSessie, AANMELD_VERSIE } from "../admin-guard";
 import { zetSessieIdentiteit, wisSessieIdentiteit } from "../sessie-identiteit";
 import { vereisScope, scopeVanVerzoek, bepaalScope } from "../scope-guard";
 import { schrijfAuditLog } from "../audit-log";
@@ -72,7 +72,7 @@ export function registerAdminRoutes(app: Express): void {
     // H-1 (audit): sessie-id vernieuwen vóór het zetten van de identiteit
     // (bescherming tegen session fixation).
     try {
-      await zetSessieIdentiteit(req, { adminId: beheerder.id });
+      await zetSessieIdentiteit(req, { adminId: beheerder.id, aanmeldVersie: AANMELD_VERSIE });
     } catch {
       return res.status(500).json({ message: "Sessie opslaan mislukt." });
     }

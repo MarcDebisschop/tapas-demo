@@ -118,9 +118,64 @@ describe("D. De merknaam in de kopbalk blijft binnen de omgeving", () => {
     expect(merkBestemming("/coaches")).toBe("/");
   });
 
+  it("is geen verwijzing meer wanneer je al op de bestemming staat", () => {
+    // Een knop die niets doet voelt stuk aan. Sta je al op de bestemming, dan
+    // is de merknaam gewoon een naam.
+    expect(kopbalk).toContain("const staErAl =");
+    expect(kopbalk).toContain("<MerkOmhulsel href={bestemming} actief={!staErAl}>");
+    expect(kopbalk).toContain('if (!actief) return <span className="cursor-default">');
+  });
+
   it("de kopbalk gebruikt die regel en niet langer een vast pad", () => {
     expect(kopbalk).toContain("import { merkBestemming }");
     expect(kopbalk).toContain("const bestemming = merkBestemming(pad)");
-    expect(kopbalk).toContain("<Link href={bestemming}>");
+    expect(kopbalk).not.toContain('<Link href="/">');
+  });
+});
+
+describe("F. Sessies van vóór de wachtwoordplicht vervallen", () => {
+  // Een sessie duurt 24 uur. Wie in de tijd van de vrije ingang binnenkwam,
+  // bleef dus een dag binnen, ook nadat de poort een wachtwoord vroeg. Een
+  // aanmeldversie op de sessie maakt die oude sessies ongeldig.
+  const bewaker = readFileSync("server/admin-guard.ts", "utf8");
+  const ingang = readFileSync("server/index.ts", "utf8");
+
+  it("de bewaker geeft de huidige aanmeldversie uit", () => {
+    expect(bewaker).toMatch(/export const AANMELD_VERSIE = \d+;/);
+  });
+
+  it("de aanmelding schrijft die versie op de sessie", () => {
+    expect(adminRoute).toContain("aanmeldVersie: AANMELD_VERSIE");
+  });
+
+  it("de ingang van de server haalt een verouderde identiteit weg", () => {
+    expect(ingang).toContain('import { AANMELD_VERSIE } from "./admin-guard"');
+    expect(ingang).toContain(
+      "if (sessie?.adminId != null && Number(sessie.aanmeldVersie) !== AANMELD_VERSIE)",
+    );
+    expect(ingang).toContain("sessie.adminId = undefined;");
+  });
+});
+
+describe("E. Er is een weg terug naar de aanmeldpoort", () => {
+  // Een sessie duurt 24 uur (server/index.ts). Zonder afmeldknop kwam wie
+  // eenmaal binnen was een dag lang zonder wachtwoord binnen, en leek de poort
+  // opnieuw open te staan.
+  const beheerOverzicht = readFileSync("client/src/pages/admin.tsx", "utf8");
+
+  it("het beheeroverzicht heeft een afmeldknop", () => {
+    expect(beheerOverzicht).toContain('data-testid="button-admin-afmelden"');
+    expect(beheerOverzicht).toContain("Afmelden");
+  });
+
+  it("die knop wist de sessie via de poort zelf", () => {
+    expect(beheerOverzicht).toContain('import { useAdminAuth } from "@/components/AdminLoginGate"');
+    expect(beheerOverzicht).toContain("const { afmelden } = useAdminAuth()");
+    expect(beheerOverzicht).toContain("onClick={() => { void afmelden(); }}");
+  });
+
+  it("de poort wist de sessie ook bij de server, niet enkel in de browser", () => {
+    expect(beheerPoort).toContain('apiRequest("POST", "/api/admin/logout"');
+    expect(adminRoute).toContain('"/api/admin/logout"');
   });
 });

@@ -5,6 +5,7 @@ import session from "express-session";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { SessieOpslag } from "./sessie-opslag";
+import { AANMELD_VERSIE } from "./admin-guard";
 import { registerRoutes } from "./routes";
 import { csrfBescherming } from "./csrf-bescherming";
 import { serveStatic } from "./static";
@@ -258,6 +259,25 @@ app.use(session({
     path: "/",
   },
 }));
+
+// ---------------------------------------------------------------------------
+// Oude beheerderssessies vervallen
+// ---------------------------------------------------------------------------
+// Er is een tijd geweest waarin de beheeromgeving zonder wachtwoord binnenliet.
+// Elke sessie uit die tijd bleef 24 uur geldig, dus wachtwoord vragen bij de
+// deur haalde niets uit zolang die sessies bleven werken. Een sessie draagt nu
+// een aanmeldversie; ontbreekt die of klopt ze niet, dan wordt de
+// beheerdersidentiteit hier weggehaald voordat enige route ze kan lezen. Zo
+// hoeft niet elke afzonderlijke lezer van req.session.adminId aangepast te
+// worden.
+app.use((req, _res, next) => {
+  const sessie = req.session as any;
+  if (sessie?.adminId != null && Number(sessie.aanmeldVersie) !== AANMELD_VERSIE) {
+    sessie.adminId = undefined;
+    sessie.aanmeldVersie = undefined;
+  }
+  next();
+});
 
 // ---------------------------------------------------------------------------
 // Demo-vervaldatum (tijdslot-beveiliging voor derden)
