@@ -11,13 +11,21 @@
  * ───────────────────────────────────
  * BELEVING wordt bij het laden bepaald in deze volgorde van prioriteit:
  *   1. URL-parameter  ?beleving=1  (aan)  of  ?beleving=0  (uit)
- *   2. localStorage-sleutel "tapas_beleving" ("true"/"false")
- *   3. Build-time env  VITE_BELEVING="true"  (fallback/standaard bij eerste bezoek)
+ *   2. Build-time env  VITE_BELEVING="true"  (fallback/standaard bij eerste bezoek)
  *
  * Als geen van deze een waarde geeft, is de DEFAULT de KALE VERSIE (Core).
+ * De standaard van de toepassing is dus Core, en de onthaalpagina is de
+ * voordeur. Elk nieuw bezoek begint daar.
  *
- * Wisselen gebeurt met zetBeleving(true|false): dat bewaart de keuze in
- * localStorage en herlaadt de pagina. Een herlaad (geen herbouw) volstaat om
+ * DE KEUZE WORDT NERGENS BEWAARD. Dat is een bewuste beslissing van 16 augustus
+ * 2026. Vroeger bleef een keuze voor de belevingslaag in localStorage staan,
+ * ook na het sluiten van de browser. Wie een keer gewisseld had, kreeg bij elk
+ * volgend bezoek de poorten in plaats van de onthaalpagina, zonder te kunnen
+ * zien waarom. De belevingslaag is nu alleen bereikbaar zolang ?beleving=1 in
+ * het adres staat. De schakelaar zet die parameter en haalt hem weer weg.
+ *
+ * Wisselen gebeurt met zetBeleving(true|false): dat zet of wist de parameter en
+ * herlaadt de pagina. Een herlaad (geen herbouw) volstaat om
  * alle voorwaardelijke paden (routes in App.tsx, het neveneffect in main.tsx,
  * de begin-state van de poorten-intro) consistent te maken. Zo kan de keuze
  * op Render zonder nieuwe build worden gewisseld.
@@ -37,39 +45,41 @@ function envBeleving(): boolean {
 }
 
 /**
- * Bepaalt de actuele BELEVING-waarde uit URL → localStorage → env.
- * Een ?beleving=…-parameter in de URL wordt meteen doorgeschreven naar
- * localStorage, zodat de keuze ook na het wegvallen van de parameter blijft.
+ * Bepaalt de actuele BELEVING-waarde uit de URL, met de env als fallback.
+ * Er wordt niets bewaard: verdwijnt de parameter ?beleving=… uit het adres,
+ * dan staat de toepassing weer in Core.
  */
 function bepaalBeleving(): boolean {
-  // 1. URL-parameter heeft voorrang (handig om een directe link te delen).
+  // Een keuze die vroeger wel bewaard werd, wordt bij het laden opgeruimd. Zo
+  // komt een browser die de oude sleutel nog draagt vanzelf weer in Core
+  // terecht, zonder dat er iets met de hand gewist hoeft te worden.
+  ruimOudeKeuzeOp();
+
+  // 1. URL-parameter. Dit is de enige manier om de belevingslaag aan te zetten.
   try {
     const params = new URLSearchParams(window.location.search);
     const raw = params.get("beleving");
     if (raw !== null) {
-      const aan = raw === "1" || raw === "true" || raw === "aan";
-      try {
-        window.localStorage.setItem(OPSLAG_SLEUTEL, aan ? "true" : "false");
-      } catch {
-        /* localStorage niet beschikbaar — negeren */
-      }
-      return aan;
+      return raw === "1" || raw === "true" || raw === "aan";
     }
   } catch {
-    /* geen window/URL — negeren */
+    /* geen window/URL, negeren */
   }
 
-  // 2. Eerder bewaarde keuze in localStorage.
-  try {
-    const opgeslagen = window.localStorage.getItem(OPSLAG_SLEUTEL);
-    if (opgeslagen === "true") return true;
-    if (opgeslagen === "false") return false;
-  } catch {
-    /* localStorage niet beschikbaar — negeren */
-  }
-
-  // 3. Build-time env als fallback/standaard.
+  // 2. Build-time env als fallback en standaard. Staat die niet op "true", dan
+  //    is de uitkomst Core en staat de onthaalpagina op de voordeur.
   return envBeleving();
+}
+
+/** Wist de sleutel waarin de keuze vroeger bewaard werd. */
+function ruimOudeKeuzeOp(): void {
+  try {
+    if (window.localStorage.getItem(OPSLAG_SLEUTEL) !== null) {
+      window.localStorage.removeItem(OPSLAG_SLEUTEL);
+    }
+  } catch {
+    /* localStorage niet beschikbaar, negeren */
+  }
 }
 
 /**
@@ -93,26 +103,28 @@ export const CORE_MODE: boolean = !BELEVING;
 export const PRODUCT_NAAM: string = CORE_MODE ? "TaPas Core" : "TaPas";
 
 /**
- * Wisselt de belevingsmodus tijdens runtime: bewaart de keuze in localStorage
- * en herlaadt de pagina. Geen rebuild nodig.
+ * Wisselt de belevingsmodus tijdens runtime: zet of wist de parameter in het
+ * adres en herlaadt de pagina. Er wordt niets bewaard. Geen rebuild nodig.
  *
  * @param aan  true = volledig platform, false = TaPas Core.
  */
 export function zetBeleving(aan: boolean): void {
-  try {
-    window.localStorage.setItem(OPSLAG_SLEUTEL, aan ? "true" : "false");
-  } catch {
-    /* localStorage niet beschikbaar — de herlaad met parameter vangt dit op */
-  }
-  // Verwijder een eventuele ?beleving=…-parameter uit de URL (zodat de
-  // localStorage-keuze leidend wordt) en forceer een volledige herlaad. We
-  // gebruiken location.replace() met een expliciete herlaad-fallback: enkel
-  // location.href toewijzen aan dezelfde URL herlaadt niet als de parameter
-  // al ontbrak.
+  // Een sleutel uit de oude opzet mag het adres niet overstemmen.
+  ruimOudeKeuzeOp();
+  // Aanzetten schrijft ?beleving=1 in het adres, uitzetten haalt de parameter
+  // weg. Daarna volgt altijd een volledige herlaad, zodat BELEVING opnieuw
+  // bepaald wordt. We gebruiken location.replace() met een expliciete
+  // herlaad-fallback: enkel location.href toewijzen aan dezelfde URL herlaadt
+  // niet wanneer er aan het adres niets veranderde.
   try {
     const url = new URL(window.location.href);
-    const hadParam = url.searchParams.has("beleving");
-    url.searchParams.delete("beleving");
+    const oudeWaarde = url.searchParams.get("beleving");
+    if (aan) {
+      url.searchParams.set("beleving", "1");
+    } else {
+      url.searchParams.delete("beleving");
+    }
+    const hadParam = oudeWaarde !== url.searchParams.get("beleving");
 
     // BELANGRIJK — 404 vermijden bij terugschakelen naar Core.
     // De app gebruikt hash-routing (#/pad). Bepaalde routes bestaan alléén in
