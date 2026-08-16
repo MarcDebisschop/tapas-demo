@@ -904,7 +904,14 @@ export default function Onthaal() {
             potentieelbepaling.
           </p>
           <p className="f-cr">
-            © 2BQ Consult · TaPasCity · info@tapascity.com · Zandstraat 85, 2110 Wijnegem
+            © 2BQ Consult · TaPasCity · info@tapascity.com · Zandstraat 85, 2110 Wijnegem ·{" "}
+            <Link
+              href="/admin"
+              data-testid="onthaal-beheer"
+              style={{ textDecoration: "underline dotted", textUnderlineOffset: "3px" }}
+            >
+              Beheer
+            </Link>
           </p>
         </div>
       </footer>

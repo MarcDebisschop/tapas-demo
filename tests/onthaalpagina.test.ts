@@ -213,3 +213,36 @@ describe("E. De verwijzingen breken de routering niet", () => {
     }
   });
 });
+
+describe("F. De onopvallende beheerdersdeur in de voettekst", () => {
+  it("staat in de voettekst en niet in de kopbalk", () => {
+    const voettekst = pagina.slice(pagina.indexOf("<footer>"));
+    expect(voettekst).toContain('data-testid="onthaal-beheer"');
+    const kopbalk = pagina.slice(pagina.indexOf("<header"), pagina.indexOf("</header>"));
+    expect(kopbalk).not.toContain("onthaal-beheer");
+  });
+
+  it("verwijst naar de bestaande beheerdersroute", () => {
+    const beheer = pagina.slice(pagina.indexOf('data-testid="onthaal-beheer"') - 400);
+    expect(beheer).toContain('href="/admin"');
+    expect(app).toContain('path="/admin"');
+  });
+
+  it("gaat langs de aanmeldpoort van de beheerder", () => {
+    expect(app).toMatch(/path="\/admin">\{\(\) => <AdminLoginGate>/);
+  });
+
+  it("draagt het woord Beheer en geen langer opschrift", () => {
+    const beheer = pagina.slice(pagina.indexOf('data-testid="onthaal-beheer"'));
+    expect(beheer).toContain(">\n              Beheer\n            </Link>");
+  });
+
+  it("staat op de regel met de vermelding van de onderneming", () => {
+    const regel = pagina.slice(
+      pagina.indexOf('<p className="f-cr">'),
+      pagina.indexOf('data-testid="onthaal-beheer"'),
+    );
+    expect(regel).toContain("2BQ Consult");
+    expect(regel).toContain("Zandstraat 85");
+  });
+});
