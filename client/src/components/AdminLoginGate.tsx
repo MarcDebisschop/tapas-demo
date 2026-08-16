@@ -5,7 +5,7 @@
 // in de broncode, want alles wat hier staat, staat in de browser van elke
 // bezoeker.
 
-import { useState, createContext, useContext } from "react";
+import { useState, useEffect, createContext, useContext } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getQueryFn, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { AppHeader } from "@/components/Brand";
 import { ShieldCheck, LogIn, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { neemOpnieuwVlagNu } from "@/lib/opnieuw-aanmelden";
 
 // ---------------------------------------------------------------------------
 // Context
@@ -60,6 +61,33 @@ export function AdminLoginGate({ children }: Props) {
   const [wachtwoord, setWachtwoord] = useState("");
   const [bezig, setBezig] = useState(false);
 
+  // Komt de bezoeker van de publieke pagina, dan wordt een lopende aanmelding
+  // eerst beeindigd. Zo staat de poort er werkelijk, ook voor wie eerder op de
+  // dag al binnen was.
+  // De vlag wordt bij het eerste beeld gelezen en meteen weggehaald, zodat de
+  // poort precies een keer afmeldt en niet bij elke herteking opnieuw.
+  const [opnieuw] = useState(() => neemOpnieuwVlagNu());
+  const [afmeldenBezig, setAfmeldenBezig] = useState(opnieuw);
+
+  useEffect(() => {
+    if (!opnieuw) return;
+    let gestopt = false;
+    void (async () => {
+      try {
+        await apiRequest("POST", "/api/admin/logout", {});
+      } catch {
+        /* geen lopende aanmelding: dan valt er ook niets af te melden */
+      }
+      await qc.invalidateQueries({ queryKey: ["/api/admin/me"] });
+      if (!gestopt) setAfmeldenBezig(false);
+    })();
+    return () => {
+      gestopt = true;
+    };
+    // Bewust een keer bij het openen van de poort.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opnieuw]);
+
   async function inloggen(e: React.FormEvent) {
     e.preventDefault();
     // Beide velden zijn verplicht. Niets invullen levert geen aanmelding op.
@@ -90,8 +118,8 @@ export function AdminLoginGate({ children }: Props) {
     await qc.invalidateQueries({ queryKey: ["/api/admin/me"] });
   }
 
-  // Sessie laden
-  if (isLoading) {
+  // Sessie laden, of de lopende aanmelding aan het beeindigen
+  if (isLoading || afmeldenBezig) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-background">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />

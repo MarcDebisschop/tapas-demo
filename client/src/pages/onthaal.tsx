@@ -26,6 +26,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { useTheme } from "@/components/ThemeProvider";
 import "./onthaal.css";
+import { vraagOpnieuwAanmeldenNu } from "@/lib/opnieuw-aanmelden";
 
 /** De keuzelijst in het formulier. Waarde en tekst blijven gelijk. */
 const ROLLEN = [
@@ -908,6 +909,7 @@ export default function Onthaal() {
             <Link
               href="/admin"
               data-testid="onthaal-beheer"
+              onClick={() => vraagOpnieuwAanmeldenNu()}
               style={{ textDecoration: "underline dotted", textUnderlineOffset: "3px" }}
             >
               Beheer

@@ -92,8 +92,12 @@ describe("B. De component", () => {
   );
 
   it("vraagt de regel en stopt wanneer die nee zegt", () => {
+    // De regel wordt nu bij elke wissel van het adres opnieuw beoordeeld, omdat
+    // de schakelaar buiten de router gemonteerd staat en anders niet meetekent
+    // wanneer je binnen de toepassing van pagina wisselt.
     expect(bron).toMatch(/import \{ schakelaarZichtbaarNu \} from "@\/lib\/schakelaar-zichtbaar"/);
-    expect(bron).toMatch(/if \(!schakelaarZichtbaarNu\(\)\) return null;/);
+    expect(bron).toMatch(/useMemo\(\(\) => schakelaarZichtbaarNu\(\), \[adres\]\)/);
+    expect(bron).toMatch(/if \(!zichtbaar\) return null;/);
   });
 
   it("doet dat vóór er iets wordt getekend", () => {

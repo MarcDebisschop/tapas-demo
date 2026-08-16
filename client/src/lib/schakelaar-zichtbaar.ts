@@ -6,7 +6,13 @@
 // niets van te merken. Wie de belevingslaag bewust opzoekt, moet er wel bij
 // kunnen zonder telkens een parameter te moeten meesleuren.
 //
-// De regel
+// De regel geldt alleen op de onthaalpagina zelf. Dat is de enige plaats waar
+// een onbekende bezoeker binnenkomt. Overal daarbuiten, en dus ook op de
+// platformpagina, blijft de schakelaar gewoon staan zoals voorheen: wie daar
+// terechtkomt, heeft de weg er bewust naartoe genomen en heeft het instrument
+// nodig.
+//
+// De regel op de onthaalpagina
 //   1. Staat ?schakelaar=1 in de URL, dan komt de schakelaar tevoorschijn en
 //      blijft hij zichtbaar (de keuze wordt bewaard).
 //   2. Staat ?schakelaar=0 in de URL, dan verdwijnt hij weer, ook later.
@@ -49,6 +55,19 @@ export function browserOpslag(): Opslag {
 }
 
 /**
+ * Is dit de onthaalpagina, de publieke voordeur?
+ *
+ * De toepassing gebruikt een hash-router, dus het pad binnen de toepassing
+ * staat achter het hekje. Zonder hekje kijken we naar het gewone pad.
+ */
+export function isOnthaalpagina(hash: string, pad: string): boolean {
+  const naHekje = (hash || "").replace(/^#/, "").split("?")[0];
+  const binnenpad = naHekje !== "" ? naHekje : pad || "/";
+  const genormaliseerd = binnenpad.replace(/\/+$/, "");
+  return genormaliseerd === "" || genormaliseerd === "/";
+}
+
+/**
  * Beslist of de belevingsschakelaar zichtbaar mag zijn.
  *
  * @param zoekreeks De querystring van de pagina, met of zonder vraagteken.
@@ -83,5 +102,7 @@ export function schakelaarZichtbaar(zoekreeks: string, opslag: Opslag): boolean 
 /** Gemaksfunctie voor de component: leest de echte URL en de echte opslag. */
 export function schakelaarZichtbaarNu(): boolean {
   if (typeof window === "undefined") return false;
+  // Buiten de onthaalpagina staat de schakelaar er gewoon, zoals altijd.
+  if (!isOnthaalpagina(window.location.hash, window.location.pathname)) return true;
   return schakelaarZichtbaar(window.location.search, browserOpslag());
 }
