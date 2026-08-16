@@ -1,9 +1,9 @@
-// AdminLoginGate — beschermt alle admin-pagina's.
-// Server checkt e-mailadres (sessie-gebaseerd). Wachtwoord wordt meegestuurd
-// voor de UX maar niet geverifieerd in de DB — demo-versie.
-// Demo-modus: velden starten LEEG zodat de browser ze niet blokkeert met
-// native form-validation. Bij submit worden de demo-credentials ingevuld
-// als de velden nog leeg zijn — zo werkt de knop altijd correct.
+// AdminLoginGate: beschermt alle admin-pagina's.
+// De server toetst e-mailadres EN wachtwoord (server/routes/admin.ts). Deze
+// poort vult niets voor de gebruiker in. Een leeg veld betekent dus geen
+// aanmelding: de knop blijft dan uit. Er staan hier bewust geen inloggegevens
+// in de broncode, want alles wat hier staat, staat in de browser van elke
+// bezoeker.
 
 import { useState, createContext, useContext } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -14,7 +14,6 @@ import { Label } from "@/components/ui/label";
 import { AppHeader } from "@/components/Brand";
 import { ShieldCheck, LogIn, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { DEMO_MODE } from "@/lib/demoMode";
 
 // ---------------------------------------------------------------------------
 // Context
@@ -57,24 +56,18 @@ export function AdminLoginGate({ children }: Props) {
     retry: false,
   });
 
-  // Velden starten leeg. De demo-credentials worden bij submit meegegeven
-  // als de velden leeg zijn. Ze worden als object bewaard zodat Vite/Rollup
-  // ze niet kan elimineren via constant-folding bij DEMO_MODE=true.
-  const demoCreds = { e: "marc@tapascity.com", w: "Tintinenco01" };
-
   const [email, setEmail] = useState("");
   const [wachtwoord, setWachtwoord] = useState("");
   const [bezig, setBezig] = useState(false);
 
   async function inloggen(e: React.FormEvent) {
     e.preventDefault();
-    // Gebruik de ingevulde waarden; als leeg → demo-veilige fallback.
-    const stuurEmail    = email.trim()  !== "" ? email.trim()  : demoCreds.e;
-    const stuurWachtwoord = wachtwoord  !== "" ? wachtwoord    : demoCreds.w;
-    if (!stuurEmail) return;
+    // Beide velden zijn verplicht. Niets invullen levert geen aanmelding op.
+    const stuurEmail = email.trim();
+    const stuurWachtwoord = wachtwoord;
+    if (!stuurEmail || !stuurWachtwoord) return;
     setBezig(true);
     try {
-      // Wachtwoord wordt meegestuurd voor de UX; server checkt enkel e-mail.
       await apiRequest("POST", "/api/admin/login", {
         email: stuurEmail,
         wachtwoord: stuurWachtwoord,
@@ -122,11 +115,6 @@ export function AdminLoginGate({ children }: Props) {
               <p className="text-sm text-muted-foreground">
                 Log in met je beheerdersaccount om verder te gaan.
               </p>
-              {DEMO_MODE && (
-                <p className="rounded-md bg-accent/10 px-3 py-1.5 text-xs text-accent">
-                  Demo: klik op Inloggen om verder te gaan
-                </p>
-              )}
             </div>
 
             <form onSubmit={inloggen} className="flex flex-col gap-4">
@@ -138,7 +126,7 @@ export function AdminLoginGate({ children }: Props) {
                   autoComplete="email"
                   value={email}
                   onChange={(ev) => setEmail(ev.target.value)}
-                  placeholder={DEMO_MODE ? "marc@tapascity.com" : "jij@tapascity.com"}
+                  placeholder="jij@tapascity.com"
                   data-testid="input-admin-email"
                 />
               </div>
@@ -150,13 +138,13 @@ export function AdminLoginGate({ children }: Props) {
                   autoComplete="current-password"
                   value={wachtwoord}
                   onChange={(ev) => setWachtwoord(ev.target.value)}
-                  placeholder={DEMO_MODE ? "••••••••••••" : "••••••••"}
+                  placeholder="••••••••"
                   data-testid="input-admin-wachtwoord"
                 />
               </div>
               <Button
                 type="submit"
-                disabled={bezig}
+                disabled={bezig || email.trim() === "" || wachtwoord === ""}
                 className="mt-2 w-full"
                 data-testid="button-admin-login"
               >

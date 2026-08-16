@@ -47,23 +47,27 @@ export function registerAdminRoutes(app: Express): void {
     if (!beheerder || !beheerder.actief) {
       return res.status(401).json({ message: "E-mailadres of wachtwoord onjuist." });
     }
-    // ADDITIEF: in de definitieve modus is een geldig wachtwoord verplicht.
-    // In demo-modus wordt deze controle overgeslagen (bestaand gedrag).
-    if (!DEMO_MODE) {
+    // Heeft dit account een wachtwoord, dan wordt dat wachtwoord ALTIJD
+    // gevraagd, ook in demo-modus. De beheeromgeving stond anders open voor
+    // iedereen die een geldig e-mailadres kende, want de demo-modus sloeg de
+    // controle over. Een demo mag schermen tonen, geen sloten openzetten.
+    if (beheerder.wachtwoordHash) {
       if (!wachtwoord) {
         return res.status(401).json({ message: "E-mailadres of wachtwoord onjuist." });
-      }
-      if (!beheerder.wachtwoordHash) {
-        // Geen wachtwoord ingesteld voor dit account in de definitieve modus.
-        return res.status(403).json({
-          message:
-            "Voor dit account is nog geen wachtwoord ingesteld. Neem contact op met de hoofdbeheerder.",
-        });
       }
       const geldig = await verifieerWachtwoord(String(wachtwoord), beheerder.wachtwoordHash);
       if (!geldig) {
         return res.status(401).json({ message: "E-mailadres of wachtwoord onjuist." });
       }
+    } else if (!DEMO_MODE) {
+      // Geen wachtwoord ingesteld voor dit account in de definitieve modus.
+      if (!wachtwoord) {
+        return res.status(401).json({ message: "E-mailadres of wachtwoord onjuist." });
+      }
+      return res.status(403).json({
+        message:
+          "Voor dit account is nog geen wachtwoord ingesteld. Neem contact op met de hoofdbeheerder.",
+      });
     }
     // H-1 (audit): sessie-id vernieuwen vóór het zetten van de identiteit
     // (bescherming tegen session fixation).

@@ -1,8 +1,9 @@
 // ---------------------------------------------------------------------------
-// CoachLoginGate — beschermt het practitioner-dashboard.
+// CoachLoginGate: beschermt het practitioner-dashboard.
 // Aparte coach-sessie (coachId) volledig los van de admin-sessie.
-// Demo-modus: zelfde demoCreds als AdminLoginGate zodat Marc direct kan
-// inloggen. Gewone coaches loggen in met hun eigen e-mailadres.
+// Deze poort vult niets in voor de gebruiker. Er staan hier geen inloggegevens
+// in de code, want alles wat hier staat, staat in de browser van elke bezoeker.
+// Iedere coach meldt zich aan met het eigen e-mailadres en wachtwoord.
 // ---------------------------------------------------------------------------
 
 import { useState, createContext, useContext } from "react";
@@ -14,7 +15,6 @@ import { Label } from "@/components/ui/label";
 import { AppHeader } from "@/components/Brand";
 import { BookOpen, LogIn, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { DEMO_MODE } from "@/lib/demoMode";
 
 // ---------------------------------------------------------------------------
 // Context
@@ -56,16 +56,17 @@ export function CoachLoginGate({ children }: Props) {
     retry: false,
   });
 
-  const demoCreds = { e: "marc@tapascity.com", w: "Tintinenco01" };
   const [email, setEmail] = useState("");
   const [wachtwoord, setWachtwoord] = useState("");
   const [bezig, setBezig] = useState(false);
 
   async function inloggen(e: React.FormEvent) {
     e.preventDefault();
-    const stuurEmail = email.trim() !== "" ? email.trim() : demoCreds.e;
-    const stuurWachtwoord = wachtwoord !== "" ? wachtwoord : demoCreds.w;
-    if (!stuurEmail) return;
+    // Beide velden zijn verplicht. De poort vult niets in voor de gebruiker:
+    // wat hier zou staan, staat in de browser van elke bezoeker.
+    const stuurEmail = email.trim();
+    const stuurWachtwoord = wachtwoord;
+    if (!stuurEmail || !stuurWachtwoord) return;
     setBezig(true);
     try {
       await apiRequest("POST", "/api/coach/login", {
@@ -111,11 +112,6 @@ export function CoachLoginGate({ children }: Props) {
               <p className="text-sm text-muted-foreground">
                 Log in met je coach-account om toegang te krijgen tot je persoonlijke dashboard.
               </p>
-              {DEMO_MODE && (
-                <p className="rounded-md bg-accent/10 px-3 py-1.5 text-xs text-accent">
-                  Demo: klik op Inloggen om verder te gaan
-                </p>
-              )}
             </div>
 
             <form onSubmit={inloggen} className="flex flex-col gap-4">
@@ -127,7 +123,7 @@ export function CoachLoginGate({ children }: Props) {
                   autoComplete="email"
                   value={email}
                   onChange={(ev) => setEmail(ev.target.value)}
-                  placeholder={DEMO_MODE ? "marc@tapascity.com" : "coach@example.com"}
+                  placeholder="coach@example.com"
                   data-testid="input-coach-email"
                 />
               </div>
@@ -145,7 +141,7 @@ export function CoachLoginGate({ children }: Props) {
               </div>
               <Button
                 type="submit"
-                disabled={bezig}
+                disabled={bezig || email.trim() === "" || wachtwoord === ""}
                 className="mt-2 w-full"
                 data-testid="button-coach-login"
               >

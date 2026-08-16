@@ -1,10 +1,11 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Moon, Sun } from "lucide-react";
 import { DEMO_MODE } from "@/lib/demoMode";
 import { PRODUCT_NAAM } from "@/lib/features";
 import { useTheme } from "./ThemeProvider";
 import { useOrganisatieMij } from "@/lib/organisatie-branding";
 import { headerTitel } from "@shared/branding";
+import { merkBestemming } from "@/lib/merkbestemming";
 
 export function Logo({ className = "" }: { className?: string }) {
   return (
@@ -37,6 +38,11 @@ export function Logo({ className = "" }: { className?: string }) {
 
 export function AppHeader({ right }: { right?: React.ReactNode }) {
   const { theme, toggle } = useTheme();
+  // Binnen een afgeschermde omgeving blijft de merknaam binnen die omgeving.
+  // Zonder deze regel zette ze een ingelogde beheerder op de publieke
+  // onthaalpagina.
+  const [pad] = useLocation();
+  const bestemming = merkBestemming(pad);
   // De organisatie van de sessie, indien er een is. Null voor de prior en voor
   // iedereen zonder organisatiesessie; dan blijft de header ongewijzigd.
   const { data: mij } = useOrganisatieMij();
@@ -51,7 +57,7 @@ export function AppHeader({ right }: { right?: React.ReactNode }) {
     )}
     <header className="border-b border-border bg-card">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
-        <Link href="/">
+        <Link href={bestemming}>
           <a className="flex items-center gap-2 text-primary" data-testid="link-home">
             {/* Het eigen logo van de organisatie vervangt de kompasroos. Nooit
                 het Earhart-vliegtuig: dat is het merkteken van TaPasCity. */}
