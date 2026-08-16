@@ -93,18 +93,23 @@ describe("C. De server vraagt het wachtwoord altijd", () => {
   });
 });
 
-describe("D. De merknaam in de kopbalk blijft binnen de omgeving", () => {
-  it("brengt je binnen het beheer naar het beheeroverzicht", () => {
-    expect(merkBestemming("/admin")).toBe("/admin");
-    expect(merkBestemming("/admin/credits")).toBe("/admin");
-    expect(merkBestemming("/admin/bekwaamheid/rondes")).toBe("/admin");
+describe("D. De merknaam in de kopbalk is de weg terug naar het platform", () => {
+  it("brengt je vanuit het beheer naar de platformpagina", () => {
+    expect(merkBestemming("/admin")).toBe("/platform");
+    expect(merkBestemming("/admin/credits")).toBe("/platform");
+    expect(merkBestemming("/admin/bekwaamheid/rondes")).toBe("/platform");
   });
 
   it("doet hetzelfde voor de andere afgeschermde omgevingen", () => {
-    expect(merkBestemming("/coach")).toBe("/coach");
-    expect(merkBestemming("/coach/dashboard")).toBe("/coach");
-    expect(merkBestemming("/organisatie")).toBe("/organisatie");
-    expect(merkBestemming("/t4r/sessie/12")).toBe("/t4r");
+    expect(merkBestemming("/coach")).toBe("/platform");
+    expect(merkBestemming("/coach/dashboard")).toBe("/platform");
+    expect(merkBestemming("/organisatie")).toBe("/platform");
+    expect(merkBestemming("/t4r/sessie/12")).toBe("/platform");
+  });
+
+  it("de platformpagina heeft een eigen adres in de routetabel", () => {
+    const routes = readFileSync("client/src/App.tsx", "utf8");
+    expect(routes).toContain('<Route path="/platform" component={Home} />');
   });
 
   it("brengt je buiten die omgevingen naar de onthaalpagina", () => {

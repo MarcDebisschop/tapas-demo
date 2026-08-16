@@ -116,6 +116,13 @@ function AppRouter() {
           ophoudt. In het volledige belevingsplatform blijft de bestaande
           startpagina staan, met de rondleiding, de werelden en de Lounge. */}
       <Route path="/" component={CORE_MODE ? Onthaal : Home} />
+      {/* De platformpagina met de rondleiding, de werelden en de tegels heeft
+          sinds de onthaalpagina op "/" geen eigen adres meer in Tapas Core.
+          Ze krijgt er hier een, zodat je vanuit een afgeschermde omgeving weer
+          bij het platform zelf uitkomt. Home kent de stand van het platform al
+          (BELEVING uit betekent: geen Academy-tegel, geen Lounge, geen
+          automatische rondleiding), dus er verandert niets aan de pagina. */}
+      <Route path="/platform" component={Home} />
       <Route path="/start" component={Start} />
       <Route path="/deelnemer/:token" component={Deelnemer} />
       <Route path="/mijn" component={Mijn} />
