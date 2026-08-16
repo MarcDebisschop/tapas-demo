@@ -26,6 +26,8 @@
 // koppelstuk, zodat de regel volledig te toetsen valt.
 // ===========================================================================
 
+import { CORE_MODE } from "@/lib/features";
+
 export const SCHAKELAAR_SLEUTEL = "tapas_schakelaar";
 
 /** Minimale opslag: precies wat deze regel nodig heeft. */
@@ -102,6 +104,13 @@ export function schakelaarZichtbaar(zoekreeks: string, opslag: Opslag): boolean 
 /** Gemaksfunctie voor de component: leest de echte URL en de echte opslag. */
 export function schakelaarZichtbaarNu(): boolean {
   if (typeof window === "undefined") return false;
+  // Staat de belevingslaag aan, dan is het adres met het hekje alleen niet de
+  // onthaalpagina maar de startpagina met de poorten. De bezoekersregel hoort
+  // daar niet te gelden: wie in de belevingslaag zit, moet er ook weer uit
+  // kunnen. Zonder deze uitzondering verdween de schakelaar precies op de plek
+  // waar hij nodig was, en was de weg terug naar Tapas CORE alleen nog met een
+  // parameter in het adres te vinden.
+  if (!CORE_MODE) return true;
   // Buiten de onthaalpagina staat de schakelaar er gewoon, zoals altijd.
   if (!isOnthaalpagina(window.location.hash, window.location.pathname)) return true;
   return schakelaarZichtbaar(window.location.search, browserOpslag());

@@ -178,6 +178,18 @@ describe("E. De schakelaar blijft buiten de onthaalpagina", () => {
     expect(schakelaar).toContain("useMemo(() => schakelaarZichtbaarNu(), [adres])");
   });
 
+  it("in de belevingslaag blijft de schakelaar bereikbaar", () => {
+    // Staat de belevingslaag aan, dan staat op het adres met het hekje niet de
+    // onthaalpagina maar de startpagina met de poorten. Zou de bezoekersregel
+    // daar gelden, dan verdween de schakelaar precies waar hij nodig is en was
+    // de weg terug naar Tapas CORE alleen nog met een parameter te vinden.
+    expect(regel).toContain('import { CORE_MODE } from "@/lib/features"');
+    expect(regel).toContain("if (!CORE_MODE) return true;");
+    expect(regel.indexOf("if (!CORE_MODE) return true;")).toBeLessThan(
+      regel.indexOf("if (!isOnthaalpagina(window.location.hash"),
+    );
+  });
+
   it("de component houdt zich nog aan de regel", () => {
     expect(schakelaar).toContain("if (!zichtbaar) return null;");
   });
