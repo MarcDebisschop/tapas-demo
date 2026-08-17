@@ -1070,3 +1070,36 @@ export const magicLinkAanvraagSchema = z.object({
   respondentCode: z.string().optional(),
 });
 export type MagicLinkAanvraag = z.infer<typeof magicLinkAanvraagSchema>;
+
+// ---------------------------------------------------------------------------
+// Verzendlogboek van uitgaande e-mail (tabel mail_verzendlog, migratie 0009)
+//
+// Eén regel per verzendpoging, zodat achteraf vast te stellen is of een bericht
+// werkelijk vertrok en over welk kanaal. De reden staat in het migratiebestand:
+// de stand van een verzending werd tot nu nergens bewaard, waardoor een klacht
+// over een niet aangekomen uitnodiging niet na te trekken was.
+//
+// De persoonlijke link en de berichttekst staan hier bewust NIET in. Een link is
+// een sleutel tot de gegevens van een deelnemer; een verzendlogboek moet kunnen
+// aantonen dat er verstuurd is, niet wat er in stond.
+// ---------------------------------------------------------------------------
+export const mailVerzendlog = sqliteTable("mail_verzendlog", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  /** ISO-tijdstip van de poging. */
+  tijdstip: text("tijdstip").notNull(),
+  soort: text("soort", {
+    enum: ["uitnodiging", "toegangsmail", "aanmeldlink", "bericht"],
+  }).notNull(),
+  ontvanger: text("ontvanger").notNull(),
+  afzender: text("afzender").notNull(),
+  onderwerp: text("onderwerp").notNull().default(""),
+  status: text("status", { enum: ["verstuurd", "gesimuleerd", "fout"] }).notNull(),
+  /** De weg naar buiten op het moment van de poging. */
+  kanaal: text("kanaal", { enum: ["brevo-api", "smtp", "geen"] }).notNull(),
+  /** Foutmelding van de leverancier, of het berichtkenmerk bij een geslaagde verzending. */
+  melding: text("melding"),
+  taal: text("taal"),
+  /** Leesbare naam van het instrument, enkel bij een uitnodiging of toegangsmail. */
+  instrument: text("instrument"),
+});
+export type MailVerzendregel = typeof mailVerzendlog.$inferSelect;

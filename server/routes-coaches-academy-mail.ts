@@ -16,6 +16,7 @@ import type { Request, Response } from "express";
 import { sqlite as sqliteInstance } from "./storage";
 import { vereisScope, scopeVanVerzoek } from "./scope-guard";
 import { existsSync, createReadStream } from "node:fs";
+import { leesVerzendlog } from "./bulk-import/verzendlog";
 import { join } from "node:path";
 
 // Helperfunctie: haal de sqlite-instantie op
@@ -1099,6 +1100,33 @@ export function registerCoachesAcademyMailRoutes(app: Express, db: any, storage:
     // Sla op als JSON in organisaties tabel mail_huisstijl kolom (indien aanwezig)
     // Voor nu: simpele bevestiging
     return res.json({ ok: true });
+  });
+
+  // -------------------------------------------------------------------------
+  // GET /api/admin/mailverzendlog: het blijvende verzendlogboek uitlezen
+  //
+  // Waarom deze route bestaat: de stand van een verzending was tot nu enkel te
+  // zien in het antwoord van de route die de mail aanstootte. Sloot je dat
+  // scherm, dan was het spoor weg. Nu bewaart de verzendmodule elke poging en
+  // leest dit eindpunt die terug, jongste regel eerst.
+  //
+  // De filters worden niet hier gecontroleerd maar in leesVerzendlog: die
+  // functie laat alleen bekende waarden door en zet de rest naast zich neer.
+  // Achter dezelfde admin-drempel als de andere mailroutes.
+  // -------------------------------------------------------------------------
+  app.get("/api/admin/mailverzendlog", (req, res) => {
+    if (!requireAdmin(req, res)) return;
+    try {
+      const uitkomst = leesVerzendlog({
+        status: typeof req.query.status === "string" ? req.query.status : null,
+        soort: typeof req.query.soort === "string" ? req.query.soort : null,
+        zoek: typeof req.query.zoek === "string" ? req.query.zoek : null,
+        limiet: typeof req.query.limiet === "string" ? Number(req.query.limiet) : null,
+      });
+      return res.json(uitkomst);
+    } catch (e) {
+      return res.status(500).json({ error: "Ophalen mislukt." });
+    }
   });
 }
 

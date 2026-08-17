@@ -65,6 +65,11 @@ export const REEDS_TOEGEPAST: Record<string, (db: BetterSqlite3.Database) => boo
   // CHECK-tekst: de kolom is wat de rest van de module nodig heeft, en een
   // kolomtoets blijft kloppen als een latere migratie de CHECK aanscherpt.
   "0008_itemblokken": (db) => kolomBestaat(db, "bekwaamheid_items", "blok"),
+  // 0009 is strikt additief: één nieuwe tabel en drie indexen, alles met
+  // IF NOT EXISTS. Ze verdraagt dus een tweede loop. De toets staat er om
+  // dezelfde reden als bij 0006: een uitdrukkelijke registerregel is duidelijker
+  // dan een migratie die stil opnieuw over de databank gaat.
+  "0009_mailverzendlog": (db) => tabelBestaat(db, "mail_verzendlog"),
 };
 
 export function tabelBestaat(db: BetterSqlite3.Database, naam: string): boolean {

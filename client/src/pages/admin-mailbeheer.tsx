@@ -213,6 +213,212 @@ function TabWhitelabel({ organisaties, labels, onToast }: {
 }
 
 // -----------------------------------------------------------------------
+// Verzendlogboek
+//
+// Waarom dit tabblad bestaat. De stand van een verzending (verstuurd,
+// gesimuleerd, fout) was tot nu enkel te zien in het antwoord van de route die
+// de mail aanstootte. Sloot je dat scherm, dan was het spoor weg. Toen een
+// deelnemer meldde dat een uitnodiging niet aankwam, was achteraf niet vast te
+// stellen of het bericht ooit vertrokken was. De verzendmodule bewaart nu elke
+// poging en dit tabblad leest die terug, jongste regel eerst.
+//
+// Wat er niet in staat: de persoonlijke link en de berichttekst. Wie het logboek
+// mag lezen, hoort daarmee geen deelnemersdeur te kunnen openen.
+// -----------------------------------------------------------------------
+function TabVerzendlog({ n }: { n: (s: any) => string }) {
+  const [status, setStatus] = useState("alles");
+  const [soort, setSoort] = useState("alles");
+  const [zoek, setZoek] = useState("");
+  const [zoekActief, setZoekActief] = useState("");
+
+  const vraag = new URLSearchParams();
+  if (status !== "alles") vraag.set("status", status);
+  if (soort !== "alles") vraag.set("soort", soort);
+  if (zoekActief.trim()) vraag.set("zoek", zoekActief.trim());
+  const sleutel = `/api/admin/mailverzendlog${vraag.toString() ? `?${vraag.toString()}` : ""}`;
+
+  const { data, isLoading, refetch } = useQuery<any>({ queryKey: [sleutel] });
+
+  const statusLabel = (s: string) =>
+    s === "verstuurd"
+      ? n("mailverzendlog_status_verstuurd")
+      : s === "gesimuleerd"
+        ? n("mailverzendlog_status_gesimuleerd")
+        : n("mailverzendlog_status_fout");
+
+  const soortLabel = (s: string) =>
+    s === "uitnodiging"
+      ? n("mailverzendlog_soort_uitnodiging")
+      : s === "toegangsmail"
+        ? n("mailverzendlog_soort_toegangsmail")
+        : s === "aanmeldlink"
+          ? n("mailverzendlog_soort_aanmeldlink")
+          : n("mailverzendlog_soort_bericht");
+
+  const kanaalLabel = (k: string) =>
+    k === "brevo-api"
+      ? n("mailverzendlog_kanaal_brevo")
+      : k === "smtp"
+        ? n("mailverzendlog_kanaal_smtp")
+        : n("mailverzendlog_kanaal_geen");
+
+  // De stand bepaalt de kleur van het merkteken. Naast de kleur staat altijd het
+  // woord zelf, want kleur alleen is voor een deel van de lezers geen informatie.
+  const standKleur = (s: string) =>
+    s === "verstuurd"
+      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+      : s === "gesimuleerd"
+        ? "bg-amber-500/15 text-amber-700 dark:text-amber-300"
+        : "bg-red-500/15 text-red-700 dark:text-red-300";
+
+  const regels: any[] = data?.regels ?? [];
+  const telling = data?.telling ?? { verstuurd: 0, gesimuleerd: 0, fout: 0 };
+
+  return (
+    <div className="space-y-4" data-testid="paneel-verzendlog">
+      <p className="text-sm text-muted-foreground">{n("mailverzendlog_uitleg")}</p>
+
+      <div className="flex flex-wrap items-center gap-3 text-sm">
+        <span className="text-muted-foreground">
+          {n("mailverzendlog_kanaal_nu")}: <span className="font-medium text-foreground">{kanaalLabel(data?.kanaal ?? "geen")}</span>
+        </span>
+        <span className="text-muted-foreground" data-testid="tekst-verzendlog-telling">
+          {statusLabel("verstuurd")} {telling.verstuurd} / {statusLabel("gesimuleerd")} {telling.gesimuleerd} / {statusLabel("fout")} {telling.fout}
+        </span>
+      </div>
+
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs">{n("mailverzendlog_kol_status")}</Label>
+          <Select value={status} onValueChange={setStatus}>
+            <SelectTrigger className="h-9 w-44" data-testid="select-verzendlog-status">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="alles">{n("mailverzendlog_alles")}</SelectItem>
+              <SelectItem value="verstuurd">{statusLabel("verstuurd")}</SelectItem>
+              <SelectItem value="gesimuleerd">{statusLabel("gesimuleerd")}</SelectItem>
+              <SelectItem value="fout">{statusLabel("fout")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">{n("mailverzendlog_kol_soort")}</Label>
+          <Select value={soort} onValueChange={setSoort}>
+            <SelectTrigger className="h-9 w-48" data-testid="select-verzendlog-soort">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="alles">{n("mailverzendlog_alles")}</SelectItem>
+              <SelectItem value="uitnodiging">{soortLabel("uitnodiging")}</SelectItem>
+              <SelectItem value="toegangsmail">{soortLabel("toegangsmail")}</SelectItem>
+              <SelectItem value="aanmeldlink">{soortLabel("aanmeldlink")}</SelectItem>
+              <SelectItem value="bericht">{soortLabel("bericht")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs" htmlFor="verzendlog-zoek">{n("mailverzendlog_zoek")}</Label>
+          <Input
+            id="verzendlog-zoek"
+            className="h-9 w-64"
+            value={zoek}
+            onChange={(e) => setZoek(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") setZoekActief(zoek);
+            }}
+            data-testid="input-verzendlog-zoek"
+          />
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            setZoekActief(zoek);
+            refetch();
+          }}
+          data-testid="knop-verzendlog-vernieuw"
+        >
+          {n("mailverzendlog_vernieuw")}
+        </Button>
+      </div>
+
+      {data?.logboekOntbreekt && (
+        <p className="text-sm text-amber-700 dark:text-amber-300" data-testid="tekst-verzendlog-ontbreekt">
+          {n("mailverzendlog_ontbreekt")}
+        </p>
+      )}
+
+      {!isLoading && !data?.logboekOntbreekt && regels.length === 0 && (
+        <p className="text-sm text-muted-foreground" data-testid="tekst-verzendlog-leeg">
+          {n("mailverzendlog_leeg")}
+        </p>
+      )}
+
+      {regels.length > 0 && (
+        <>
+          <p className="text-xs text-muted-foreground">
+            {/* Enkelvoud en meervoud staan als aparte sleutel in de tabel: "1 regels"
+                is fout in elke taal die deze tabel kent. */}
+            {(data?.totaal ?? regels.length) === 1
+              ? n("mailverzendlog_totaal_een")
+              : n("mailverzendlog_totaal").replace("{aantal}", String(data?.totaal ?? regels.length))}
+          </p>
+          <div className="overflow-x-auto rounded-md border border-border">
+            <table className="w-full text-sm" data-testid="tabel-verzendlog">
+              <thead className="bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  <th className="px-2 py-2 font-medium sm:px-3">{n("mailverzendlog_kol_tijdstip")}</th>
+                  <th className="px-2 py-2 font-medium sm:px-3">{n("mailverzendlog_kol_soort")}</th>
+                  <th className="px-2 py-2 font-medium sm:px-3">{n("mailverzendlog_kol_ontvanger")}</th>
+                  {/* Op een smal scherm blijven tijdstip, soort, ontvanger en stand
+                      staan. Onderwerp, kanaal en melding wijken dan, want anders
+                      breekt het adres in onleesbare stukken. Op een breed scherm
+                      staat alles er. */}
+                  <th className="hidden px-3 py-2 font-medium md:table-cell">{n("mailverzendlog_kol_onderwerp")}</th>
+                  <th className="px-2 py-2 font-medium sm:px-3">{n("mailverzendlog_kol_status")}</th>
+                  <th className="hidden px-3 py-2 font-medium sm:table-cell">{n("mailverzendlog_kol_kanaal")}</th>
+                  <th className="hidden px-3 py-2 font-medium lg:table-cell">{n("mailverzendlog_kol_melding")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {regels.map((r) => (
+                  <tr key={r.id} className="border-t border-border align-top" data-testid={`rij-verzendlog-${r.id}`}>
+                    {/* Op een smal scherm staat de dag zonder jaartal, zodat de
+                        stand er nog naast past. Vanaf sm staat het volledige
+                        tijdstip er. */}
+                    <td className="whitespace-nowrap px-2 py-2 tabular-nums text-muted-foreground sm:px-3">
+                      <span className="sm:hidden">
+                        {new Date(r.tijdstip).toLocaleString("nl-BE", { day: "2-digit", month: "2-digit" })}
+                        {" "}
+                        {new Date(r.tijdstip).toLocaleTimeString("nl-BE", { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                      <span className="hidden sm:inline">
+                        {new Date(r.tijdstip).toLocaleString("nl-BE", { dateStyle: "short", timeStyle: "short" })}
+                      </span>
+                    </td>
+                    <td className="px-2 py-2 sm:whitespace-nowrap sm:px-3">{soortLabel(r.soort)}</td>
+                    <td className="px-2 py-2 break-all sm:px-3 md:whitespace-nowrap md:break-normal">{r.ontvanger}</td>
+                    <td className="hidden max-w-[22rem] px-3 py-2 text-muted-foreground md:table-cell">{r.onderwerp}</td>
+                    <td className="whitespace-nowrap px-2 py-2 sm:px-3">
+                      <span className={`rounded px-2 py-0.5 text-xs font-medium ${standKleur(r.status)}`}>
+                        {statusLabel(r.status)}
+                      </span>
+                    </td>
+                    <td className="hidden whitespace-nowrap px-3 py-2 text-muted-foreground sm:table-cell">{kanaalLabel(r.kanaal)}</td>
+                    <td className="hidden max-w-[20rem] px-3 py-2 text-xs text-muted-foreground break-words lg:table-cell">{r.melding ?? ""}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// -----------------------------------------------------------------------
 // Hoofdcomponent — gereconstrueerd uit u8e() in bundle
 // -----------------------------------------------------------------------
 export default function AdminMailbeheer() {
@@ -255,6 +461,7 @@ export default function AdminMailbeheer() {
             <TabsTrigger value="teksten" data-testid="tab-teksten">{n("mailbeheer_tab_teksten")}</TabsTrigger>
             <TabsTrigger value="huisstijl" data-testid="tab-huisstijl">{n("mailbeheer_tab_huisstijl")}</TabsTrigger>
             <TabsTrigger value="whitelabel" data-testid="tab-whitelabel">{n("mailbeheer_tab_whitelabel")}</TabsTrigger>
+            <TabsTrigger value="verzendlog" data-testid="tab-verzendlog">{n("mailbeheer_tab_verzendlog")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="teksten" className="mt-4">
@@ -319,6 +526,10 @@ export default function AdminMailbeheer() {
               }}
               onToast={() => toast({ description: n("mailbeheer_bewaard") })}
             />
+          </TabsContent>
+
+          <TabsContent value="verzendlog" className="mt-4">
+            <TabVerzendlog n={n} />
           </TabsContent>
         </Tabs>
       </main>

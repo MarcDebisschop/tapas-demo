@@ -200,8 +200,10 @@ describe("De migratieloper op een databank die al gevuld is", () => {
       "0006_bekwaamheid",
       "0007_beslisuitkomsten",
       "0008_itemblokken",
+      "0009_mailverzendlog",
     ]);
     expect(tabelBestaat(db, "traject")).toBe(true);
+    expect(tabelBestaat(db, "mail_verzendlog")).toBe(true);
     expect(kolomBestaat(db, "traject_gebeurtenissen", "vastgelegd_door_persoon_id")).toBe(
       true,
     );

@@ -21,6 +21,7 @@ import nodemailer from "nodemailer";
 import { sqlite } from "../storage";
 import { bouwToegangsmail } from "../toegangsmail";
 import { bouwAanmeldmail } from "../aanmeldmail";
+import { schrijfVerzendregel, type VerzendSoort } from "./verzendlog";
 
 const STANDAARD_AFZENDER = "info@tapascity.com";
 
@@ -128,6 +129,36 @@ function vulTokens(tekst: string, input: MailInput): string {
     .replace(/\{\{\s*instrument\s*\}\}/g, input.instrument);
 }
 
+/**
+ * Legt de uitkomst van een verzendpoging vast in het blijvende logboek en geeft
+ * die uitkomst onveranderd terug.
+ *
+ * Waarom hier en niet in de routes. Elke route die mailt, komt langs een van de
+ * vier functies hieronder. Op deze plaats wordt dus elke poging vastgelegd,
+ * ook een poging uit een route die later bijkomt. Zou de vastlegging per route
+ * gebeuren, dan was de eerste route die het vergeet meteen een gat in het
+ * logboek, en gaten in een logboek merkt niemand.
+ *
+ * De link en de berichttekst gaan bewust niet mee: zie server/bulk-import/verzendlog.ts.
+ */
+function boek(
+  soort: VerzendSoort,
+  meta: { naar: string; from: string; onderwerp: string; taal?: string | null; instrument?: string | null },
+  resultaat: MailResultaat,
+): MailResultaat {
+  schrijfVerzendregel({
+    soort,
+    ontvanger: meta.naar,
+    afzender: meta.from,
+    onderwerp: meta.onderwerp,
+    status: resultaat.status,
+    melding: resultaat.melding ?? null,
+    taal: meta.taal ?? null,
+    instrument: meta.instrument ?? null,
+  });
+  return resultaat;
+}
+
 let transporterCache: nodemailer.Transporter | null = null;
 
 function getTransporter(): nodemailer.Transporter {
@@ -156,27 +187,32 @@ export async function verstuurUitnodiging(input: MailInput): Promise<MailResulta
   const from = afzenderVoor(input.from);
   const subject = vulTokens(onderwerp, input);
   const text = vulTokens(body, input);
+  const meta = { naar: input.naar, from, onderwerp: subject, taal: input.taal, instrument: input.instrument };
 
   // SIMULATIEMODUS: niet echt versturen.
   if (isSimulatiemodus()) {
     console.log(
       `[bulk-import/mailer] SIMULATIE — mail NIET verstuurd. naar=${input.naar} van=${from} onderwerp="${subject}"`,
     );
-    return { status: "gesimuleerd", gesimuleerd: true };
+    return boek("uitnodiging", meta, { status: "gesimuleerd", gesimuleerd: true });
   }
 
   // C3 — Voorkeur: Brevo HTTP-API (werkt op Render free; SMTP is daar geblokkeerd).
   if (brevoApiGeconfigureerd()) {
-    return verstuurViaBrevoApi({ from, naar: input.naar, naam: input.naam, subject, text });
+    return boek(
+      "uitnodiging",
+      meta,
+      await verstuurViaBrevoApi({ from, naar: input.naar, naam: input.naam, subject, text }),
+    );
   }
 
   try {
     await getTransporter().sendMail({ from, to: input.naar, subject, text });
-    return { status: "verstuurd", gesimuleerd: false };
+    return boek("uitnodiging", meta, { status: "verstuurd", gesimuleerd: false });
   } catch (e) {
     const melding = e instanceof Error ? e.message : "Onbekende SMTP-fout";
     console.error(`[bulk-import/mailer] Verzending mislukt naar ${input.naar}: ${melding}`);
-    return { status: "fout", gesimuleerd: false, melding };
+    return boek("uitnodiging", meta, { status: "fout", gesimuleerd: false, melding });
   }
 }
 
@@ -197,31 +233,36 @@ export async function verstuurToegangsmail(input: ToegangsmailVerzending): Promi
     taal: input.taal,
   });
   const from = afzenderVoor(input.from);
+  const meta = { naar: input.naar, from, onderwerp, taal: input.taal, instrument: input.instrument };
 
   if (isSimulatiemodus()) {
     console.log(
       `[mailer] SIMULATIE — toegangsmail NIET verstuurd. naar=${input.naar} van=${from} onderwerp="${onderwerp}"`,
     );
-    return { status: "gesimuleerd", gesimuleerd: true };
+    return boek("toegangsmail", meta, { status: "gesimuleerd", gesimuleerd: true });
   }
 
   if (brevoApiGeconfigureerd()) {
-    return verstuurViaBrevoApi({
-      from,
-      naar: input.naar,
-      naam: input.naam,
-      subject: onderwerp,
-      text: tekst,
-    });
+    return boek(
+      "toegangsmail",
+      meta,
+      await verstuurViaBrevoApi({
+        from,
+        naar: input.naar,
+        naam: input.naam,
+        subject: onderwerp,
+        text: tekst,
+      }),
+    );
   }
 
   try {
     await getTransporter().sendMail({ from, to: input.naar, subject: onderwerp, text: tekst });
-    return { status: "verstuurd", gesimuleerd: false };
+    return boek("toegangsmail", meta, { status: "verstuurd", gesimuleerd: false });
   } catch (e) {
     const melding = e instanceof Error ? e.message : "Onbekende SMTP-fout";
     console.error(`[mailer] Toegangsmail mislukt naar ${input.naar}: ${melding}`);
-    return { status: "fout", gesimuleerd: false, melding };
+    return boek("toegangsmail", meta, { status: "fout", gesimuleerd: false, melding });
   }
 }
 
@@ -245,31 +286,36 @@ export async function verstuurAanmeldlink(input: AanmeldlinkVerzending): Promise
     taal: input.taal,
   });
   const from = afzenderVoor(input.from);
+  const meta = { naar: input.naar, from, onderwerp, taal: input.taal, instrument: null };
 
   if (isSimulatiemodus()) {
     console.log(
       `[mailer] SIMULATIE — aanmeldlink NIET verstuurd. naar=${input.naar} van=${from} onderwerp="${onderwerp}"`,
     );
-    return { status: "gesimuleerd", gesimuleerd: true };
+    return boek("aanmeldlink", meta, { status: "gesimuleerd", gesimuleerd: true });
   }
 
   if (brevoApiGeconfigureerd()) {
-    return verstuurViaBrevoApi({
-      from,
-      naar: input.naar,
-      naam: input.naam,
-      subject: onderwerp,
-      text: tekst,
-    });
+    return boek(
+      "aanmeldlink",
+      meta,
+      await verstuurViaBrevoApi({
+        from,
+        naar: input.naar,
+        naam: input.naam,
+        subject: onderwerp,
+        text: tekst,
+      }),
+    );
   }
 
   try {
     await getTransporter().sendMail({ from, to: input.naar, subject: onderwerp, text: tekst });
-    return { status: "verstuurd", gesimuleerd: false };
+    return boek("aanmeldlink", meta, { status: "verstuurd", gesimuleerd: false });
   } catch (e) {
     const melding = e instanceof Error ? e.message : "Onbekende SMTP-fout";
     console.error(`[mailer] Aanmeldlink mislukt naar ${input.naar}: ${melding}`);
-    return { status: "fout", gesimuleerd: false, melding };
+    return boek("aanmeldlink", meta, { status: "fout", gesimuleerd: false, melding });
   }
 }
 
@@ -363,23 +409,28 @@ export interface BerichtVerzending {
 
 export async function verstuurBericht(input: BerichtVerzending): Promise<MailResultaat> {
   const from = afzenderVoor(input.from);
+  const meta = { naar: input.naar, from, onderwerp: input.onderwerp, taal: null, instrument: null };
 
   if (isSimulatiemodus()) {
     console.log(
       `[mailer] SIMULATIE, bericht NIET verstuurd. naar=${input.naar} van=${from} onderwerp="${input.onderwerp}"`,
     );
-    return { status: "gesimuleerd", gesimuleerd: true };
+    return boek("bericht", meta, { status: "gesimuleerd", gesimuleerd: true });
   }
 
   if (brevoApiGeconfigureerd()) {
-    return verstuurViaBrevoApi({
-      from,
-      naar: input.naar,
-      naam: input.naam,
-      subject: input.onderwerp,
-      text: input.tekst,
-      antwoordNaar: input.antwoordNaar ?? null,
-    });
+    return boek(
+      "bericht",
+      meta,
+      await verstuurViaBrevoApi({
+        from,
+        naar: input.naar,
+        naam: input.naam,
+        subject: input.onderwerp,
+        text: input.tekst,
+        antwoordNaar: input.antwoordNaar ?? null,
+      }),
+    );
   }
 
   try {
@@ -392,10 +443,10 @@ export async function verstuurBericht(input: BerichtVerzending): Promise<MailRes
         ? { replyTo: input.antwoordNaar.trim() }
         : {}),
     });
-    return { status: "verstuurd", gesimuleerd: false };
+    return boek("bericht", meta, { status: "verstuurd", gesimuleerd: false });
   } catch (e) {
     const melding = e instanceof Error ? e.message : "Onbekende SMTP-fout";
     console.error(`[mailer] Bericht mislukt naar ${input.naar}: ${melding}`);
-    return { status: "fout", gesimuleerd: false, melding };
+    return boek("bericht", meta, { status: "fout", gesimuleerd: false, melding });
   }
 }
