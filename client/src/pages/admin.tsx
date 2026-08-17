@@ -35,7 +35,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Afname, OrganisatieMetSaldo } from "@/lib/types";
-import { Copy, Check, Send, UserPlus, Bell, Languages, Settings2, ChartColumn, GraduationCap, Mail, KeyRound, Users, CreditCard, BarChart2, Building2, ArrowRight, Layers, Euro, FileSpreadsheet, Sparkles, Power, MonitorPlay, Palette, Network, LogOut } from "lucide-react";
+import { Copy, Check, Send, UserPlus, Bell, Languages, Settings2, ChartColumn, GraduationCap, Mail, KeyRound, Users, CreditCard, BarChart2, Building2, ArrowRight, Layers, Euro, FileSpreadsheet, Sparkles, Power, MonitorPlay, Palette, Network, LogOut, ShieldCheck } from "lucide-react";
 import { LegeStaat } from "@/components/LegeStaat";
 import {
   TALEN,
@@ -432,6 +432,17 @@ export default function Admin() {
                   <BarChart2 className="h-3.5 w-3.5 shrink-0" /> Kwaliteitsmonitor
                 </a>
               </Link>
+              {/* De bekwaamheidsmodule bestond wel als schermenreeks onder
+                  /admin/bekwaamheid, maar stond in geen enkel menu. Ze was dus
+                  alleen te bereiken door de adreslijn met de hand in te tikken.
+                  Deze regel maakt de reeks vindbaar vanuit het beheerdersplein. */}
+              {isPrior && (
+                <Link href="/admin/bekwaamheid">
+                  <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-bekwaamheid">
+                    <ShieldCheck className="h-3.5 w-3.5 shrink-0" /> Bekwaamheid
+                  </a>
+                </Link>
+              )}
               {isPrior && (
                 <Link href="/admin/vraagbeheer">
                   <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-vraagbeheer">

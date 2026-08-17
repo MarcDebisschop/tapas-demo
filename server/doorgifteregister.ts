@@ -43,13 +43,40 @@ function smtpHost(): string {
 }
 
 /**
- * De mailregel. `SMTP_HOST` bepaalt of er echt verstuurd wordt: ontbreekt hij,
- * dan draait de mailer in simulatiemodus en verlaat er geen enkel gegeven het
- * platform.
+ * Leest de sleutel van de mail-API zoals de mailer ze zelf leest. De mailer in
+ * server/bulk-import/mailer.ts verstuurt langs twee wegen: de API van Brevo
+ * wanneer `BREVO_API_KEY` staat, en anders SMTP wanneer `SMTP_HOST` staat. Het
+ * register keek alleen naar `SMTP_HOST` en meldde daardoor "simulatiemodus"
+ * terwijl er via de API wel gegevens het platform verlieten.
+ */
+function mailApiSleutel(): string {
+  return (process.env.BREVO_API_KEY ?? "").trim();
+}
+
+/**
+ * De mailregel. Ze volgt de twee wegen van de mailer: eerst de mail-API, dan
+ * SMTP. Staat geen van beide, dan draait de mailer in simulatiemodus en verlaat
+ * er geen enkel gegeven het platform.
  */
 export function mailDoorgifteKanaal(): DoorgifteKanaal {
   const host = smtpHost();
-  const actief = host.length > 0;
+  const viaApi = mailApiSleutel().length > 0;
+  const actief = viaApi || host.length > 0;
+  if (viaApi) {
+    return {
+      kanaal: "e-mail",
+      doel: "Uitnodigingen en herinneringen met een persoonlijke deelnemerslink versturen.",
+      gegevens: "Naam, e-mailadres, instrumentnaam en de persoonlijke link.",
+      ontvanger: "Mailleverancier Brevo (api.brevo.com)",
+      land: "Brevo verwerkt binnen de EER; te bevestigen in de doorgiftetoets",
+      actief: true,
+      grondslagVereist:
+        "Verwerkersovereenkomst met de mailleverancier; bij verwerking buiten de EER " +
+        "ook een doorgiftetoets (AVG art. 44 e.v.).",
+      vaststelling:
+        "De mail-API is geconfigureerd: uitnodigingsmails worden effectief verstuurd.",
+    };
+  }
   return {
     kanaal: "e-mail",
     doel: "Uitnodigingen en herinneringen met een persoonlijke deelnemerslink versturen.",
