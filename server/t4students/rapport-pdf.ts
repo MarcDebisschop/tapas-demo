@@ -43,6 +43,7 @@ import {
   type T4SVorm,
 } from "./rapport-contract";
 import { F, registerFonts } from "../hdd/pdf/theme";
+import { COVERFOTO } from "./beeld/coverfoto";
 
 // ── Bladmaat en marges, uit blauwdruk 3.6 ───────────────────────────────────
 const BLAD_B = 595.2756;
@@ -61,7 +62,10 @@ const VOETREGEL = "Een momentopname, geen oordeel of beslissing. · TaPasCity";
 const SCHUIN = 11;
 
 export interface T4SPdfOpties {
-  /** Het pad naar de coverfoto. Ontbreekt die, dan komt er een vlak in de plaats. */
+  /**
+   * Een eigen coverfoto, als pad naar een bestand. Blijft dit leeg, dan komt de
+   * ingebouwde coverfoto op het voorblad (server/t4students/beeld/coverfoto.ts).
+   */
   coverfoto?: string;
 }
 
@@ -857,13 +861,23 @@ function tekenPaginakop(doc: Doc, pagina: T4SPagina, vervolg: boolean): number {
 function tekenCover(doc: Doc, rapport: T4SRapport, pagina: T4SPagina, opties: T4SPdfOpties): void {
   vulRechthoek(doc, 0, 0, BLAD_B, BLAD_H, KLEUR.papier);
   const beeldH = 300;
-  if (opties.coverfoto && existsSync(opties.coverfoto)) {
-    doc.save().rect(0, 0, BLAD_B, beeldH).clip();
-    doc.image(opties.coverfoto, 0, 0, { cover: [BLAD_B, beeldH], align: "center", valign: "center" });
-    doc.restore();
-  } else {
-    vulRechthoek(doc, 0, 0, BLAD_B, beeldH, KLEUR.tealZacht);
+  // Is er een eigen foto meegegeven, dan geldt die; anders de ingebouwde foto.
+  // Het vlak in vlakke tint blijft enkel over als noodrem wanneer het beeld zelf
+  // niet te tekenen valt, zodat een rapport nooit op een cover stukloopt.
+  const beeld: Buffer | string | null =
+    opties.coverfoto && existsSync(opties.coverfoto) ? opties.coverfoto : COVERFOTO;
+  let getekend = false;
+  if (beeld) {
+    try {
+      doc.save().rect(0, 0, BLAD_B, beeldH).clip();
+      doc.image(beeld, 0, 0, { cover: [BLAD_B, beeldH], align: "center", valign: "center" });
+      doc.restore();
+      getekend = true;
+    } catch {
+      doc.restore();
+    }
   }
+  if (!getekend) vulRechthoek(doc, 0, 0, BLAD_B, beeldH, KLEUR.tealZacht);
   vulRechthoek(doc, 0, beeldH, BLAD_B, 6, KLEUR.accent);
 
   let y = beeldH + 76;
