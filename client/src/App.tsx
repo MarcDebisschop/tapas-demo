@@ -14,6 +14,7 @@ import Home from "@/pages/home";
 import Onthaal from "@/pages/onthaal";
 import Start from "@/pages/start";
 import Deel1 from "@/pages/deel1";
+import Studiekompas from "@/pages/studiekompas";
 import Deel2 from "@/pages/deel2";
 import ReisT4Kids from "@/pages/reis-t4kids";
 import ReisT4KidsStart from "@/pages/reis-t4kids-start";
@@ -129,6 +130,10 @@ function AppRouter() {
       <Route path="/dashboard/:token" component={Dashboard} />
       <Route path="/afname/:id/deel1" component={Deel1} />
       <Route path="/afname/:id/deel2" component={Deel2} />
+      {/* Het T4Students Studiekompas heeft zijn eigen invulscherm: de tien
+          itemsoorten van dit instrument passen niet in de blokvorm van deel 1.
+          Zie de kop van client/src/pages/studiekompas.tsx. */}
+      <Route path="/afname/:id/studiekompas" component={Studiekompas} />
       <Route path="/reis/start" component={ReisT4KidsStart} />
       <Route path="/reis/:id" component={ReisT4Kids} />
       <Route path="/afname/:id/t4kids-rapport" component={T4KidsRapport} />

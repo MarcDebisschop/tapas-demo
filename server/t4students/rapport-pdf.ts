@@ -387,7 +387,9 @@ function blokHoogte(doc: Doc, blok: T4SBlok): number {
       for (const r of blok.regels) {
         h += hoogteVan(doc, r.vraag, F.dm, 9.4, TEKST_B - 44, 2.8) + 4;
         if (r.herkenning !== null) {
-          h += hoogteVan(doc, r.herkenning || "", F.dmMed, 8.5, TEKST_B - 124, 1.5) + 3;
+          // Dezelfde tekst als bij het tekenen, inclusief de aanhalingstekens:
+          // anders rekent deze regel met een kortere tekst dan er komt te staan.
+          h += hoogteVan(doc, `\u201C${r.herkenning || ""}\u201D`, F.dmMed, 8.5, TEKST_B - 124, 1.5) + 3;
         }
         if (r.energie) h += 11;
         if (r !== blok.regels[blok.regels.length - 1]) h += 5;
@@ -599,7 +601,13 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
       // invulde (r.herkenning) springt er nu uit als een citaat: schuin
       // gezet en tussen aanhalingstekens, zoals in het referentiebeeld.
       const kopKleur = blok.kleur === KLEUR.oker ? KLEUR.okerDiep : blok.kleur;
-      let h = 30;
+      // De regels beginnen op y + 42 (opschrift, kop, lucht). Die 42 punten
+      // horen dus in de hoogte van het vlak, plus 12 punten onderrand. Stond
+      // hier eerder 30, dan eindigde de laatste antwoordregel tot 14 punten
+      // ONDER het gekleurde vlak; op het blad met de eigen woorden viel de
+      // regel "En dat: ..." daardoor buiten de kaart. De hoogtemeting hierboven
+      // rekende al met 44 punten, dus de bladindeling had de ruimte wel.
+      let h = 42;
       for (const r of blok.regels) {
         h += hoogteVan(doc, r.vraag, F.dm, 9.4, TEKST_B - 44, 2.8) + 4;
         if (r.herkenning !== null) {
@@ -610,7 +618,8 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
       }
       // Opmaak afwerken, punt 3: dezelfde 18 punten lucht tussen de kop en
       // de eerste tekstregel als bij kader en kaartvlak (was 16 punten).
-      vulRechthoek(doc, x, y, TEKST_B, h + 2, KLEUR.okerZacht, 3);
+      const vlakH = h + 12;
+      vulRechthoek(doc, x, y, TEKST_B, vlakH, KLEUR.okerZacht, 3);
       kapitalen(doc, blok.opschrift, x + 16, y + 9, 6.8, kopKleur);
       doc.font(F.dmBold).fontSize(10.5).fillColor(KLEUR.inkt);
       doc.text(blok.kop, x + 16, y + 24, { width: TEKST_B - 32, lineBreak: false });
@@ -640,8 +649,9 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
           yy += 5;
         }
       });
-      // Ingreep 3, punt 4: acht punten extra ademruimte na de kaart.
-      return h + 2 + 18;
+      // Ingreep 3, punt 4: acht punten extra ademruimte na de kaart. De som
+      // blijft gelijk aan de hoogtemeting hierboven (44 + regels + 18).
+      return vlakH + 8;
     }
     case "batterij": {
       const b = 176;

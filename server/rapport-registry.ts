@@ -14,7 +14,12 @@
 // ---------------------------------------------------------------------------
 
 import { bouwRapportInhoud, renderRapportHtml } from "./rapportgenerator";
-import { bouwT4StudentsRapport, renderT4StudentsHtml } from "./t4students/rapport";
+import {
+  bouwRapportUitContract as bouwT4StudentsUitContract,
+  htmlVanRapport as htmlT4Students,
+  pdfVanRapport as pdfT4Students,
+  titelVanRapport as titelT4Students,
+} from "./t4students/rapport-keten";
 import { bouwT4pBusinessProfiel, renderT4pBusinessProfielHtml } from "./t4p/rapport";
 import { bouwT4pBusinessKompas, renderT4pBusinessKompasHtml } from "./t4p/kompas";
 import { bouwT4TeensRapport, renderT4TeensHtml } from "./t4teens/rapport";
@@ -24,14 +29,30 @@ export interface GeneratorEntry {
   // bouw krijgt (contract, variant); niet elke generator gebruikt variant.
   bouw: (contract: any, variant: "kompas" | "coachatlas") => any;
   render: (inhoud: any) => string;
+  /**
+   * Alleen voor instrumenten die hun PDF zelf tekenen in plaats van via HTML.
+   * Staat deze functie er, dan bewaart server/storage.ts de PDF meteen bij het
+   * rapport (kolom pdfBase64) en serveren de downloadroutes die PDF, in plaats
+   * van de HTML-weergave door een browser te laten afdrukken.
+   */
+  pdf?: (inhoud: any) => Promise<Buffer>;
+  /**
+   * De titel in de rapportenlijst, wanneer de inhoud van dit instrument geen
+   * velden titel en respondent.naam draagt.
+   */
+  titel?: (inhoud: any) => string;
 }
 
 // Instrumenten met een eigen, toegewijde generator. Alles wat hier NIET in
 // staat, valt via kiesGenerator terug op de generieke bouwRapportInhoud.
 export const RAPPORT_GENERATORS: Record<string, GeneratorEntry> = {
+  // T4Students studiekompas: de studiekompasmotor met zijn eigen 35 bladen,
+  // door pdfkit getekend. Zie server/t4students/rapport-keten.ts.
   t4students: {
-    bouw: (contract) => bouwT4StudentsRapport(contract),
-    render: (inhoud) => renderT4StudentsHtml(inhoud),
+    bouw: (contract) => bouwT4StudentsUitContract(contract),
+    render: (inhoud) => htmlT4Students(inhoud),
+    pdf: (inhoud) => pdfT4Students(inhoud),
+    titel: (inhoud) => titelT4Students(inhoud),
   },
   // T4P Business Kompas: de gemeten A4-printlayout (24 hoofdstukken, eigen
   // @page-formaat, ingebedde fonts en iconen). De oude webweergave blijft
@@ -81,6 +102,10 @@ export async function genereerRapportPdf(
 ): Promise<Buffer> {
   const gen = kiesGenerator(instrumentId);
   const inhoud = gen.bouw(contract, variant);
+  // Tekent het instrument zijn PDF zelf (pdfkit), dan is dat de echte PDF: de
+  // HTML-weergave door een browser laten afdrukken zou een ander document
+  // opleveren dan het instrument bedoelt.
+  if (gen.pdf) return gen.pdf(inhoud);
   const html = gen.render(inhoud);
   return renderRapportPdf(html, { titel: inhoud?.titel });
 }

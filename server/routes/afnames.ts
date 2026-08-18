@@ -52,7 +52,7 @@ import { controleerAfnameVolledig } from "../volledigheid-afname";
 import { schrijfAuditLog } from "../audit-log";
 import { dashboardCodeVanToken, voornaamVanNaam } from "../dashboard-code";
 import { buildGeneratorContract } from "../scoring";
-import { buildT4StudentsContract } from "../t4students/scoring";
+import { bouwT4StudentsAfnameContract } from "../t4students/afnamecontract";
 import { buildT4TeensContract } from "../t4teens/scoring";
 import { naarItemSleutels } from "../t4teens/antwoordsleutels";
 import { buildT4KidsContract } from "../t4kids/scoring";
@@ -554,22 +554,21 @@ export function registerAfnameRoutes(app: Express): void {
         taal: a.taal,
       });
     } else if (a.instrumentId === "t4students") {
-      // Open reflectie-antwoorden reizen optioneel additief mee in de request.
-      const reflectie =
-        req.body && typeof req.body.reflectie === "object" && req.body.reflectie
-          ? (req.body.reflectie as Record<string, string>)
-          : null;
-      contract = buildT4StudentsContract({
+      // T4Students studiekompas: de eigen scoringsmotor
+      // (server/t4students/kompas-scoring.ts) leest de antwoorden per item-id en
+      // levert het resultaat waaruit de 35 bladen gebouwd worden. Het contract
+      // draagt dat resultaat, de antwoorden en de meta, zodat elke latere lezer
+      // exact hetzelfde rapport ziet. De volledigheidscontrole hierboven heeft
+      // op dat moment al bevestigd dat de antwoorden in de itemvorm van dit
+      // instrument staan.
+      contract = bouwT4StudentsAfnameContract({
         respondentCode: a.respondentCode,
         name: a.name,
-        company: a.company,
-        role: a.role,
+        taal: a.taal,
+        responses,
+        itemTijden,
         consentScope: a.consentScope,
         consentTimestamp: a.consentTimestamp,
-        responses,
-        reflectie,
-        taal: a.taal,
-        itemTijden,
       });
     } else if (a.instrumentId === "t4teens") {
       // T4Teens: eigen itembank + eigen scoringscontract (instrumentId "t4teens"),

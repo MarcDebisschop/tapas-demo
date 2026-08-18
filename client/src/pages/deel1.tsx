@@ -109,6 +109,16 @@ export default function Deel1() {
   // (dat verandert hier niet); enkel de afronding na deel 1 volgt hieronder
   // hetzelfde pad als T4Teens.
   const isT4Students = afname?.instrumentId === "t4students";
+
+  // Het studiekompas heeft sinds het herstel zijn eigen invulscherm. Dit scherm
+  // kan de tien itemsoorten van dat instrument niet tonen en bewaarde antwoorden
+  // onder bloksleutels (B0, B1, ...) terwijl de scoring per item-id leest; dat
+  // leverde een rapport met louter nulwaarden. Elke deelnemerslink die hier
+  // binnenkomt gaat daarom meteen door naar het juiste scherm.
+  useEffect(() => {
+    if (isT4Students) navigate(`/afname/${id}/studiekompas`, { replace: true });
+  }, [isT4Students, id, navigate]);
+
   const instrumentEndpoint = isT4Kids
     ? `/api/vragenlijst/tapas-t4kids?taal=${taal}`
     : isT4Teens

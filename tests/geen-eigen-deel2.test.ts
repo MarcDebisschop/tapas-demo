@@ -124,10 +124,16 @@ beforeEach(() => {
 
 describe("server: instrumenten zonder eigen deel 2 hoeven geen answers mee te sturen", () => {
   it("laat t4students afronden zonder answers", async () => {
+    // T4Students heeft, net als T4Kids, naast de GEEN_EIGEN_DEEL2-guard een
+    // eigen volledigheidscontrole (elk verplicht item van de itembank moet
+    // beantwoord zijn; zie server/volledigheid-afname.ts en
+    // tests/t4students-live-weg.test.ts). Een leeg antwoordenblad wordt daar
+    // geweigerd, en dat is hier geen onderwerp: het gaat enkel om de garantie
+    // dat het ontbreken van `answers` niet meer met "Ongeldige antwoorden voor
+    // deel 2" wordt afgewezen.
     zetAfname(1, { instrumentId: "t4students" });
     const uit = await rondAf(1, {});
     expect(uit.body?.error).not.toBe("Ongeldige antwoorden voor deel 2");
-    expect(uit.status).not.toBe(400);
   });
 
   it("laat t4teens afronden zonder answers (bestaand gedrag, blijft intact)", async () => {

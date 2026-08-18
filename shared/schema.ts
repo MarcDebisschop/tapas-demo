@@ -215,8 +215,41 @@ export const blockResponseSchema = z.object({
   beantwoordOp: z.string().nullable().optional(),
 });
 
+// Eén item-antwoord van het T4Students-studiekompas. Dat instrument bewaart
+// zijn antwoorden niet per blok maar per item-id, in de vorm die de eigen
+// scoringsmotor leest (server/t4students/kompas-scoring.ts: T4SAntwoord).
+// Welke velden gevuld zijn, hangt af van de itemsoort: herkenning met of zonder
+// energie, een interesseschaal, een keuze-optie, een schuif van 0 tot 10, of de
+// vrije tekst van de open beginvraag. Minstens één veld moet gevuld zijn, zodat
+// een leeg of vreemd object niet als antwoord door deze poort glipt.
+export const t4sAntwoordSchema = z
+  .object({
+    recognition: z.number().nullable().optional(),
+    energy: z.number().nullable().optional(),
+    interest: z.number().nullable().optional(),
+    choice: z.string().nullable().optional(),
+    value: z.number().nullable().optional(),
+    text: z.string().nullable().optional(),
+  })
+  .strict()
+  .refine(
+    (a) =>
+      a.recognition != null ||
+      a.energy != null ||
+      a.interest != null ||
+      a.choice != null ||
+      a.value != null ||
+      a.text != null,
+    { message: "Een antwoord moet minstens één waarde dragen." },
+  );
+
 export const submitMainSchema = z.object({
-  responses: z.record(z.string(), blockResponseSchema),
+  // Twee antwoordvormen, elk met een eigen instrument: de blokvorm van het
+  // T4P Business Kompas (en alles wat daarop meelift) en de itemvorm van het
+  // T4Students-studiekompas. De vormen sluiten elkaar uit: een blokantwoord
+  // draagt most, least en itemEnergy, een item-antwoord draagt die velden niet
+  // en wordt door .strict() geweigerd zodra ze er toch in staan.
+  responses: z.record(z.string(), z.union([blockResponseSchema, t4sAntwoordSchema])),
   // Duur per item in milliseconden. Optioneel: zonder deze gegevens verloopt de
   // afname ongewijzigd, alleen zonder kwaliteitsmelding over het tempo.
   tijden: z.record(z.string(), z.number().nonnegative()).optional(),

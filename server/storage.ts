@@ -2573,15 +2573,37 @@ export class DatabaseStorage implements IStorage {
       // stil terugvallen op de statische inhoud/html (fallback naar bouwRapportInhoud)
     }
 
+    // --- Instrumenten die hun PDF zelf tekenen (pdfkit in plaats van HTML).
+    //     De downloadroutes serveren een bewaarde PDF zodra die er is, en laten
+    //     anders een browser de bewaarde HTML afdrukken. Voor een instrument met
+    //     een eigen PDF-tekening zou die tweede weg een ander document opleveren
+    //     dan het instrument bedoelt. Daarom wordt de PDF hier meteen bewaard.
+    //     Mislukt het tekenen, dan gaat het rapport toch door: de HTML blijft
+    //     dan de weergave, met een melding in het logboek. ---
+    let pdfBase64: string | null = null;
+    if (generator.pdf) {
+      try {
+        const buffer = await generator.pdf(inhoud);
+        pdfBase64 = buffer.toString("base64");
+      } catch (e) {
+        console.error("[rapport] PDF tekenen mislukt voor", contract?.instrumentId, e);
+      }
+    }
+
+    const titel = generator.titel
+      ? generator.titel(inhoud)
+      : `${inhoud.titel} — ${inhoud.respondent.naam}`;
+
     const now = new Date().toISOString();
     return db
       .insert(rapporten)
       .values({
         afnameId,
         variant,
-        titel: `${inhoud.titel} — ${inhoud.respondent.naam}`,
+        titel,
         inhoud: JSON.stringify(inhoud),
         html,
+        pdfBase64,
         contractVersie: contract?.contractVersion ?? "1.0.0",
         createdAt: now,
       })

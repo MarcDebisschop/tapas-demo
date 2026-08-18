@@ -29,6 +29,7 @@ import {
   T4KIDS_STELLINGEN,
   T4KIDS_ARCHETYPE_TOP_N,
 } from "./t4kids/itembank";
+import { naarT4SAntwoorden, ontbrekendeItems as ontbrekendeT4SItems } from "./t4students/antwoorden";
 
 /** Uitkomst van de volledigheidscontrole. */
 export type Volledigheid =
@@ -48,10 +49,16 @@ export type Volledigheid =
  *     server/routes/vragenlijst-t4teens.ts. Zolang die twee niet gekoppeld zijn,
  *     zou een controle hier op een lege lijst draaien en dus niets weigeren.
  *     Zie het verslag.
- *   - t4students: het invulscherm wordt in een andere fase gebouwd.
+ *
+ * t4students staat er wel in. Het studiekompas kent zijn vragenset volledig
+ * (server/data/t4students.json) en bewaart antwoorden per item-id. Juist daar
+ * ging het mis: een antwoordenblad in de blokvorm van een ander instrument
+ * kwam ongehinderd binnen en leverde daarna een rapport met nulwaarden. De
+ * controle hieronder sluit dat af bij de bron.
  */
 function kentVerwachteVragenset(instrumentId: string | null | undefined): boolean {
   if (instrumentId === "t4kids") return true;
+  if (instrumentId === "t4students") return true;
   if (!instrumentId) return true; // het standaard-instrument (T4P Business)
   return instrumentId === getDefaultDescriptor().instrumentId;
 }
@@ -82,7 +89,9 @@ export function controleerAfnameVolledig(opties: {
   const ontbreekt =
     opties.instrumentId === "t4kids"
       ? ontbrekendT4Kids(opties.responses, opties.keuzes)
-      : ontbrekendStandaard(opties.responses);
+      : opties.instrumentId === "t4students"
+        ? ontbrekendT4Students(opties.responses)
+        : ontbrekendStandaard(opties.responses);
 
   if (ontbreekt.length === 0) return { volledig: true };
   return {
@@ -103,6 +112,17 @@ function ontbrekendStandaard(
   responses: Record<string, BlokAntwoord> | null | undefined,
 ): string[] {
   return ontbrekendeBlokken(verwachteBlokken(null), responses);
+}
+
+/**
+ * T4Students levert antwoorden per item-id aan, in de vorm die de eigen
+ * scoringsmotor leest. naarT4SAntwoorden() laat alleen sleutels door die een
+ * item van dit instrument zijn; een antwoordenblad in een andere vorm komt er
+ * dus leeg uit en elk item ontbreekt. Zo kan een afname die niet met het
+ * studiekompas is ingevuld, nooit meer afgerond worden.
+ */
+function ontbrekendT4Students(responses: unknown): string[] {
+  return ontbrekendeT4SItems(naarT4SAntwoorden(responses));
 }
 
 /**

@@ -3,7 +3,7 @@ import { T4STUDENTS_INSTRUMENT as I } from "../server/t4students/instrument";
 import { scoreStudiekompas } from "../server/t4students/kompas-scoring";
 import { bouwT4StudentsRapport } from "../server/t4students/rapport-paginas";
 import { VOORBEELDAFNAME } from "../server/t4students/rapport-voorbeeld";
-import { bouwT4StudentsRapport as bouwOudeWeg, renderT4StudentsHtml } from "../server/t4students/rapport";
+import { htmlVanRapport } from "../server/t4students/rapport-keten";
 import { laadInstrumentItems } from "../server/question-manager";
 import type { T4SBlok } from "../server/t4students/rapport-contract";
 
@@ -79,28 +79,29 @@ describe("het Studiekompas draagt geen lange liggende streepjes", () => {
   });
 });
 
-describe("de oude T4Students-rapportweg draagt geen lange liggende streepjes", () => {
-  it("de HTML-uitvoer van bouwT4StudentsRapport/renderT4StudentsHtml bevat geen streepje uit U+2010 tot U+2015", () => {
-    const contract = {
-      participant: { name: VOORBEELDAFNAME.naam, respondentCode: VOORBEELDAFNAME.code },
-      answers: VOORBEELDAFNAME.antwoorden,
-      instrument: I,
-    };
-    const inhoud = bouwOudeWeg(contract);
-    const html = renderT4StudentsHtml(inhoud);
-    const gevonden = vindStreepjes(html);
-    expect(gevonden).toEqual([]);
+describe("de HTML-weergave van het Studiekompas draagt geen lange liggende streepjes", () => {
+  it("de HTML-uitvoer van htmlVanRapport bevat geen streepje uit U+2010 tot U+2015", () => {
+    const resultaat = scoreStudiekompas(I, VOORBEELDAFNAME.antwoorden, null, "nl");
+    const rapport = bouwT4StudentsRapport(I, resultaat, VOORBEELDAFNAME.antwoorden, "verdieping", {
+      naam: VOORBEELDAFNAME.naam,
+      code: VOORBEELDAFNAME.code,
+      datum: VOORBEELDAFNAME.datum,
+      instrumentVersie: I.version,
+    });
+    expect(vindStreepjes(htmlVanRapport(rapport))).toEqual([]);
   });
 });
 
-describe("de vijf T4S-MOT-vragenlijstitems en hun tekst dragen geen lange liggende streepjes", () => {
-  it("geen streepje uit U+2010 tot U+2015 in familie, construct of tekst van de MOT-items", () => {
+describe("de vragenlijstitems van het Studiekompas dragen geen lange liggende streepjes", () => {
+  it("geen streepje uit U+2010 tot U+2015 in familie, construct of tekst van enig item", () => {
     const items = laadInstrumentItems("tapas-t4students");
-    const motItems = items.filter((it) => it.itemId.startsWith("T4S-MOT"));
-    expect(motItems.length).toBeGreaterThan(0);
-    for (const item of motItems) {
-      const tekstNl = item.tekst.nl ?? "";
-      for (const veld of [item.family, item.construct, tekstNl]) {
+    // De itembank van het vraagbeheer is dezelfde als die van de afname en van
+    // de scoring: server/data/t4students.json. Eerder stond hier een tweede,
+    // met de hand geschreven lijst met eigen id's; die is afgevoerd.
+    expect(items.length).toBeGreaterThan(30);
+    expect(items.some((it) => it.itemId.startsWith("MOT-"))).toBe(true);
+    for (const item of items) {
+      for (const veld of [item.family, item.construct ?? "", item.tekst.nl ?? ""]) {
         expect(vindStreepjes(veld), `${item.itemId}: ${veld}`).toEqual([]);
       }
     }

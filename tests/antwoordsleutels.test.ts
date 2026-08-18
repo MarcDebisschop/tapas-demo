@@ -4,11 +4,13 @@
 // Deze tests meten welke sleutel het invulscherm aan een antwoord meegeeft en
 // of de scoring datzelfde antwoord met die sleutel terugvindt.
 //
-// Het invulscherm (client/src/pages/deel1.tsx) bewaart elk antwoord onder een
-// bloksleutel van de vorm B<blokindex>. De scoringsmodules van T4Students en
-// T4Teens zoeken een antwoord op met de itemsleutel uit de itembank
-// (T4S-... respectievelijk T4T-...). De tests hieronder tonen wat daar in
-// werkelijkheid van terechtkomt, per instrument.
+// Het invulscherm van het T4P Business Kompas (client/src/pages/deel1.tsx)
+// bewaart elk antwoord onder een bloksleutel van de vorm B<blokindex>. T4Teens
+// scoort op itemsleutels uit zijn itembank (T4T-...) en zet die sleutels om.
+// T4Students heeft sinds het herstel zijn eigen invulscherm
+// (client/src/pages/studiekompas.tsx) dat meteen op item-id bewaart, en de
+// volledigheidscontrole weigert er elke andere antwoordvorm. De tests hieronder
+// meten dat, per instrument.
 // ---------------------------------------------------------------------------
 
 import { describe, it, expect } from "vitest";
@@ -19,7 +21,9 @@ import { registerVragenlijstT4TeensRoutes } from "../server/routes/vragenlijst-t
 import { clientInstrument } from "../server/instrument";
 import { laadInstrumentItems } from "../server/question-manager";
 import { buildT4TeensContract } from "../server/t4teens/scoring";
-import { buildT4StudentsContract } from "../server/t4students/scoring";
+import { registerVragenlijstT4StudentsRoutes } from "../server/routes/vragenlijst-t4students";
+import { bouwT4StudentsAfnameContract } from "../server/t4students/afnamecontract";
+import { controleerAfnameVolledig } from "../server/volledigheid-afname";
 import { naarItemSleutels } from "../server/t4teens/antwoordsleutels";
 
 // Eén blok-antwoord zoals deel1.tsx het opbouwt (shared/schema blockResponseSchema).
@@ -160,36 +164,116 @@ describe("T4Teens - de weg van een antwoord van invulscherm tot scoring", () => 
 });
 
 describe("T4Students - de weg van een antwoord van invulscherm tot scoring", () => {
-  it("het invulscherm toont voor T4Students niet de T4Students-vragenlijst", () => {
-    // deel1.tsx kent alleen voor t4kids en t4teens een eigen endpoint; elke
-    // andere afname valt terug op /api/instrument, en dat levert T4P Business.
-    const view = clientInstrument("nl") as any;
-    expect(view.instrumentId).toBe("t4p-business-kompas");
-    expect(view.blocks.length).toBe(34);
+  async function haalStudiekompas(): Promise<{ items: any[]; totaalItems: number }> {
+    const app = express();
+    registerVragenlijstT4StudentsRoutes(app);
+    let view: any = null;
+    await metServer(app, async (basis) => {
+      const res = await fetch(`${basis}/api/vragenlijst/tapas-t4students?taal=nl`);
+      expect(res.status).toBe(200);
+      view = await res.json();
+    });
+    return view;
+  }
+
+  it("de vragenlijst van het studiekompas draagt de item-id's van de scoring, geen bloksleutels", async () => {
+    const view = await haalStudiekompas();
+    const ids = view.items.map((i: any) => i.id);
+    expect(ids).toContain("P0");
+    expect(ids).toContain("I1");
+    expect(ids).toContain("D1");
+    expect(ids).toContain("R6");
+    // De bloklijst van het T4P Business Kompas loopt van B0 tot B33. Het
+    // betekenisspoor van deze bank heet zelf B1, dus de vorm alleen zegt niets;
+    // beslissend is dat B0 en de hoge blokken er niet in staan.
+    expect(ids).not.toContain("B0");
+    expect(ids).not.toContain("B12");
+    expect(ids).not.toContain("B33");
+    // Elk item van de bank staat in de lijst, in de volgorde van de bank.
+    expect(view.items.length).toBe(view.totaalItems);
+    // Elk item draagt een leesbare vraag. Het schuifitem P2 heeft geen eigen
+    // vraag maar twee varianten, elk met hun eigen tekst; de keuze van P1
+    // bepaalt welke variant het scherm toont.
+    const zonderTekst = view.items.filter(
+      (i: any) => !(typeof i.text === "string" && i.text.length > 0),
+    );
+    expect(zonderTekst.map((i: any) => i.id)).toEqual(["P2"]);
+    const varianten = Object.values(zonderTekst[0].variants ?? {}) as any[];
+    expect(varianten.length).toBeGreaterThan(1);
+    expect(varianten.every((v) => typeof v.text === "string" && v.text.length > 0)).toBe(true);
   });
 
-  it("de bloksleutels van dat scherm komen in niets overeen met de T4Students-itembank", () => {
-    const view = clientInstrument("nl") as any;
-    const bloksleutels = new Set(view.blocks.map(sleutelVanInvulscherm));
-    const items = laadInstrumentItems("tapas-t4students");
-
-    expect(items.length).toBe(37);
-    expect(items.every((i) => i.itemId.startsWith("T4S-"))).toBe(true);
-    expect(items.filter((i) => bloksleutels.has(i.itemId))).toEqual([]);
-    // Er zijn ook niet evenveel blokken als items, dus ook een omzetting op
-    // volgorde is hier niet mogelijk.
-    expect(view.blocks.length).not.toBe(items.length);
-  });
-
-  it("een volledig ingevulde afname levert daardoor een leeg T4Students-contract", () => {
+  it("een antwoordenblad met bloksleutels wordt geweigerd in plaats van als leeg gescoord", () => {
     const view = clientInstrument("nl") as any;
     const antwoorden: Record<string, unknown> = {};
     for (const blok of view.blocks) antwoorden[sleutelVanInvulscherm(blok)] = blokAntwoord(2);
 
-    const contract = buildT4StudentsContract({ ...deelnemer, responses: antwoorden });
+    const uitkomst = controleerAfnameVolledig({
+      instrumentId: "t4students",
+      responses: antwoorden as any,
+      keuzes: null,
+      taal: "nl",
+    });
+    expect(uitkomst.volledig).toBe(false);
+    if (!uitkomst.volledig) {
+      expect(uitkomst.ontbreekt).toContain("I1");
+      expect(uitkomst.ontbreekt.length).toBeGreaterThan(30);
+    }
+  });
 
-    expect(contract.sections.main.meta.completedItems).toBe(0);
-    expect(contract.sections.main.meta.averageScore).toBe(0);
-    expect(contract.sections.main.constructRows.every((r) => r.avgEnergy === 0)).toBe(true);
+  it("een antwoordenblad in de vorm van het studiekompas komt door de controle en scoort echte items", async () => {
+    const view = await haalStudiekompas();
+    const antwoorden: Record<string, unknown> = {};
+    for (const item of view.items) {
+      const soort = item.itemType ?? "";
+      if (soort === "open-intro") {
+        antwoorden[item.id] = { text: "Ik hoop een richting te vinden die bij me past." };
+      } else if (soort === "battery") {
+        antwoorden[item.id] = { value: 7 };
+      } else if (soort === "recognition+energy") {
+        antwoorden[item.id] = { recognition: 2, energy: 1 };
+      } else if (soort === "recognition") {
+        antwoorden[item.id] = { recognition: 2 };
+      } else if (soort === "interest") {
+        antwoorden[item.id] = { interest: 1 };
+      } else if (Array.isArray(item.options) && item.options.length > 0) {
+        antwoorden[item.id] = { choice: item.options[0].key };
+      } else if (item.variants) {
+        // P2 volgt de keuze op P1; die zetten we hieronder, na de lus.
+      }
+    }
+    // P1 en P2: eerst het profiel, dan de vervolgvraag van dat profiel.
+    const p1 = view.items.find((i: any) => i.id === "P1");
+    const p2 = view.items.find((i: any) => i.id === "P2");
+    if (p1 && p2) {
+      const keuze = p1.options[0].key;
+      antwoorden["P1"] = { choice: keuze };
+      const variant = p2.variants[keuze];
+      antwoorden["P2"] =
+        variant.itemType === "profile-scale"
+          ? { value: 6 }
+          : { choice: variant.options[0].key };
+    }
+
+    const uitkomst = controleerAfnameVolledig({
+      instrumentId: "t4students",
+      responses: antwoorden as any,
+      keuzes: null,
+      taal: "nl",
+    });
+    expect(uitkomst.volledig, JSON.stringify(uitkomst)).toBe(true);
+
+    const contract = bouwT4StudentsAfnameContract({
+      respondentCode: deelnemer.respondentCode,
+      name: deelnemer.name,
+      taal: "nl",
+      responses: antwoorden,
+    });
+    expect(contract.instrumentId).toBe("t4students");
+    expect(contract.ontbrekend).toEqual([]);
+    expect(contract.resultaat.betrouwbaarheid.beantwoord).toBeGreaterThan(30);
+    expect(
+      Object.values(contract.resultaat.constructScores).some((c: any) => c.recognition > 0),
+    ).toBe(true);
   });
 });

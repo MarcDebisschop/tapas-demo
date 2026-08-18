@@ -3,12 +3,12 @@ import { T4STUDENTS_INSTRUMENT as I } from "../server/t4students/instrument";
 import { scoreStudiekompas } from "../server/t4students/kompas-scoring";
 import { bouwT4StudentsRapport } from "../server/t4students/rapport-paginas";
 import { VOORBEELDAFNAME } from "../server/t4students/rapport-voorbeeld";
-import { bouwT4StudentsRapport as bouwOudeWeg, renderT4StudentsHtml } from "../server/t4students/rapport";
+import { htmlVanRapport } from "../server/t4students/rapport-keten";
 import type { T4SPagina } from "../server/t4students/rapport-contract";
 
 // ---------------------------------------------------------------------------
-// De volledige bronvermelding van Deci en Ryan, met jaartal, in beide
-// rapportwegen.
+// De volledige bronvermelding van Deci en Ryan, met jaartal, in de bladen en in
+// de HTML-weergave.
 //
 // WAAROM DIT BEWAAKT MOET WORDEN
 // Vandaag noemt de code Deci en Ryan alleen bij naam, zonder jaartal en zonder
@@ -65,30 +65,29 @@ describe("de volledige bronvermelding van Deci en Ryan staat in het Studiekompas
   });
 });
 
-describe("de volledige bronvermelding van Deci en Ryan staat in de oude T4Students-rapportweg", () => {
+describe("de volledige bronvermelding staat ook in de HTML-weergave van hetzelfde rapport", () => {
+  function html(): string {
+    const resultaat = scoreStudiekompas(I, VOORBEELDAFNAME.antwoorden, null, "nl");
+    const rapport = bouwT4StudentsRapport(I, resultaat, VOORBEELDAFNAME.antwoorden, "verdieping", {
+      naam: VOORBEELDAFNAME.naam,
+      code: VOORBEELDAFNAME.code,
+      datum: VOORBEELDAFNAME.datum,
+      instrumentVersie: I.version,
+    });
+    return htmlVanRapport(rapport);
+  }
+
   it("de drie volledige, letterlijke bronvermeldingen staan in de HTML-uitvoer", () => {
-    const contract = {
-      participant: { name: VOORBEELDAFNAME.naam, respondentCode: VOORBEELDAFNAME.code },
-      answers: VOORBEELDAFNAME.antwoorden,
-      instrument: I,
-    };
-    const inhoud = bouwOudeWeg(contract);
-    const html = renderT4StudentsHtml(inhoud);
+    const uitvoer = html();
     for (const bron of VOLLEDIGE_BRONNEN) {
-      expect(html, `bron ontbreekt: ${bron}`).toContain(bron);
+      expect(uitvoer, `bron ontbreekt: ${bron}`).toContain(bron);
     }
   });
 
   it("de lopende tekst gebruikt 'en' tussen de auteurs en het jaartal 1985, 2000", () => {
-    const contract = {
-      participant: { name: VOORBEELDAFNAME.naam, respondentCode: VOORBEELDAFNAME.code },
-      answers: VOORBEELDAFNAME.antwoorden,
-      instrument: I,
-    };
-    const inhoud = bouwOudeWeg(contract);
-    const html = renderT4StudentsHtml(inhoud);
-    expect(html).toContain("Deci en Ryan (1985, 2000)");
-    expect(html).not.toContain("Deci &amp; Ryan");
-    expect(html).not.toContain("Deci & Ryan");
+    const uitvoer = html();
+    expect(uitvoer).toContain("Deci en Ryan (1985, 2000)");
+    expect(uitvoer).not.toContain("Deci &amp; Ryan");
+    expect(uitvoer).not.toContain("Deci & Ryan");
   });
 });

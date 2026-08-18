@@ -32,6 +32,7 @@ import { storage, db } from "./storage";
 import { MODULES as T4R_MODULES } from "./t4r/library";
 import { t4oInstrument } from "./t4organizations/instrument";
 import { T4KIDS_ITEMS_FLAT } from "./t4kids/itembank";
+import { t4studentsItems } from "./t4students/instrument";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -308,66 +309,38 @@ function laadDriverScanItems(): VraagItem[] {
 }
 
 /**
- * T4Students / Studiekompas — oriënterende studiekeuze voor jongeren.
- * Structuur: talentfoci (4) × 2 items + drivers (5) × 2 items + versnellers (6) × 2 items
- *            + motivatielaag (3 intrinsiek + 2 extrinsiek) + 2 open vragen = 37 items.
- * Geen apart JSON-bestand — definities zijn normatief vastgelegd.
- * family = domein (foci / drivers / versnellers / motivatie)
+ * T4Students / Studiekompas.
+ *
+ * De items komen uit de echte itembank van het instrument
+ * (server/data/t4students.json, via server/t4students/instrument.ts). Hier stond
+ * eerder een tweede, met de hand geschreven lijst van 37 items met eigen id's
+ * (T4S-FA-1 en verder). Die lijst kwam in geen enkele afname en in geen enkele
+ * scoring voor: de scoringsmotor van het studiekompas leest de items P0, I1,
+ * BE1, D1 en verder. Twee lijsten met dezelfde naam is precies de verwarring die
+ * de verkeerde rapporten heeft veroorzaakt, dus is er nu één.
+ *
+ * Gevolg voor het vraagbeheer: een overschrijving hoort bij het item-id van het
+ * instrument zelf, en werkt daardoor ook echt door in de afname
+ * (server/routes/vragenlijst-t4students.ts leest dezelfde overschrijvingen).
  */
-const T4STUDENTS_ITEMS_DEF: { id: string; domein: string; cluster: string; tekst: string }[] = [
-  // Talentfoci
-  { id: "T4S-FA-1", domein: "Talentfoci", cluster: "Interrelatie", tekst: "Ik ga graag met mensen om en voel goed aan hoe zij zich voelen." },
-  { id: "T4S-FA-2", domein: "Talentfoci", cluster: "Interrelatie", tekst: "Samenwerken en contacten leggen gaat me van nature gemakkelijk af." },
-  { id: "T4S-FB-1", domein: "Talentfoci", cluster: "Operatie", tekst: "Ik zet ideeën vlot om in concrete acties en resultaten." },
-  { id: "T4S-FB-2", domein: "Talentfoci", cluster: "Operatie", tekst: "Ik hou van praktisch werken en problemen oplossen met daadkracht." },
-  { id: "T4S-FC-1", domein: "Talentfoci", cluster: "Strategie", tekst: "Ik kijk graag verder dan het hier en nu en bedenk langetermijndoelen." },
-  { id: "T4S-FC-2", domein: "Talentfoci", cluster: "Strategie", tekst: "Ik ben goed in het zien van grote lijnen en het organiseren van complexe informatie." },
-  { id: "T4S-FD-1", domein: "Talentfoci", cluster: "Innovatie", tekst: "Ik bedenk graag nieuwe ideeën en ongewone oplossingen." },
-  { id: "T4S-FD-2", domein: "Talentfoci", cluster: "Innovatie", tekst: "Ik inspireer anderen met mijn creativiteit en origineel denken." },
-  // Drivers
-  { id: "T4S-DBS-1", domein: "Drivers", cluster: "Be Strong", tekst: "Ik werk het liefst zelfstandig en neem graag zelf de verantwoordelijkheid." },
-  { id: "T4S-DBS-2", domein: "Drivers", cluster: "Be Strong", tekst: "Ik blijf rustig en gefocust als het moeilijk wordt." },
-  { id: "T4S-DBP-1", domein: "Drivers", cluster: "Be Perfect", tekst: "Ik lever liever iets laat en goed af dan snel maar onvolledig." },
-  { id: "T4S-DBP-2", domein: "Drivers", cluster: "Be Perfect", tekst: "Ik let op details en word onrustig als er fouten in mijn werk zitten." },
-  { id: "T4S-DHU-1", domein: "Drivers", cluster: "Hurry Up", tekst: "Ik werk beter met een deadline dan zonder tijdsdruk." },
-  { id: "T4S-DHU-2", domein: "Drivers", cluster: "Hurry Up", tekst: "Ik vind het fijn om snel resultaat te zien van mijn inspanningen." },
-  { id: "T4S-DTH-1", domein: "Drivers", cluster: "Try Hard", tekst: "Ik wil uitblinken en mijn inzet laten zien in uitdagende situaties." },
-  { id: "T4S-DTH-2", domein: "Drivers", cluster: "Try Hard", tekst: "Ik geef alles om te slagen, ook als het moeilijk is." },
-  { id: "T4S-DPO-1", domein: "Drivers", cluster: "Please Others", tekst: "Het is voor mij belangrijk dat anderen tevreden zijn met mijn werk." },
-  { id: "T4S-DPO-2", domein: "Drivers", cluster: "Please Others", tekst: "Ik pas me graag aan de behoeften van anderen aan om samenwerking te bevorderen." },
-  // Versnellers
-  { id: "T4S-Va-1", domein: "Versnellers", cluster: "Analyse", tekst: "Ik analyseer graag complexe problemen en zoek naar oorzaken en verbanden." },
-  { id: "T4S-Va-2", domein: "Versnellers", cluster: "Analyse", tekst: "Ik orden informatie logisch en redeneer systematisch." },
-  { id: "T4S-Vb-1", domein: "Versnellers", cluster: "Coaching", tekst: "Ik help anderen graag groeien en stel de juiste vragen om inzicht te bieden." },
-  { id: "T4S-Vb-2", domein: "Versnellers", cluster: "Coaching", tekst: "Ik ondersteun anderen geduldig en sensitief bij hun leerproces." },
-  { id: "T4S-Vc-1", domein: "Versnellers", cluster: "Onderscheiden", tekst: "Ik formuleer graag een visie en breng negatief nieuws positief." },
-  { id: "T4S-Vc-2", domein: "Versnellers", cluster: "Onderscheiden", tekst: "Mijn persoonlijke bijdrage is meetbaar en opvallend anders dan die van anderen." },
-  { id: "T4S-Vd-1", domein: "Versnellers", cluster: "Faciliteren", tekst: "Ik begeleid groepen door verandering en breng mensen bij een gemeenschappelijk doel." },
-  { id: "T4S-Vd-2", domein: "Versnellers", cluster: "Faciliteren", tekst: "Ik stem verschillen af en zorg voor verbinding in een team." },
-  { id: "T4S-Ve-1", domein: "Versnellers", cluster: "Impacteren", tekst: "Ik heb een natuurlijk overwicht en breng mensen in beweging." },
-  { id: "T4S-Ve-2", domein: "Versnellers", cluster: "Impacteren", tekst: "Anderen voelen mijn invloed en vertrouwen op mijn oordeel." },
-  { id: "T4S-Vf-1", domein: "Versnellers", cluster: "Resultaat", tekst: "Ik maak af wat ik begin en lever tastbare resultaten." },
-  { id: "T4S-Vf-2", domein: "Versnellers", cluster: "Resultaat", tekst: "Onder druk haal ik de beste resultaten met een doener-mentaliteit." },
-  // Motivatielaag (SDT — Deci & Ryan)
-  { id: "T4S-MOT-INT-1", domein: "Motivatie (intrinsiek)", cluster: "Autonomie", tekst: "Ik studeer het best als ik zelf mag kiezen hoe en wanneer ik iets aanpak." },
-  { id: "T4S-MOT-INT-2", domein: "Motivatie (intrinsiek)", cluster: "Competentie", tekst: "Ik voel me gedreven als ik merk dat ik écht iets leer of beter word." },
-  { id: "T4S-MOT-INT-3", domein: "Motivatie (intrinsiek)", cluster: "Verbondenheid", tekst: "Ik werk harder als ik me verbonden voel met de mensen om me heen." },
-  { id: "T4S-MOT-EXT-1", domein: "Motivatie (extrinsiek)", cluster: "Erkenning", tekst: "Goede punten, prijzen of erkenning van anderen motiveren me sterk." },
-  { id: "T4S-MOT-EXT-2", domein: "Motivatie (extrinsiek)", cluster: "Verwachting", tekst: "De verwachtingen van mijn omgeving (ouders, school) spelen een grote rol in mijn keuzes." },
-  // Open reflectie
-  { id: "T4S-OPN-1", domein: "Reflectie", cluster: "Open vraag", tekst: "Welke vakken of activiteiten geven jou energie en waarom?" },
-  { id: "T4S-OPN-2", domein: "Reflectie", cluster: "Open vraag", tekst: "In welke situaties voel jij je het sterkst? Geef een voorbeeld." },
-];
-
 function laadT4StudentsItems(): VraagItem[] {
-  return T4STUDENTS_ITEMS_DEF.map((d) => ({
-    itemId: d.id,
-    instrument: "tapas-t4students",
-    family: d.domein,
-    construct: d.cluster,
-    tekst: { nl: d.tekst },
-    heeftOverride: false,
-  }));
+  try {
+    return t4studentsItems().map((it) => ({
+      itemId: it.id,
+      instrument: "tapas-t4students",
+      family: it.family,
+      construct: it.construct,
+      tekst: {
+        nl: it.text?.nl ?? "",
+        fr: it.text?.fr ?? "",
+        en: it.text?.en ?? "",
+      },
+      heeftOverride: false,
+    }));
+  } catch (e) {
+    console.error("[QM] T4Students items laden mislukt:", e);
+    return [];
+  }
 }
 
 
