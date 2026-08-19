@@ -49,8 +49,37 @@ function vindTekstvariabele(code: string): string | null {
   return m ? m[1] : null;
 }
 
+// Opmaakherstel-3, punt 3: een ingetogen vlak zonder kop houdt de regel waar
+// de kop zou staan niet langer open. Het beginpunt van de hoofdtekst staat
+// daarom niet meer als een vast getal in de aanroep, maar als een
+// tussenvariabele: "const tekstY = y + 22 + kopH + omschrijvingH;", waarbij
+// kopH de hoogte van die ene kopregel is (nul als er geen kop is). Voor de
+// meting hieronder geldt het geval MET kop, want alleen dan bestaat er een
+// afstand tussen kop en tekst. We lezen die kophoogte uit de constante in de
+// broncode, zodat de test niet met een eigen getal gaat rekenen.
+function constanteUitBron(bron: string, naam: string): number {
+  const m = bron.match(new RegExp(`const ${naam} = ([0-9.]+);`));
+  expect(m, `constante ${naam} niet gevonden in rapport-pdf.ts`).not.toBeNull();
+  return Number(m![1]);
+}
+
+/**
+ * Het beginpunt van de hoofdtekst in een vlak dat zijn kopregel overslaat als
+ * er geen kop is: het vaste getal uit "const tekstY = y + N + kopH" plus de
+ * hoogte van de kopregel zelf.
+ */
+function tekstYViaKopHoogte(code: string, bron: string): number | null {
+  const m = code.match(/const tekstY = y \+ ([0-9.]+) \+ kopH/);
+  if (!m) return null;
+  return Number(m[1]) + constanteUitBron(bron, "KAARTVLAK_KOP_H");
+}
+
 /** Haalt het getal na "y + " uit een regel met blok.kop of blok.tekst. */
-function yOffsetVan(code: string, veld: "blok.kop" | "blok.tekst"): number {
+function yOffsetVan(code: string, veld: "blok.kop" | "blok.tekst", bron?: string): number {
+  if (veld === "blok.tekst" && bron) {
+    const viaKop = tekstYViaKopHoogte(code, bron);
+    if (viaKop != null) return viaKop;
+  }
   const regex = new RegExp(`doc\\.text\\(${veld.replace(".", "\\.")},[^\\n]*y \\+ ([0-9.]+)`);
   const schrijfRegex = new RegExp(`schrijf\\(doc, ${veld.replace(".", "\\.")},[^\\n]*y \\+ ([0-9.]+)`);
   let m = code.match(regex) ?? code.match(schrijfRegex);
@@ -74,9 +103,10 @@ describe("lucht tussen de kop van een kaart en de tekst eronder", () => {
   });
 
   it("kaartvlak: de afstand tussen de kop en de eerste tekstregel is minstens 15 punten", () => {
-    const code = pakCase(leesTekenaar(), "kaartvlak");
+    const bron = leesTekenaar();
+    const code = pakCase(bron, "kaartvlak");
     const kopY = yOffsetVan(code, "blok.kop");
-    const tekstY = yOffsetVan(code, "blok.tekst");
+    const tekstY = yOffsetVan(code, "blok.tekst", bron);
     expect(tekstY - kopY).toBeGreaterThanOrEqual(15);
   });
 
@@ -102,7 +132,7 @@ describe("lucht tussen de kop van een kaart en de tekst eronder", () => {
     const kaderCode = pakCase(bron, "kader");
     const kaartvlakCode = pakCase(bron, "kaartvlak");
     const kaderAfstand = yOffsetVan(kaderCode, "blok.tekst") - yOffsetVan(kaderCode, "blok.kop");
-    const kaartvlakAfstand = yOffsetVan(kaartvlakCode, "blok.tekst") - yOffsetVan(kaartvlakCode, "blok.kop");
+    const kaartvlakAfstand = yOffsetVan(kaartvlakCode, "blok.tekst", bron) - yOffsetVan(kaartvlakCode, "blok.kop");
     expect(kaartvlakAfstand).toBe(kaderAfstand);
   });
 });
