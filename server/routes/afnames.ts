@@ -53,6 +53,7 @@ import { schrijfAuditLog } from "../audit-log";
 import { dashboardCodeVanToken, voornaamVanNaam } from "../dashboard-code";
 import { buildGeneratorContract } from "../scoring";
 import { bouwT4StudentsAfnameContract } from "../t4students/afnamecontract";
+import { poortVoorUitstuur } from "../t4students/uitstuurcontrole";
 import { buildT4TeensContract } from "../t4teens/scoring";
 import { naarItemSleutels } from "../t4teens/antwoordsleutels";
 import { buildT4KidsContract } from "../t4kids/scoring";
@@ -175,6 +176,22 @@ export function registerAfnameRoutes(app: Express): void {
     });
     if (!poortoordeel.mag) {
       return res.status(403).json(weigeringslichaam(poortoordeel));
+    }
+
+    // Uitstuurcontrole van het studiekompas. Voor er iets aangemaakt wordt,
+    // wordt de volledige keten van invulscherm tot PDF op deze levende server
+    // nagespeeld. Sluit ze niet, dan komt er geen afname, geen link en geen
+    // creditverbruik, en hoort de verzender de reden. Zie
+    // server/t4students/uitstuurcontrole.ts. Andere instrumenten gaan hier
+    // ongewijzigd door.
+    //
+    // De plaats is met opzet gekozen: na de leeftijds- en bekwaamheidspoort,
+    // want die twee gaan over wie mag afnemen en horen hun eigen antwoord te
+    // geven, en voor de saldo-check en de aanmaak, want een keten die niet
+    // sluit mag nooit een afname, een link of een creditverbruik opleveren.
+    const uitstuur = await poortVoorUitstuur(data.instrumentId ?? null, app);
+    if (uitstuur) {
+      return res.status(uitstuur.status).json(uitstuur.lichaam);
     }
 
     // Saldo-check vóór aanmaak: als er een organisatie is meegegeven, moet die
@@ -304,6 +321,14 @@ export function registerAfnameRoutes(app: Express): void {
     });
     if (!poortoordeel.mag) {
       return res.status(403).json(weigeringslichaam(poortoordeel));
+    }
+
+    // Uitstuurcontrole van het studiekompas, zelfde poort en zelfde plaats als
+    // op /api/afnames. Een uitnodiging is precies het moment waarop de
+    // opdrachtgever zeker wil zijn: wat de deur uitgaat, werkt.
+    const uitstuurUitnodiging = await poortVoorUitstuur(data.instrumentId ?? null, app);
+    if (uitstuurUitnodiging) {
+      return res.status(uitstuurUitnodiging.status).json(uitstuurUitnodiging.lichaam);
     }
 
     // Saldo-check + reservering wanneer er een organisatie is.

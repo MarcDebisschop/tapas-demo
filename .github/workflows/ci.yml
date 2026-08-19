@@ -10,7 +10,10 @@
 #   2. vitest run        -- de volledige testsuite (privacylaag + rapportmotor)
 #   3. typecontrole      -- tsc met een BASISLIJN: de bekende typefouten mogen
 #                           blijven, maar er mag er geen enkele bijkomen
-#   4. npm run build     -- de productiebouw moet slagen
+#   4. mutatieproef      -- de wachttoetsen van T4Students worden zelf getoetst:
+#                           de keten wordt een voor een bewust stukgemaakt en
+#                           elke breuk moet een toets rood zetten
+#   5. npm run build     -- de productiebouw moet slagen
 #
 # De typecontrole loopt tegen een basislijn omdat het bestaande project een
 # gemeten, bekend aantal typefouten heeft. Een harde `tsc`-poort zou de pijplijn
@@ -44,6 +47,9 @@ jobs:
 
       - name: Testsuite
         run: npx vitest run
+
+      - name: Mutatieproef op de wachttoetsen van T4Students
+        run: npm run proef:t4students
 
       - name: Typecontrole tegen de basislijn
         run: node script/tsc-basislijn.mjs

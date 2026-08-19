@@ -27,6 +27,7 @@ import { afnames, type Afname } from "@shared/schema";
 import { getTemplate, alleTemplates, TEMPLATES } from "./templates";
 import { templateAlsBuffer, parseUpload, type ParseFout } from "./excel";
 import { verstuurUitnodiging, isSimulatiemodus } from "./mailer";
+import { poortVoorUitstuur } from "../t4students/uitstuurcontrole";
 import { t4oStorage } from "../t4organizations/storage";
 import { T4O_GROEPEN, type T4OGroep } from "../t4organizations/schema";
 
@@ -391,6 +392,16 @@ export function registerBulkImportRoutes(app: Express): void {
     const instrumentId = String(req.body?.instrumentId ?? "");
     const tpl = getTemplate(instrumentId);
     if (!tpl) return res.status(400).json({ error: "Onbekend of niet-ondersteund instrument." });
+
+    // Uitstuurcontrole van het studiekompas, dezelfde poort als op
+    // /api/afnames en /api/uitnodigingen. Een bulkverzending is de deur waar de
+    // meeste uitnodigingen tegelijk buiten gaan, dus de poort hoort hier zeker
+    // te hangen. Zie server/t4students/uitstuurcontrole.ts. Andere instrumenten
+    // gaan ongewijzigd door.
+    const uitstuurBulk = await poortVoorUitstuur(instrumentId, app);
+    if (uitstuurBulk) {
+      return res.status(uitstuurBulk.status).json(uitstuurBulk.lichaam);
+    }
 
     // De organisatie komt uit de scope. Een organisatie die een ander id
     // meestuurt krijgt 403; anders zou ze in bulk uitnodigingen op kosten van
