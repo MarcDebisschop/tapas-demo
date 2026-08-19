@@ -24,6 +24,17 @@ const vragen: Vraag[] = [];
 /** Laat de nagemaakte poort weigeren of doorlaten. */
 let laatDoor = true;
 
+// De uitstuurcontrole van het studiekompas hangt op dezelfde schrijfwegen en
+// weigert een verzoek wanneer de keten van invulscherm tot PDF niet sluit. Deze
+// suite bouwt een kale app met alleen de afnameroutes erop, dus die keten sluit
+// hier per definitie niet. Wat de uitstuurcontrole beslist is elders getoetst
+// (tests/t4students-uitstuurcontrole.test.ts en tests/t4students-uitstuur-bulk.test.ts);
+// hier telt uitsluitend de aansluiting op de bekwaamheidspoort, dus wordt ze
+// vervangen door een poort die doorlaat.
+vi.mock("../server/t4students/uitstuurcontrole", () => ({
+  poortVoorUitstuur: async () => null,
+}));
+
 vi.mock("../server/bekwaamheid/poortbrug", () => ({
   beoordeelSchrijfweg: async (invoer: Vraag) => {
     vragen.push({

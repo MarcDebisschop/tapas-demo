@@ -26,6 +26,8 @@ import { fileURLToPath } from "node:url";
 const WORTEL = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const TOETS_BEREIK = "tests/t4students-bereikbaarheid.test.ts";
 const TOETS_LEVEND = "tests/t4students-live-weg.test.ts";
+const TOETS_POORT = "tests/t4students-uitstuurcontrole.test.ts";
+const TOETS_BULK = "tests/t4students-uitstuur-bulk.test.ts";
 
 /** Elke mutatie: bestand, exacte tekst die vervangen wordt, en de vervanging. */
 const MUTATIES = [
@@ -95,6 +97,52 @@ const MUTATIES = [
     van: 'if (instrumentId === "t4students") return true;',
     naar: 'if (instrumentId === "t4students") return false;',
   },
+  {
+    code: "M8",
+    omschrijving: "uitstuurpoort weggehaald bij de zelfstart en de uitnodiging",
+    toets: TOETS_POORT,
+    bestand: "server/routes/afnames.ts",
+    van: "await poortVoorUitstuur(",
+    naar: "await geenPoort(",
+    alleVoorkomens: true,
+    extra: (tekst) =>
+      tekst.replace(
+        'import { poortVoorUitstuur } from "../t4students/uitstuurcontrole";',
+        "const geenPoort = async () => null;",
+      ),
+  },
+  {
+    code: "M9",
+    omschrijving: "uitstuurpoort weggehaald bij de bulk-import",
+    toets: TOETS_BULK,
+    bestand: "server/bulk-import/routes.ts",
+    van: "await poortVoorUitstuur(instrumentId, app)",
+    naar: "null",
+  },
+  {
+    code: "M10",
+    omschrijving: "uitstuurpoort keurt alles goed zonder de keten na te kijken",
+    toets: TOETS_POORT,
+    bestand: "server/t4students/uitstuurcontrole.ts",
+    van: 'if (instrumentId !== "t4students") return null;',
+    naar: "return null;",
+  },
+  {
+    code: "M11",
+    omschrijving: "uitstuurcontrole slaat de controle op de uitgeleverde frontend over",
+    toets: TOETS_POORT,
+    bestand: "server/t4students/uitstuurcontrole.ts",
+    van: "for (const b of bundelBevindingen(wortel)) bevindingen.push(b);",
+    naar: "void bundelBevindingen;",
+  },
+  {
+    code: "M12",
+    omschrijving: "uitstuurcontrole kijkt maar een taal na in plaats van alle drie",
+    toets: TOETS_POORT,
+    bestand: "server/t4students/uitstuurcontrole.ts",
+    van: 'const TALEN = ["nl", "fr", "en"] as const;',
+    naar: 'const TALEN = ["nl"] as const;',
+  },
 ];
 
 function lees(betrekkelijk) {
@@ -136,7 +184,7 @@ const uitslagen = [];
 console.log("Mutatieproef T4Students\n");
 
 // nulmeting: niets gewijzigd, beide wachttoetsen horen groen te staan
-for (const toets of [TOETS_BEREIK, TOETS_LEVEND]) {
+for (const toets of [TOETS_BEREIK, TOETS_LEVEND, TOETS_POORT, TOETS_BULK]) {
   const r = draaiToets(toets);
   uitslagen.push({
     code: "M0",

@@ -19,7 +19,7 @@ import { spawnSync } from "node:child_process";
 
 // Gemeten op de hoofdtak met `npx tsc --noEmit`. Verlaag dit getal zodra de
 // pijplijn meldt dat er minder fouten zijn.
-const BASISLIJN = 73;
+const BASISLIJN = 64;
 
 const uitvoer = spawnSync("npx", ["tsc", "--noEmit"], { encoding: "utf8" });
 const tekst = `${uitvoer.stdout ?? ""}${uitvoer.stderr ?? ""}`;
