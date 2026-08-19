@@ -84,6 +84,15 @@ export interface CandidateReport {
   sessionId: number;
   candidateLabel: string;
   sourceFile: string | null;
+  // Herkomst van de vergeleken cijfers; zie server/t4r/schema.ts.
+  herkomst: "interne-afname" | "pdf";
+  afnameId: number | null;
+  respondentCode: string | null;
+  overgenomenAt: string | null;
+  bronContractVersie: string | null;
+  bronInstrumentVersie: number | null;
+  /** JSON-lijst met sleutels die na de overname met de hand zijn aangepast. */
+  handmatigAangepast: string;
   metingen: string;
   context: string;
   rawText: string | null;

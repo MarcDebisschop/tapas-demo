@@ -115,3 +115,27 @@ export function isPositieveEnergie(score: number): boolean {
  * plaats van deze waarde in te vullen.
  */
 export const ENERGIE_TERUGVAL = 5;
+
+// ---------------------------------------------------------------------------
+// De drieletterige energiestatus op de itemschaal (min 2 tot plus 2).
+//
+// Deze regel bestond al, maar stond als private functie in de rapportmotor van
+// het Kompas (server/t4p/kompas-contract.ts). Zij bepaalt of een lijn in het
+// rapport "geeft", "neutraal" of "kost" naast zich krijgt. Zodra een tweede
+// plaats dezelfde vraag stelt (T4Recruitment neemt precies deze status over),
+// mag er geen tweede kopie van de grens ontstaan: dan zou hetzelfde profiel in
+// het rapport "geeft" kunnen lezen en in de vergelijkende studie "neutraal".
+//
+// CONVENTIE, GEEN IJKING. De grens van 0,25 is door de ontwikkelaar gekozen en
+// niet empirisch geijkt. Zij is hier letterlijk overgenomen uit de bestaande
+// rapportmotor zodat de getallen ongewijzigd blijven.
+// ---------------------------------------------------------------------------
+export type EnergieStatusDrie = "geeft" | "neutraal" | "kost";
+
+export const ENERGIE_STATUS_GRENS = 0.25;
+
+export function energieStatusVanGemiddelde(gemiddeldeItemEnergie: number): EnergieStatusDrie {
+  if (gemiddeldeItemEnergie > ENERGIE_STATUS_GRENS) return "geeft";
+  if (gemiddeldeItemEnergie < -ENERGIE_STATUS_GRENS) return "kost";
+  return "neutraal";
+}

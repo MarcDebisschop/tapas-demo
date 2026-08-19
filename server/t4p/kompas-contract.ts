@@ -10,6 +10,7 @@
 // Rangorde overal: netscore aflopend -> meest aflopend -> minst oplopend ->
 // alfabetisch. De energiestatus (geeft/neutraal/kost) is NOOIT een sorteersleutel.
 import { isTapasBeeld } from "../../shared/talent-constructs";
+import { energieStatusVanGemiddelde } from "../../shared/energie-schaal";
 
 export interface KompasDeelnemer {
   naam: string;
@@ -62,10 +63,11 @@ function netTekst(n: number): string {
   return n > 0 ? "+" + n : n < 0 ? "−" + Math.abs(n) : "0";
 }
 
+// De grens staat in shared/energie-schaal.ts. Zij stond hier, en werd van hier
+// overgenomen; het rapport en de vergelijkende studie van T4Recruitment lezen nu
+// dezelfde regel, zodat dezelfde energie nooit twee statussen kan krijgen.
 function statusVanEnergie(gem: number): "geeft" | "kost" | "neutraal" {
-  if (gem > 0.25) return "geeft";
-  if (gem < -0.25) return "kost";
-  return "neutraal";
+  return energieStatusVanGemiddelde(gem);
 }
 
 /** Som van de gemiddelde energie over rijen, afgerond op twee decimalen. */
