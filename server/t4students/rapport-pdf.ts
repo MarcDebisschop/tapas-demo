@@ -96,6 +96,54 @@ function hoogteVan(doc: Doc, tekst: string, font: string, grootte: number, breed
   return doc.heightOfString(tekst, { width: breedte, lineGap: regelruimte });
 }
 
+// ── Het introblok: meten en tekenen op dezelfde breedte ─────────────────────
+//
+// Opmaakherstel-3, punt 1: het getinte introvlak liep aan de onderkant over.
+// De hoogte werd gemeten op een tekstbreedte van TEKST_B - 16, terwijl de
+// tekst zelf werd geschreven op TEKST_B - 26 (13 punten marge links en
+// rechts). Op de smallere schrijfbreedte paste de tekst soms in een regel
+// meer dan waarop het vlak was gemeten, en die laatste regel viel buiten het
+// vlak (zichtbaar op het blad "Jouw beeld van jezelf": de regel "apart." lag
+// op de onderrand van het vlak). Meten en tekenen gebeuren nu met dezelfde
+// maten, uit deze ene bron. Zo kan het verschil niet opnieuw ontstaan.
+const INTRO_ZIJMARGE = 13;
+const INTRO_BOVENMARGE = 8;
+/** Wat er onder de tekst binnen het vlak overblijft, zodat de laatste regel niet op de rand ligt. */
+const INTRO_ONDERMARGE = 8;
+/** De lucht onder het vlak, voor het volgende blok. */
+const INTRO_NA_VLAK = 6;
+const INTRO_KORPS = 9.4;
+const INTRO_REGELRUIMTE = 3.4;
+
+// ── De kopregel in een ingetogen vlak ──────────────────────────────────
+// Opmaakherstel-3, punt 3: de hoogte van de ene regel waarop de kop van een
+// ingetogen vlak ("kaartvlak") staat. Is de kop leeg, dan wordt die regel
+// niet opengehouden. Meten en tekenen halen dit getal uit dezelfde bron.
+const KAARTVLAK_KOP_H = 18;
+
+export function kaartvlakKopHoogte(kop: string | null | undefined): number {
+  return (kop ?? "").trim().length > 0 ? KAARTVLAK_KOP_H : 0;
+}
+
+/** Dezelfde regel, in het ingetogen vlak met vraag en antwoord ("citaat"). */
+const CITAAT_KOP_H = 18;
+
+export function citaatKopHoogte(kop: string | null | undefined): number {
+  return (kop ?? "").trim().length > 0 ? CITAAT_KOP_H : 0;
+}
+
+export function introMaten(doc: Doc, tekst: string): {
+  tekstBreedte: number;
+  tekstHoogte: number;
+  vlakHoogte: number;
+  blokHoogte: number;
+} {
+  const tekstBreedte = TEKST_B - INTRO_ZIJMARGE * 2;
+  const tekstHoogte = hoogteVan(doc, tekst, F.dm, INTRO_KORPS, tekstBreedte, INTRO_REGELRUIMTE);
+  const vlakHoogte = tekstHoogte + INTRO_BOVENMARGE + INTRO_ONDERMARGE;
+  return { tekstBreedte, tekstHoogte, vlakHoogte, blokHoogte: vlakHoogte + INTRO_NA_VLAK };
+}
+
 function schrijf(
   doc: Doc,
   tekst: string,
@@ -328,7 +376,7 @@ function tekenGroepkop(doc: Doc, groep: T4SGroep, x: number, y: number): number 
 function blokHoogte(doc: Doc, blok: T4SBlok): number {
   switch (blok.soort) {
     case "intro":
-      return hoogteVan(doc, blok.tekst, F.dm, 9.4, TEKST_B - 16, 3.4) + 22;
+      return introMaten(doc, blok.tekst).blokHoogte;
     case "alinea":
       return hoogteVan(doc, blok.tekst, F.dm, 9.2, TEKST_B, 3.6) + 9;
     case "tussenkop":
@@ -386,8 +434,9 @@ function blokHoogte(doc: Doc, blok: T4SBlok): number {
       // regel "Jouw antwoord:" weg en telt alleen de hoogte van de zin zelf.
       // Opmaak afwerken, punt 3: twee punten extra zodat de afstand tussen de
       // kop en de eerste tekstregel, net als bij kader en kaartvlak, op 18
-      // punten komt (was 16).
-      let h = 44;
+      // punten komt (was 16). Opmaakherstel-3, punt 3: heeft dit vlak geen
+      // kop, dan wordt de regel waar de kop zou staan niet opengehouden.
+      let h = 44 - citaatKopHoogte(blok.kop);
       for (const r of blok.regels) {
         h += hoogteVan(doc, r.vraag, F.dm, 9.4, TEKST_B - 44, 2.8) + 4;
         if (r.herkenning !== null) {
@@ -439,8 +488,11 @@ function blokHoogte(doc: Doc, blok: T4SBlok): number {
       // witruimte is, net als bij "kader", met 4 punten verkleind. Herstel,
       // punt 1 en 4: bij citaatstijl staan er aanhalingstekens omheen, die
       // tellen mee in de hoogteberekening (zie tekenBlok hieronder).
+      // Opmaakherstel-3, punt 3: is er geen kop, dan wordt de regel waar de
+      // kop zou staan ook niet meer opengehouden. Zie KAARTVLAK_KOP_H bij
+      // tekenBlok voor de reden.
       const kaartvlakTekstH = blok.citaatstijl ? `\u201C${blok.tekst}\u201D` : blok.tekst;
-      let h = hoogteVan(doc, kaartvlakTekstH, F.dm, 9, TEKST_B - 32, 3.2) + 60;
+      let h = hoogteVan(doc, kaartvlakTekstH, F.dm, 9, TEKST_B - 32, 3.2) + 60 - kaartvlakKopHoogte(blok.kop);
       if (blok.contactregel) h += 16;
       if (blok.omschrijving) h += 12;
       return h;
@@ -482,10 +534,20 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
       // en heeft, net als elk ander getint vlak, geen balk aan de
       // linkerrand. Het is een aanloop, geen uitleg van een onderdeel, en
       // zonder balk leest het rustiger.
-      const h = hoogteVan(doc, blok.tekst, F.dm, 9.4, TEKST_B - 16, 3.4);
-      vulRechthoek(doc, x, y, TEKST_B, h + 16, KLEUR.papier2, 3);
-      schrijf(doc, blok.tekst, x + 13, y + 8, TEKST_B - 26, F.dm, 9.4, KLEUR.inkt, 3.4);
-      return h + 22;
+      const maten = introMaten(doc, blok.tekst);
+      vulRechthoek(doc, x, y, TEKST_B, maten.vlakHoogte, KLEUR.papier2, 3);
+      schrijf(
+        doc,
+        blok.tekst,
+        x + INTRO_ZIJMARGE,
+        y + INTRO_BOVENMARGE,
+        maten.tekstBreedte,
+        F.dm,
+        INTRO_KORPS,
+        KLEUR.inkt,
+        INTRO_REGELRUIMTE,
+      );
+      return maten.blokHoogte;
     }
     case "alinea":
       return schrijf(doc, blok.tekst, x, y, TEKST_B, F.dm, 9.2, KLEUR.inkt, 3.6) + 9;
@@ -611,7 +673,13 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
       // ONDER het gekleurde vlak; op het blad met de eigen woorden viel de
       // regel "En dat: ..." daardoor buiten de kaart. De hoogtemeting hierboven
       // rekende al met 44 punten, dus de bladindeling had de ruimte wel.
-      let h = 42;
+      // Opmaakherstel-3, punt 3: is er geen kop (het blad "Waar jij iets wilt
+      // betekenen" heeft er met opzet geen, het opschriftje zegt het al), dan
+      // schuiven de regels de hoogte van die ene kopregel op en krimpt het
+      // vlak evenveel mee. Zo staat er geen gat tussen het opschriftje en de
+      // eerste regel.
+      const citaatKopH = citaatKopHoogte(blok.kop);
+      let h = 42 - (CITAAT_KOP_H - citaatKopH);
       for (const r of blok.regels) {
         h += hoogteVan(doc, r.vraag, F.dm, 9.4, TEKST_B - 44, 2.8) + 4;
         if (r.herkenning !== null) {
@@ -625,9 +693,11 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
       const vlakH = h + 12;
       vulRechthoek(doc, x, y, TEKST_B, vlakH, KLEUR.okerZacht, 3);
       kapitalen(doc, blok.opschrift, x + 16, y + 9, 6.8, kopKleur);
-      doc.font(F.dmBold).fontSize(10.5).fillColor(KLEUR.inkt);
-      doc.text(blok.kop, x + 16, y + 24, { width: TEKST_B - 32, lineBreak: false });
-      let yy = y + 42;
+      if (citaatKopH > 0) {
+        doc.font(F.dmBold).fontSize(10.5).fillColor(KLEUR.inkt);
+        doc.text(blok.kop, x + 16, y + 24, { width: TEKST_B - 32, lineBreak: false });
+      }
+      let yy = y + 42 - (CITAAT_KOP_H - citaatKopH);
       blok.regels.forEach((r, i) => {
         const vh = hoogteVan(doc, r.vraag, F.dm, 9.4, TEKST_B - 44, 2.8);
         doc.font(F.dm).fontSize(9.4).fillColor(KLEUR.inkt);
@@ -746,25 +816,36 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
       // tussen de kop en de hoofdtekst, net als in de rangordes.
       const opschriftKleur = blok.kleur === KLEUR.oker ? KLEUR.okerDiep : blok.kleur ?? KLEUR.accentDiep;
       const omschrijvingH = blok.omschrijving ? 12 : 0;
+      // Opmaakherstel-3, punt 3: sommige ingetogen vlakken hebben met opzet
+      // geen kop, omdat het opschriftje er al zegt wat er staat (het blad
+      // "Dit hoopte je te vinden" en het blad "Waar jij iets wilt
+      // betekenen"). De regel voor de kop werd toch opengehouden, waardoor er
+      // midden in het vlak een gat stond tussen het opschriftje en de eerste
+      // tekstregel. Is er geen kop, dan schuift de tekst nu de hoogte van die
+      // ene regel op en krimpt het vlak evenveel mee.
+      const kopH = kaartvlakKopHoogte(blok.kop);
       // Herstel, punt 1 en 4: citaatstijl zet de hoofdtekst tussen
       // aanhalingstekens en schuin, voor letterlijke, vrije tekst van de
       // student zelf (zie de doc-comment bij het type in rapport-contract.ts).
       const kaartvlakTekst = blok.citaatstijl ? `\u201C${blok.tekst}\u201D` : blok.tekst;
       const tekstH = hoogteVan(doc, kaartvlakTekst, F.dm, 9, TEKST_B - 32, 3.2);
       const contactH = blok.contactregel ? 16 : 0;
-      const totaal = tekstH + contactH + omschrijvingH + 48;
+      const totaal = tekstH + contactH + omschrijvingH + 48 - (KAARTVLAK_KOP_H - kopH);
       vulRechthoek(doc, x, y, TEKST_B, totaal, KLEUR.okerZacht, 3);
       kapitalen(doc, blok.opschrift, x + 16, y + 10, 6.8, opschriftKleur);
-      doc.font(F.dmBold).fontSize(11.5).fillColor(KLEUR.inkt);
-      doc.text(blok.kop, x + 16, y + 22, { width: TEKST_B - 32, lineBreak: false });
+      if (kopH > 0) {
+        doc.font(F.dmBold).fontSize(11.5).fillColor(KLEUR.inkt);
+        doc.text(blok.kop, x + 16, y + 22, { width: TEKST_B - 32, lineBreak: false });
+      }
       if (blok.omschrijving) {
         doc.font(F.dm).fontSize(7.6).fillColor(KLEUR.inktZacht);
-        doc.text(blok.omschrijving, x + 16, y + 35.5, { width: TEKST_B - 32, lineBreak: false });
+        doc.text(blok.omschrijving, x + 16, y + 17.5 + kopH, { width: TEKST_B - 32, lineBreak: false });
       }
-      schrijf(doc, kaartvlakTekst, x + 16, y + 40 + omschrijvingH, TEKST_B - 32, F.dm, 9, KLEUR.inkt, 3.2, blok.citaatstijl === true);
+      const tekstY = y + 22 + kopH + omschrijvingH;
+      schrijf(doc, kaartvlakTekst, x + 16, tekstY, TEKST_B - 32, F.dm, 9, KLEUR.inkt, 3.2, blok.citaatstijl === true);
       if (blok.contactregel) {
         doc.font(F.dmBold).fontSize(9).fillColor(KLEUR.accent);
-        doc.text(blok.contactregel, x + 16, y + 40 + omschrijvingH + tekstH + 8, { width: TEKST_B - 32, lineBreak: false });
+        doc.text(blok.contactregel, x + 16, tekstY + tekstH + 8, { width: TEKST_B - 32, lineBreak: false });
       }
       // Ingreep 3, punt 4: acht punten extra ademruimte na de kaart.
       return totaal + 14;
@@ -943,7 +1024,31 @@ const HALFLEEG_DREMPEL = 0.55;
 // verder naar onder, dan zakt de inhoud niet verder dan deze grens onder
 // haar normale plaats. Zo blijft er zichtbaar rust boven de inhoud, maar
 // blijft de kop bij zijn inhoud horen.
-const MAX_EXTRA_RUIMTE_BOVEN = 75;
+// Opmaakherstel-3, punt 2: deze grens stond op vijfenzeventig punten. Dat is
+// bijna vier tekstregels lucht tussen het streepje onder de kop en de eerste
+// regel eronder, en dat las op de korte bladen ("Talent-foci, wat het zijn",
+// "Drivers, wat het zijn", "Studierichtingen om te verkennen") als een gat in
+// plaats van als rust: het wit boven de inhoud viel samen met het wit rond de
+// kop, terwijl er onder de inhoud toch nog een paar honderd punten leeg bleef.
+// Zesendertig punten (ongeveer twee regels) geeft dezelfde bedoelde rust
+// zonder de kop van haar inhoud te scheiden.
+const MAX_EXTRA_RUIMTE_BOVEN = 36;
+
+// Opmaakherstel-3, punt 2: de begrenzing hierboven is een vast getal en houdt
+// geen rekening met hoe klein de inhoud zelf is. Op een heel kort blad
+// (bijvoorbeeld "Dit hoopte je te vinden": een inleidend vlak en de eigen
+// woorden van de student, samen ongeveer honderdtwintig punten) zette ze de
+// volle vijfenzeventig punten boven de inhoud. Boven het blok stond dan een
+// gat van ruim een halve inhoudshoogte, terwijl er onder het blok toch nog
+// vierhonderd punten wit overbleven: de inhoud zakte niet naar het midden,
+// ze kwam enkel los te hangen van haar eigen kop.
+//
+// De extra ruimte is daarom voortaan ook begrensd op een deel van de inhoud
+// zelf. Kleine inhoud krijgt kleine lucht en blijft bij haar kop staan; een
+// blad dat halfvol is, krijgt nog steeds de volle vijfenzeventig punten. Het
+// wit dat overblijft, staat onder de inhoud, waar het als rust leest in
+// plaats van als een gat tussen de kop en de eerste regel.
+const EXTRA_RUIMTE_AANDEEL_VAN_INHOUD = 0.25;
 
 /**
  * Berekent waar de inhoud van een blad moet beginnen. Bij een vervolgblad of
@@ -959,7 +1064,11 @@ export function berekenInhoudStart(inhoudHoogte: number, kopEindY: number, isVer
   const beschikbaar = BODEM - kopEindY;
   if (beschikbaar <= 0 || inhoudHoogte >= beschikbaar * HALFLEEG_DREMPEL) return kopEindY;
   const overschot = beschikbaar - inhoudHoogte;
-  const extraRuimte = Math.min(overschot / 2, MAX_EXTRA_RUIMTE_BOVEN);
+  const extraRuimte = Math.min(
+    overschot / 2,
+    MAX_EXTRA_RUIMTE_BOVEN,
+    inhoudHoogte * EXTRA_RUIMTE_AANDEEL_VAN_INHOUD,
+  );
   return kopEindY + extraRuimte;
 }
 

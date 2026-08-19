@@ -43,7 +43,14 @@ describe("lucht tussen de kop en de eerste tekstregel geldt ook binnen een getin
     const kopMatch = code.match(/doc\.text\(blok\.kop,[^\n]*y \+ ([0-9.]+)/);
     expect(kopMatch, "geen y-positie gevonden voor blok.kop in citaat").not.toBeNull();
     const kopY = Number(kopMatch![1]);
-    const yyMatch = code.match(/let yy = y \+ ([0-9.]+);/);
+    // Opmaakherstel-3, punt 3: het beginpunt van de regels is niet langer een
+    // vast getal. Heeft dit vlak geen kop, dan wordt de regel waar de kop zou
+    // staan niet opengehouden en schuiven de regels evenveel op:
+    // "let yy = y + 42 - (CITAAT_KOP_H - citaatKopH);". Voor deze meting geldt
+    // het geval MET kop, want alleen dan bestaat er een afstand tussen kop en
+    // eerste regel; dan is citaatKopH gelijk aan CITAAT_KOP_H en valt de
+    // aftrek weg.
+    const yyMatch = code.match(/let yy = y \+ ([0-9.]+)(?: - \(CITAAT_KOP_H - citaatKopH\))?;/);
     expect(yyMatch, "geen startpunt yy gevonden in citaat").not.toBeNull();
     const yyStart = Number(yyMatch![1]);
     expect(yyStart - kopY).toBeGreaterThanOrEqual(18);

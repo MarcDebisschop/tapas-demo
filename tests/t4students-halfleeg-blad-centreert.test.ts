@@ -142,6 +142,12 @@ describe("het exacte startpunt van de inhoud op een blad", () => {
 // die vijfenzeventig punten onder haar normale plaats (INHOUD_TOP/kopEindY).
 // Een kort hoofdstuk moet nog steeds enige extra ruimte krijgen (de
 // centrering blijft dus bestaan, ze slaat alleen niet meer door).
+//
+// Opmaakherstel-3: deze bovengrens is nadien verder aangescherpt naar
+// zesendertig punten en naar een kwart van de inhoud zelf. Die scherpere
+// waarborg staat in tests/t4students-opmaak-vlakken-en-lucht.test.ts. De
+// grens van vijfenzeventig punten hieronder blijft als ondergrens van de
+// belofte staan: ze mag nooit meer worden.
 // ---------------------------------------------------------------------------
 describe("de verticale centrering wordt begrensd op vijfenzeventig punten extra ruimte", () => {
   it("bij een heel kort hoofdstuk is de extra ruimte boven de inhoud nooit meer dan 75 punten", async () => {
