@@ -66,6 +66,7 @@ const opslag = (await import("../server/storage")) as unknown as {
 const afnames = opslag.storage.__afnames;
 
 const { registerAfnameRoutes } = await import("../server/routes/afnames");
+const { verwachteT4TeensSleutels } = await import("../server/t4teens/volledigheid");
 
 const BEWIJS = "bezitstoken-voor-de-test";
 
@@ -118,6 +119,15 @@ async function rondAf(id: number, lichaam: unknown) {
   }
 }
 
+/** Een volledig ingevuld T4Teens-antwoordenblad, in de vorm van het scherm. */
+function volledigT4Teens(): Record<string, unknown> {
+  const uit: Record<string, unknown> = {};
+  for (const sleutel of verwachteT4TeensSleutels()) {
+    uit[sleutel] = { most: null, least: null, itemEnergy: null, blockEnergy: 1 };
+  }
+  return uit;
+}
+
 beforeEach(() => {
   afnames.clear();
 });
@@ -137,7 +147,12 @@ describe("server: instrumenten zonder eigen deel 2 hoeven geen answers mee te st
   });
 
   it("laat t4teens afronden zonder answers (bestaand gedrag, blijft intact)", async () => {
-    zetAfname(2, { instrumentId: "t4teens" });
+    // T4Teens heeft sinds 19 augustus 2026 ook een eigen volledigheidscontrole
+    // (server/t4teens/volledigheid.ts). Die is hier geen onderwerp, dus krijgt
+    // deze afname een volledig ingevuld antwoordenblad. Het gaat enkel om de
+    // garantie dat het ontbreken van `answers` niet met "Ongeldige antwoorden
+    // voor deel 2" wordt afgewezen.
+    zetAfname(2, { instrumentId: "t4teens", mainResponses: JSON.stringify(volledigT4Teens()) });
     const uit = await rondAf(2, {});
     expect(uit.body?.error).not.toBe("Ongeldige antwoorden voor deel 2");
     expect(uit.status).not.toBe(400);

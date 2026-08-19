@@ -58,6 +58,18 @@ function scoreVan(raw: unknown): number | null {
   return null;
 }
 
+/**
+ * Is dit een gegeven antwoord volgens de scoring zelf?
+ *
+ * De volledigheidspoort (server/t4teens/volledigheid.ts) moet exact dezelfde
+ * regel gebruiken als de scoring. Anders kan een antwoord geweigerd worden dat
+ * de scoring wel zou meerekenen, of omgekeerd. Daarom leest die poort deze
+ * functie in plaats van de vorm van een antwoord nog eens na te bouwen.
+ */
+export function t4teensAntwoordGegeven(raw: unknown): boolean {
+  return scoreVan(raw) !== null;
+}
+
 export interface T4TeensMainMeta {
   completedItems: number;
   totalItems: number;
