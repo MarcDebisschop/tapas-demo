@@ -24,23 +24,42 @@ function lees(pad: string): string {
   return readFileSync(resolve(process.cwd(), pad), "utf-8");
 }
 
+/**
+ * Leest een bestand en laat alleen de werkzame code over: commentaar gaat eruit.
+ *
+ * Waarom dit erbij hoort. Een controle die de platte bestandstekst afzoekt,
+ * keurt een aansluiting ook goed wanneer die is uitgezet en enkel nog als
+ * commentaarregel bestaat. Bij de mutatieproef bleek dat: de regel
+ * registerVragenlijstT4StudentsRoutes(app) met twee schuine strepen ervoor liet
+ * deze toets groen, terwijl de vragenlijstroute in werkelijkheid niet meer
+ * aanstond en de deelnemer op een 404 zou uitkomen. Elke aansluiting hieronder
+ * wordt daarom in de code gezocht, niet in de uitleg eromheen.
+ */
+function leesWerkzameCode(pad: string): string {
+  return lees(pad)
+    .replace(/\/\*[\s\S]*?\*\//g, "") // blokcommentaar, ook meerregelig
+    .split("\n")
+    .map((regel) => regel.replace(/\/\/.*$/, "")) // regelcommentaar achteraan
+    .join("\n");
+}
+
 describe("de weg naar het studiekompas staat aan", () => {
   it("de vragenlijstroute van dit instrument wordt geregistreerd in server/routes.ts", () => {
-    const bron = lees("server/routes.ts");
+    const bron = leesWerkzameCode("server/routes.ts");
     expect(bron).toContain("registerVragenlijstT4StudentsRoutes");
     expect(bron).toContain("./routes/vragenlijst-t4students");
-    // Niet alleen ingevoerd, ook aangeroepen.
+    // Niet alleen ingevoerd, ook werkelijk aangeroepen, en niet uitgezet.
     expect(bron).toContain("registerVragenlijstT4StudentsRoutes(app)");
   });
 
   it("het invulscherm heeft een adres in client/src/App.tsx", () => {
-    const bron = lees("client/src/App.tsx");
+    const bron = leesWerkzameCode("client/src/App.tsx");
     expect(bron).toContain('import Studiekompas from "@/pages/studiekompas"');
     expect(bron).toContain('path="/afname/:id/studiekompas" component={Studiekompas}');
   });
 
   it("deel 1 van het T4P Business Kompas stuurt een T4Students-afname door", () => {
-    const bron = lees("client/src/pages/deel1.tsx");
+    const bron = leesWerkzameCode("client/src/pages/deel1.tsx");
     expect(bron).toContain('afname?.instrumentId === "t4students"');
     expect(bron).toContain("navigate(`/afname/${id}/studiekompas`");
   });
@@ -65,7 +84,7 @@ describe("de weg naar het studiekompas staat aan", () => {
   });
 
   it("het invulscherm haalt geen vragenlijst van een ander instrument op", () => {
-    const bron = lees("client/src/pages/studiekompas.tsx");
+    const bron = leesWerkzameCode("client/src/pages/studiekompas.tsx");
     expect(bron).toContain("/api/vragenlijst/tapas-t4students");
     expect(bron).not.toContain("/api/instrument");
     expect(bron).not.toContain("tapas-t4teens");
