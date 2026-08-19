@@ -30,6 +30,7 @@ import {
   T4KIDS_ARCHETYPE_TOP_N,
 } from "./t4kids/itembank";
 import { naarT4SAntwoorden, ontbrekendeItems as ontbrekendeT4SItems } from "./t4students/antwoorden";
+import { ontbrekendeT4TeensBlokken } from "./t4teens/volledigheid";
 
 /** Uitkomst van de volledigheidscontrole. */
 export type Volledigheid =
@@ -41,14 +42,15 @@ export type Volledigheid =
  * weigeren. Staat een instrument hier niet in, dan verandert er niets aan het
  * gedrag van vandaag.
  *
- * Bewust nog niet in deze lijst:
- *   - t4teens: het invulscherm is invulbaar gemaakt, dus de oude reden (meest en
- *     minst waren nooit allebei te zetten) geldt niet meer. Wat hier nog
- *     ontbreekt is de vragenset: verwachteBlokken() leest de blokken uit de
- *     descriptor, en die van T4Teens draagt er geen. De blokken komen uit
- *     server/routes/vragenlijst-t4teens.ts. Zolang die twee niet gekoppeld zijn,
- *     zou een controle hier op een lege lijst draaien en dus niets weigeren.
- *     Zie het verslag.
+ * t4teens staat er sinds de testronde van 19 augustus 2026 ook in. De reden
+ * waarom het er eerder niet in stond, was echt: verwachteBlokken() leest de
+ * blokken uit de descriptor, en die van T4Teens draagt er geen, dus zou een
+ * controle hier op een lege lijst draaien en niets weigeren. Dat is nu
+ * opgelost in server/t4teens/volledigheid.ts, die de verwachte blokken uit
+ * dezelfde itembank haalt als de vragenlijstroute en als de omzetting van
+ * bloksleutels naar itemsleutels. De test wees uit wat het gat kostte: een
+ * halve lijst kon afgerond worden, werd voltooid verklaard en kreeg een
+ * rapport.
  *
  * t4students staat er wel in. Het studiekompas kent zijn vragenset volledig
  * (server/data/t4students.json) en bewaart antwoorden per item-id. Juist daar
@@ -59,6 +61,7 @@ export type Volledigheid =
 function kentVerwachteVragenset(instrumentId: string | null | undefined): boolean {
   if (instrumentId === "t4kids") return true;
   if (instrumentId === "t4students") return true;
+  if (instrumentId === "t4teens") return true;
   if (!instrumentId) return true; // het standaard-instrument (T4P Business)
   return instrumentId === getDefaultDescriptor().instrumentId;
 }
@@ -91,7 +94,9 @@ export function controleerAfnameVolledig(opties: {
       ? ontbrekendT4Kids(opties.responses, opties.keuzes)
       : opties.instrumentId === "t4students"
         ? ontbrekendT4Students(opties.responses)
-        : ontbrekendStandaard(opties.responses);
+        : opties.instrumentId === "t4teens"
+          ? ontbrekendeT4TeensBlokken(opties.responses)
+          : ontbrekendStandaard(opties.responses);
 
   if (ontbreekt.length === 0) return { volledig: true };
   return {

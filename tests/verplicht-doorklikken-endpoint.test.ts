@@ -182,9 +182,22 @@ describe("het afrond-endpoint weigert een onvolledige inzending", () => {
 
 describe("de weigering sluit niemand onterecht buiten", () => {
   it("laat een instrument waarvan de vragenset niet bekend is ongemoeid", async () => {
-    zetAfname(6, { instrumentId: "t4teens", mainResponses: JSON.stringify({}) });
+    // Een instrument dat de server niet kent. Liever geen regel dan een
+    // verkeerde regel die een deelnemer buitensluit.
+    zetAfname(6, { instrumentId: "instrument-dat-de-server-niet-kent", mainResponses: JSON.stringify({}) });
     const uit = await rondAf(6, VERBINDING);
     expect(uit.body?.error).not.toBe(vertaal("onvolledig_indienen", "nl"));
+  });
+
+  it("weigert een lege T4Teens-inzending, want die vragenset is nu wel bekend", async () => {
+    // Tot 19 augustus 2026 kwam deze afname er ongehinderd door en kreeg ze
+    // daarna de toestand voltooid en een rapport. Zie server/t4teens/volledigheid.ts.
+    zetAfname(9, { instrumentId: "t4teens", mainResponses: JSON.stringify({}) });
+    const uit = await rondAf(9, VERBINDING);
+    expect(uit.status).toBe(400);
+    expect(uit.body.error).toBe(vertaal("onvolledig_indienen", "nl"));
+    expect(uit.body.ontbreekt).toContain("B0");
+    expect(afnames.get(9).status).toBe("deel2");
   });
 
   it("weigert nog steeds vóór de controle wat al eerder geweigerd werd", async () => {
