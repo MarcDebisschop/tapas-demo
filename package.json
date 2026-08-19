@@ -12,7 +12,8 @@
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "verify:stem": "node script/verify-vlaamse-stem.mjs"
+    "verify:stem": "node script/verify-vlaamse-stem.mjs",
+    "proef:t4students": "node script/t4students-mutatieproef.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
