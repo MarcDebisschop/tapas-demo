@@ -90,6 +90,17 @@ function zetAfname(id: number, extra: Record<string, unknown>) {
     company: null,
     role: null,
     consentScope: "self",
+    // Een echte afname draagt deze twee velden altijd: de startpagina zet ze
+    // voor de eerste vraag. Sinds de toestemmingspoort op de inleverroutes
+    // staat, hoort een fixture dat dus ook te doen.
+    consentGiven: true,
+    consentTimestamp: "2026-08-19T10:00:00.000Z",
+    // T4Teens en T4Kids kennen naast de toestemming ook een leeftijdspoort
+    // (AVG artikel 8). Een echte afname legt die bij de start vast.
+    leeftijdsband: "13-15",
+    ouderlijkeToestemming: true,
+    ouderNaam: "Ouder Test",
+    ouderEmail: "ouder@example.com",
     itemTijden: null,
     mainResponses: null,
     ...extra,

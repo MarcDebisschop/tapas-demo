@@ -37,6 +37,10 @@ import { valideerLeeftijdspoort } from "@shared/leeftijd";
 import { leesItemTijden } from "../afnamekwaliteit";
 import { bewijsGeldig, bewijsUitBody, koppelBeslissing } from "../koppel-bewijs";
 import { vereisAfnameBewijs } from "../afname-bewijs";
+// Tweede poort op dezelfde drie inleverroutes: de toestemming (en bij T4Kids en
+// T4Teens de leeftijdspoort van AVG art. 8) moet vastgelegd zijn voordat er
+// antwoorden bewaard of ingeleverd kunnen worden. Zie server/toestemming-poort.ts.
+import { vereisVastgelegdeToestemming } from "../toestemming-poort";
 import { vereisAdmin, adminIdVanSessie } from "../admin-guard";
 import { beoordeelSchrijfweg, weigeringslichaam } from "../bekwaamheid/poortbrug";
 import {
@@ -462,7 +466,7 @@ export function registerAfnameRoutes(app: Express): void {
   });
 
   // --- Tussentijds bewaren van deel 1 (concept) ---
-  app.post("/api/afnames/:id/concept", vereisAfnameBewijs, async (req, res) => {
+  app.post("/api/afnames/:id/concept", vereisAfnameBewijs, vereisVastgelegdeToestemming, async (req, res) => {
     const id = Number(req.params.id);
     const a = await storage.getAfname(id);
     if (!a) return res.status(404).json({ error: "Afname niet gevonden" });
@@ -481,7 +485,7 @@ export function registerAfnameRoutes(app: Express): void {
   });
 
   // --- Deel 1 (hoofdvragenlijst) inleveren ---
-  app.post("/api/afnames/:id/main", vereisAfnameBewijs, async (req, res) => {
+  app.post("/api/afnames/:id/main", vereisAfnameBewijs, vereisVastgelegdeToestemming, async (req, res) => {
     const id = Number(req.params.id);
     const a = await storage.getAfname(id);
     if (!a) return res.status(404).json({ error: "Afname niet gevonden" });
@@ -501,7 +505,7 @@ export function registerAfnameRoutes(app: Express): void {
   });
 
   // --- Deel 2 (verbondenheid) inleveren + profiel genereren ---
-  app.post("/api/afnames/:id/connection", vereisAfnameBewijs, async (req, res) => {
+  app.post("/api/afnames/:id/connection", vereisAfnameBewijs, vereisVastgelegdeToestemming, async (req, res) => {
     const id = Number(req.params.id);
     const a = await storage.getAfname(id);
     if (!a) return res.status(404).json({ error: "Afname niet gevonden" });
@@ -574,6 +578,7 @@ export function registerAfnameRoutes(app: Express): void {
         role: a.role,
         consentScope: a.consentScope,
         consentTimestamp: a.consentTimestamp,
+        consentGiven: a.consentGiven,
         responses,
         keuzes,
         taal: a.taal,
@@ -594,6 +599,7 @@ export function registerAfnameRoutes(app: Express): void {
         itemTijden,
         consentScope: a.consentScope,
         consentTimestamp: a.consentTimestamp,
+        consentGiven: a.consentGiven,
       });
     } else if (a.instrumentId === "t4teens") {
       // T4Teens: eigen itembank + eigen scoringscontract (instrumentId "t4teens"),
@@ -611,6 +617,7 @@ export function registerAfnameRoutes(app: Express): void {
         role: a.role,
         consentScope: a.consentScope,
         consentTimestamp: a.consentTimestamp,
+        consentGiven: a.consentGiven,
         responses: naarItemSleutels(responses),
         taal: a.taal,
       });
@@ -626,6 +633,7 @@ export function registerAfnameRoutes(app: Express): void {
         role: a.role,
         consentScope: a.consentScope,
         consentTimestamp: a.consentTimestamp,
+        consentGiven: a.consentGiven,
         responses,
         baseline: a.baselineEnergy,
         connection: connection!,

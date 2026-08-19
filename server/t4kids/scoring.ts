@@ -34,6 +34,7 @@ import {
   T4KIDS_WOORDSCHAAL,
   type Focus,
 } from "./itembank";
+import { toestemmingVoorContract } from "../contract-toestemming";
 
 function round2(x: number): number {
   return Number(x.toFixed(2));
@@ -178,6 +179,9 @@ export interface BuildT4KidsOpts {
   role?: string | null;
   consentScope?: string | null;
   consentTimestamp?: string | null;
+  // Komt uit afnames.consent_given. Zie server/contract-toestemming.ts: het
+  // contract bevestigt toestemming alleen met een tijdstip als onderbouwing.
+  consentGiven?: boolean | null;
   // itemId -> ruwe respons (blockResponse-achtig object of getal).
   responses: Record<string, unknown>;
   // Module 2: gekozen archetypen (met "waarom") + top-3 ranking (itemIds).
@@ -557,11 +561,12 @@ export function buildT4KidsContract(opts: BuildT4KidsOpts): T4KidsContract {
       company: opts.company ?? null,
       role: opts.role ?? null,
     },
-    consent: {
-      given: true,
-      scope: opts.consentScope ?? "ontdekkingsreis + rapport (kind + ouder)",
-      timestamp: opts.consentTimestamp ?? null,
-    },
+    consent: toestemmingVoorContract({
+      consentGiven: opts.consentGiven,
+      consentScope: opts.consentScope,
+      consentTimestamp: opts.consentTimestamp,
+      standaardScope: "ontdekkingsreis + rapport (kind + ouder)",
+    }),
     sections: {
       main: {
         meta: {

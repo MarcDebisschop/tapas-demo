@@ -158,6 +158,9 @@ interface DashboardResponse {
     instrumentId: string;
     instrumentNaam: string;
     rapporten: Array<{ id: number; variant: string; titel: string }>;
+    // Pad naar een rapport dat in de client getekend wordt en dus geen
+    // rapportrecord heeft (vandaag enkel het T4Kids-boekje). Null voor de rest.
+    eigenRapportPad?: string | null;
   }>;
   galerij: GalerijData;
 }
@@ -737,6 +740,18 @@ export default function Dashboard() {
                             </div>
                           </div>
                         ))}
+                      </div>
+                    ) : a.eigenRapportPad ? (
+                      // T4Kids: het boekje wordt in de client getekend, dus er is
+                      // geen rapportrecord om te tonen. Zonder deze knop bleef hier
+                      // "Rapport in voorbereiding" staan bij een voltooide reis en
+                      // was het boekje na het sluiten van het tabblad weg.
+                      <div className="mt-4 border-t border-border pt-4">
+                        <a href={`#${a.eigenRapportPad}`} data-testid={`link-eigen-rapport-${a.id}`}>
+                          <Button size="sm" variant="outline">
+                            <Eye className="mr-2 h-4 w-4" /> {k(STR.bekijkRapport, taal)}
+                          </Button>
+                        </a>
                       </div>
                     ) : (
                       <p className="mt-3 text-xs text-muted-foreground">{k(STR.geenRapport, taal)}</p>

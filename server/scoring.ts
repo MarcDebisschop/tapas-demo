@@ -2,6 +2,7 @@ import { instrument, huidigeInhoudsVersie } from "./instrument";
 import type { InstrumentBlock } from "./instrument";
 import { berekenAfnamekwaliteit, type Afnamekwaliteit, type ItemTijden } from "./afnamekwaliteit";
 import { energieNaarTienschaal } from "../shared/energie-schaal";
+import { toestemmingVoorContract } from "./contract-toestemming";
 
 // ---------------------------------------------------------------------------
 // Server-side scoringengine — getrouwe port van de gevalideerde JS-engine
@@ -296,6 +297,9 @@ export function buildGeneratorContract(opts: {
   role?: string | null;
   consentScope?: string | null;
   consentTimestamp?: string | null;
+  // Komt uit afnames.consent_given. Zie server/contract-toestemming.ts: het
+  // contract bevestigt toestemming alleen met een tijdstip als onderbouwing.
+  consentGiven?: boolean | null;
   responses: Responses;
   baseline: number;
   connection: ConnectionAnswers;
@@ -323,11 +327,12 @@ export function buildGeneratorContract(opts: {
       company: opts.company ?? null,
       role: opts.role ?? null,
     },
-    consent: {
-      given: true,
-      scope: opts.consentScope ?? "profiel-generatie + rapport",
-      timestamp: opts.consentTimestamp ?? null,
-    },
+    consent: toestemmingVoorContract({
+      consentGiven: opts.consentGiven,
+      consentScope: opts.consentScope,
+      consentTimestamp: opts.consentTimestamp,
+      standaardScope: "profiel-generatie + rapport",
+    }),
     sections: {
       main,
       connection: {

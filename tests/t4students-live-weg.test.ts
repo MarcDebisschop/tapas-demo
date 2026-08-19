@@ -175,6 +175,11 @@ beforeEach(() => {
     bezitsToken: RESPONDENT_CODE,
     inviteToken: null,
     consentScope: "test",
+    // Een echte afname draagt deze twee velden altijd: de startpagina zet ze
+    // voor de eerste vraag. Sinds de toestemmingspoort op de inleverroutes
+    // staat, hoort een fixture dat dus ook te doen.
+    consentGiven: true,
+    consentTimestamp: "2026-08-19T10:00:00.000Z",
     consentTimestamp: null,
     organisatieId: null,
     baselineEnergy: null,

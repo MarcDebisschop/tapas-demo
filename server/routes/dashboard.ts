@@ -272,6 +272,12 @@ export function registerDashboardRoutes(app: Express): void {
       instrumentId: string;
       instrumentNaam: string;
       rapporten: Array<{ id: number; variant: string; titel: string }>;
+      // Instrumenten waarvan het rapport in de client getekend wordt en dus geen
+      // rapportrecord kent (vandaag enkel T4Kids). Zonder dit veld bleef het
+      // dashboard "Rapport in voorbereiding" tonen bij een voltooide afname en
+      // was het boekje na het sluiten van het tabblad onbereikbaar. Null voor
+      // elk ander instrument, zodat daar niets verandert.
+      eigenRapportPad: string | null;
     }>;
     for (const a of afnames) {
       const raps = await storage.listRapporten(a.id);
@@ -287,6 +293,10 @@ export function registerDashboardRoutes(app: Express): void {
         instrumentId: descriptor.instrumentId,
         instrumentNaam: descriptor.name,
         rapporten: raps.map((r) => ({ id: r.id, variant: r.variant, titel: r.titel })),
+        eigenRapportPad:
+          descriptor.instrumentId === "t4kids" && a.status === "voltooid" && a.generatorContract
+            ? `/dashboard/${req.params.token}/afname/${a.id}/t4kids-rapport`
+            : null,
       });
     }
 
