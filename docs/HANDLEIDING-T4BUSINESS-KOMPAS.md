@@ -128,12 +128,22 @@ het rapport afgedrukt.
 
 Samenstelling (`server/scoring.ts`, `consistencyMetrics`):
 
-| Component | Gewicht |
-|---|---|
-| Keuzeparen volledig (most en least gezet) | 40% |
-| Energieantwoorden aanwezig | 30% |
-| Aansluiting tussen driverkeuze en energieantwoord | 20% |
-| Spreiding in de energieantwoorden | 10% |
+| Component | Gewicht | Wat het meet |
+|---|---|---|
+| Keuzeparen volledig (most en least gezet) | 40 punten | aandeel blokken met beide keuzes |
+| Energieantwoorden aanwezig | 30 punten | aandeel blokken met een bruikbaar energieantwoord |
+| Aansluiting top-3 drivers | 20 punten | aandeel van de drie hoogste drivers met energie >= 0 |
+| Rust in de energieantwoorden | 10 punten | 10 min de som van de absolute driverenergie, ondergrens 0 |
+
+De laatste twee componenten verdienen een kanttekening en die hoort in een
+handleiding thuis. De aansluitingscomponent belandt hoger wanneer de sterkst
+herkende drivers als energiegevend worden aangeduid; de rustcomponent zakt
+wanneer de energieantwoorden ver van nul liggen. Beide zijn dus geen zuivere
+maten van zorgvuldig invullen: iemand die eerlijk rapporteert dat haar
+dominante drivers veel energie kosten, haalt op deze index een lagere waarde.
+Dat is een bekende beperking van deze samenstelling en een reden om de index
+alleen te lezen als leessignaal bij de invulling, nooit als beoordeling van de
+persoon of van de kwaliteit van haar antwoorden.
 
 De woordlabels: 80 of hoger is hoog, 60 tot 80 is middelmatig, onder 60 is laag.
 De term "interne consistentie" wordt hier bewust nergens gebruikt, ook niet in
@@ -159,7 +169,8 @@ Elke grens in dit instrument valt in één van vier soorten:
 | Gewichten 40/30/20/10 in de index | vast | `server/scoring.ts` | Ontwerpconventie |
 | Energiestatus "geeft" | gemiddelde > +0,25 | `server/t4p/kompas-contract.ts` | Interpretatieve heuristiek |
 | Energiestatus "kost" | gemiddelde < -0,25 | `server/t4p/kompas-contract.ts` | Interpretatieve heuristiek |
-| Familiegemiddelde foci "positief" | >= +0,50 | `server/t4p/kompas-contract.ts` | Interpretatieve heuristiek |
+| Leesrichting Big-Five-dimensie op blad 20 | grenzen +3,0 / +0,5 / -1,5 op het gemiddelde net | `server/t4p/kompas-contract.ts` | Interpretatieve heuristiek |
+| Rangordelabel RIASEC op blad 20 | plaats 1 tot 6 in de eigen rangorde | `server/t4p/kompas-contract.ts` | Technische kwaliteitsregel |
 | Driverrisico "hoog" | gemiddelde energie top-2 drivers <= -1 | `server/scoring.ts` | Interpretatieve heuristiek |
 | Driverrisico "matig" | tussen -1 en 0 | `server/scoring.ts` | Interpretatieve heuristiek |
 | Rangorde binnen familie | op `net / aanbiedingen` | `server/t4p/kompas-contract.ts` | Technische kwaliteitsregel |
@@ -204,7 +215,13 @@ persoon. Ze maakt wel iets mogelijk wat eerder niet kon: nagaan of een afname in
    werkelijk onderscheidend is, kan alleen uit data komen.
 5. **Deel 2 (organisatieverbondenheid).** Vier vragen; die schaalbreedte is te
    smal voor enige psychometrische claim per subschaal.
-6. **Onverklaarde grootheid.** `totalChoices: completed * 3`
+6. **Het vertaalblad naar gevestigde kaders (blad 20).** De koppeling van het
+   T4P-profiel naar Big Five, RIASEC en de strata van Jaques is een
+   interpretatieve brug. Er bestaat geen enkele studie waarin T4P-uitkomsten
+   naast echte Big-Five-, RIASEC- of Jaques-metingen zijn gelegd. Het blad zegt
+   dat nu ook zelf. Zolang die studie er niet is, blijft "vermoedelijke
+   Holland-code" en "vermoedelijk stratum" gespreksmateriaal en geen uitslag.
+7. **Onverklaarde grootheid.** `totalChoices: completed * 3`
    (`server/scoring.ts`) is niet terug te voeren op de itemstructuur. Dit is een
    openstaand punt uit de audit en geen bewuste beslisregel.
 
