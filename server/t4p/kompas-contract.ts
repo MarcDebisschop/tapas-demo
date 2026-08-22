@@ -221,7 +221,9 @@ const BREEDTE = {
   jaques: [87.7, 71.2, 332.4],
   lenzen: [186, 157.1, 148.2],
   families: [122.5, 104.2, 264.6],
-  constructen: [217.2, 99.6, 53.2, 121.3],
+  // Vijf kolommen sinds de technische bijlage ook de nettoscore per aanbieding
+  // toont; de som blijft gelijk aan de tekstbreedte van het blad.
+  constructen: [180.5, 88.4, 46.6, 90.5, 85.3],
   ankers: [102.3, 280.7, 108.3],
 };
 
@@ -2568,10 +2570,22 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
     .map((f: any) => [f.family, getal(f.avgEnergy), familieLezing(f.family, f.avgEnergy)]);
 
   const kortFamilie = (f: string): string => (f === "Talent-versnellers" ? "Versnellers" : f);
+  // De nettoscore per aanbieding staat hier op drie decimalen. In de
+  // mensgerichte hoofdstukken wordt betekenisvol afgerond; de technische
+  // bijlage is de plek waar een meelezende psychometrist de ruwe verhouding
+  // most-min-least gedeeld door het aantal aanbiedingen kan nazien.
+  const perAanbiedingTekst = (r: Rij): string => {
+    const w = r.netPerAanbieding;
+    if (typeof w !== "number" || !Number.isFinite(w)) return "n.v.t.";
+    const teken = w > 0 ? "+" : w < 0 ? "\u2212" : "";
+    return `${teken}${Math.abs(w).toFixed(3).replace(".", ",")}`;
+  };
+
   const constructTabel = [...drivers, ...alleFoci, ...versnellers].map((r) => [
     r.construct,
     kortFamilie(r.family),
     netTekst(r.net),
+    perAanbiedingTekst(r),
     getal(r.avgEnergy),
   ]);
 
@@ -2590,7 +2604,7 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
       {
         type: "vrijetabel",
         kop: null,
-        kolommen: ["CONSTRUCT", "FAMILIE", "NET", "GEM. ENERGIE"],
+        kolommen: ["CONSTRUCT", "FAMILIE", "NET", "NET/AANB.", "GEM. ENERGIE"],
         rijen: constructTabel,
         kolombreedtes: BREEDTE.constructen,
       },
@@ -2606,7 +2620,7 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
               alle.filter((r) => r.shown > 0).length,
             )}/${kort(alle.length)} duidingen, ${kort(
               keuzes,
-            )} keuzes. Net = most − least; gemiddelde energie van energiekostend (negatief) tot energiegevend (positief).`,
+            )} keuzes. Net = most − least; net/aanb. = net per aanbieding; gemiddelde energie van energiekostend (negatief) tot energiegevend (positief).`,
           },
           {
             kop: "Bewaking of risico",
