@@ -91,7 +91,7 @@ export const TEMPLATES: Record<string, InstrumentTemplate> = {
   },
   t4students: {
     instrumentId: "t4students",
-    titel: "T4Students (17-23 jaar)",
+    titel: "T4Students (17 tot 25 jaar)",
     instructie:
       "Talentprofiel voor studenten. Naam/e-mail ouder/voogd is optioneel " +
       "(enkel invullen bij minderjarige studenten).",

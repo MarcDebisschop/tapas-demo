@@ -988,7 +988,16 @@ export function bouwT4StudentsRapport(
   resultaat: T4SResultaat,
   antwoorden: T4SAntwoorden,
   licentie: T4SLicentie,
-  opties: { naam: string; code: string; datum: string; instrumentVersie: string },
+  opties: {
+    naam: string;
+    code: string;
+    datum: string;
+    instrumentVersie: string;
+    // Melding over de MANIER van invullen, berekend uit de tijd per item
+    // (server/afnamekwaliteit.ts). Geen score en geen oordeel over de jongere.
+    // Ontbreekt bij afnames zonder bruikbare tijdgegevens.
+    afnamekwaliteit?: { vlag: boolean; melding: string | null } | null;
+  },
 ): T4SRapport {
   const taal = resultaat.taal;
   const items = itemIndex(inst);
@@ -2047,6 +2056,16 @@ export function bouwT4StudentsRapport(
         {
           soort: "alinea",
           tekst:
+            "In welke fase dit instrument staat: het studiekompas is een reflectief ontwikkelinstrument " +
+            "in opbouw. De inhoud is opgebouwd op vakliteratuur en op de ervaring van de ontwikkelaar, " +
+            "maar er is nog geen onderzoek op echte afnamegegevens uitgevoerd. Er zijn dus geen " +
+            "betrouwbaarheidscijfers, geen validiteitsonderzoek en geen normgroep. De grenzen tussen de " +
+            "groepen en de labels in dit rapport zijn gekozen conventies, geen op gegevens geijkte " +
+            "grenzen. Lees de uitkomsten daarom als gespreksstof, niet als vaststaande meting.",
+        },
+        {
+          soort: "alinea",
+          tekst:
             "Hoe de cijfers berekend zijn, in gewone taal: bij elke stelling gaf je aan hoeveel je " +
             "jezelf erin herkent, op een schaal van vier antwoorden. Die antwoorden zijn per onderdeel " +
             "opgeteld en daarna teruggerekend naar dezelfde schaal van 0 tot 3 die je op het scherm " +
@@ -2064,6 +2083,23 @@ export function bouwT4StudentsRapport(
             { label: "Uitvoering", waarde: licentie === "basis" ? "Basis" : "Verdieping" },
           ],
         },
+        // Melding over de manier van invullen. Staat er alleen wanneer de tijd
+        // per item aanleiding geeft; anders blijft dit blad ongewijzigd.
+        ...(opties.afnamekwaliteit?.vlag && opties.afnamekwaliteit.melding
+          ? [
+              {
+                soort: "kader" as const,
+                opschrift: "Bij het lezen",
+                kop: "Over de manier van invullen",
+                kleur: KLEUR.oker,
+                tekst:
+                  opties.afnamekwaliteit.melding +
+                  " Dit zegt niets over jou en niets over je talenten: het gaat alleen over het tempo " +
+                  "waarin deze vragenlijst is doorlopen. Lees de uitkomsten daarom rustiger dan gewoonlijk " +
+                  "en bespreek ze met iemand die je kent.",
+              },
+            ]
+          : []),
         {
           soort: "alinea",
           tekst:

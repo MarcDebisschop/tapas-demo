@@ -1,0 +1,162 @@
+// ---------------------------------------------------------------------------
+// tests/doorlooptijd-en-t4students-claims.test.ts
+//
+// Wat deze toetsen bewijzen:
+//
+//   A. De doorlooptijd van een afname wordt gemeten vanaf het startmoment van
+//      de DEELNEMER en niet vanaf het aanmaakmoment van de afname, en een
+//      onmogelijke duur levert null op in plaats van een misleidend getal.
+//   B. Het startmoment wordt maar een keer gezet, zodat een tussentijdse
+//      bewaaractie de doorlooptijd niet terugzet.
+//   C. De kolommen gestart_op en duur_ms staan in het schema en worden voor
+//      bestaande databanken idempotent bijgezet.
+//   D. Het T4Students-contract draagt de kwaliteitsmelding over de manier van
+//      invullen, ook voor oudere contracten die ze nog niet bevatten.
+//   E. T4Students claimt nergens een normgroep en noemt overal dezelfde
+//      doelgroep.
+// ---------------------------------------------------------------------------
+
+import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { startVeld, berekenDuurMs } from "../server/routes/afnames";
+import {
+  bouwT4StudentsAfnameContract,
+  leesT4StudentsContract,
+} from "../server/t4students/afnamecontract";
+import { ITEM_TIJDSDREMPEL_MS } from "../server/afnamekwaliteit";
+
+const lees = (p: string) => readFileSync(resolve(__dirname, "..", p), "utf8");
+
+describe("A. Doorlooptijd", () => {
+  it("rekent het verschil tussen starten en afronden in milliseconden", () => {
+    const start = "2026-03-01T10:00:00.000Z";
+    const einde = "2026-03-01T10:18:30.000Z";
+    expect(berekenDuurMs(start, einde)).toBe(18 * 60 * 1000 + 30 * 1000);
+  });
+
+  it("levert null wanneer er geen startmoment bekend is", () => {
+    expect(berekenDuurMs(null, "2026-03-01T10:00:00.000Z")).toBeNull();
+    expect(berekenDuurMs("", "2026-03-01T10:00:00.000Z")).toBeNull();
+    expect(berekenDuurMs("   ", "2026-03-01T10:00:00.000Z")).toBeNull();
+  });
+
+  it("levert null bij een onmogelijke of negatieve duur", () => {
+    expect(berekenDuurMs("2026-03-01T11:00:00.000Z", "2026-03-01T10:00:00.000Z")).toBeNull();
+    expect(berekenDuurMs("geen datum", "2026-03-01T10:00:00.000Z")).toBeNull();
+  });
+});
+
+describe("B. Startmoment wordt niet overschreven", () => {
+  it("zet een startmoment wanneer er nog geen is", () => {
+    const veld = startVeld(null);
+    expect(typeof veld.gestartOp).toBe("string");
+    expect(Number.isFinite(Date.parse(veld.gestartOp!))).toBe(true);
+  });
+
+  it("laat een bestaand startmoment ongemoeid", () => {
+    expect(startVeld("2026-03-01T10:00:00.000Z")).toEqual({});
+  });
+});
+
+describe("C. Kolommen in schema en migratie", () => {
+  it("staat in het Drizzle-schema", () => {
+    const schema = lees("shared/schema.ts");
+    expect(schema).toContain('gestartOp: text("gestart_op")');
+    expect(schema).toContain('duurMs: integer("duur_ms")');
+  });
+
+  it("wordt idempotent bijgezet voor bestaande databanken", () => {
+    const storage = lees("server/storage.ts");
+    expect(storage).toContain('if (!heeft("gestart_op")) add(`ALTER TABLE afnames ADD COLUMN gestart_op TEXT;`)');
+    expect(storage).toContain('if (!heeft("duur_ms")) add(`ALTER TABLE afnames ADD COLUMN duur_ms INTEGER;`)');
+  });
+});
+
+describe("D. Kwaliteitsmelding in het T4Students-contract", () => {
+  // Twintig items, waarvan zes ver onder de drempel: dat is dertig procent en
+  // dus boven het aandeel waarop de melding aanslaat.
+  const tijden: Record<string, number> = {};
+  for (let i = 0; i < 20; i++) {
+    tijden["T4S-" + i] = i < 6 ? Math.round(ITEM_TIJDSDREMPEL_MS / 4) : 9000;
+  }
+
+  it("zet een melding wanneer de vragenlijst opvallend snel is doorlopen", () => {
+    const contract = bouwT4StudentsAfnameContract({
+      respondentCode: "T4S-TIJD-001",
+      name: "Test Student",
+      taal: "nl",
+      responses: {},
+      itemTijden: tijden,
+    });
+    expect(contract.afnamekwaliteit).not.toBeNull();
+    expect(contract.afnamekwaliteit!.vlag).toBe(true);
+    expect(contract.afnamekwaliteit!.melding).toBeTruthy();
+    expect(contract.afnamekwaliteit!.itemsMetTijd).toBe(20);
+    expect(contract.afnamekwaliteit!.itemsOnderDrempel).toBe(6);
+  });
+
+  it("zet geen melding wanneer er geen tijdgegevens zijn", () => {
+    const contract = bouwT4StudentsAfnameContract({
+      respondentCode: "T4S-TIJD-002",
+      name: "Test Student",
+      taal: "nl",
+      responses: {},
+      itemTijden: null,
+    });
+    expect(contract.afnamekwaliteit).toBeNull();
+  });
+
+  it("berekent de melding opnieuw voor een ouder contract zonder melding", () => {
+    const contract = bouwT4StudentsAfnameContract({
+      respondentCode: "T4S-TIJD-003",
+      name: "Test Student",
+      taal: "nl",
+      responses: {},
+      itemTijden: tijden,
+    });
+    const oud = { ...contract } as any;
+    delete oud.afnamekwaliteit;
+    const gelezen = leesT4StudentsContract(oud);
+    expect(gelezen.afnamekwaliteit?.vlag).toBe(true);
+  });
+
+  it("laat het rapport de melding tonen op het verantwoordingsblad", () => {
+    const paginas = lees("server/t4students/rapport-paginas.ts");
+    expect(paginas).toContain("Over de manier van invullen");
+    expect(paginas).toContain("opties.afnamekwaliteit?.vlag");
+    const keten = lees("server/t4students/rapport-keten.ts");
+    expect(keten).toContain("afnamekwaliteit: contract.afnamekwaliteit ?? null");
+  });
+});
+
+describe("E. Geen normgroepclaim en een uniforme doelgroep", () => {
+  const bronnen = [
+    "server/routes-stm.ts",
+    "server/gids/data.ts",
+    "client/src/data/instrumentengids.ts",
+    "server/bulk-import/templates.ts",
+  ];
+
+  it("noemt nergens nog aparte normgroepen voor T4Teens of T4Students", () => {
+    for (const p of bronnen) {
+      expect(lees(p)).not.toContain("aparte normgroepen");
+    }
+  });
+
+  it("noemt overal dezelfde doelgroep voor T4Students", () => {
+    for (const p of bronnen) {
+      const bron = lees(p);
+      expect(bron).not.toContain("17-23");
+      expect(bron).not.toContain("17 tot 23");
+    }
+  });
+
+  it("zegt in het rapport in welke ontwikkelfase het instrument staat", () => {
+    const paginas = lees("server/t4students/rapport-paginas.ts");
+    expect(paginas).toContain("reflectief ontwikkelinstrument");
+    expect(paginas).toContain("betrouwbaarheidscijfers");
+    expect(paginas).toContain("geen validiteitsonderzoek");
+    expect(paginas).toContain("gekozen conventies");
+  });
+});
