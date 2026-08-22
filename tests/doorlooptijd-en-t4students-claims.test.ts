@@ -24,7 +24,13 @@ import {
   bouwT4StudentsAfnameContract,
   leesT4StudentsContract,
 } from "../server/t4students/afnamecontract";
-import { ITEM_TIJDSDREMPEL_MS, berekenInvulpatroon } from "../server/afnamekwaliteit";
+import {
+  ITEM_TIJDSDREMPEL_MS,
+  berekenAfnamekwaliteit,
+  berekenInvulpatroon,
+  patroonMeldingJij,
+  tempoMeldingJij,
+} from "../server/afnamekwaliteit";
 import { t4studentsItems } from "../server/t4students/instrument";
 
 const lees = (p: string) => readFileSync(resolve(__dirname, "..", p), "utf8");
@@ -125,7 +131,7 @@ describe("D. Kwaliteitsmelding in het T4Students-contract", () => {
   it("laat het rapport de melding tonen op het verantwoordingsblad", () => {
     const paginas = lees("server/t4students/rapport-paginas.ts");
     expect(paginas).toContain("Over de manier van invullen");
-    expect(paginas).toContain("opties.afnamekwaliteit?.vlag");
+    expect(paginas).toContain("tempoMeldingJij");
     const keten = lees("server/t4students/rapport-keten.ts");
     expect(keten).toContain("afnamekwaliteit: contract.afnamekwaliteit ?? null");
   });
@@ -219,5 +225,36 @@ describe("F. Invulpatroon", () => {
     expect(lees("server/t4students/rapport-keten.ts")).toContain(
       "invulpatroon: contract.invulpatroon ?? null",
     );
+  });
+});
+
+describe("G. De leessignalen spreken de jongere zelf aan", () => {
+  it("zegt in de tempotekst niets over de deelnemer in de derde persoon", () => {
+    // Genoeg gemeten items om te mogen vlaggen: vijf snelle en vijftien rustige.
+    const tijden: Record<string, number> = {};
+    for (let i = 0; i < 20; i++) tijden[`I${i}`] = i < 5 ? 500 : 9000;
+    const kwaliteit = berekenAfnamekwaliteit(tijden);
+    expect(kwaliteit!.vlag).toBe(true);
+    const jij = tempoMeldingJij(kwaliteit);
+    expect(jij).toContain("Je hebt deze vragenlijst");
+    expect(jij).not.toContain("de deelnemer");
+    expect(jij).not.toContain("\u2014");
+  });
+
+  it("zegt in de patroontekst niets over de deelnemer in de derde persoon", () => {
+    const patroon = berekenInvulpatroon(Array.from({ length: 20 }, () => 2));
+    expect(patroon!.vlag).toBe(true);
+    const jij = patroonMeldingJij(patroon);
+    expect(jij).toContain("In je antwoorden valt een patroon op");
+    expect(jij).not.toContain("de deelnemer");
+    expect(jij).not.toContain("\u2014");
+  });
+
+  it("levert null wanneer er niets te melden is", () => {
+    expect(tempoMeldingJij(null)).toBeNull();
+    expect(patroonMeldingJij(null)).toBeNull();
+    const rustig = berekenInvulpatroon([0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0]);
+    expect(rustig!.vlag).toBe(false);
+    expect(patroonMeldingJij(rustig)).toBeNull();
   });
 });

@@ -117,6 +117,25 @@ function meldingVoor(itemsOnderDrempel: number, itemsMetTijd: number): string {
   );
 }
 
+/**
+ * Dezelfde melding, maar gericht aan de deelnemer zelf. De rapporten van
+ * T4Students en T4Teens spreken de jongere aan; een tekst over "de deelnemer"
+ * klinkt daar alsof er over iemand heen gepraat wordt. Levert null wanneer er
+ * niets te melden is, zodat de aanroeper geen eigen vlagcontrole hoeft te doen.
+ */
+export function tempoMeldingJij(kwaliteit: Afnamekwaliteit | null | undefined): string | null {
+  if (!kwaliteit || !kwaliteit.vlag || !kwaliteit.itemsMetTijd) return null;
+  const procent = Math.round((kwaliteit.itemsOnderDrempel / kwaliteit.itemsMetTijd) * 100);
+  return (
+    `Je hebt deze vragenlijst deels in een hoog tempo ingevuld: ${kwaliteit.itemsOnderDrempel} ` +
+    `van de ${kwaliteit.itemsMetTijd} vragen kregen binnen twee seconden een antwoord ` +
+    `(${procent} procent). Dat kan gewoon vlotheid zijn, en het kan betekenen dat een deel van ` +
+    "de vragen snel is doorlopen. Het zegt niets over jou en niets over je talenten: het gaat " +
+    "alleen over de manier waarop de lijst is doorlopen. Lees de uitkomsten daarom rustig na " +
+    "en bespreek ze met iemand die je kent."
+  );
+}
+
 // Leest de opgeslagen JSON-tekst met tijden per item veilig uit. Onleesbare of
 // ontbrekende inhoud levert null op in plaats van een fout: de afname blijft
 // dan gewoon werken, alleen zonder kwaliteitsmelding.
@@ -221,8 +240,10 @@ export function berekenInvulpatroon(waarden: Array<number | null | undefined>): 
   };
 }
 
-// Neutrale melding over de afname, nooit over de persoon.
-function patroonMelding(langsteReeks: number, aandeel: number, antwoorden: number): string {
+// De vaststelling zelf, zonder lezing: welke van de twee patronen opvalt.
+// Staat apart omdat zowel de coachtekst als de tekst voor de deelnemer haar
+// gebruikt; twee losse formuleringen zouden vroeg of laat uiteenlopen.
+function patroonVaststelling(langsteReeks: number, aandeel: number, antwoorden: number): string {
   const procent = Math.round(aandeel * 100);
   const stukken: string[] = [];
   if (langsteReeks >= REEKS_DREMPEL) {
@@ -231,8 +252,34 @@ function patroonMelding(langsteReeks: number, aandeel: number, antwoorden: numbe
   if (aandeel >= AANDEEL_ZELFDE_DREMPEL) {
     stukken.push(`${procent} procent van de ${antwoorden} antwoorden is dezelfde keuze`);
   }
+  return stukken.join(" en ");
+}
+
+/**
+ * De patroonmelding gericht aan de deelnemer zelf, om dezelfde reden als bij
+ * tempoMeldingJij. Levert null wanneer er niets te melden is.
+ */
+export function patroonMeldingJij(patroon: Invulpatroon | null | undefined): string | null {
+  if (!patroon || !patroon.vlag) return null;
+  const vaststelling = patroonVaststelling(
+    patroon.langsteReeks,
+    patroon.aandeelZelfdeAntwoord,
+    patroon.antwoorden,
+  );
   return (
-    `In deze vragenlijst valt het antwoordpatroon op: ${stukken.join(" en ")}. ` +
+    `In je antwoorden valt een patroon op: ${vaststelling}. Dat kan betekenen dat die vragen ` +
+    "echt op dezelfde manier bij je passen, en het kan betekenen dat de lijst in een vast ritme " +
+    "is doorlopen. Het zegt niets over wie je bent. Bespreek bij het nalezen vooral de " +
+    "onderdelen waar je jezelf het minst herkende: juist daar wordt zichtbaar of de antwoorden " +
+    "voor jou nog kloppen."
+  );
+}
+
+// Neutrale melding over de afname, nooit over de persoon.
+function patroonMelding(langsteReeks: number, aandeel: number, antwoorden: number): string {
+  const stukken = patroonVaststelling(langsteReeks, aandeel, antwoorden);
+  return (
+    `In deze vragenlijst valt het antwoordpatroon op: ${stukken}. ` +
     "Dat kan betekenen dat een reeks stellingen echt op dezelfde manier past, en het kan " +
     "betekenen dat de lijst in een vast ritme is doorlopen. Het zegt niets over de deelnemer " +
     "zelf. Toets bij het nalezen samen of de antwoorden nog kloppen."

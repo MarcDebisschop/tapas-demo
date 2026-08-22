@@ -22,6 +22,8 @@
 import rapportteksten from "../data/t4students-rapportteksten.json";
 import type { T4SInstrument } from "./instrument";
 import type { T4SAntwoorden, T4SResultaat } from "./kompas-scoring";
+import type { Afnamekwaliteit, Invulpatroon } from "../afnamekwaliteit";
+import { patroonMeldingJij, tempoMeldingJij } from "../afnamekwaliteit";
 import {
   FAM_BEELD,
   FAM_DRIVERS,
@@ -996,14 +998,18 @@ export function bouwT4StudentsRapport(
     // Melding over de MANIER van invullen, berekend uit de tijd per item
     // (server/afnamekwaliteit.ts). Geen score en geen oordeel over de jongere.
     // Ontbreekt bij afnames zonder bruikbare tijdgegevens.
-    afnamekwaliteit?: { vlag: boolean; melding: string | null } | null;
+    afnamekwaliteit?: Afnamekwaliteit | null;
     // Melding over het antwoordpatroon (dezelfde keuze in een lange reeks).
     // Zelfde aard als hierboven: een leessignaal, geen score en geen oordeel.
-    invulpatroon?: { vlag: boolean; melding: string | null } | null;
+    invulpatroon?: Invulpatroon | null;
   },
 ): T4SRapport {
   const taal = resultaat.taal;
   const items = itemIndex(inst);
+  // Leessignalen over de afname, in de tweede persoon. Null betekent: er is
+  // niets te melden en het kaderblok blijft weg.
+  const tempoJij = tempoMeldingJij(opties.afnamekwaliteit ?? null);
+  const patroonJij = patroonMeldingJij(opties.invulpatroon ?? null);
   const meldingen: string[] = [];
 
   const foci = rangschik(inst, resultaat, antwoorden, FAM_FOCI);
@@ -2088,32 +2094,28 @@ export function bouwT4StudentsRapport(
         },
         // Melding over de manier van invullen. Staat er alleen wanneer de tijd
         // per item aanleiding geeft; anders blijft dit blad ongewijzigd.
-        ...(opties.invulpatroon?.vlag && opties.invulpatroon.melding
+        // Beide leessignalen spreken de jongere zelf aan. De coachvarianten uit
+        // server/afnamekwaliteit.ts spreken over "de deelnemer" en horen dus in
+        // een coachweergave, niet in het rapport dat de jongere in handen krijgt.
+        ...(patroonJij
           ? [
               {
                 soort: "kader" as const,
                 opschrift: "Bij het lezen",
                 kop: "Over het antwoordpatroon",
                 kleur: KLEUR.oker,
-                tekst:
-                  opties.invulpatroon.melding +
-                  " Bespreek bij het nalezen vooral de onderdelen waar je jezelf het minst herkende: " +
-                  "juist daar wordt zichtbaar of de antwoorden voor jou nog kloppen.",
+                tekst: patroonJij,
               },
             ]
           : []),
-        ...(opties.afnamekwaliteit?.vlag && opties.afnamekwaliteit.melding
+        ...(tempoJij
           ? [
               {
                 soort: "kader" as const,
                 opschrift: "Bij het lezen",
                 kop: "Over de manier van invullen",
                 kleur: KLEUR.oker,
-                tekst:
-                  opties.afnamekwaliteit.melding +
-                  " Dit zegt niets over jou en niets over je talenten: het gaat alleen over het tempo " +
-                  "waarin deze vragenlijst is doorlopen. Lees de uitkomsten daarom rustiger dan gewoonlijk " +
-                  "en bespreek ze met iemand die je kent.",
+                tekst: tempoJij,
               },
             ]
           : []),
