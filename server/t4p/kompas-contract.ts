@@ -354,23 +354,31 @@ const RIASEC: { letter: string; naam: string; constructen: string[] }[] = [
 ];
 
 /** Indicatie per rangpositie binnen de zes RIASEC-letters. */
+// De RIASEC-kolom toont een RANGORDE binnen dit profiel, geen niveau. De eerdere
+// labels ("Sterk", "Midden", "Laag") lazen als een vergelijking met een norm die
+// hier niet bestaat; deze labels benoemen alleen de plaats in de eigen rangorde.
 const RIASEC_INDICATIE = [
-  "Sterk (primair)",
-  "Sterk",
-  "Midden–sterk",
-  "Midden",
-  "Laag–midden",
-  "Laag",
+  "1e oriëntatie",
+  "2e oriëntatie",
+  "3e oriëntatie",
+  "4e oriëntatie",
+  "5e oriëntatie",
+  "6e oriëntatie",
 ];
 
-/** Indicatie voor een Big-Five-dimensie op basis van het gemiddelde nettoscore-niveau. */
+/**
+ * Leesrichting van een Big-Five-dimensie binnen dit ene profiel.
+ *
+ * Bewust GEEN niveaulabels ("hoog", "gemiddeld"): dat zou een vergelijking met
+ * een normgroep suggereren en die bestaat hier niet. De tekst zegt alleen hoe
+ * uitgesproken de bijhorende constructen binnen deze zelfbeschrijving naar voor
+ * komen. Grenzen zijn ontwerpconventies, niet empirisch geijkte afkappunten.
+ */
 function bigFiveIndicatie(gemiddelde: number): string {
-  if (gemiddelde >= 4.5) return "Zeer hoog";
-  if (gemiddelde >= 3.0) return "Hoog";
-  if (gemiddelde >= 2.0) return "Midden–hoog";
-  if (gemiddelde >= 0.5) return "Midden";
-  if (gemiddelde >= -1.5) return "Laag–midden";
-  return "Laag";
+  if (gemiddelde >= 3.0) return "sterk naar voor in dit profiel";
+  if (gemiddelde >= 0.5) return "duidelijk aanwezig in dit profiel";
+  if (gemiddelde >= -1.5) return "wisselend in dit profiel";
+  return "weinig naar voor in dit profiel";
 }
 
 export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): any {
@@ -2316,7 +2324,7 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
       bigFiveIndicatie(gemNet(["Be Perfect", "Try Hard"])),
       `${netLabel("Be Perfect")} en ${netLabel(
         "Try Hard",
-      )} zijn de dominante drivers; Resultaatgericht en Analyse dragen hoge energie. Self-oriented perfectionisme correleert sterk positief met consciëntieusheid (r≈.54–.61).`,
+      )} zijn de dominante drivers; Resultaatgericht en Analyse dragen hoge energie.`,
     ],
     [
       "Openheid",
@@ -2347,14 +2355,14 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
     ],
     [
       "Neuroticisme",
-      kostDrivers.length ? "Verhoogd onder druk" : "Gemiddeld",
+      kostDrivers.length ? "meer belasting gemeld onder druk" : "geen belastingsignaal",
       `De energiediscrepantie (beleefd ${kort(
         Math.round(beleefd * 10) / 10,
       )}/10 vs. gemeten ${kort(
         Math.round(gemeten * 10) / 10,
       )}/10) en de belasting uit ${
         lijstZin(kostDrivers.map((r) => r.construct)) || "de drivers"
-      } wijzen op spanninggevoeligheid; socially prescribed perfectionisme correleert positief met neuroticisme (r≈.24–.32).`,
+      } wijzen op belasting die vandaag gemeld wordt, niet op een trek of een klacht.`,
     ],
   ];
 
@@ -2379,7 +2387,7 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
   secties.push({
     nummer: "20",
     titel: "Vertaling naar gevestigde kaders",
-    ondertitel: `${voornaam}s T4P-profiel verbonden met Big Five, RIASEC en het werkniveau van Elliott Jaques — onderbouwd, als brug naar gangbare HR-taal.`,
+    ondertitel: `${voornaam}s T4P-profiel gelegd naast Big Five, RIASEC en het werkniveau van Elliott Jaques: taal voor het gesprek, geen aparte testuitslag.`,
     onderdelen: [
       { type: "subkop", tekst: "Big Five (Five-Factor Model)" },
       {
@@ -2441,15 +2449,16 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
         blokken: [
           {
             kop: "Professionele betekenis",
-            tekst: `<i>Interpretatie.</i> Deze vertaling plaatst ${voornaam}s T4P-profiel naast drie internationaal erkende kaders — persoonlijkheid (Big Five), beroepsinteresse (RIASEC) en werkcomplexiteit (Jaques) — zodat het profiel aansluit op gangbare taal in HR, selectie en organisatieontwerp.`,
+            tekst: `<i>Interpretatie.</i> Deze vertaling plaatst ${voornaam}s T4P-profiel naast drie internationaal erkende kaders — persoonlijkheid (Big Five), beroepsinteresse (RIASEC) en werkcomplexiteit (Jaques) — zodat het gesprek kan aansluiten op gangbare taal in ontwikkeling, loopbaan en organisatieontwerp. Niet voor selectie of enige geschiktheidsbeslissing.`,
           },
           {
             kop: "Bewaking of risico",
             tekst:
-              "<i>Interpretatiegrens.</i> Het zijn onderbouwde equivalenties, geen aparte " +
-              "testscores: T4P meet talent en energie, geen Big-Five-, RIASEC- of " +
-              "Jaques-instrument. Gebruik de vertaling als brug, niet als vervanging van die " +
-              "instrumenten.",
+              "<i>Interpretatiegrens.</i> Het zijn interpretatieve bruggen, geen " +
+              "gevalideerde equivalenties en geen aparte testscores. Geen van deze " +
+              "koppelingen is op afnamedata onderzocht. T4P meet talent en energie, en is " +
+              "geen Big-Five-, RIASEC- of Jaques-instrument. Lees dit blad als taal voor " +
+              "het gesprek, nooit als vervanging van die instrumenten.",
           },
           {
             kop: "Actie of ontwerpimplicatie",
