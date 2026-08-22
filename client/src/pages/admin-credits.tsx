@@ -1089,7 +1089,7 @@ function TendenzenTab() {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Kpi label="Profielen in beeld" value={String(t.aantalProfielen)} sub="voltooid" />
             <Kpi label="Gem. energie vragenlijst" value={t.energie?.gemVragenlijst != null ? `${t.energie.gemVragenlijst}/10` : "—"} sub={t.energie?.gemBaseline != null ? `baseline ${t.energie.gemBaseline}/10` : undefined} />
-            <Kpi label="Gem. invulzorgvuldigheid" value={t.energie?.gemConsistentie != null ? `${t.energie.gemConsistentie}/100` : "—"} />
+            <Kpi label="Gem. volledigheid en samenhang" value={t.energie?.gemConsistentie != null ? `${t.energie.gemConsistentie}/100` : "—"} />
             <Kpi label="Driver-belasting" value={`${t.driverBelasting?.laag ?? 0} laag`} sub={`${t.driverBelasting?.matig ?? 0} matig · ${t.driverBelasting?.hoog ?? 0} hoog`} />
           </div>
 

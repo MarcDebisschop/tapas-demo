@@ -272,19 +272,19 @@ export function bouwDashboardData(contractRaw: unknown, taal: Taal): DashboardDa
     const score = typeof cons.score === "number" ? cons.score : null;
     const m: ML = {
       nl: score !== null
-        ? `Je invulzorgvuldigheid komt uit op ${score}/100. Dat gaat over hoe volledig je hebt geantwoord en hoe goed je antwoorden bij elkaar aansluiten. Het zegt niets over jou en niets over de kwaliteit van de vragenlijst.`
+        ? `De volledigheid en samenhang van je invulling komt uit op ${score}/100. Dat gaat over hoe volledig je hebt geantwoord en hoe goed je antwoorden bij elkaar aansluiten. Het is geen betrouwbaarheidsmaat van de vragenlijst. Het zegt niets over jou en niets over de kwaliteit van de vragenlijst.`
         : `Er is te weinig ingevuld om hier iets over te zeggen.`,
       fr: score !== null
-        ? `Le soin apporté au remplissage atteint ${score}/100. Cela porte sur le caractère complet de tes réponses et sur leur concordance entre elles. Cela ne dit rien sur toi ni sur la qualité du questionnaire.`
+        ? `L'exhaustivité et la cohérence de ton remplissage atteignent ${score}/100. Cela porte sur le caractère complet de tes réponses et sur leur concordance entre elles. Cela ne dit rien sur toi ni sur la qualité du questionnaire.`
         : `Il y a trop peu de réponses pour dire quoi que ce soit à ce sujet.`,
       en: score !== null
-        ? `The care taken when filling in comes out at ${score}/100. That is about how fully you answered and how well your answers line up with one another. It says nothing about you and nothing about the quality of the questionnaire.`
+        ? `The completeness and coherence of your responses comes out at ${score}/100. That is about how fully you answered and how well your answers line up with one another. It says nothing about you and nothing about the quality of the questionnaire.`
         : `Too little was filled in to say anything about this.`,
       es: score !== null
-        ? `El cuidado al rellenar alcanza ${score}/100. Se refiere a lo completas que son tus respuestas y a lo bien que concuerdan entre sí. No dice nada sobre ti ni sobre la calidad del cuestionario.`
+        ? `La integridad y la coherencia de tus respuestas alcanzan ${score}/100. Se refiere a lo completas que son tus respuestas y a lo bien que concuerdan entre sí. No dice nada sobre ti ni sobre la calidad del cuestionario.`
         : `Se ha rellenado muy poco para decir algo al respecto.`,
       ru: score !== null
-        ? `Тщательность заполнения составляет ${score}/100. Это о том, насколько полно вы ответили и насколько ваши ответы согласуются между собой. Это ничего не говорит о вас и о качестве опросника.`
+        ? `Полнота и согласованность вашего заполнения составляют ${score}/100. Это о том, насколько полно вы ответили и насколько ваши ответы согласуются между собой. Это ничего не говорит о вас и о качестве опросника.`
         : `Заполнено слишком мало, чтобы что-то об этом сказать.`,
     };
     kaarten.push({ titel: k(T.kaartInvulzorgvuldigheid, taal), tekst: k(m, taal) });

@@ -10,6 +10,14 @@
 // Rangorde overal: netscore aflopend -> meest aflopend -> minst oplopend ->
 // alfabetisch. De energiestatus (geeft/neutraal/kost) is NOOIT een sorteersleutel.
 import { isTapasBeeld } from "../../shared/talent-constructs";
+// Canonieke naam van de invulindex. Dit rapportcontract is volledig in het
+// Nederlands opgebouwd, dus hier komen de Nederlandse varianten uit de
+// gedeelde module. De index is GEEN betrouwbaarheidsmaat.
+import {
+  INVULLING_NAAM_KORT,
+  INVULLING_NAAM_WOORDEN,
+  INVULLING_GEEN_BETROUWBAARHEID,
+} from "../../shared/invulling-index";
 
 export interface KompasDeelnemer {
   naam: string;
@@ -505,7 +513,10 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
           { waarde: kort(discrepantie, true), label: "ENERGIEDISCREPANTIE" },
           {
             waarde: `${kort(consistentie)}/100`,
-            label: `INVULZORGVULDIGHEID (${consLabel.toUpperCase()})`,
+            // Kort gehouden: de tegels staan naast elkaar en een langer label
+            // breekt de rij. Het woordlabel (hoog/middelmatig/laag) staat in de
+            // datakwaliteitstabel van hoofdstuk 14.
+            label: INVULLING_NAAM_KORT.nl.toUpperCase(),
           },
           { waarde: risicoLabel, label: "DRIVER-RISICO" },
           { waarde: `${kort(q3)} / ${kort(q4)}`, label: "ZELF- VS. ORG-INVESTERING" },
@@ -556,8 +567,8 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
             `${kort(alle.filter((r) => r.shown > 0).length)} / ${kort(alle.length)}`,
             "Geduide constructen",
           ],
-          [`${kort(consistentie)} / 100`, "Invulzorgvuldigheid"],
-          [consLabel, "Invulzorgvuldigheid in woorden"],
+          [`${kort(consistentie)} / 100`, INVULLING_NAAM_KORT.nl],
+          [consLabel, INVULLING_NAAM_WOORDEN.nl],
           ...(tempoMelding
             ? [[`${Math.round(num(afnamekwaliteit?.aandeelOnderDrempel) * 100)} %`, "Items binnen twee seconden"]]
             : []),
@@ -570,7 +581,7 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
           {
             kop: "Kernboodschap",
             variant: "",
-            tekst: `De invulzorgvuldigheid van deze vragenlijst is ${consLabel} (${kort(consistentie)}/100). Dat cijfer gaat over deze invulling: hoe volledig er geantwoord is en hoe goed de energieantwoorden bij elkaar aansluiten. Het zegt niets over de kwaliteit van het instrument en niets over de persoon. Ook bij een hoog cijfer blijven de scores een lezing, geen absolute uitspraak.`,
+            tekst: `De volledigheid en samenhang van deze invulling is ${consLabel.toLowerCase()} (${kort(consistentie)}/100). Dat cijfer gaat over deze invulling: hoe volledig er geantwoord is en hoe goed de energieantwoorden bij elkaar aansluiten. ${INVULLING_GEEN_BETROUWBAARHEID.nl} Het zegt niets over de kwaliteit van het instrument en niets over de persoon. Ook bij een hoog cijfer blijven de scores een lezing, geen absolute uitspraak. De grenzen voor de woorden hoog, middelmatig en laag zijn ontwerpconventies van de ontwikkelaar.`,
           },
           // Melding over het tempo van invullen. Gaat over de afname, niet over
           // de persoon, en verschijnt alleen als er tijdgegevens zijn.
@@ -2503,7 +2514,7 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
           {
             kop: "Data en signalen",
             variant: "",
-            tekst: `De invulzorgvuldigheid komt uit op ${kort(consistentie)}/100${
+            tekst: `De volledigheid en samenhang van de invulling komt uit op ${kort(consistentie)}/100${
               consLabel ? ` (${consLabel.toLowerCase()})` : ""
             }. Volledigheid: ${kort(schermen)}/${kort(schermenTotaal)} schermen, ${kort(
               alle.filter((r) => r.shown > 0).length,
