@@ -38,6 +38,17 @@ export interface ConstructRow {
   least: number;
   net: number;
   shown: number;
+  // Nettoscore per aanbieding: net gedeeld door het aantal keren dat het
+  // construct is aangeboden. De blokopbouw van T4Business biedt de drivers en
+  // de talent-foci elk acht keer aan, maar de talent-versnellers ongelijk (8,
+  // 9 of 10 keer). Een ruwe nettoscore vergelijkt dan appelen met peren: een
+  // construct dat vaker verschijnt kan alleen daardoor al een hogere netto
+  // halen. Deze genormaliseerde waarde maakt de ordening binnen een familie
+  // vergelijkbaar. `net` blijft ongewijzigd voor het datacontract.
+  // Optioneel, zodat de scoringengines van t4kids, t4teens en t4students dit
+  // veld niet hoeven te vullen; lezers vangen het op met een terugval op
+  // net gedeeld door shown.
+  netPerAanbieding?: number;
   avgEnergy: number;
   energySource: string;
   mostItems: string[];
@@ -137,6 +148,7 @@ function aggregate(responses: Responses): { rows: ConstructRow[]; famRows: Famil
     least: v.least,
     net: v.most - v.least,
     shown: v.shown,
+    netPerAanbieding: v.shown > 0 ? Math.round(((v.most - v.least) / v.shown) * 1000) / 1000 : 0,
     avgEnergy: v.energyVals.length
       ? round2(v.energyVals.reduce((a, b) => a + b, 0) / v.energyVals.length)
       : 0,

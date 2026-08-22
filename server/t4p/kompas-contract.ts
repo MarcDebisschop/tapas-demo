@@ -33,6 +33,8 @@ interface Rij {
   most: number;
   least: number;
   net: number;
+  /** Nettoscore per aanbieding: net gedeeld door het aantal aanbiedingen. */
+  netPerAanbieding: number;
   avgEnergy: number;
   shown: number;
   mostItems: string[];
@@ -51,16 +53,28 @@ function komma(s: string): string {
   return s.replace(".", ",").replace("-", "−");
 }
 
-/** Vast aantal decimalen, altijd met teken: 0.38 -> "+0,38", -0.83 -> "−0,83". */
-function getal(x: unknown, decimalen = 2): string {
+/**
+ * Vast aantal decimalen, altijd met teken: 0.4 -> "+0,4", -0.8 -> "−0,8".
+ *
+ * De standaard staat op ÉÉN decimaal. Twee decimalen suggereren in mensgerichte
+ * rapporttekst een precisie die dit instrument niet heeft: de energieschaal
+ * loopt van -2 tot +2 en de waarden zijn gemiddelden over acht tot tien
+ * aanbiedingen. Het datacontract en de scoringengine bewaren wél twee
+ * decimalen; het afronden gebeurt uitsluitend in de weergave.
+ * Classificatie van deze regel: ontwerpconventie.
+ */
+function getal(x: unknown, decimalen = 1): string {
   const n = num(x);
   return (n < 0 ? "" : "+") + komma(n.toFixed(decimalen));
 }
 
-/** Zonder overtollige nullen: 2 -> "2", 5.5 -> "5,5", -3.5 -> "−3,5". */
+/**
+ * Zonder overtollige nullen: 2 -> "2", 5.5 -> "5,5", -3.5 -> "−3,5".
+ * Rondt af op één decimaal, om dezelfde reden als bij `getal`.
+ */
 function kort(x: unknown, teken = false): string {
   const n = num(x);
-  let s = String(Math.round(n * 100) / 100);
+  let s = String(Math.round(n * 10) / 10);
   if (s.includes("e")) s = n.toFixed(2);
   return (n < 0 ? "" : teken ? "+" : "") + komma(s);
 }
@@ -111,7 +125,14 @@ function icoonNaam(construct: string): string {
  * De enige toegestane rangorde: netscore aflopend, dan meest aflopend, dan
  * minst oplopend, dan alfabetisch. Energie speelt hier bewust geen rol.
  */
+// Rangorde binnen een familie. Sorteert op nettoscore PER AANBIEDING, niet op
+// ruwe nettoscore. De drivers en de talent-foci worden elk acht keer
+// aangeboden, dus daar verandert dit niets. De talent-versnellers worden
+// ongelijk aangeboden (8, 9 of 10 keer); zonder deze normalisatie krijgt een
+// vaker aangeboden versneller alleen daardoor al een hogere plaats.
+// Classificatie van deze regel: ontwerpconventie.
 function rangorde(a: Rij, b: Rij): number {
+  if (b.netPerAanbieding !== a.netPerAanbieding) return b.netPerAanbieding - a.netPerAanbieding;
   if (b.net !== a.net) return b.net - a.net;
   if (b.most !== a.most) return b.most - a.most;
   if (a.least !== b.least) return a.least - b.least;
@@ -204,12 +225,48 @@ const BREEDTE = {
   ankers: [102.3, 280.7, 108.3],
 };
 
+// ------------------------------------------------ vaste claimgrenzen in tekst
+//
+// Deze zinnen staan op één plaats, zodat er geen varianten ontstaan. Ze horen
+// bij de claimgrens van het instrument: het Kompas is een beschrijvend,
+// ipsatief gelezen ontwikkel- en gespreksinstrument zonder normgroep.
+
+/** Ordening geldt binnen deze persoon, nooit tussen personen. */
+export const LEZING_BINNEN_PERSOON =
+  "De ordening in dit rapport is uitsluitend binnen-persoonlijk: ze vergelijkt " +
+  "de lijnen van deze deelnemer met elkaar. Er is geen normgroep en geen " +
+  "vergelijkingsgroep, dus de cijfers zeggen niets over hoe deze deelnemer zich " +
+  "verhoudt tot anderen en mogen niet worden gebruikt voor selectie, aanwerving, " +
+  "promotie, ontslag of geschiktheidsbeslissingen.";
+
+/** Cijfers zijn gesprekssignalen, geen exacte meetwaarden. */
+export const LEZING_GESPREKSSIGNAAL =
+  "De cijfers zijn afgerond weergegeven en werken als gesprekssignaal, niet als " +
+  "exacte meetwaarde. Alle woordlabels en grenswaarden in dit rapport zijn " +
+  "conventies van de ontwikkelaar en geen empirisch geijkte afkappunten.";
+
+/** Ordening binnen een familie is genormaliseerd per aanbieding. */
+export const LEZING_PER_AANBIEDING =
+  "De volgorde binnen deze familie staat op nettoscore per aanbieding. Dat is " +
+  "nodig omdat de constructen in deze familie niet even vaak worden aangeboden; " +
+  "zonder die correctie zou een vaker aangeboden lijn alleen daardoor al hoger " +
+  "eindigen. Het is een ontwerpkeuze, geen empirisch bepaalde weging.";
+
+/** Driverbelasting is een werkhypothese, geen classificatie. */
+export const LEZING_DRIVERSIGNAAL =
+  "De driverbelasting is een interpretatief signaal en een werkhypothese voor " +
+  "het gesprek. Het is geen geijkte classificatie, geen risicoscore en geen " +
+  "uitspraak over gezondheid of functioneren.";
+
 export const KOMPAS_LEESWIJZER =
   "Elk hoofdstuk werkt op twee niveaus. De nettoscore toont het potentieel; de " +
   "energie- en duidingslaag toont de beschikbaarheid vandaag: of die lijn energie " +
   "geeft, neutraal is of energie kost. Een hoge nettoscore betekent dus niet " +
   "automatisch dat een talent vandaag vrij beschikbaar is — dat dubbele lezen is " +
-  "de kern van een verantwoorde T4P-interpretatie.";
+  "de kern van een verantwoorde T4P-interpretatie. " +
+  LEZING_BINNEN_PERSOON +
+  " " +
+  LEZING_GESPREKSSIGNAAL;
 
 function hoofdletter(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -329,6 +386,15 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
     most: num(r.most),
     least: num(r.least),
     net: num(r.net),
+    // Terugval voor oudere contracten die het veld nog niet bevatten: dan
+    // wordt het hier uit net en shown berekend, met dezelfde afronding als de
+    // scoringengine.
+    netPerAanbieding:
+      typeof r.netPerAanbieding === "number" && Number.isFinite(r.netPerAanbieding)
+        ? r.netPerAanbieding
+        : num(r.shown) > 0
+          ? Math.round((num(r.net) / num(r.shown)) * 1000) / 1000
+          : 0,
     avgEnergy: num(r.avgEnergy),
     shown: num(r.shown),
     mostItems: (r.mostItems ?? []).map(tekstVan).filter((s: string) => s !== ""),
@@ -963,6 +1029,13 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
               "afspraken over wanneer iets ‘goed genoeg’ is, organiseer expliciete " +
               "afrondingsmomenten en bewaak de verleiding werk van anderen over te nemen.",
           },
+          // Vaste leesregel bij de drivers: signaal en werkhypothese, en de
+          // ordening geldt enkel binnen deze persoon.
+          {
+            kop: "Hoe je deze rangorde leest",
+            variant: "",
+            tekst: `${LEZING_DRIVERSIGNAAL} ${LEZING_BINNEN_PERSOON}`,
+          },
         ],
         pt: 9.6,
       },
@@ -1052,6 +1125,12 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
               topFocus
             )}, met minder belasting op wat vandaag geen voorkeursroute is. Maak ruimte waarin die aandachtslijn zichtbaar mag renderen.`,
           },
+          // Vaste leesregel: de ordening geldt enkel binnen deze persoon.
+          {
+            kop: "Hoe je deze rangorde leest",
+            variant: "",
+            tekst: LEZING_BINNEN_PERSOON,
+          },
         ],
         pt: 9.0,
       },
@@ -1122,6 +1201,13 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
             tekst: `Ontwerp rollen zo dat ${lijstZin(
               versnellers.slice(0, 2).map(kern)
             )} centraal staan, binnen duidelijke grenzen van beschikbaarheid.`,
+          },
+          // Vaste leesregel: de versnellers worden ongelijk aangeboden, dus de
+          // ordening staat op nettoscore per aanbieding.
+          {
+            kop: "Hoe deze rangorde is bepaald",
+            variant: "",
+            tekst: `${LEZING_PER_AANBIEDING} ${LEZING_BINNEN_PERSOON}`,
           },
         ],
         pt: 9.0,
