@@ -10,6 +10,14 @@
 // Rangorde overal: netscore aflopend -> meest aflopend -> minst oplopend ->
 // alfabetisch. De energiestatus (geeft/neutraal/kost) is NOOIT een sorteersleutel.
 import { isTapasBeeld } from "../../shared/talent-constructs";
+// Canonieke naam van de invulindex. Dit rapportcontract is volledig in het
+// Nederlands opgebouwd, dus hier komen de Nederlandse varianten uit de
+// gedeelde module. De index is GEEN betrouwbaarheidsmaat.
+import {
+  INVULLING_NAAM_KORT,
+  INVULLING_NAAM_WOORDEN,
+  INVULLING_GEEN_BETROUWBAARHEID,
+} from "../../shared/invulling-index";
 
 export interface KompasDeelnemer {
   naam: string;
@@ -25,6 +33,8 @@ interface Rij {
   most: number;
   least: number;
   net: number;
+  /** Nettoscore per aanbieding: net gedeeld door het aantal aanbiedingen. */
+  netPerAanbieding: number;
   avgEnergy: number;
   shown: number;
   mostItems: string[];
@@ -43,16 +53,28 @@ function komma(s: string): string {
   return s.replace(".", ",").replace("-", "−");
 }
 
-/** Vast aantal decimalen, altijd met teken: 0.38 -> "+0,38", -0.83 -> "−0,83". */
-function getal(x: unknown, decimalen = 2): string {
+/**
+ * Vast aantal decimalen, altijd met teken: 0.4 -> "+0,4", -0.8 -> "−0,8".
+ *
+ * De standaard staat op ÉÉN decimaal. Twee decimalen suggereren in mensgerichte
+ * rapporttekst een precisie die dit instrument niet heeft: de energieschaal
+ * loopt van -2 tot +2 en de waarden zijn gemiddelden over acht tot tien
+ * aanbiedingen. Het datacontract en de scoringengine bewaren wél twee
+ * decimalen; het afronden gebeurt uitsluitend in de weergave.
+ * Classificatie van deze regel: ontwerpconventie.
+ */
+function getal(x: unknown, decimalen = 1): string {
   const n = num(x);
   return (n < 0 ? "" : "+") + komma(n.toFixed(decimalen));
 }
 
-/** Zonder overtollige nullen: 2 -> "2", 5.5 -> "5,5", -3.5 -> "−3,5". */
+/**
+ * Zonder overtollige nullen: 2 -> "2", 5.5 -> "5,5", -3.5 -> "−3,5".
+ * Rondt af op één decimaal, om dezelfde reden als bij `getal`.
+ */
 function kort(x: unknown, teken = false): string {
   const n = num(x);
-  let s = String(Math.round(n * 100) / 100);
+  let s = String(Math.round(n * 10) / 10);
   if (s.includes("e")) s = n.toFixed(2);
   return (n < 0 ? "" : teken ? "+" : "") + komma(s);
 }
@@ -103,7 +125,14 @@ function icoonNaam(construct: string): string {
  * De enige toegestane rangorde: netscore aflopend, dan meest aflopend, dan
  * minst oplopend, dan alfabetisch. Energie speelt hier bewust geen rol.
  */
+// Rangorde binnen een familie. Sorteert op nettoscore PER AANBIEDING, niet op
+// ruwe nettoscore. De drivers en de talent-foci worden elk acht keer
+// aangeboden, dus daar verandert dit niets. De talent-versnellers worden
+// ongelijk aangeboden (8, 9 of 10 keer); zonder deze normalisatie krijgt een
+// vaker aangeboden versneller alleen daardoor al een hogere plaats.
+// Classificatie van deze regel: ontwerpconventie.
 function rangorde(a: Rij, b: Rij): number {
+  if (b.netPerAanbieding !== a.netPerAanbieding) return b.netPerAanbieding - a.netPerAanbieding;
   if (b.net !== a.net) return b.net - a.net;
   if (b.most !== a.most) return b.most - a.most;
   if (a.least !== b.least) return a.least - b.least;
@@ -192,16 +221,54 @@ const BREEDTE = {
   jaques: [87.7, 71.2, 332.4],
   lenzen: [186, 157.1, 148.2],
   families: [122.5, 104.2, 264.6],
-  constructen: [217.2, 99.6, 53.2, 121.3],
+  // Vijf kolommen sinds de technische bijlage ook de nettoscore per aanbieding
+  // toont; de som blijft gelijk aan de tekstbreedte van het blad.
+  constructen: [180.5, 88.4, 46.6, 90.5, 85.3],
   ankers: [102.3, 280.7, 108.3],
 };
+
+// ------------------------------------------------ vaste claimgrenzen in tekst
+//
+// Deze zinnen staan op één plaats, zodat er geen varianten ontstaan. Ze horen
+// bij de claimgrens van het instrument: het Kompas is een beschrijvend,
+// ipsatief gelezen ontwikkel- en gespreksinstrument zonder normgroep.
+
+/** Ordening geldt binnen deze persoon, nooit tussen personen. */
+export const LEZING_BINNEN_PERSOON =
+  "De ordening in dit rapport is uitsluitend binnen-persoonlijk: ze vergelijkt " +
+  "de lijnen van deze deelnemer met elkaar. Er is geen normgroep en geen " +
+  "vergelijkingsgroep, dus de cijfers zeggen niets over hoe deze deelnemer zich " +
+  "verhoudt tot anderen en mogen niet worden gebruikt voor selectie, aanwerving, " +
+  "promotie, ontslag of geschiktheidsbeslissingen.";
+
+/** Cijfers zijn gesprekssignalen, geen exacte meetwaarden. */
+export const LEZING_GESPREKSSIGNAAL =
+  "De cijfers zijn afgerond weergegeven en werken als gesprekssignaal, niet als " +
+  "exacte meetwaarde. Alle woordlabels en grenswaarden in dit rapport zijn " +
+  "conventies van de ontwikkelaar en geen empirisch geijkte afkappunten.";
+
+/** Ordening binnen een familie is genormaliseerd per aanbieding. */
+export const LEZING_PER_AANBIEDING =
+  "De volgorde binnen deze familie staat op nettoscore per aanbieding. Dat is " +
+  "nodig omdat de constructen in deze familie niet even vaak worden aangeboden; " +
+  "zonder die correctie zou een vaker aangeboden lijn alleen daardoor al hoger " +
+  "eindigen. Het is een ontwerpkeuze, geen empirisch bepaalde weging.";
+
+/** Driverbelasting is een werkhypothese, geen classificatie. */
+export const LEZING_DRIVERSIGNAAL =
+  "De driverbelasting is een interpretatief signaal en een werkhypothese voor " +
+  "het gesprek. Het is geen geijkte classificatie, geen risicoscore en geen " +
+  "uitspraak over gezondheid of functioneren.";
 
 export const KOMPAS_LEESWIJZER =
   "Elk hoofdstuk werkt op twee niveaus. De nettoscore toont het potentieel; de " +
   "energie- en duidingslaag toont de beschikbaarheid vandaag: of die lijn energie " +
   "geeft, neutraal is of energie kost. Een hoge nettoscore betekent dus niet " +
   "automatisch dat een talent vandaag vrij beschikbaar is — dat dubbele lezen is " +
-  "de kern van een verantwoorde T4P-interpretatie.";
+  "de kern van een verantwoorde T4P-interpretatie. " +
+  LEZING_BINNEN_PERSOON +
+  " " +
+  LEZING_GESPREKSSIGNAAL;
 
 function hoofdletter(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -287,23 +354,31 @@ const RIASEC: { letter: string; naam: string; constructen: string[] }[] = [
 ];
 
 /** Indicatie per rangpositie binnen de zes RIASEC-letters. */
+// De RIASEC-kolom toont een RANGORDE binnen dit profiel, geen niveau. De eerdere
+// labels ("Sterk", "Midden", "Laag") lazen als een vergelijking met een norm die
+// hier niet bestaat; deze labels benoemen alleen de plaats in de eigen rangorde.
 const RIASEC_INDICATIE = [
-  "Sterk (primair)",
-  "Sterk",
-  "Midden–sterk",
-  "Midden",
-  "Laag–midden",
-  "Laag",
+  "1e oriëntatie",
+  "2e oriëntatie",
+  "3e oriëntatie",
+  "4e oriëntatie",
+  "5e oriëntatie",
+  "6e oriëntatie",
 ];
 
-/** Indicatie voor een Big-Five-dimensie op basis van het gemiddelde nettoscore-niveau. */
+/**
+ * Leesrichting van een Big-Five-dimensie binnen dit ene profiel.
+ *
+ * Bewust GEEN niveaulabels ("hoog", "gemiddeld"): dat zou een vergelijking met
+ * een normgroep suggereren en die bestaat hier niet. De tekst zegt alleen hoe
+ * uitgesproken de bijhorende constructen binnen deze zelfbeschrijving naar voor
+ * komen. Grenzen zijn ontwerpconventies, niet empirisch geijkte afkappunten.
+ */
 function bigFiveIndicatie(gemiddelde: number): string {
-  if (gemiddelde >= 4.5) return "Zeer hoog";
-  if (gemiddelde >= 3.0) return "Hoog";
-  if (gemiddelde >= 2.0) return "Midden–hoog";
-  if (gemiddelde >= 0.5) return "Midden";
-  if (gemiddelde >= -1.5) return "Laag–midden";
-  return "Laag";
+  if (gemiddelde >= 3.0) return "sterk naar voor in dit profiel";
+  if (gemiddelde >= 0.5) return "duidelijk aanwezig in dit profiel";
+  if (gemiddelde >= -1.5) return "wisselend in dit profiel";
+  return "weinig naar voor in dit profiel";
 }
 
 export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): any {
@@ -321,6 +396,15 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
     most: num(r.most),
     least: num(r.least),
     net: num(r.net),
+    // Terugval voor oudere contracten die het veld nog niet bevatten: dan
+    // wordt het hier uit net en shown berekend, met dezelfde afronding als de
+    // scoringengine.
+    netPerAanbieding:
+      typeof r.netPerAanbieding === "number" && Number.isFinite(r.netPerAanbieding)
+        ? r.netPerAanbieding
+        : num(r.shown) > 0
+          ? Math.round((num(r.net) / num(r.shown)) * 1000) / 1000
+          : 0,
     avgEnergy: num(r.avgEnergy),
     shown: num(r.shown),
     mostItems: (r.mostItems ?? []).map(tekstVan).filter((s: string) => s !== ""),
@@ -505,7 +589,10 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
           { waarde: kort(discrepantie, true), label: "ENERGIEDISCREPANTIE" },
           {
             waarde: `${kort(consistentie)}/100`,
-            label: `INVULZORGVULDIGHEID (${consLabel.toUpperCase()})`,
+            // Kort gehouden: de tegels staan naast elkaar en een langer label
+            // breekt de rij. Het woordlabel (hoog/middelmatig/laag) staat in de
+            // datakwaliteitstabel van hoofdstuk 14.
+            label: INVULLING_NAAM_KORT.nl.toUpperCase(),
           },
           { waarde: risicoLabel, label: "DRIVER-RISICO" },
           { waarde: `${kort(q3)} / ${kort(q4)}`, label: "ZELF- VS. ORG-INVESTERING" },
@@ -556,8 +643,8 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
             `${kort(alle.filter((r) => r.shown > 0).length)} / ${kort(alle.length)}`,
             "Geduide constructen",
           ],
-          [`${kort(consistentie)} / 100`, "Invulzorgvuldigheid"],
-          [consLabel, "Invulzorgvuldigheid in woorden"],
+          [`${kort(consistentie)} / 100`, INVULLING_NAAM_KORT.nl],
+          [consLabel, INVULLING_NAAM_WOORDEN.nl],
           ...(tempoMelding
             ? [[`${Math.round(num(afnamekwaliteit?.aandeelOnderDrempel) * 100)} %`, "Items binnen twee seconden"]]
             : []),
@@ -570,7 +657,7 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
           {
             kop: "Kernboodschap",
             variant: "",
-            tekst: `De invulzorgvuldigheid van deze vragenlijst is ${consLabel} (${kort(consistentie)}/100). Dat cijfer gaat over deze invulling: hoe volledig er geantwoord is en hoe goed de energieantwoorden bij elkaar aansluiten. Het zegt niets over de kwaliteit van het instrument en niets over de persoon. Ook bij een hoog cijfer blijven de scores een lezing, geen absolute uitspraak.`,
+            tekst: `De volledigheid en samenhang van deze invulling is ${consLabel.toLowerCase()} (${kort(consistentie)}/100). Dat cijfer gaat over deze invulling: hoe volledig er geantwoord is en hoe goed de energieantwoorden bij elkaar aansluiten. ${INVULLING_GEEN_BETROUWBAARHEID.nl} Het zegt niets over de kwaliteit van het instrument en niets over de persoon. Ook bij een hoog cijfer blijven de scores een lezing, geen absolute uitspraak. De grenzen voor de woorden hoog, middelmatig en laag zijn ontwerpconventies van de ontwikkelaar.`,
           },
           // Melding over het tempo van invullen. Gaat over de afname, niet over
           // de persoon, en verschijnt alleen als er tijdgegevens zijn.
@@ -952,6 +1039,13 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
               "afspraken over wanneer iets ‘goed genoeg’ is, organiseer expliciete " +
               "afrondingsmomenten en bewaak de verleiding werk van anderen over te nemen.",
           },
+          // Vaste leesregel bij de drivers: signaal en werkhypothese, en de
+          // ordening geldt enkel binnen deze persoon.
+          {
+            kop: "Hoe je deze rangorde leest",
+            variant: "",
+            tekst: `${LEZING_DRIVERSIGNAAL} ${LEZING_BINNEN_PERSOON}`,
+          },
         ],
         pt: 9.6,
       },
@@ -1041,6 +1135,12 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
               topFocus
             )}, met minder belasting op wat vandaag geen voorkeursroute is. Maak ruimte waarin die aandachtslijn zichtbaar mag renderen.`,
           },
+          // Vaste leesregel: de ordening geldt enkel binnen deze persoon.
+          {
+            kop: "Hoe je deze rangorde leest",
+            variant: "",
+            tekst: LEZING_BINNEN_PERSOON,
+          },
         ],
         pt: 9.0,
       },
@@ -1111,6 +1211,13 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
             tekst: `Ontwerp rollen zo dat ${lijstZin(
               versnellers.slice(0, 2).map(kern)
             )} centraal staan, binnen duidelijke grenzen van beschikbaarheid.`,
+          },
+          // Vaste leesregel: de versnellers worden ongelijk aangeboden, dus de
+          // ordening staat op nettoscore per aanbieding.
+          {
+            kop: "Hoe deze rangorde is bepaald",
+            variant: "",
+            tekst: `${LEZING_PER_AANBIEDING} ${LEZING_BINNEN_PERSOON}`,
           },
         ],
         pt: 9.0,
@@ -2217,7 +2324,7 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
       bigFiveIndicatie(gemNet(["Be Perfect", "Try Hard"])),
       `${netLabel("Be Perfect")} en ${netLabel(
         "Try Hard",
-      )} zijn de dominante drivers; Resultaatgericht en Analyse dragen hoge energie. Self-oriented perfectionisme correleert sterk positief met consciëntieusheid (r≈.54–.61).`,
+      )} zijn de dominante drivers; Resultaatgericht en Analyse dragen hoge energie.`,
     ],
     [
       "Openheid",
@@ -2248,14 +2355,14 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
     ],
     [
       "Neuroticisme",
-      kostDrivers.length ? "Verhoogd onder druk" : "Gemiddeld",
+      kostDrivers.length ? "meer belasting gemeld onder druk" : "geen belastingsignaal",
       `De energiediscrepantie (beleefd ${kort(
         Math.round(beleefd * 10) / 10,
       )}/10 vs. gemeten ${kort(
         Math.round(gemeten * 10) / 10,
       )}/10) en de belasting uit ${
         lijstZin(kostDrivers.map((r) => r.construct)) || "de drivers"
-      } wijzen op spanninggevoeligheid; socially prescribed perfectionisme correleert positief met neuroticisme (r≈.24–.32).`,
+      } wijzen op belasting die vandaag gemeld wordt, niet op een trek of een klacht.`,
     ],
   ];
 
@@ -2280,7 +2387,7 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
   secties.push({
     nummer: "20",
     titel: "Vertaling naar gevestigde kaders",
-    ondertitel: `${voornaam}s T4P-profiel verbonden met Big Five, RIASEC en het werkniveau van Elliott Jaques — onderbouwd, als brug naar gangbare HR-taal.`,
+    ondertitel: `${voornaam}s T4P-profiel gelegd naast Big Five, RIASEC en het werkniveau van Elliott Jaques: taal voor het gesprek, geen aparte testuitslag.`,
     onderdelen: [
       { type: "subkop", tekst: "Big Five (Five-Factor Model)" },
       {
@@ -2342,15 +2449,16 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
         blokken: [
           {
             kop: "Professionele betekenis",
-            tekst: `<i>Interpretatie.</i> Deze vertaling plaatst ${voornaam}s T4P-profiel naast drie internationaal erkende kaders — persoonlijkheid (Big Five), beroepsinteresse (RIASEC) en werkcomplexiteit (Jaques) — zodat het profiel aansluit op gangbare taal in HR, selectie en organisatieontwerp.`,
+            tekst: `<i>Interpretatie.</i> Deze vertaling plaatst ${voornaam}s T4P-profiel naast drie internationaal erkende kaders — persoonlijkheid (Big Five), beroepsinteresse (RIASEC) en werkcomplexiteit (Jaques) — zodat het gesprek kan aansluiten op gangbare taal in ontwikkeling, loopbaan en organisatieontwerp. Niet voor selectie of enige geschiktheidsbeslissing.`,
           },
           {
             kop: "Bewaking of risico",
             tekst:
-              "<i>Interpretatiegrens.</i> Het zijn onderbouwde equivalenties, geen aparte " +
-              "testscores: T4P meet talent en energie, geen Big-Five-, RIASEC- of " +
-              "Jaques-instrument. Gebruik de vertaling als brug, niet als vervanging van die " +
-              "instrumenten.",
+              "<i>Interpretatiegrens.</i> Het zijn interpretatieve bruggen, geen " +
+              "gevalideerde equivalenties en geen aparte testscores. Geen van deze " +
+              "koppelingen is op afnamedata onderzocht. T4P meet talent en energie, en is " +
+              "geen Big-Five-, RIASEC- of Jaques-instrument. Lees dit blad als taal voor " +
+              "het gesprek, nooit als vervanging van die instrumenten.",
           },
           {
             kop: "Actie of ontwerpimplicatie",
@@ -2471,10 +2579,22 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
     .map((f: any) => [f.family, getal(f.avgEnergy), familieLezing(f.family, f.avgEnergy)]);
 
   const kortFamilie = (f: string): string => (f === "Talent-versnellers" ? "Versnellers" : f);
+  // De nettoscore per aanbieding staat hier op drie decimalen. In de
+  // mensgerichte hoofdstukken wordt betekenisvol afgerond; de technische
+  // bijlage is de plek waar een meelezende psychometrist de ruwe verhouding
+  // most-min-least gedeeld door het aantal aanbiedingen kan nazien.
+  const perAanbiedingTekst = (r: Rij): string => {
+    const w = r.netPerAanbieding;
+    if (typeof w !== "number" || !Number.isFinite(w)) return "n.v.t.";
+    const teken = w > 0 ? "+" : w < 0 ? "\u2212" : "";
+    return `${teken}${Math.abs(w).toFixed(3).replace(".", ",")}`;
+  };
+
   const constructTabel = [...drivers, ...alleFoci, ...versnellers].map((r) => [
     r.construct,
     kortFamilie(r.family),
     netTekst(r.net),
+    perAanbiedingTekst(r),
     getal(r.avgEnergy),
   ]);
 
@@ -2493,7 +2613,7 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
       {
         type: "vrijetabel",
         kop: null,
-        kolommen: ["CONSTRUCT", "FAMILIE", "NET", "GEM. ENERGIE"],
+        kolommen: ["CONSTRUCT", "FAMILIE", "NET", "NET/AANB.", "GEM. ENERGIE"],
         rijen: constructTabel,
         kolombreedtes: BREEDTE.constructen,
       },
@@ -2503,13 +2623,13 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
           {
             kop: "Data en signalen",
             variant: "",
-            tekst: `De invulzorgvuldigheid komt uit op ${kort(consistentie)}/100${
+            tekst: `De volledigheid en samenhang van de invulling komt uit op ${kort(consistentie)}/100${
               consLabel ? ` (${consLabel.toLowerCase()})` : ""
             }. Volledigheid: ${kort(schermen)}/${kort(schermenTotaal)} schermen, ${kort(
               alle.filter((r) => r.shown > 0).length,
             )}/${kort(alle.length)} duidingen, ${kort(
               keuzes,
-            )} keuzes. Net = most − least; gemiddelde energie van energiekostend (negatief) tot energiegevend (positief).`,
+            )} keuzes. Net = most − least; net/aanb. = net per aanbieding; gemiddelde energie van energiekostend (negatief) tot energiegevend (positief).`,
           },
           {
             kop: "Bewaking of risico",

@@ -484,6 +484,11 @@ try {
   // milliseconden als JSON-tekst. Strikt additief en nullable: bestaande
   // afnames houden NULL en tonen daardoor geen kwaliteitsmelding.
   if (!heeft("item_tijden")) add(`ALTER TABLE afnames ADD COLUMN item_tijden TEXT;`);
+  // Doorlooptijd: startmoment van de deelnemer en de totale duur. `created_at`
+  // is het aanmaakmoment van de afname, niet het startmoment van de deelnemer.
+  // Strikt additief en nullable: bestaande rijen houden NULL.
+  if (!heeft("gestart_op")) add(`ALTER TABLE afnames ADD COLUMN gestart_op TEXT;`);
+  if (!heeft("duur_ms")) add(`ALTER TABLE afnames ADD COLUMN duur_ms INTEGER;`);
   // Auditbevinding K-1 (kritiek), derde ronde: bezitsbewijs per afname. De
   // respondentCode is leesbaar en dus raadbaar; dit token is dat niet. Bestaande
   // rijen krijgen meteen een token, zodat de oude, raadbare code nergens meer als

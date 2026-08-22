@@ -21,6 +21,7 @@ import { instrument, kies } from "./instrument";
 import { TALEN, STANDAARD_TAAL, type Taal } from "../shared/talen";
 import { isTapasBeeld } from "../shared/talent-constructs";
 import { energieBand, type EnergieBand } from "../shared/energie-schaal";
+import { INVULLING_NAAM_KORT } from "../shared/invulling-index";
 
 export interface RapportSectie {
   kop: string;
@@ -145,11 +146,11 @@ const T = {
   // kwaliteit van het instrument en niet over de persoon. De tekst zegt dat
   // daarom met zoveel woorden.
   invulzorgvuldigheid_uitleg: m(
-    "Invulzorgvuldigheid zegt hoe deze vragenlijst is ingevuld: hoe volledig de vragen beantwoord zijn en hoe goed de energieantwoorden bij elkaar aansluiten. Het zegt niets over de kwaliteit van het instrument en niets over de persoon. Het is geen psychometrische betrouwbaarheidsmaat; er wordt geen samenhang tussen items mee berekend.",
-    "Le soin apporté au remplissage indique comment ce questionnaire a été rempli : dans quelle mesure les questions ont reçu une réponse et dans quelle mesure les réponses sur l'énergie concordent entre elles. Cela ne dit rien de la qualité de l'instrument ni de la personne. Ce n'est pas une mesure psychométrique de fidélité ; aucune covariance entre items n'est calculée.",
-    "Care taken when filling in says how this questionnaire was completed: how fully the questions were answered and how well the energy answers line up with one another. It says nothing about the quality of the instrument and nothing about the person. It is not a psychometric reliability measure; no covariance between items is computed.",
-    "El cuidado al rellenar indica cómo se ha completado este cuestionario: en qué medida se respondieron las preguntas y hasta qué punto las respuestas sobre la energía concuerdan entre sí. No dice nada sobre la calidad del instrumento ni sobre la persona. No es una medida psicométrica de fiabilidad; no se calcula covarianza entre ítems.",
-    "Тщательность заполнения показывает, как был заполнен этот опросник: насколько полно даны ответы и насколько ответы об энергии согласуются между собой. Это ничего не говорит о качестве инструмента и ничего о человеке. Это не психометрический показатель надёжности; ковариация между пунктами не рассчитывается."
+    "Volledigheid en samenhang van de invulling zeggen hoe deze vragenlijst is ingevuld: hoe volledig de vragen beantwoord zijn en hoe goed de energieantwoorden bij elkaar aansluiten. Het zegt niets over de kwaliteit van het instrument en niets over de persoon. Het is geen psychometrische betrouwbaarheidsmaat; er wordt geen samenhang tussen items mee berekend.",
+    "L'exhaustivité et la cohérence du remplissage indiquent comment ce questionnaire a été rempli : dans quelle mesure les questions ont reçu une réponse et dans quelle mesure les réponses sur l'énergie concordent entre elles. Cela ne dit rien de la qualité de l'instrument ni de la personne. Ce n'est pas une mesure psychométrique de fidélité ; aucune covariance entre items n'est calculée.",
+    "Completeness and coherence of the responses given indicate how this questionnaire was completed: how fully the questions were answered and how well the energy answers line up with one another. It says nothing about the quality of the instrument and nothing about the person. It is not a psychometric reliability measure; no covariance between items is computed.",
+    "La integridad y la coherencia del cuestionario rellenado indican cómo se ha completado este cuestionario: en qué medida se respondieron las preguntas y hasta qué punto las respuestas sobre la energía concuerdan entre sí. No dice nada sobre la calidad del instrumento ni sobre la persona. No es una medida psicométrica de fiabilidad; no se calcula covarianza entre ítems.",
+    "Полнота и согласованность заполнения показывают, как был заполнен этот опросник: насколько полно даны ответы и насколько ответы об энергии согласуются между собой. Это ничего не говорит о качестве инструмента и ничего о человеке. Это не психометрический показатель надёжности; ковариация между пунктами не рассчитывается."
   ),
   verschil_dichtbij: m(
     "De zelfingeschatte baseline en het beeld uit de vragenlijst liggen dicht bij elkaar. Dat wijst op een herkenbaar, consistent energiebeeld.",
@@ -175,7 +176,14 @@ const T = {
   ind_energie_vl: m("Energie uit vragenlijst (0-10)", "Énergie du questionnaire (0-10)", "Energy from questionnaire (0-10)", "Energía del cuestionario (0-10)", "Энергия по опроснику (0-10)"),
   ind_baseline: m("Zelfingeschatte baseline (0-10)", "Référence auto-évaluée (0-10)", "Self-rated baseline (0-10)", "Referencia autoevaluada (0-10)", "Самооценённый базовый уровень (0-10)"),
   ind_verschil: m("Verschil", "Écart", "Difference", "Diferencia", "Разница"),
-  ind_invulzorgvuldigheid: m("Invulzorgvuldigheid", "Soin apporté au remplissage", "Care taken when filling in", "Cuidado al rellenar", "Тщательность заполнения"),
+  // Canonieke naam uit shared/invulling-index.ts. Geen betrouwbaarheidsmaat.
+  ind_invulzorgvuldigheid: m(
+    INVULLING_NAAM_KORT.nl,
+    INVULLING_NAAM_KORT.fr,
+    INVULLING_NAAM_KORT.en,
+    INVULLING_NAAM_KORT.es,
+    INVULLING_NAAM_KORT.ru,
+  ),
   col_indicator: m("Indicator", "Indicateur", "Indicator", "Indicador", "Показатель"),
   col_waarde: m("Waarde", "Valeur", "Value", "Valor", "Значение"),
   // Sectie 2 — talentfoci

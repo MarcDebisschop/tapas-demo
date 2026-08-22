@@ -121,11 +121,28 @@ function motorPanelen(fragment: string): string[][] {
   );
 }
 
+// Spiegelt de rangorderegel van het rapportcontract: nettoscore PER AANBIEDING
+// aflopend, dan ruwe nettoscore, dan meest, dan minst, dan alfabetisch. De
+// normalisatie per aanbieding is nodig omdat de talent-versnellers ongelijk
+// worden aangeboden (8, 9 of 10 keer).
+function perAanbieding(r: any): number {
+  if (typeof r.netPerAanbieding === "number" && Number.isFinite(r.netPerAanbieding)) {
+    return r.netPerAanbieding;
+  }
+  return Number(r.shown) > 0 ? Math.round((Number(r.net) / Number(r.shown)) * 1000) / 1000 : 0;
+}
+
 function rijenVanFamilie(contract: any, familie: string) {
   return (contract.sections.main.constructRows as any[])
     .filter((r) => r.family === familie)
     .filter((r) => !(familie === "Talent-foci" && String(r.construct).startsWith("TaPas-Beeld")))
-    .sort((a, b) => b.net - a.net);
+    .sort((a, b) => {
+      if (perAanbieding(b) !== perAanbieding(a)) return perAanbieding(b) - perAanbieding(a);
+      if (b.net !== a.net) return b.net - a.net;
+      if (b.most !== a.most) return b.most - a.most;
+      if (a.least !== b.least) return a.least - b.least;
+      return a.construct < b.construct ? -1 : a.construct > b.construct ? 1 : 0;
+    });
 }
 
 // --- gouden hoofdstukkenlijst ----------------------------------------------
