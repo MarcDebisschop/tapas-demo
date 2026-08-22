@@ -21,7 +21,10 @@
 // overschrijven via /api/gids (server/gids-manager.ts). Deze file is de DEFAULT.
 // =============================================================================
 
-import { T4TEENS_LEEFTIJDSTEKST } from "@shared/doelgroep-leeftijd";
+import {
+  T4TEENS_LEEFTIJDSTEKST,
+  T4STUDENTS_LEEFTIJDSTEKST_VOLUIT,
+} from "@shared/doelgroep-leeftijd";
 import { TWOMINSCAN_PAGINATEKST, TWOMINSCAN_TALENTEKST_VOLUIT } from "@shared/twominscan-rapport";
 
 export type Orientatie = "business" | "education" | "beide" | "sport";
@@ -260,11 +263,11 @@ export const INSTRUMENTENGIDS: GidsInstrument[] = [
       "Bevestigt mijn studiekeuze wie ik ben? Welke jobdomeinen sluiten aan bij mijn talent? Hoe formuleer ik mijn sterktes richting stage en eerste job?",
     gebruik:
       "Voor studierichtingsbevestiging of -bijsturing, voorbereiding op het stagezoekproces, eerste loopbaanoriëntatie en persoonlijke ontwikkeling.",
-    doelgroep: "Studenten 17 tot 25 jaar, studentenbegeleiders.",
+    doelgroep: `Studenten ${T4STUDENTS_LEEFTIJDSTEKST_VOLUIT}, studentenbegeleiders.`,
     start: { label: "Ontdek T4Students", route: "/studie/leerlingen", direct: false },
     rapportTeaser:
       "Een T4Students talentpaspoort met jobdomein-mapping en een eerste LinkedIn-formulering voor de start op de arbeidsmarkt.",
-    leeftijdsfocus: "17 tot 25 jaar",
+    leeftijdsfocus: T4STUDENTS_LEEFTIJDSTEKST_VOLUIT,
     icoon: "GraduationCap",
   },
 ];

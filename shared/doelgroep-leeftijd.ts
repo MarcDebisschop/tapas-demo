@@ -1,9 +1,10 @@
 // ---------------------------------------------------------------------------
 // shared/doelgroep-leeftijd.ts
 //
-// De enige bron van waarheid voor de leeftijden waarvoor T4Teens gemaakt is:
-// de ondergrens, de bovengrens, het punt waarop de twee leeftijdsbanden
-// splitsen, en alle teksten die daaruit volgen.
+// De enige bron van waarheid voor de leeftijden waarvoor T4Teens en
+// T4Students gemaakt zijn: de ondergrens, de bovengrens, het punt waarop de
+// twee leeftijdsbanden van T4Teens splitsen, en alle teksten die daaruit
+// volgen.
 //
 // WAAROM DIT BESTAAT
 // Voor een en hetzelfde instrument stonden vijf verschillende leeftijdsgrenzen
@@ -56,3 +57,44 @@ export const T4TEENS_LEEFTIJDSTEKST = `${T4TEENS_LEEFTIJDSBEREIK} jaar`;
 
 /** Het bereik voluit, voor een lopende zin richting de jongere zelf. */
 export const T4TEENS_LEEFTIJDSTEKST_VOLUIT = `${T4TEENS_DOELGROEP.minLeeftijd} tot en met ${T4TEENS_DOELGROEP.maxLeeftijd} jaar`;
+
+// ---------------------------------------------------------------------------
+// T4STUDENTS
+//
+// Dezelfde behandeling voor het studiekompas. Ook hier stonden meerdere
+// getallen naast elkaar: het databestand van het instrument zei "17-25+", het
+// register zei "17 tot 25 jaar en ouder", de gids op de server en in de client
+// zeiden "17 tot 25 jaar", en een oudere regel in het register noemde nog
+// "17-23 jaar". De vastgelegde doelgroep is 17 tot en met 23 jaar. Alles wat
+// die leeftijd in een tekst zet, leest hem vanaf hier.
+//
+// DE GRENS IS EEN KEUZE, GEEN METING
+// Er is geen leeftijdsonderzoek waaruit volgt dat de items boven 23 niet meer
+// werken of dat ze voor een zeventienjarige en een drieentwintigjarige
+// hetzelfde betekenen. Meetinvariantie over leeftijd is niet onderzocht. Dit
+// is een ontwerpconventie van TaPasCity: de ondergrens sluit aan op het punt
+// waar T4Teens ophoudt, de bovengrens op het einde van een gewone
+// studieloopbaan in het hoger onderwijs.
+//
+// DE ONDERGRENS BLIJFT EEN OPEN PUNT
+// Zeventien valt vandaag zowel binnen T4Teens als binnen T4Students, en de
+// leeftijdspoort wordt voor T4Students helemaal niet toegepast. Dat is niet
+// met deze grens opgelost en staat vast in
+// tests/t4students-doelgroep-ondergrens.test.ts.
+// ---------------------------------------------------------------------------
+
+export const T4STUDENTS_DOELGROEP = {
+  /** Jongste leeftijd waarvoor T4Students bedoeld is. */
+  minLeeftijd: 17,
+  /** Oudste leeftijd waarvoor T4Students bedoeld is. */
+  maxLeeftijd: 23,
+} as const;
+
+/** Het bereik zonder eenheid, bijvoorbeeld voor een titel tussen haakjes. */
+export const T4STUDENTS_LEEFTIJDSBEREIK = `${T4STUDENTS_DOELGROEP.minLeeftijd}-${T4STUDENTS_DOELGROEP.maxLeeftijd}`;
+
+/** Het bereik zoals het in doelgroepomschrijvingen staat. */
+export const T4STUDENTS_LEEFTIJDSTEKST = `${T4STUDENTS_LEEFTIJDSBEREIK} jaar`;
+
+/** Het bereik voluit, voor een lopende zin. */
+export const T4STUDENTS_LEEFTIJDSTEKST_VOLUIT = `${T4STUDENTS_DOELGROEP.minLeeftijd} tot ${T4STUDENTS_DOELGROEP.maxLeeftijd} jaar`;

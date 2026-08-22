@@ -152,10 +152,16 @@ describe("E. Geen normgroepclaim en een uniforme doelgroep", () => {
   });
 
   it("noemt overal dezelfde doelgroep voor T4Students", () => {
+    // De vastgelegde doelgroep is 17 tot 23 jaar en staat op een enkele plaats,
+    // in shared/doelgroep-leeftijd.ts. Geen van deze bronnen mag een eigen
+    // getal dragen: ze lezen de grens of ze zeggen niets over leeftijd. Wat
+    // hier gecontroleerd wordt is dat het oude bereik nergens is achtergebleven.
+    // De volledige controle over alle bronbestanden staat in
+    // tests/t4students-leeftijdsgrens.test.ts.
     for (const p of bronnen) {
       const bron = lees(p);
-      expect(bron).not.toContain("17-23");
-      expect(bron).not.toContain("17 tot 23");
+      expect(bron, `oude doelgroep in ${p}`).not.toContain("17-25");
+      expect(bron, `oude doelgroep in ${p}`).not.toContain("17 tot 25");
     }
   });
 

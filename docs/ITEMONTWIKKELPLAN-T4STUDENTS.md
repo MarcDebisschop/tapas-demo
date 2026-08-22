@@ -36,7 +36,7 @@ ontwikkeltraject van maanden, niet iets wat er in deze ronde bij kon.
 | 1 | Constructdefinities uitschrijven per cluster: wat valt eronder, wat niet | zonder scherpe definitie is geen item te schrijven en geen expertbeoordeling mogelijk |
 | 2 | Per cluster 5 kandidaat-items schrijven in het Nederlands | overschrijven laat toe om de zwakste eruit te gooien |
 | 3 | Inhoudsvaliditeit: 3 tot 5 onafhankelijke beoordelaars wijzen elk item aan een cluster toe | vangt items die twee clusters tegelijk raken |
-| 4 | Taalcontrole op leeftijd 17 tot 25: leesniveau, geen jargon, geen schoolse formulering | de doelgroep leest dit alleen |
+| 4 | Taalcontrole op leeftijd 17 tot 23: leesniveau, geen jargon, geen schoolse formulering | de doelgroep leest dit alleen |
 | 5 | Cognitieve interviews met 8 tot 12 jongeren: wat begrijp je hier | vangt items die anders begrepen worden dan bedoeld |
 | 6 | Vertaling naar Frans en Engels, daarna terugvertaling | de bank is drietalig (`nl`, `fr`, `en`) en de vertaling mag de betekenis niet verschuiven |
 | 7 | Pilootafname, itemanalyse, selectie van de 3 beste per cluster | pas hier komen cijfers in beeld |

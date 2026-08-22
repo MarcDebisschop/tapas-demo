@@ -98,11 +98,11 @@ const VRAAGBANK: StmVraag[] = [
     opties: ["Juist", "Fout"],
     correct_antwoord: "Fout",
     feedback_correct:
-      "Correct. T4Teens richt zich op 13 tot 17 jaar, T4Students op 17 tot 25 jaar. Het zijn " +
+      "Correct. T4Teens richt zich op 13 tot 17 jaar, T4Students op 17 tot 23 jaar. Het zijn " +
       "aparte itembanken en aparte rapporten. Geen van beide werkt met een normgroep: er wordt " +
       "niet met andere jongeren vergeleken.",
     feedback_fout:
-      "Fout. T4Teens (13 tot 17 jaar) en T4Students (17 tot 25 jaar) hebben een eigen itembank en " +
+      "Fout. T4Teens (13 tot 17 jaar) en T4Students (17 tot 23 jaar) hebben een eigen itembank en " +
       "een eigen aanpak. Ze vergelijken de jongere niet met een normgroep.",
   },
   {
@@ -313,9 +313,9 @@ const VRAAGBANK: StmVraag[] = [
     ],
     correct_antwoord: "Bij jongeren die nog studeren of in transitie zijn naar de arbeidsmarkt",
     feedback_correct:
-      "Juist. T4Students is ontworpen voor de doelgroep 17 tot 25 jaar in studie of transitie.",
+      "Juist. T4Students is ontworpen voor de doelgroep 17 tot 23 jaar in studie of transitie.",
     feedback_fout:
-      "Fout. T4Students is ontworpen voor jongeren van 17 tot 25 jaar in studiecontext of in de " +
+      "Fout. T4Students is ontworpen voor jongeren van 17 tot 23 jaar in studiecontext of in de " +
       "overgang naar de arbeidsmarkt.",
   },
 
