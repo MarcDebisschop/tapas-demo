@@ -22,6 +22,8 @@
 import rapportteksten from "../data/t4students-rapportteksten.json";
 import type { T4SInstrument } from "./instrument";
 import type { T4SAntwoorden, T4SResultaat } from "./kompas-scoring";
+import type { Afnamekwaliteit, Invulpatroon } from "../afnamekwaliteit";
+import { patroonMeldingJij, tempoMeldingJij } from "../afnamekwaliteit";
 import {
   FAM_BEELD,
   FAM_DRIVERS,
@@ -988,10 +990,26 @@ export function bouwT4StudentsRapport(
   resultaat: T4SResultaat,
   antwoorden: T4SAntwoorden,
   licentie: T4SLicentie,
-  opties: { naam: string; code: string; datum: string; instrumentVersie: string },
+  opties: {
+    naam: string;
+    code: string;
+    datum: string;
+    instrumentVersie: string;
+    // Melding over de MANIER van invullen, berekend uit de tijd per item
+    // (server/afnamekwaliteit.ts). Geen score en geen oordeel over de jongere.
+    // Ontbreekt bij afnames zonder bruikbare tijdgegevens.
+    afnamekwaliteit?: Afnamekwaliteit | null;
+    // Melding over het antwoordpatroon (dezelfde keuze in een lange reeks).
+    // Zelfde aard als hierboven: een leessignaal, geen score en geen oordeel.
+    invulpatroon?: Invulpatroon | null;
+  },
 ): T4SRapport {
   const taal = resultaat.taal;
   const items = itemIndex(inst);
+  // Leessignalen over de afname, in de tweede persoon. Null betekent: er is
+  // niets te melden en het kaderblok blijft weg.
+  const tempoJij = tempoMeldingJij(opties.afnamekwaliteit ?? null);
+  const patroonJij = patroonMeldingJij(opties.invulpatroon ?? null);
   const meldingen: string[] = [];
 
   const foci = rangschik(inst, resultaat, antwoorden, FAM_FOCI);
@@ -2047,6 +2065,16 @@ export function bouwT4StudentsRapport(
         {
           soort: "alinea",
           tekst:
+            "In welke fase dit instrument staat: het studiekompas is een reflectief ontwikkelinstrument " +
+            "in opbouw. De inhoud is opgebouwd op vakliteratuur en op de ervaring van de ontwikkelaar, " +
+            "maar er is nog geen onderzoek op echte afnamegegevens uitgevoerd. Er zijn dus geen " +
+            "betrouwbaarheidscijfers, geen validiteitsonderzoek en geen normgroep. De grenzen tussen de " +
+            "groepen en de labels in dit rapport zijn gekozen conventies, geen op gegevens geijkte " +
+            "grenzen. Lees de uitkomsten daarom als gespreksstof, niet als vaststaande meting.",
+        },
+        {
+          soort: "alinea",
+          tekst:
             "Hoe de cijfers berekend zijn, in gewone taal: bij elke stelling gaf je aan hoeveel je " +
             "jezelf erin herkent, op een schaal van vier antwoorden. Die antwoorden zijn per onderdeel " +
             "opgeteld en daarna teruggerekend naar dezelfde schaal van 0 tot 3 die je op het scherm " +
@@ -2064,6 +2092,33 @@ export function bouwT4StudentsRapport(
             { label: "Uitvoering", waarde: licentie === "basis" ? "Basis" : "Verdieping" },
           ],
         },
+        // Melding over de manier van invullen. Staat er alleen wanneer de tijd
+        // per item aanleiding geeft; anders blijft dit blad ongewijzigd.
+        // Beide leessignalen spreken de jongere zelf aan. De coachvarianten uit
+        // server/afnamekwaliteit.ts spreken over "de deelnemer" en horen dus in
+        // een coachweergave, niet in het rapport dat de jongere in handen krijgt.
+        ...(patroonJij
+          ? [
+              {
+                soort: "kader" as const,
+                opschrift: "Bij het lezen",
+                kop: "Over het antwoordpatroon",
+                kleur: KLEUR.oker,
+                tekst: patroonJij,
+              },
+            ]
+          : []),
+        ...(tempoJij
+          ? [
+              {
+                soort: "kader" as const,
+                opschrift: "Bij het lezen",
+                kop: "Over de manier van invullen",
+                kleur: KLEUR.oker,
+                tekst: tempoJij,
+              },
+            ]
+          : []),
         {
           soort: "alinea",
           tekst:

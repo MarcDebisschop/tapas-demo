@@ -141,35 +141,35 @@ export function bouwChatProfiel(contractRaw: unknown, taal: Taal, naam?: string 
       `Versterkend gedrag: ${versnTxt}. ` +
       `Energie tijdens de vragenlijst: ${vragenlijstEnergie.toFixed(1)}/10 (eigen inschatting vooraf: ${baseline.toFixed(1)}/10). ` +
       `Drivers om in het oog te houden (naar Taibi Kahler): ${driverTxt}; driver-belasting: ${driverLabel}. ` +
-      `${consScore !== null ? `Invulzorgvuldigheid van deze vragenlijst: ${consScore}/100.` : ""}`,
+      `${consScore !== null ? `Volledigheid en samenhang van deze invulling: ${consScore}/100 (geen betrouwbaarheidsmaat).` : ""}`,
     fr:
       `${naamTxt ? `Nom : ${naamTxt}. ` : ""}` +
       `Focus de talent les plus forts (où l'énergie circule) : ${fociTxt}. ` +
       `Comportement amplificateur : ${versnTxt}. ` +
       `Énergie pendant le questionnaire : ${vragenlijstEnergie.toFixed(1)}/10 (auto-évaluation préalable : ${baseline.toFixed(1)}/10). ` +
       `Drivers à surveiller (d'après Taibi Kahler) : ${driverTxt} ; charge des Drivers : ${driverLabel}. ` +
-      `${consScore !== null ? `Soin apporté au remplissage de ce questionnaire : ${consScore}/100.` : ""}`,
+      `${consScore !== null ? `Exhaustivité et cohérence de ce remplissage : ${consScore}/100 (pas une mesure de fiabilité).` : ""}`,
     en:
       `${naamTxt ? `Name: ${naamTxt}. ` : ""}` +
       `Strongest talent foci (where energy flows freely): ${fociTxt}. ` +
       `Amplifying behaviour: ${versnTxt}. ` +
       `Energy during the questionnaire: ${vragenlijstEnergie.toFixed(1)}/10 (own estimate beforehand: ${baseline.toFixed(1)}/10). ` +
       `Drivers to keep an eye on (after Taibi Kahler): ${driverTxt}; Driver load: ${driverLabel}. ` +
-      `${consScore !== null ? `Care taken when filling in this questionnaire: ${consScore}/100.` : ""}`,
+      `${consScore !== null ? `Completeness and coherence of these responses: ${consScore}/100 (not a reliability measure).` : ""}`,
     es:
       `${naamTxt ? `Nombre: ${naamTxt}. ` : ""}` +
       `Focos de talento más fuertes (donde fluye la energía): ${fociTxt}. ` +
       `Comportamiento amplificador: ${versnTxt}. ` +
       `Energía durante el cuestionario: ${vragenlijstEnergie.toFixed(1)}/10 (estimación previa propia: ${baseline.toFixed(1)}/10). ` +
       `Drivers a vigilar (según Taibi Kahler): ${driverTxt}; carga de Drivers: ${driverLabel}. ` +
-      `${consScore !== null ? `Cuidado al rellenar este cuestionario: ${consScore}/100.` : ""}`,
+      `${consScore !== null ? `Integridad y coherencia de este cuestionario rellenado: ${consScore}/100 (no es una medida de fiabilidad).` : ""}`,
     ru:
       `${naamTxt ? `Имя: ${naamTxt}. ` : ""}` +
       `Сильнейшие фокусы таланта (где энергия течёт свободно): ${fociTxt}. ` +
       `Усиливающее поведение: ${versnTxt}. ` +
       `Энергия во время опросника: ${vragenlijstEnergie.toFixed(1)}/10 (собственная предварительная оценка: ${baseline.toFixed(1)}/10). ` +
       `Drivers, за которыми стоит следить (по Taibi Kahler): ${driverTxt}; нагрузка Drivers: ${driverLabel}. ` +
-      `${consScore !== null ? `Тщательность заполнения этого опросника: ${consScore}/100.` : ""}`,
+      `${consScore !== null ? `Полнота и согласованность этого заполнения: ${consScore}/100 (не мера надежности).` : ""}`,
   };
 
   // --- Zorg-kompas laag A: risicosignalen ---

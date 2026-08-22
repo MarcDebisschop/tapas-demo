@@ -1,7 +1,10 @@
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { STANDAARD_TAAL, type Taal } from "../shared/talen";
-import { T4TEENS_LEEFTIJDSTEKST } from "../shared/doelgroep-leeftijd";
+import {
+  T4TEENS_LEEFTIJDSTEKST,
+  T4STUDENTS_LEEFTIJDSTEKST_VOLUIT,
+} from "../shared/doelgroep-leeftijd";
 import { TWOMINSCAN_PAGINATEKST, TWOMINSCAN_TALENTEKST } from "../shared/twominscan-rapport";
 import {
   type Instrument,
@@ -458,8 +461,8 @@ function bouwRegistry(): Map<string, InstrumentDescriptor> {
   //                 ontdek je talent, energie en gedragspatroon in een
   //                 academisch kader."
   //
-  // Twee dingen klopten niet. De doelgroep stond op 17 tot 23 jaar, terwijl het
-  // instrument zelf jongvolwassenen van 17 tot 25 en ouder noemt. En het
+  // Twee dingen klopten niet. De doelgroep stond hier als vaste tekst, los van
+  // de andere plaatsen die dezelfde leeftijd noemden, en het
   // versienummer stond als vaste tekst in het register, terwijl het
   // gezaghebbende nummer in het databestand van het instrument hoort. Verder
   // ontbrak wat de descriptors van de andere instrumenten wel vermelden: het
@@ -494,7 +497,7 @@ function bouwRegistry(): Map<string, InstrumentDescriptor> {
     name: "T4Students",
     version: inhoudsVersie(t4studentsJson),
     description:
-      `Individueel studiekompas voor jongvolwassenen (17 tot 25 jaar en ouder): ${T4STUDENTS_AANTAL_ITEMS} ` +
+      `Individueel studiekompas voor jongvolwassenen (${T4STUDENTS_LEEFTIJDSTEKST_VOLUIT}): ${T4STUDENTS_AANTAL_ITEMS} ` +
       "items die de student zelf invult, in een enkele zitting. De meting levert " +
       "een beeld van zichzelf, een energiebeeld, zes talentfoci, zes " +
       "talent-versnellers, een driverprofiel, een uit de eigen antwoorden " +

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "name": "T4Students",
   "language": "nl",
-  "description": "Studie- en loopbaankompas voor jongvolwassenen (17-25+): 39 stellingen leiden tot TaPas-BEELD, energiebeeld, zes talentfoci, zes talent-versnellers, driverprofiel, een motivatiebalans naar de zelfdeterminatietheorie, een uit de TaPas-data afgeleid en bevestigd RIASEC-vermoeden gekoppeld aan de 10 studiegebieden, en - als USP - de persoonlijke studiestrategie. Uit één meting worden twee rapporten gerenderd: een Basis-rapport (zelfinzicht) en een Verdiepingsrapport (begeleid keuzeadvies).",
+  "description": "Studie- en loopbaankompas voor jongvolwassenen (17-23 jaar): 39 stellingen leiden tot TaPas-BEELD, energiebeeld, zes talentfoci, zes talent-versnellers, driverprofiel, een motivatiebalans naar de zelfdeterminatietheorie, een uit de TaPas-data afgeleid en bevestigd RIASEC-vermoeden gekoppeld aan de 10 studiegebieden, en - als USP - de persoonlijke studiestrategie. Uit één meting worden twee rapporten gerenderd: een Basis-rapport (zelfinzicht) en een Verdiepingsrapport (begeleid keuzeadvies).",
   "responseScales": {
     "recognition": {
       "type": "ordinal",
