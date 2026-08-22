@@ -997,6 +997,9 @@ export function bouwT4StudentsRapport(
     // (server/afnamekwaliteit.ts). Geen score en geen oordeel over de jongere.
     // Ontbreekt bij afnames zonder bruikbare tijdgegevens.
     afnamekwaliteit?: { vlag: boolean; melding: string | null } | null;
+    // Melding over het antwoordpatroon (dezelfde keuze in een lange reeks).
+    // Zelfde aard als hierboven: een leessignaal, geen score en geen oordeel.
+    invulpatroon?: { vlag: boolean; melding: string | null } | null;
   },
 ): T4SRapport {
   const taal = resultaat.taal;
@@ -2085,6 +2088,20 @@ export function bouwT4StudentsRapport(
         },
         // Melding over de manier van invullen. Staat er alleen wanneer de tijd
         // per item aanleiding geeft; anders blijft dit blad ongewijzigd.
+        ...(opties.invulpatroon?.vlag && opties.invulpatroon.melding
+          ? [
+              {
+                soort: "kader" as const,
+                opschrift: "Bij het lezen",
+                kop: "Over het antwoordpatroon",
+                kleur: KLEUR.oker,
+                tekst:
+                  opties.invulpatroon.melding +
+                  " Bespreek bij het nalezen vooral de onderdelen waar je jezelf het minst herkende: " +
+                  "juist daar wordt zichtbaar of de antwoorden voor jou nog kloppen.",
+              },
+            ]
+          : []),
         ...(opties.afnamekwaliteit?.vlag && opties.afnamekwaliteit.melding
           ? [
               {

@@ -39,6 +39,7 @@ export function bouwRapportUitContract(ruwContract: unknown): T4SRapport {
       datum: contract.datum,
       instrumentVersie: contract.instrumentVersie,
       afnamekwaliteit: contract.afnamekwaliteit ?? null,
+      invulpatroon: contract.invulpatroon ?? null,
     },
   );
 }

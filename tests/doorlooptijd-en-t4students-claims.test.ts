@@ -24,7 +24,8 @@ import {
   bouwT4StudentsAfnameContract,
   leesT4StudentsContract,
 } from "../server/t4students/afnamecontract";
-import { ITEM_TIJDSDREMPEL_MS } from "../server/afnamekwaliteit";
+import { ITEM_TIJDSDREMPEL_MS, berekenInvulpatroon } from "../server/afnamekwaliteit";
+import { t4studentsItems } from "../server/t4students/instrument";
 
 const lees = (p: string) => readFileSync(resolve(__dirname, "..", p), "utf8");
 
@@ -158,5 +159,65 @@ describe("E. Geen normgroepclaim en een uniforme doelgroep", () => {
     expect(paginas).toContain("betrouwbaarheidscijfers");
     expect(paginas).toContain("geen validiteitsonderzoek");
     expect(paginas).toContain("gekozen conventies");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// F. Invulpatroon: dezelfde keuze in een lange reeks
+// ---------------------------------------------------------------------------
+
+describe("F. Invulpatroon", () => {
+  it("vlagt een lange reeks gelijke antwoorden", () => {
+    // Twintig antwoorden waarvan twaalf op rij dezelfde keuze.
+    const reeks = [0, 1, 2, 3, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 1, 3];
+    const patroon = berekenInvulpatroon(reeks);
+    expect(patroon).not.toBeNull();
+    expect(patroon!.langsteReeks).toBe(12);
+    expect(patroon!.vlag).toBe(true);
+    expect(patroon!.melding).toContain("12 stellingen op rij");
+  });
+
+  it("vlagt een schaal die nauwelijks gebruikt wordt", () => {
+    // Twintig antwoorden, achttien keer dezelfde keuze maar nooit lang op rij.
+    const reeks = [2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2];
+    const patroon = berekenInvulpatroon(reeks);
+    expect(patroon!.aandeelZelfdeAntwoord).toBeCloseTo(0.9, 3);
+    expect(patroon!.vlag).toBe(true);
+  });
+
+  it("vlagt niet bij een gewoon gespreid patroon", () => {
+    const reeks = [0, 1, 2, 3, 2, 1, 0, 3, 2, 1, 3, 0, 1, 2, 3, 1, 2, 0, 3, 1];
+    const patroon = berekenInvulpatroon(reeks);
+    expect(patroon!.vlag).toBe(false);
+    expect(patroon!.melding).toBeNull();
+  });
+
+  it("vlagt nooit bij te weinig antwoorden", () => {
+    const patroon = berekenInvulpatroon([2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]);
+    expect(patroon!.antwoorden).toBe(12);
+    expect(patroon!.langsteReeks).toBe(12);
+    expect(patroon!.vlag).toBe(false);
+  });
+
+  it("levert null zonder bruikbare antwoorden", () => {
+    expect(berekenInvulpatroon([])).toBeNull();
+    expect(berekenInvulpatroon([null, undefined, Number.NaN])).toBeNull();
+  });
+
+  it("reist mee in het T4Students-contract en op het verantwoordingsblad", () => {
+    const antwoorden: Record<string, { recognition: number }> = {};
+    for (const item of t4studentsItems()) antwoorden[item.id] = { recognition: 2 };
+    const contract = bouwT4StudentsAfnameContract({
+      respondentCode: "T4S-PATROON-001",
+      name: "Test Student",
+      taal: "nl",
+      responses: antwoorden,
+    });
+    expect(contract.invulpatroon?.vlag).toBe(true);
+    const paginas = lees("server/t4students/rapport-paginas.ts");
+    expect(paginas).toContain("Over het antwoordpatroon");
+    expect(lees("server/t4students/rapport-keten.ts")).toContain(
+      "invulpatroon: contract.invulpatroon ?? null",
+    );
   });
 });
