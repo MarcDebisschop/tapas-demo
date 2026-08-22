@@ -76,7 +76,7 @@ bescherming. Ook hier: het gebruik bepaalt de juridische positie.
 
 ## 4. Extra aandacht bij T4Students wegens de onderwijscontext
 
-1. **Leeftijd.** De doelgroep is 17 tot 25 jaar. Voor deelnemers onder de 18 moet
+1. **Leeftijd.** De doelgroep is 17 tot 23 jaar. Voor deelnemers onder de 18 moet
    nagegaan worden of toestemming van de jongere volstaat dan wel of ouderlijke
    betrokkenheid vereist is. In België geldt geen vaste leeftijdsgrens voor
    toestemming buiten de context van diensten van de informatiemaatschappij; dit

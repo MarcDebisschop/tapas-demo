@@ -11,9 +11,10 @@ vandaag is, en zegt uitdrukkelijk wat er nog niet is.
 
 Het T4Students Studiekompas is een **reflectief ontwikkelinstrument** voor
 jongeren in de laatste jaren secundair onderwijs en bij instroom in het hoger
-onderwijs. Doelgroep in code, rapport en juridische teksten: **17 tot 25 jaar**
-(deze doelgroeptekst is in deze ronde geharmoniseerd; er staat nergens nog een
-andere leeftijdsband voor dit instrument).
+onderwijs. Doelgroep in code, rapport en juridische teksten: **17 tot 23 jaar**. Die
+leeftijd staat op een enkele plaats vastgelegd, in
+`shared/doelgroep-leeftijd.ts`, en elke tekst die hem toont leest hem daar; er
+staat nergens nog een andere leeftijdsband voor dit instrument.
 
 Het instrument brengt in kaart hoe een jongere zichzelf op dit moment beschrijft:
 waar haar aandacht naartoe gaat, langs welke routes ze tot resultaat komt, welke
@@ -128,7 +129,7 @@ niet geïmplementeerd zijn.
 | Terugrekening naar dezelfde schaal per onderdeel | vast | `server/t4students/` | Technische kwaliteitsregel |
 | Rangorde van interesses | binnen persoon | `server/t4students/` | Technische kwaliteitsregel |
 | Woordlabels bij de uitkomsten | vast | `server/data/t4students-rapportteksten.json` | Interpretatieve heuristiek |
-| Doelgroep 17 tot 25 jaar | vast | code, rapport en gids | Ontwerpconventie |
+| Doelgroep 17 tot 23 jaar | vast | `shared/doelgroep-leeftijd.ts` | Ontwerpconventie |
 
 Ook hier staat geen enkele regel "Empirisch onderbouwd", en om dezelfde reden:
 er zijn geen afnamedata om iets op te ijken.
@@ -146,7 +147,7 @@ er zijn geen afnamedata om iets op te ijken.
    getoetst en in drie talen worden vertaald voor ze in de bank mogen.
 4. **Ijking van de patroon- en tempodrempels.** 10, 0,80, 2000 ms en 15% zijn
    conventies. Wat een werkelijk afwijkend invulpatroon is bij jongeren van 17
-   tot 25 jaar, kan alleen uit data komen.
+   tot 23 jaar, kan alleen uit data komen.
 5. **Interesseschaal.** Zes interesses met elk één item vormen geen RIASEC-meting
    en mogen ook niet als Holland-code worden gepresenteerd.
 

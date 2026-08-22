@@ -23,8 +23,8 @@ import {
 //
 // WAT ER GEMETEN IS
 // Drie plaatsen spreken over de leeftijd van dit instrument:
-//   1. server/data/t4students.json: "jongvolwassenen (17-25+)"
-//   2. server/registry.ts: "jongvolwassenen (17 tot 25 jaar en ouder)"
+//   1. server/data/t4students.json: "jongvolwassenen (17-23 jaar)"
+//   2. server/registry.ts: leest de grens uit shared/doelgroep-leeftijd.ts
 //   3. shared/doelgroep-leeftijd.ts: T4Teens loopt tot en met 17, en de
 //      opmerking daar zegt "Daarboven is T4Students het passende instrument",
 //      wat 18 als ondergrens impliceert.
@@ -51,7 +51,7 @@ import {
 
 describe("punt 10: de doelgroepgrens van T4Students is niet beslist", () => {
   it("het instrument zelf noemt 17 als ondergrens", () => {
-    expect(I.description).toContain("jongvolwassenen (17-25+)");
+    expect(I.description).toContain("jongvolwassenen (17-23 jaar)");
   });
 
   it("T4Teens loopt tot en met datzelfde jaar, dus 17 valt in allebei", () => {

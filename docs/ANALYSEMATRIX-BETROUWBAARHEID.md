@@ -61,7 +61,7 @@ geldt daarom pas na uitbreiding tot minstens drie items per cluster
 
 | # | Analyse | Voorwaarde | Nodige data | Inclusiecriteria | Scoretype | Wat het wel toont | Wat het niet toont |
 |---|---|---|---|---|---|---|---|
-| 1 | Itemanalyse per cluster (item-restcorrelatie) | minstens 3 items per cluster | minimaal 200 jongeren | leeftijd 17 tot 25, volledige afname, geen patroonvlag | herkenningsscores | of items binnen een cluster samenhangen | dat het cluster een echt kenmerk is |
+| 1 | Itemanalyse per cluster (item-restcorrelatie) | minstens 3 items per cluster | minimaal 200 jongeren | leeftijd 17 tot 23, volledige afname, geen patroonvlag | herkenningsscores | of items binnen een cluster samenhangen | dat het cluster een echt kenmerk is |
 | 2 | Interne consistentie per cluster (alfa of omega) | pas na #1 en met 3 items of meer | minimaal 200 jongeren | zelfde als #1 | herkenningsscores, normatief | precisie per cluster | validiteit, en niets over studiesucces |
 | 3 | Test-hertest over 3 tot 6 weken | onafhankelijk van itembreedte | minimaal 80 jongeren, twee momenten | zelfde als #1 | clusterscores | stabiliteit | voorspelling |
 | 4 | Structuurtoets op de drie families | pas na #1 | minimaal 300 jongeren | zelfde als #1 | clusterscores | of foci, versnellers en motivatie te scheiden zijn | causaliteit |
@@ -83,7 +83,7 @@ het rapport geen enkele voorspellende uitspraak doen, en dat doet het ook niet.
 | Volledigheid en samenhang >= 60 | ondergrens van de middelste band; conventie, niet geijkt | Ontwerpconventie |
 | Geen patroonvlag (T4Students) | eenvormige antwoorden bevatten geen bruikbare variantie | Technische kwaliteitsregel |
 | Doorlooptijd binnen een plausibele band | de band zelf moet uit analyse 7 komen; vóór die analyse is er geen verdedigbare grens | Openstaand |
-| Leeftijd 17 tot 25 (T4Students) | vastgelegde doelgroep | Ontwerpconventie |
+| Leeftijd 17 tot 23 (T4Students) | vastgelegde doelgroep | Ontwerpconventie |
 
 Let op de derde rij van onder: er staat vandaag **geen** doorlooptijdgrens in de
 code, en er hoort er ook geen in tot analyse 7 gedraaid is. Een grens verzinnen
