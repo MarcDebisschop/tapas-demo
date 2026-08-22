@@ -1452,11 +1452,11 @@ export function beantwoord(vraag: string, p: ProfielFeiten, taal: Taal): { reply
     const herk =
       p.herkenbaarheid !== null
         ? {
-            nl: ` Je invulzorgvuldigheid is ${p.herkenbaarheid}/100${p.herkenbaarheid >= 70 ? ", dus je hebt de vragenlijst volledig en gelijkmatig ingevuld." : "."}`,
-            fr: ` Soin apporté au remplissage : ${p.herkenbaarheid}/100.`,
-            en: ` Care taken when filling in: ${p.herkenbaarheid}/100.`,
-            es: ` Cuidado al rellenar: ${p.herkenbaarheid}/100.`,
-            ru: ` Тщательность заполнения: ${p.herkenbaarheid}/100.`,
+            nl: ` De volledigheid en samenhang van je invulling komt uit op ${p.herkenbaarheid}/100${p.herkenbaarheid >= 70 ? ", dus je hebt de vragenlijst volledig en gelijkmatig ingevuld." : "."} Dat is geen betrouwbaarheidsmaat van de vragenlijst.`,
+            fr: ` Exhaustivité et cohérence du remplissage : ${p.herkenbaarheid}/100.`,
+            en: ` Completeness and coherence of the responses given: ${p.herkenbaarheid}/100.`,
+            es: ` Integridad y coherencia del cuestionario rellenado: ${p.herkenbaarheid}/100.`,
+            ru: ` Полнота и согласованность заполнения: ${p.herkenbaarheid}/100.`,
           }
         : { nl: "", fr: "", en: "", es: "", ru: "" };
     const m: ML = {

@@ -274,7 +274,7 @@ export default function AdminDetail() {
                 </Card>
                 <Card>
                   <CardContent className="p-4">
-                    <p className="text-xs text-muted-foreground">Invulzorgvuldigheid</p>
+                    <p className="text-xs text-muted-foreground">Volledigheid en samenhang van de invulling</p>
                     <p className="mt-1 text-base font-semibold text-foreground">
                       {meta?.consistency?.label} <span className="text-sm font-normal text-muted-foreground">({meta?.consistency?.score}/100)</span>
                     </p>

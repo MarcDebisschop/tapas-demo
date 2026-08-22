@@ -97,6 +97,27 @@ function tijdenVeld(tijden: Record<string, number> | undefined): { itemTijden?: 
   return { itemTijden: JSON.stringify(tijden) };
 }
 
+// Startmoment van de DEELNEMER, niet het aanmaakmoment van de afname. Wordt
+// gezet bij de eerste bewaaractie en daarna nooit meer overschreven: anders
+// zou elke tussentijdse bewaaractie de doorlooptijd terugzetten naar nul.
+export function startVeld(bestaand: string | null | undefined): { gestartOp?: string } {
+  if (bestaand && String(bestaand).trim() !== "") return {};
+  return { gestartOp: new Date().toISOString() };
+}
+
+// Doorlooptijd in milliseconden tussen het startmoment van de deelnemer en het
+// afrondmoment. Levert null wanneer het startmoment ontbreekt (afnames van voor
+// de invoering) of wanneer het verschil negatief is: een negatieve duur zou een
+// verschoven klok verbergen achter een getal dat betekenis lijkt te hebben.
+export function berekenDuurMs(gestartOp: string | null | undefined, voltooidOp: string): number | null {
+  if (!gestartOp || String(gestartOp).trim() === "") return null;
+  const start = Date.parse(String(gestartOp));
+  const einde = Date.parse(voltooidOp);
+  if (!Number.isFinite(start) || !Number.isFinite(einde)) return null;
+  const verschil = einde - start;
+  return verschil >= 0 ? verschil : null;
+}
+
 // Genereert een leesbare respondentCode op basis van naam + jaar + volgnummer.
 function makeRespondentCode(name: string, id: number): string {
   const initials = name
@@ -442,6 +463,10 @@ export function registerAfnameRoutes(app: Express): void {
       consentUserAgent,
       respondentCode: finalCode,
       status: "deel1",
+      // Startmoment van de deelnemer: het geven van toestemming is de eerste
+      // eigen handeling in de afname. Wordt niet overschreven wanneer er al
+      // een startmoment staat.
+      ...startVeld(a.gestartOp),
       // Leeftijdsband wordt enkel bewaard wanneer de poort geldt (dus voor
       // T4Teens/T4Kids); andere instrumenten houden NULL.
       leeftijdsband: poort.band,
@@ -480,6 +505,7 @@ export function registerAfnameRoutes(app: Express): void {
     const updated = await storage.updateAfname(id, {
       mainResponses: JSON.stringify(parsed.data.responses),
       ...tijdenVeld(parsed.data.tijden),
+      ...startVeld(a.gestartOp),
     });
     res.json({ ok: true, status: updated?.status ?? a.status });
   });
@@ -499,6 +525,7 @@ export function registerAfnameRoutes(app: Express): void {
     const updated = await storage.updateAfname(id, {
       mainResponses: JSON.stringify(parsed.data.responses),
       ...tijdenVeld(parsed.data.tijden),
+      ...startVeld(a.gestartOp),
       status: "deel2",
     });
     res.json(updated);
@@ -642,13 +669,15 @@ export function registerAfnameRoutes(app: Express): void {
       });
     }
 
+    const voltooidOp = new Date().toISOString();
     let updated = await storage.updateAfname(id, {
       // Instrumenten zonder eigen deel 2 hebben geen `connection`-antwoorden;
       // dan blijft deze kolom leeg in plaats van de tekst "null" te bevatten.
       connectionAnswers: connection ? JSON.stringify(connection) : null,
       generatorContract: JSON.stringify(contract),
       status: "voltooid",
-      completedAt: new Date().toISOString(),
+      completedAt: voltooidOp,
+      duurMs: berekenDuurMs(a.gestartOp, voltooidOp),
     });
 
     // Een afgeronde afname moet meteen tot een rapport leiden. Zonder rapport

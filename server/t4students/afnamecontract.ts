@@ -22,6 +22,13 @@ import type { T4SAntwoorden, T4SResultaat, T4STaal } from "./kompas-scoring";
 import type { T4SLicentie } from "./rapport-contract";
 import { naarT4SAntwoorden, ontbrekendeItems } from "./antwoorden";
 import { toestemmingVoorContract } from "../contract-toestemming";
+import {
+  berekenAfnamekwaliteit,
+  berekenInvulpatroon,
+  type Afnamekwaliteit,
+  type Invulpatroon,
+} from "../afnamekwaliteit";
+import { t4studentsItems } from "./instrument";
 
 export const T4STUDENTS_CONTRACT_VERSIE = "2.0.0";
 
@@ -40,9 +47,24 @@ export interface T4SAfnameContract {
   /** Welke items geen antwoord droegen. Leeg bij een volledige afname. */
   ontbrekend: string[];
   itemTijden?: Record<string, number>;
-  // `given` is later toegevoegd zodat ook dit contract zelf zegt of de
-  // toestemming vastligt, met het tijdstip als onderbouwing. Optioneel, want
-  // contracten van voor die wijziging dragen het veld niet.
+  /**
+   * Melding OVER DE AFNAME op basis van de tijd per item: is de vragenlijst
+   * opvallend snel doorlopen? Geen score, geen eigenschap en geen oordeel over
+   * de jongere. Null wanneer er geen bruikbare tijdgegevens zijn, bijvoorbeeld
+   * bij afnames van voor de invoering van de tijdmeting.
+   * Zie server/afnamekwaliteit.ts voor de drempels en hun onderbouwing.
+   */
+  afnamekwaliteit?: Afnamekwaliteit | null;
+  /**
+   * Melding over het antwoordPATROON: is de schaal nauwelijks gebruikt, of
+   * kregen veel stellingen op rij hetzelfde antwoord? Geen score en geen
+   * oordeel over de jongere, maar een leessignaal. Null wanneer er te weinig
+   * antwoorden zijn om iets te zeggen.
+   */
+  invulpatroon?: Invulpatroon | null;
+  // `given` zegt of de toestemming werkelijk vastligt, met het tijdstip als
+  // onderbouwing. Optioneel, want contracten van voor die wijziging dragen het
+  // veld niet. Zie server/contract-toestemming.ts voor de regel.
   consent?: { given?: boolean; scope: string | null; timestamp: string | null };
 }
 
@@ -118,6 +140,17 @@ export function bouwT4StudentsAfnameContract(input: {
     antwoorden,
     ontbrekend: ontbrekendeItems(antwoorden, instrument),
     itemTijden: tijdenAlsGetallen(input.itemTijden),
+    // De tijdmeting van het invulscherm was tot nu toe nergens aangesloten:
+    // ze werd bewaard maar niet gelezen. Hier wordt ze eenmalig omgezet naar
+    // een melding, zodat elke latere lezer van het contract dezelfde melding ziet.
+    afnamekwaliteit: berekenAfnamekwaliteit(tijdenAlsGetallen(input.itemTijden)),
+    // Het antwoordpatroon wordt gelezen in de volgorde waarin de stellingen
+    // zijn aangeboden: de langste reeks gelijke antwoorden is anders niet te
+    // bepalen. De open beginvraag draagt geen herkenningswaarde en valt er
+    // vanzelf uit.
+    invulpatroon: berekenInvulpatroon(
+      t4studentsItems().map((item) => antwoorden[item.id]?.recognition ?? null),
+    ),
     consent: toestemmingVoorContract({
       consentGiven: input.consentGiven,
       consentScope: input.consentScope,
@@ -162,6 +195,20 @@ export function leesT4StudentsContract(ruw: unknown): T4SAfnameContract {
     antwoorden: c.antwoorden as T4SAntwoorden,
     ontbrekend: Array.isArray(c.ontbrekend) ? c.ontbrekend : [],
     itemTijden: c.itemTijden,
+    // Oudere contracten dragen geen melding. Die wordt dan uit de bewaarde
+    // tijden opnieuw berekend, met dezelfde drempels, zodat een bestaand
+    // rapport niet stil zonder melding valt.
+    afnamekwaliteit:
+      c.afnamekwaliteit ?? berekenAfnamekwaliteit(c.itemTijden as Record<string, unknown> | undefined),
+    // Ook hier: een ouder contract draagt de melding nog niet en laat ze uit de
+    // bewaarde antwoorden opnieuw berekenen, met dezelfde drempels.
+    invulpatroon:
+      c.invulpatroon ??
+      berekenInvulpatroon(
+        t4studentsItems().map(
+          (item) => (c.antwoorden as T4SAntwoorden)[item.id]?.recognition ?? null,
+        ),
+      ),
     consent: c.consent,
   };
 }

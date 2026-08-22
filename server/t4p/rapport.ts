@@ -265,7 +265,7 @@ export function bouwT4pBusinessProfiel(contract: any): T4pRapportInhoud {
       { waarde: `${fmt(beleefd, 1)}/10`, label: "Beleefde startenergie" },
       { waarde: `${fmt(gemeten, 1)}/10`, label: "Gemeten energie" },
       { waarde: fmt(discrepantie, 1, true), label: "Energiediscrepantie" },
-      { waarde: `${Math.round(num(consistency?.score))}/100`, label: `Invulzorgvuldigheid (${consistency?.label ?? "—"})` },
+      { waarde: `${Math.round(num(consistency?.score))}/100`, label: `Volledigheid en samenhang (${consistency?.label ?? "—"})` },
       { waarde: String(driverRisk?.label ?? "—"), label: "Driver-risico" },
       { waarde: `${isFinite(zelf) ? zelf : "—"} / ${isFinite(org) ? org : "—"}`, label: "Zelf- vs. org-investering" },
     ],
@@ -297,7 +297,7 @@ export function bouwT4pBusinessProfiel(contract: any): T4pRapportInhoud {
         "aflopend gerangschikt. De volgorde is geen scoreladder, maar toont welke ingang het talent het " +
         "makkelijkst opent.",
       `Hoe de vragenlijst is ingevuld: ${ingevuld}/${totaal} schermen (${keuzes} keuzes). ` +
-        `De invulzorgvuldigheid komt uit op ${Math.round(num(consistency?.score))}/100 ` +
+        `De volledigheid en samenhang van de invulling komt uit op ${Math.round(num(consistency?.score))}/100 ` +
         `(${consistency?.label ?? "—"}). Dat cijfer gaat over deze invulling: hoe volledig er is ` +
         `geantwoord en hoe goed de energieantwoorden bij elkaar aansluiten. Het zegt niets over de ` +
         `kwaliteit van het instrument en niets over de persoon, en het is geen psychometrische ` +

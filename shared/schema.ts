@@ -124,6 +124,19 @@ export const afnames = sqliteTable("afnames", {
   aangemaaktDoorBeheerderId: integer("aangemaakt_door_beheerder_id"),
   aangemaaktDoorOrganisatieId: integer("aangemaakt_door_organisatie_id"),
   createdAt: text("created_at").notNull(),
+  // --- Doorlooptijd van de afname -----------------------------------------
+  // `createdAt` is het moment waarop de afname werd AANGEMAAKT of uitgenodigd,
+  // niet het moment waarop de deelnemer begon. `gestartOp` is dat wel: het
+  // wordt gezet bij de eerste bewaaractie van de deelnemer en daarna nooit
+  // meer overschreven. `duurMs` is het verschil tussen `completedAt` en
+  // `gestartOp` in milliseconden, zodat de doorlooptijd niet elke keer
+  // opnieuw hoeft te worden berekend.
+  //
+  // Strikt additief en nullable: afnames van voor de invoering houden NULL en
+  // tonen dan gewoon geen doorlooptijd. De tijd per blok of item staat apart
+  // in `itemTijden`.
+  gestartOp: text("gestart_op"),
+  duurMs: integer("duur_ms"),
   completedAt: text("completed_at"),
 });
 
