@@ -1,5 +1,5 @@
 {
-  "bron": "duidingsteksten-t4students.md, letterlijk overgenomen",
+  "bron": "duidingsteksten-t4students.md, letterlijk overgenomen; de tekst bij Try Hard volgt de vaste constructdefinitie van de opdrachtgever: iets uitzonderlijks willen doen voor iemand naar wie je opkijkt en van wie je weet dat die in je gelooft",
   "sleutel": "de constructnaam zoals die in server/data/t4students.json staat",
   "constructen": {
     "Functioneel Innovatief": {
@@ -60,7 +60,7 @@
     },
     "Try Hard": {
       "familie": "Drivers",
-      "tekst": "Try Hard is het patroon om voor iemand die je echt waardeert, er alles aan te doen om te slagen. Het geeft je inzet, doorzettingsvermogen en betrokkenheid. Bij studeren zie je dit terug als je net dat stapje harder gaat voor een vak of een docent die je waardeert, en in samenwerking geef je vaak meer dan strikt gevraagd wordt. Onder druk kan Try Hard gaan duwen: dan blijf je proberen, ook als een andere aanpak of gewoon stoppen verstandiger zou zijn. Te weinig van dit patroon kan betekenen dat je minder snel die extra inspanning levert als het even tegenzit. Het is geen gebrek en geen deugd, het is een patroon dat je kunt leren herkennen en bijsturen."
+      "tekst": "Try Hard is het patroon om iets uitzonderlijks te willen doen voor iemand naar wie je opkijkt en van wie je weet dat die in jou gelooft. Het geeft je inzet, volhouden en de wil om echt het verschil te maken. Bij studeren zie je dit terug als je net dat stapje harder gaat voor een docent of coach die in jou gelooft, en in samenwerking geef je vaak meer dan gevraagd wordt zodra zo iemand erop rekent. Onder druk kan Try Hard gaan duwen: dan hangt je inzet aan die ene persoon, en zakt je motivatie weg zodra die er niet meer is. Te weinig van dit patroon kan betekenen dat je minder snel die extra inspanning levert, ook wanneer iemand die voor jou belangrijk is erop hoopt. Het is geen gebrek en geen deugd, het is een patroon dat je kunt leren herkennen en bijsturen."
     },
     "Hurry Up": {
       "familie": "Drivers",
