@@ -33,6 +33,54 @@ bezoeker kon er de cijfers van een willekeurige organisatie mee opvragen. Er
 zijn geen externe afnemers van deze API. Zou die er wel zijn, dan was dit een
 hoofdversie geweest.
 
+## [Niet vrijgegeven]
+
+### Gewijzigd
+
+- T4Students Studiekompas: de driver Try Hard volgt nu de constructdefinitie van
+  de opdrachtgever. Try Hard is niet "hard blijven proberen" maar iets
+  uitzonderlijks willen doen voor een persoon naar wie de deelnemer opkijkt, die
+  hem inspireert, en van wie hij weet dat die in hem gelooft. Alle drie de
+  plaatsen waar het construct voor een deelnemer zichtbaar wordt zijn
+  aangepast: het herkenningsitem D3 in `server/data/t4students.json` (Nederlands,
+  Frans en Engels), de korte omschrijving naast de constructnaam in
+  `server/data/t4students-omschrijvingen.json`, en de duidingstekst in
+  `server/data/t4students-duidingsteksten.json`. Zonder de persoon in de tekst
+  valt Try Hard samen met gewone inzet, die ook in Be Perfect, Hurry Up en de
+  motivatiebron Verwachting zit. De duidingstekst benoemt nu ook de keerzijde:
+  valt die persoon weg, dan valt de beweging weg. Gevolg voor de itemanalyse: D3
+  is inhoudelijk gewijzigd en geldt daarmee als een nieuw item, dus antwoorden op
+  de oude formulering mogen niet met de nieuwe worden samengenomen.
+- T4Students Studiekompas: het rapport is eerlijk gemaakt over de basis onder
+  zijn rangordes. Op een uitzondering na rust elk construct op een enkel
+  herkenningsitem met vier antwoordmogelijkheden, terwijl de gelijkstandsmarge op
+  0.3 staat. Een verschil van een stap op een enkele vraag levert daardoor een
+  eigen groep op en werd tot een uitspraak over de student. De rangorde blijft,
+  want zonder rangorde is het rapport als gespreksdocument onbruikbaar, maar de
+  aandachtspuntenpagina zegt nu waarop een lijn rust en hoe groot een verschil
+  moet zijn voor het iets betekent. De uitspraak over de laagste talentfocus is
+  gebonden aan de momentopname in plaats van aan de persoon.
+- `docs/ITEMONTWIKKELPLAN-T4STUDENTS.md`: de door de opdrachtgever herwerkte
+  formuleringen van de kandidaat-items zijn overgenomen, met een nieuwe paragraaf
+  4.4 die de constructdefinitie van Try Hard, het validiteitsargument en de
+  gevolgen vastlegt. De taalkundige maten bij paragraaf 5.1 zijn opnieuw gemeten
+  op de huidige tekst.
+
+### Toegevoegd
+
+- `tests/t4students-try-hard-relationeel.test.ts`: houdt de relationele figuur,
+  het vertrouwen van die persoon en het uitzonderlijke vast in het item (drie
+  talen), de omschrijving en de duidingstekst, zonder een letterlijke
+  formulering vast te leggen.
+- Dezelfde test leest nu ook de opmaakmeldingen van het hele voorbeeldrapport en
+  zakt zodra een vaste regel breder wordt dan haar plaats. Die meldingen bestonden
+  al maar werden door geen enkele test gelezen, waardoor een te lange omschrijving
+  stil over de rand van haar kolom kon lopen.
+- `tests/t4students-rangorde-eerlijk-over-een-item.test.ts`: houdt vast dat het
+  rapport op de aandachtspuntenpagina zegt waarop zijn rangordes rusten, en dat
+  het geen vaststaande uitspraak doet over een enkel construct. De test zakt
+  zodra die uitleg verdwijnt of zodra de oude formulering terugkomt.
+
 ## [2.5.0] - 2026-07-26
 
 Nog niet getagd. Deze versie wordt vrijgegeven zodra de bijhorende pull request
