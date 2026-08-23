@@ -82,7 +82,84 @@ export interface ExtractResult {
 
 export interface MatchResponse {
   uitkomst: MatchUitkomst;
-  candidate: { label: string; decision: string | null; decisionReason: string | null };
+  candidate: {
+    label: string;
+    decision: string | null;
+    decisionReason: string | null;
+    // Herkomst van de vergeleken cijfers. "interne-afname" betekent: uit een
+    // T4Business-afname van dit platform, met de toestemming en de bewaartermijn
+    // die daarbij horen. "pdf" betekent: uit een geupload bestand, waarvan het
+    // platform de persoon niet kan vaststellen.
+    herkomst?: "interne-afname" | "pdf";
+    afnameId?: number | null;
+    respondentCode?: string | null;
+    overgenomenAt?: string | null;
+    bronInstrumentVersie?: number | null;
+    sourceFile?: string | null;
+    handmatigAangepast?: string[];
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Kandidaatprofiel uit een interne T4Business-afname
+// ---------------------------------------------------------------------------
+
+export interface AfnameKandidaat {
+  afnameId: number;
+  naam: string;
+  bedrijf: string | null;
+  rol: string | null;
+  respondentCode: string;
+  status: string;
+  afgenomenOp: string | null;
+  bewaartotDatum: string | null;
+  toestemmingOp: string | null;
+  aantalLijnen: number;
+  volledig: boolean;
+}
+
+export interface OvernameHerkomst {
+  soort: "interne-afname";
+  afnameId: number;
+  respondentCode: string | null;
+  overgenomenAt: string | null;
+  contractVersie: string | null;
+  instrumentVersie: number | null;
+  afgenomenOp: string | null;
+  toestemmingOp: string | null;
+  bewaartotDatum: string | null;
+}
+
+export interface OvernameResultaat {
+  rapport: CandidateReport;
+  metingen: Record<string, { net: number; energie: EnergieStatus; gemiddeldeEnergie: number; bronConstruct: string }>;
+  context: ExtractContext;
+  deelnemer: { naam: string | null; respondentCode: string | null; bedrijf: string | null; rol: string | null };
+  ontbrekendeSleutels: string[];
+  onbekendeConstructen: string[];
+  herkomst: OvernameHerkomst;
+}
+
+/** De afnames van de eigen organisatie waaruit overgenomen kan worden. */
+export function useAfnameKandidaten(enabled: boolean) {
+  return useQuery<AfnameKandidaat[]>({
+    queryKey: ["/api/t4r/afname-kandidaten"],
+    enabled,
+    retry: false,
+  });
+}
+
+export function useKandidaatUitAfname(sessionId: number) {
+  return useMutation({
+    mutationFn: async (afnameId: number): Promise<OvernameResultaat> => {
+      const res = await apiRequest("POST", `/api/t4r/sessions/${sessionId}/candidate/uit-afname`, { afnameId });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/t4r/sessions", sessionId, "candidate"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/t4r/sessions", sessionId, "audit"] });
+    },
+  });
 }
 
 export function useCandidateReport(id: number) {

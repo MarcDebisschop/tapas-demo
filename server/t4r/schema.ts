@@ -105,6 +105,27 @@ export const t4rCandidateReports = sqliteTable("t4r_candidate_reports", {
   sessionId: integer("session_id").notNull(),
   candidateLabel: text("candidate_label").notNull(),
   sourceFile: text("source_file"),
+  // --- Herkomst van het vergeleken profiel ---------------------------------
+  // Waar komen deze cijfers vandaan? "interne-afname" betekent: rechtstreeks uit
+  // een T4Business-afname van dit platform, met de toestemming en de
+  // bewaartermijn die al bij die afname horen. "pdf" betekent: uit een geupload
+  // bestand, waarvan het platform niet kan vaststellen wie de persoon is.
+  // Zonder dit veld staat er nergens vast dat het vergeleken profiel bij de
+  // juiste mens hoort, en dat is bij een beslissing over een mens niet houdbaar.
+  herkomst: text("herkomst").notNull().default("pdf"),
+  // De afname waaruit is overgenomen, en haar respondentcode. Beide null op het
+  // PDF-pad.
+  afnameId: integer("afname_id"),
+  respondentCode: text("respondent_code"),
+  // Wanneer is er overgenomen, en welke contract- en instrumentversie stond er in
+  // die afname? Zonder de instrumentversie is een vergelijking over de tijd
+  // aanvechtbaar: twee afnames kunnen een andere vragenlijst geweest zijn.
+  overgenomenAt: text("overgenomen_at"),
+  bronContractVersie: text("bron_contract_versie"),
+  bronInstrumentVersie: integer("bron_instrument_versie"),
+  // De sleutels die de beoordelaar met de hand veranderde ten opzichte van de
+  // afname, als JSON-lijst. De server bepaalt deze lijst zelf.
+  handmatigAangepast: text("handmatig_aangepast").notNull().default("[]"),
   metingen: text("metingen").notNull().default("{}"),
   context: text("context").notNull().default("{}"),
   rawText: text("raw_text"),
@@ -123,6 +144,9 @@ export const insertT4rCandidateReportSchema = createInsertSchema(t4rCandidateRep
 export type InsertCandidateReport = z.infer<typeof insertT4rCandidateReportSchema>;
 export type CandidateReport = typeof t4rCandidateReports.$inferSelect;
 
+// De herkomstvelden staan bewust NIET in dit schema. Ze worden gezet door de
+// overnameroute en daarna door de server vastgehouden. Wie zijn eigen herkomst
+// mag meesturen, kan een geupload bestand als interne afname laten doorgaan.
 export const saveCandidateReportSchema = z.object({
   sessionId: z.number(),
   candidateLabel: z.string().min(1),

@@ -96,6 +96,13 @@ CREATE TABLE IF NOT EXISTS t4r_candidate_reports (
   session_id INTEGER NOT NULL,
   candidate_label TEXT NOT NULL,
   source_file TEXT,
+  herkomst TEXT NOT NULL DEFAULT 'pdf',
+  afname_id INTEGER,
+  respondent_code TEXT,
+  overgenomen_at TEXT,
+  bron_contract_versie TEXT,
+  bron_instrument_versie INTEGER,
+  handmatig_aangepast TEXT NOT NULL DEFAULT '[]',
   metingen TEXT NOT NULL DEFAULT '{}',
   context TEXT NOT NULL DEFAULT '{}',
   raw_text TEXT,
@@ -121,7 +128,43 @@ try { sqlite.exec("ALTER TABLE t4r_sessions ADD COLUMN platform_sessie_id INTEGE
 try { sqlite.exec("ALTER TABLE t4r_sessions ADD COLUMN chat_gebruikt INTEGER NOT NULL DEFAULT 0"); } catch { /* bestaat al */ }
 try { sqlite.exec("ALTER TABLE t4r_sessions ADD COLUMN chat_tegoed INTEGER NOT NULL DEFAULT 0"); } catch { /* bestaat al */ }
 
+// Herkomst van het kandidaatprofiel op reeds bestaande dossiers. Bestaande rijen
+// komen van het PDF-pad; die terugval is de eerlijke waarde, want van die rijen
+// is de persoon inderdaad niet vastgesteld.
+try { sqlite.exec("ALTER TABLE t4r_candidate_reports ADD COLUMN herkomst TEXT NOT NULL DEFAULT 'pdf'"); } catch { /* bestaat al */ }
+try { sqlite.exec("ALTER TABLE t4r_candidate_reports ADD COLUMN afname_id INTEGER"); } catch { /* bestaat al */ }
+try { sqlite.exec("ALTER TABLE t4r_candidate_reports ADD COLUMN respondent_code TEXT"); } catch { /* bestaat al */ }
+try { sqlite.exec("ALTER TABLE t4r_candidate_reports ADD COLUMN overgenomen_at TEXT"); } catch { /* bestaat al */ }
+try { sqlite.exec("ALTER TABLE t4r_candidate_reports ADD COLUMN bron_contract_versie TEXT"); } catch { /* bestaat al */ }
+try { sqlite.exec("ALTER TABLE t4r_candidate_reports ADD COLUMN bron_instrument_versie INTEGER"); } catch { /* bestaat al */ }
+try { sqlite.exec("ALTER TABLE t4r_candidate_reports ADD COLUMN handmatig_aangepast TEXT NOT NULL DEFAULT '[]'"); } catch { /* bestaat al */ }
+
 export const t4rDb = drizzle(sqlite);
+
+/**
+ * De herkomstvelden die enkel de server mag zetten. Ze worden apart van de body
+ * doorgegeven zodat een verzoek uit de browser ze niet kan meesturen.
+ */
+export interface HerkomstPatch {
+  herkomst: "interne-afname" | "pdf";
+  afnameId?: number | null;
+  respondentCode?: string | null;
+  overgenomenAt?: string | null;
+  bronContractVersie?: string | null;
+  bronInstrumentVersie?: number | null;
+  handmatigAangepast?: string[];
+}
+
+/** Een bewaarde JSON-lijst veilig teruglezen; bij twijfel een lege lijst. */
+function veiligeLijst(ruw: string | null | undefined): string[] {
+  if (!ruw) return [];
+  try {
+    const v = JSON.parse(ruw);
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
 
 export interface IT4RStorage {
   createSession(data: InsertSession, platformSessieId?: number): Promise<Session>;
@@ -141,7 +184,10 @@ export interface IT4RStorage {
   listAudit(sessionId: number): Promise<AuditEvent[]>;
 
   getCandidateReport(sessionId: number): Promise<CandidateReport | undefined>;
-  saveCandidateReport(data: SaveCandidateReport): Promise<CandidateReport>;
+  saveCandidateReport(
+    data: SaveCandidateReport,
+    herkomst?: HerkomstPatch,
+  ): Promise<CandidateReport>;
 
   listChatBerichten(sessionId: number): Promise<T4rChatBericht[]>;
   voegChatBerichtToe(sessionId: number, rol: string, inhoud: string, veiligheid?: string | null): Promise<T4rChatBericht>;
@@ -236,7 +282,10 @@ export class T4RDatabaseStorage implements IT4RStorage {
     return t4rDb.select().from(candidateReports).where(eq(candidateReports.sessionId, sessionId)).get();
   }
 
-  async saveCandidateReport(data: SaveCandidateReport): Promise<CandidateReport> {
+  async saveCandidateReport(
+    data: SaveCandidateReport,
+    herkomst?: HerkomstPatch,
+  ): Promise<CandidateReport> {
     const existing = t4rDb
       .select()
       .from(candidateReports)
@@ -252,6 +301,23 @@ export class T4RDatabaseStorage implements IT4RStorage {
       verified: data.verified ?? existing?.verified ?? false,
       decision: data.decision ?? existing?.decision ?? null,
       decisionReason: data.decisionReason ?? existing?.decisionReason ?? null,
+      // De herkomst komt nooit uit de body van een gewone bewaaractie. Zij wordt
+      // gezet door de overnameroute en blijft daarna staan; een latere bewerking
+      // van de waarden verandert de herkomst niet, ze verandert enkel de lijst
+      // met handmatig aangepaste lijnen.
+      herkomst: herkomst?.herkomst ?? existing?.herkomst ?? "pdf",
+      afnameId: herkomst ? herkomst.afnameId ?? null : existing?.afnameId ?? null,
+      respondentCode: herkomst ? herkomst.respondentCode ?? null : existing?.respondentCode ?? null,
+      overgenomenAt: herkomst ? herkomst.overgenomenAt ?? null : existing?.overgenomenAt ?? null,
+      bronContractVersie: herkomst
+        ? herkomst.bronContractVersie ?? null
+        : existing?.bronContractVersie ?? null,
+      bronInstrumentVersie: herkomst
+        ? herkomst.bronInstrumentVersie ?? null
+        : existing?.bronInstrumentVersie ?? null,
+      handmatigAangepast: JSON.stringify(
+        herkomst?.handmatigAangepast ?? veiligeLijst(existing?.handmatigAangepast),
+      ),
       updatedAt: Date.now(),
     };
 

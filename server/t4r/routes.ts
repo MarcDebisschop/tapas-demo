@@ -20,6 +20,16 @@ import { z } from "zod";
 import pdfParse from "pdf-parse/lib/pdf-parse.js";
 import { storage as platformStorage, CreditError } from "../storage";
 import { isDemoModus } from "../demomodus";
+import { bepaalScope } from "../scope-guard";
+import { adminIdVanSessie } from "../admin-guard";
+import {
+  neemProfielOverUitContract,
+  bepaalHandmatigAangepast,
+  VERWACHT_AANTAL_LIJNEN,
+  T4P_INSTRUMENT,
+  type OvergenomenMeting,
+} from "./uit-afname";
+import type { HerkomstPatch } from "./storage";
 
 /**
  * T4Recruitment — ingeplugde routes.
@@ -100,7 +110,40 @@ async function t4rChatContextVoor(sessionId: number, taal: Taal) {
   return { ...bouwChatContext(uitkomst, session ?? null, candidate, taal), uitkomst, candidate, session: session ?? null };
 }
 
+/**
+ * Poortwachter voor het volledige T4Recruitment-pad.
+ *
+ * T4Recruitment is recruiter-werk: een rolprofiel, een stakeholderkring en een
+ * kandidaatdossier met persoonsgegevens. Er is nooit een kandidaat die hier
+ * binnenkomt; de kandidaat vult een T4Business-vragenlijst in en ziet die op zijn
+ * eigen pad. Toch stond dit hele pad open: zonder aanmelding gaven de sessielijst,
+ * het kandidaatdossier en de vergelijkende studie alle drie een antwoord, en de
+ * sessienummers lopen op. Eén poort vooraan is hier de juiste plaats: zo kan een
+ * nieuwe route niet per ongeluk zonder controle geregistreerd worden.
+ *
+ * Wat dit NIET doet: scheiden per organisatie. De T4R-tabellen bewaren geen
+ * eigenaar, dus twee aangemelde begeleiders van verschillende organisaties zien
+ * elkaars rolprofielen nog. Dat is een apart punt dat een veld in de databank
+ * vraagt; het staat hier vermeld zodat het niet als opgelost geldt. De
+ * kandidaatgegevens uit een afname zijn wel per organisatie afgeschermd: de
+ * keuzelijst hieronder gebruikt de bestaande scope-poort.
+ */
+async function vereisBegeleider(req: any, res: any, next: any): Promise<void> {
+  const viaAdmin = adminIdVanSessie(req);
+  const ruweCoach = (req.session as any)?.coachId;
+  const coachId = ruweCoach == null ? null : Number(ruweCoach);
+  const aangemeld = viaAdmin !== null || (coachId !== null && Number.isFinite(coachId) && coachId > 0);
+  if (!aangemeld) {
+    res.status(401).json({ error: "Niet ingelogd." });
+    return;
+  }
+  next();
+}
+
 export function registerT4RRoutes(app: Express): void {
+  // Elke route onder dit voorvoegsel vraagt een aangemelde begeleider.
+  app.use("/api/t4r", vereisBegeleider);
+
   // ---- Sessies ----
   app.get("/api/t4r/sessions", async (_req, res) => {
     res.json(await storage.listSessions());
@@ -197,6 +240,166 @@ export function registerT4RRoutes(app: Express): void {
     res.json(await storage.listAudit(Number(req.params.id)));
   });
 
+  // -------------------------------------------------------------------------
+  // Kandidaatprofiel uit een T4Business-afname van dit platform.
+  //
+  // De keuzelijst is afgeschermd per organisatie via de bestaande scope-poort:
+  // een begeleider ziet enkel afnames van zijn eigen organisatie. Afnames die
+  // geanonimiseerd zijn, waarvan de toestemming is ingetrokken of waarvan de
+  // bewaartermijn verstreken is, staan er niet in. Er is geen enkele reden om
+  // die nog in een vergelijking te betrekken.
+  // -------------------------------------------------------------------------
+  app.get("/api/t4r/afname-kandidaten", async (req, res) => {
+    const scope = await bepaalScope(req);
+    if (scope.soort === "geen") {
+      return res.status(403).json({ error: "Geen toegang tot organisatiegegevens." });
+    }
+    let afnames: any[] = [];
+    try {
+      afnames = await platformStorage.listAfnames(scope);
+    } catch (e: any) {
+      return res.status(500).json({ error: "Afnames konden niet gelezen worden." });
+    }
+    const vandaag = new Date().toISOString().slice(0, 10);
+    const lijst: any[] = [];
+    for (const a of afnames) {
+      // Enkel het zakelijke instrument ("t4p-business-kompas"). De jongeren-
+      // instrumenten meten andere constructen en horen niet in een aanwervings-
+      // vergelijking. Een afname zonder instrumentnaam wordt bewust NIET
+      // meegenomen: dan staat niet vast welk instrument is afgenomen.
+      if (a.instrumentId !== T4P_INSTRUMENT) continue;
+      if (a.geanonimiseerdAt) continue;
+      if (a.consentIngetrokkenAt) continue;
+      if (a.bewaartotDatum && String(a.bewaartotDatum).slice(0, 10) < vandaag) continue;
+      if (!a.generatorContract) continue;
+      let contract: any = null;
+      try {
+        contract = JSON.parse(a.generatorContract);
+      } catch {
+        continue;
+      }
+      const overname = neemProfielOverUitContract(contract);
+      const aantal = Object.keys(overname.metingen).length;
+      if (aantal === 0) continue;
+      lijst.push({
+        afnameId: a.id,
+        naam: a.name,
+        bedrijf: a.company ?? null,
+        rol: a.role ?? null,
+        respondentCode: a.respondentCode,
+        status: a.status,
+        afgenomenOp: overname.gegenereerdOp ?? a.createdAt ?? null,
+        bewaartotDatum: a.bewaartotDatum ?? null,
+        toestemmingOp: a.consentTimestamp ?? null,
+        aantalLijnen: aantal,
+        volledig: aantal === VERWACHT_AANTAL_LIJNEN,
+      });
+    }
+    res.json(lijst);
+  });
+
+  app.post("/api/t4r/sessions/:id/candidate/uit-afname", async (req, res) => {
+    const sessionId = Number(req.params.id);
+    const schema = z.object({ afnameId: z.number().int().positive() });
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
+
+    const scope = await bepaalScope(req);
+    if (scope.soort === "geen") {
+      return res.status(403).json({ error: "Geen toegang tot organisatiegegevens." });
+    }
+    const sessie = await storage.getSession(sessionId);
+    if (!sessie) return res.status(404).json({ error: "Rolprofiel niet gevonden." });
+
+    const afname = await platformStorage.getAfname(parsed.data.afnameId);
+    if (!afname) return res.status(404).json({ error: "Afname niet gevonden." });
+    // Dezelfde afscherming als de keuzelijst, ook wanneer iemand een nummer
+    // rechtstreeks meestuurt.
+    if (scope.soort === "organisatie" && afname.organisatieId !== scope.organisatieId) {
+      return res.status(403).json({ error: "Deze afname hoort niet bij uw organisatie." });
+    }
+    if (afname.geanonimiseerdAt)
+      return res.status(409).json({ error: "Deze afname is geanonimiseerd en kan niet meer vergeleken worden." });
+    if (afname.consentIngetrokkenAt)
+      return res.status(409).json({ error: "De toestemming voor deze afname is ingetrokken." });
+    const vandaag = new Date().toISOString().slice(0, 10);
+    if (afname.bewaartotDatum && String(afname.bewaartotDatum).slice(0, 10) < vandaag)
+      return res.status(409).json({ error: "De bewaartermijn van deze afname is verstreken." });
+    if (afname.instrumentId !== T4P_INSTRUMENT)
+      return res
+        .status(409)
+        .json({ error: "Deze afname is geen T4Business-afname en kan niet vergeleken worden." });
+    if (!afname.generatorContract)
+      return res.status(409).json({ error: "Deze afname heeft nog geen afgerond profiel." });
+
+    let contract: any = null;
+    try {
+      contract = JSON.parse(afname.generatorContract);
+    } catch {
+      return res.status(500).json({ error: "Het profiel van deze afname is beschadigd." });
+    }
+    const overname = neemProfielOverUitContract(contract);
+    if (Object.keys(overname.metingen).length === 0)
+      return res.status(409).json({ error: "Uit deze afname zijn geen constructen over te nemen." });
+
+    const label = overname.deelnemer.naam ?? afname.name;
+    const herkomst: HerkomstPatch = {
+      herkomst: "interne-afname",
+      afnameId: afname.id,
+      respondentCode: overname.deelnemer.respondentCode ?? afname.respondentCode,
+      overgenomenAt: new Date().toISOString(),
+      bronContractVersie: overname.contractVersie,
+      bronInstrumentVersie: overname.instrumentVersie,
+      // Vers overgenomen: er is nog niets met de hand veranderd.
+      handmatigAangepast: [],
+    };
+    const metingen: Record<string, { net: number; energie: "geeft" | "neutraal" | "kost" }> = {};
+    for (const [sleutel, m] of Object.entries(overname.metingen)) {
+      metingen[sleutel] = { net: m.net, energie: m.energie };
+    }
+
+    const rep = await storage.saveCandidateReport(
+      {
+        sessionId,
+        candidateLabel: label,
+        sourceFile: null,
+        metingen,
+        context: overname.context,
+        // Nog niet geverifieerd: de begeleider bevestigt de overname in het
+        // scherm. Dat blijft een bewuste handeling, ook nu de cijfers niet meer
+        // ingetypt hoeven te worden.
+        verified: false,
+      },
+      herkomst,
+    );
+    await storage.addAudit(
+      sessionId,
+      "Kandidaatprofiel overgenomen uit afname",
+      `${label} (afname ${afname.id}, code ${herkomst.respondentCode ?? "onbekend"}, ` +
+        `${Object.keys(metingen).length} van ${VERWACHT_AANTAL_LIJNEN} lijnen)`,
+    );
+
+    res.json({
+      rapport: rep,
+      metingen: overname.metingen,
+      context: overname.context,
+      deelnemer: overname.deelnemer,
+      ontbrekendeSleutels: overname.ontbrekendeSleutels,
+      onbekendeConstructen: overname.onbekendeConstructen,
+      herkomst: {
+        soort: "interne-afname",
+        afnameId: afname.id,
+        respondentCode: herkomst.respondentCode,
+        overgenomenAt: herkomst.overgenomenAt,
+        contractVersie: overname.contractVersie,
+        instrumentVersie: overname.instrumentVersie,
+        afgenomenOp: overname.gegenereerdOp,
+        toestemmingOp: afname.consentTimestamp ?? null,
+        bewaartotDatum: afname.bewaartotDatum ?? null,
+      },
+    });
+  });
+
   // ---- Kandidaatrapport: upload + automatische extractie ----
   app.post("/api/t4r/sessions/:id/candidate/extract", async (req, res) => {
     const schema = z.object({
@@ -230,8 +433,63 @@ export function registerT4RRoutes(app: Express): void {
     const body = { ...req.body, sessionId: Number(req.params.id) };
     const parsed = saveCandidateReportSchema.safeParse(body);
     if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
-    const rep = await storage.saveCandidateReport(parsed.data);
-    if (parsed.data.verified) await storage.addAudit(rep.sessionId, "Kandidaatdata geverifieerd", rep.candidateLabel);
+
+    // Is dit dossier uit een interne afname overgenomen? Dan bepaalt de SERVER
+    // welke lijnen afwijken van die afname, door het contract opnieuw te lezen.
+    // Zo blijft het spoor kloppen ook wanneer een beoordelaar waarden overtypt,
+    // en kan de browser dat spoor niet zelf schrijven.
+    const bestaand = await storage.getCandidateReport(Number(req.params.id));
+    let herkomst: HerkomstPatch | undefined;
+    if (parsed.data.sourceFile) {
+      // Er is een bestand in het spel. Zelfs wanneer dit dossier eerder uit een
+      // afname kwam, geldt vanaf nu de eerlijke waarde: de herkomst van deze
+      // cijfers is niet vastgesteld. De verwijzing naar de oude afname wordt
+      // gewist, want ze dekt deze waarden niet meer.
+      herkomst = {
+        herkomst: "pdf",
+        afnameId: null,
+        respondentCode: null,
+        overgenomenAt: null,
+        bronContractVersie: null,
+        bronInstrumentVersie: null,
+        handmatigAangepast: [],
+      };
+    } else if (bestaand?.herkomst === "interne-afname" && bestaand.afnameId != null) {
+      const afname = await platformStorage.getAfname(bestaand.afnameId);
+      let bron: Record<string, OvergenomenMeting> = {};
+      if (afname?.generatorContract) {
+        try {
+          bron = neemProfielOverUitContract(JSON.parse(afname.generatorContract)).metingen;
+        } catch {
+          bron = {};
+        }
+      }
+      herkomst = {
+        herkomst: "interne-afname",
+        afnameId: bestaand.afnameId,
+        respondentCode: bestaand.respondentCode,
+        overgenomenAt: bestaand.overgenomenAt,
+        bronContractVersie: bestaand.bronContractVersie,
+        bronInstrumentVersie: bestaand.bronInstrumentVersie,
+        handmatigAangepast: bepaalHandmatigAangepast(bron, parsed.data.metingen),
+      };
+    }
+
+    const rep = await storage.saveCandidateReport(parsed.data, herkomst);
+    if (parsed.data.verified) {
+      const spoor =
+        rep.herkomst === "interne-afname"
+          ? `${rep.candidateLabel} (uit afname ${rep.afnameId}, code ${rep.respondentCode ?? "onbekend"})`
+          : `${rep.candidateLabel} (uit geupload bestand; herkomst niet vastgesteld)`;
+      await storage.addAudit(rep.sessionId, "Kandidaatdata geverifieerd", spoor);
+      const aangepast = herkomst?.handmatigAangepast ?? [];
+      if (aangepast.length)
+        await storage.addAudit(
+          rep.sessionId,
+          "Waarden met de hand aangepast na overname",
+          aangepast.join(", "),
+        );
+    }
     if (parsed.data.decision)
       await storage.addAudit(rep.sessionId, "Matchbeslissing", `${rep.candidateLabel}: ${parsed.data.decision}`);
     res.json(rep);
@@ -255,7 +513,30 @@ export function registerT4RRoutes(app: Express): void {
       return res.status(500).json({ error: "Kandidaatdata is beschadigd." });
     }
     const uitkomst = berekenMatch({ answers, metingen, context });
-    res.json({ uitkomst, candidate: { label: rep.candidateLabel, decision: rep.decision, decisionReason: rep.decisionReason } });
+    let handmatigAangepast: string[] = [];
+    try {
+      const v = JSON.parse(rep.handmatigAangepast ?? "[]");
+      if (Array.isArray(v)) handmatigAangepast = v.filter((x: any) => typeof x === "string");
+    } catch {
+      handmatigAangepast = [];
+    }
+    res.json({
+      uitkomst,
+      candidate: {
+        label: rep.candidateLabel,
+        decision: rep.decision,
+        decisionReason: rep.decisionReason,
+        // Het spoor reist mee met de studie: wie het rapport leest, hoort te zien
+        // waar de vergeleken cijfers vandaan komen en of er iets is bijgesteld.
+        herkomst: rep.herkomst,
+        afnameId: rep.afnameId,
+        respondentCode: rep.respondentCode,
+        overgenomenAt: rep.overgenomenAt,
+        bronInstrumentVersie: rep.bronInstrumentVersie,
+        sourceFile: rep.sourceFile,
+        handmatigAangepast,
+      },
+    });
   });
 
   // -------------------------------------------------------------------------

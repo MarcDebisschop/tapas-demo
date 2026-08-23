@@ -14,6 +14,10 @@ import {
   useCandidateReport,
   useExtractCandidate,
   useSaveCandidate,
+  useAfnameKandidaten,
+  useKandidaatUitAfname,
+  type AfnameKandidaat,
+  type OvernameHerkomst,
   useMatch,
   useChat,
   usePostChat,
@@ -96,6 +100,7 @@ export function MatchModule({
   const { data: bestaand, isLoading: laadtRapport } = useCandidateReport(sessionId);
   const extract = useExtractCandidate(sessionId);
   const save = useSaveCandidate(sessionId);
+  const overname = useKandidaatUitAfname(sessionId);
 
   // Welke fase tonen we? Als er al een geverifieerd rapport is → meteen de studie.
   const [fase, setFase] = useState<Fase | null>(null);
@@ -109,6 +114,9 @@ export function MatchModule({
   const [bestandsnaam, setBestandsnaam] = useState<string | null>(null);
   const [werk, setWerk] = useState<Record<string, VerifiedMeting>>({});
   const [ctx, setCtx] = useState<ExtractContext>({});
+  // Waar komen de waarden in dit scherm vandaan? Bij een overname uit een afname
+  // van dit platform staat hier het spoor; bij een geupload bestand blijft dit null.
+  const [herkomst, setHerkomst] = useState<OvernameHerkomst | null>(null);
 
   const gevraagd = useMemo(() => gevraagdeConstructen(answers), [answers]);
 
@@ -119,7 +127,49 @@ export function MatchModule({
     [gevraagd]
   );
 
+  /**
+   * Neemt het profiel over uit een voltooide T4Business-afname van dit platform.
+   * De server leest het rapportcontract van die afname en levert de zestien
+   * lijnen; de browser rekent hier niets zelf uit.
+   */
+  function handleAfname(kandidaat: AfnameKandidaat) {
+    overname.mutate(kandidaat.afnameId, {
+      onSuccess: (res) => {
+        const next: Record<string, VerifiedMeting> = {};
+        for (const c of teVerifierenConstructen) {
+          const m = res.metingen[c.key];
+          next[c.key] = {
+            net: m ? String(m.net) : "",
+            energie: (m?.energie as EnergieStatus) ?? "",
+            // Waarden uit een eigen afname komen uit de bron zelf, niet uit een
+            // leespoging op een bestand. Ze zijn dus zeker, tenzij ze ontbreken.
+            confident: !!m,
+          };
+        }
+        setWerk(next);
+        setCtx(res.context ?? {});
+        setLabel(res.deelnemer.naam?.trim() || kandidaat.naam);
+        setBestandsnaam(null);
+        setHerkomst(res.herkomst);
+        setFase("verificatie");
+        if (res.ontbrekendeSleutels.length)
+          toast({
+            title: t("t4r_herkomst_onvolledig"),
+            description: `${res.ontbrekendeSleutels.length}/${teVerifierenConstructen.length}`,
+            variant: "destructive",
+          });
+      },
+      onError: (e: any) =>
+        toast({
+          title: t("t4r_herkomst_overname_mislukt"),
+          description: String(e?.message ?? "").slice(0, 200),
+          variant: "destructive",
+        }),
+    });
+  }
+
   function handleFile(file: File) {
+    setHerkomst(null);
     setLabel((l) => l || file.name.replace(/\.pdf$/i, ""));
     const reader = new FileReader();
     reader.onload = () => {
@@ -190,7 +240,9 @@ export function MatchModule({
     save.mutate(
       {
         candidateLabel: label.trim(),
-        sourceFile: bestandsnaam,
+        // Bij een overname is er geen bronbestand. De server houdt de verwijzing
+        // naar de afname zelf bij; die kan de browser niet zetten.
+        sourceFile: herkomst ? null : bestandsnaam,
         metingen,
         context: {
           energieDiscrepantie: ctx.energieDiscrepantie ?? null,
@@ -216,6 +268,7 @@ export function MatchModule({
     setCtx({});
     setLabel("");
     setBestandsnaam(null);
+    setHerkomst(null);
   }
 
   // -------------------------------------------------------------------------
@@ -261,7 +314,13 @@ export function MatchModule({
       </ol>
 
       {effectieveFase === "upload" && (
-        <UploadFase onFile={handleFile} bezig={extract.isPending} taal={taal} />
+        <UploadFase
+          onFile={handleFile}
+          bezig={extract.isPending}
+          onAfname={handleAfname}
+          bezigOvername={overname.isPending}
+          taal={taal}
+        />
       )}
 
       {effectieveFase === "verificatie" && (
@@ -275,6 +334,7 @@ export function MatchModule({
           label={label}
           setLabel={setLabel}
           bestandsnaam={bestandsnaam}
+          herkomst={herkomst}
           onBevestig={bevestigEnBereken}
           onOpnieuw={opnieuw}
           bezig={save.isPending}
@@ -336,13 +396,120 @@ function ProcStap({ n, label, actief, klaar, icon: Icon }: { n: number; label: s
 // ---------------------------------------------------------------------------
 // Fase 1 — Upload
 // ---------------------------------------------------------------------------
-function UploadFase({ onFile, bezig, taal = STANDAARD_TAAL }: { onFile: (f: File) => void; bezig: boolean; taal?: Taal }) {
+/**
+ * Korte datumweergave in de Belgische notatie (dag/maand/jaar), dezelfde als in
+ * het auditspoor. Een leeg gegeven blijft leeg in plaats van te doen alsof.
+ */
+function korteDatum(waarde: string | null | undefined): string {
+  if (!waarde) return "";
+  const d = new Date(waarde);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("nl-BE", { dateStyle: "short" });
+}
+
+function UploadFase({
+  onFile,
+  bezig,
+  onAfname,
+  bezigOvername,
+  taal = STANDAARD_TAAL,
+}: {
+  onFile: (f: File) => void;
+  bezig: boolean;
+  onAfname: (k: AfnameKandidaat) => void;
+  bezigOvername: boolean;
+  taal?: Taal;
+}) {
   const t = maakVertaler(taal);
   const inputRef = useRef<HTMLInputElement>(null);
   const [over, setOver] = useState(false);
+  const { data: kandidaten, isLoading: laadtKandidaten } = useAfnameKandidaten(true);
+  const [gekozen, setGekozen] = useState<string>("");
+  const kandidaat = (kandidaten ?? []).find((k) => String(k.afnameId) === gekozen);
 
   return (
     <div className="space-y-4">
+      {/* Weg 1: overnemen uit een afname van dit platform. Hier is de persoon
+          bekend, samen met de toestemming en de bewaartermijn. */}
+      <section className="rounded-xl border border-primary/30 bg-primary/5 p-5">
+        <div className="mb-1 flex items-center gap-2 font-serif font-semibold text-foreground" style={{ fontSize: "var(--text-base)" }}>
+          <ShieldCheck size={16} className="text-primary" /> {t("t4r_herkomst_titel")}
+        </div>
+        <p className="text-muted-foreground" style={{ fontSize: "var(--text-sm)" }}>
+          {t("t4r_herkomst_intro")}
+        </p>
+
+        {laadtKandidaten ? (
+          <Skeleton className="mt-4 h-10 w-full" />
+        ) : (kandidaten ?? []).length === 0 ? (
+          <p className="mt-4 text-muted-foreground" style={{ fontSize: "var(--text-sm)" }} data-testid="text-geen-afnames">
+            {t("t4r_herkomst_geen")}
+          </p>
+        ) : (
+          <div className="mt-4 space-y-3">
+            <Select value={gekozen} onValueChange={setGekozen}>
+              <SelectTrigger className="bg-background" data-testid="select-afname-kandidaat">
+                <SelectValue placeholder={t("t4r_herkomst_kies")} />
+              </SelectTrigger>
+              <SelectContent>
+                {(kandidaten ?? []).map((k) => (
+                  <SelectItem key={k.afnameId} value={String(k.afnameId)} data-testid={`afname-optie-${k.afnameId}`}>
+                    {k.naam} · {k.respondentCode}
+                    {k.bedrijf ? ` · ${k.bedrijf}` : ""}
+                    {korteDatum(k.afgenomenOp) ? ` · ${korteDatum(k.afgenomenOp)}` : ""}
+                    {k.volledig ? "" : ` · ${t("t4r_herkomst_onvolledig")}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {kandidaat && (
+              <ul className="space-y-0.5 text-muted-foreground" style={{ fontSize: "var(--text-xs)" }} data-testid="lijst-afname-details">
+                <li>
+                  {t("t4r_herkomst_code")}: {kandidaat.respondentCode}
+                </li>
+                {korteDatum(kandidaat.toestemmingOp) && (
+                  <li>
+                    {t("t4r_herkomst_toestemming")}: {korteDatum(kandidaat.toestemmingOp)}
+                  </li>
+                )}
+                {korteDatum(kandidaat.bewaartotDatum) && (
+                  <li>
+                    {t("t4r_herkomst_bewaartot")}: {korteDatum(kandidaat.bewaartotDatum)}
+                  </li>
+                )}
+              </ul>
+            )}
+
+            <Button
+              data-testid="button-neem-uit-afname"
+              disabled={!kandidaat || bezigOvername}
+              onClick={() => kandidaat && onAfname(kandidaat)}
+            >
+              {bezigOvername ? <Loader2 size={15} className="mr-1.5 animate-spin" /> : <ArrowRight size={15} className="mr-1.5" />}
+              {t("t4r_herkomst_overnemen")}
+            </Button>
+          </div>
+        )}
+      </section>
+
+      {/* Weg 2: een bestand van buiten dit platform. Terugvaloptie, met een
+          eerlijke waarschuwing over wat het platform hier niet kan vaststellen. */}
+      <div className="flex items-center gap-3 pt-1">
+        <span className="h-px flex-1 bg-border" />
+        <span className="text-muted-foreground" style={{ fontSize: "var(--text-xs)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+          {t("t4r_herkomst_of_bestand")}
+        </span>
+        <span className="h-px flex-1 bg-border" />
+      </div>
+
+      <div className="flex items-start gap-3 rounded-lg border border-[hsl(var(--chart-4))]/30 bg-[hsl(var(--chart-4))]/5 px-4 py-3">
+        <AlertTriangle size={15} className="mt-0.5 shrink-0 text-[hsl(var(--chart-4))]" />
+        <p className="text-muted-foreground" style={{ fontSize: "var(--text-sm)" }} data-testid="text-pdf-waarschuwing">
+          {t("t4r_herkomst_bestand_waarschuwing")}
+        </p>
+      </div>
+
       <div
         onDragOver={(e) => {
           e.preventDefault();
@@ -410,6 +577,7 @@ function VerificatieFase({
   label,
   setLabel,
   bestandsnaam,
+  herkomst,
   onBevestig,
   onOpnieuw,
   bezig,
@@ -424,6 +592,7 @@ function VerificatieFase({
   label: string;
   setLabel: (v: string) => void;
   bestandsnaam: string | null;
+  herkomst: OvernameHerkomst | null;
   onBevestig: () => void;
   onOpnieuw: () => void;
   bezig: boolean;
@@ -475,8 +644,36 @@ function VerificatieFase({
           <div>
             <Label style={{ fontSize: "var(--text-sm)" }}>{t("t4r_comp_verif_bronbestand")}</Label>
             <div className="mt-1.5 flex h-10 items-center rounded-md border border-border bg-background px-3 text-muted-foreground" style={{ fontSize: "var(--text-sm)" }}>
-              {bestandsnaam ?? "—"}
+              {bestandsnaam ?? (herkomst ? `${t("t4r_herkomst_uit_afname")} ${herkomst.afnameId}` : "-")}
             </div>
+          </div>
+        </div>
+
+        {/* Het spoor bij deze cijfers. Bij een interne afname weet het platform om
+            wie het gaat; bij een bestand kan het dat niet vaststellen. */}
+        <div
+          className={`mt-4 flex items-start gap-3 rounded-lg border px-4 py-3 ${
+            herkomst ? "border-primary/25 bg-primary/5" : "border-[hsl(var(--chart-4))]/30 bg-[hsl(var(--chart-4))]/5"
+          }`}
+          data-testid="kader-herkomst"
+        >
+          {herkomst ? (
+            <ShieldCheck size={15} className="mt-0.5 shrink-0 text-primary" />
+          ) : (
+            <ShieldAlert size={15} className="mt-0.5 shrink-0 text-[hsl(var(--chart-4))]" />
+          )}
+          <div className="text-muted-foreground" style={{ fontSize: "var(--text-sm)" }}>
+            <p className="font-semibold text-foreground">
+              {herkomst ? t("t4r_herkomst_uit_afname") : t("t4r_herkomst_uit_bestand")}
+            </p>
+            {herkomst && (
+              <p className="mt-0.5" style={{ fontSize: "var(--text-xs)" }}>
+                {t("t4r_herkomst_code")}: {herkomst.respondentCode ?? "-"}
+                {korteDatum(herkomst.afgenomenOp) ? ` · ${t("t4r_herkomst_afgenomen")}: ${korteDatum(herkomst.afgenomenOp)}` : ""}
+                {korteDatum(herkomst.toestemmingOp) ? ` · ${t("t4r_herkomst_toestemming")}: ${korteDatum(herkomst.toestemmingOp)}` : ""}
+                {korteDatum(herkomst.bewaartotDatum) ? ` · ${t("t4r_herkomst_bewaartot")}: ${korteDatum(herkomst.bewaartotDatum)}` : ""}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -729,6 +926,27 @@ function StudieFase({
             <span>{t("t4r_comp_studie_type_niveau")} <span className="text-foreground capitalize">{session.roleType} / {session.roleLevel}</span></span>
             <span>{t("t4r_comp_studie_kandidaat")} <span className="text-foreground">{match.candidate.label}</span></span>
             <span>{t("t4r_comp_studie_beoordeeld")} <span className="text-foreground">{u.constructen.length}</span></span>
+          </div>
+
+          {/* Herkomst van de vergeleken cijfers, ook in de afdruk. Wie dit rapport
+              later leest, hoort te zien of het profiel aan de juiste persoon hangt. */}
+          <div className="mt-3 border-t border-border pt-2.5 text-muted-foreground" style={{ fontSize: "var(--text-xs)" }} data-testid="studie-herkomst">
+            {match.candidate.herkomst === "interne-afname" ? (
+              <span>
+                {t("t4r_herkomst_uit_afname")} · {t("t4r_herkomst_code")}: {match.candidate.respondentCode ?? "-"}
+                {korteDatum(match.candidate.overgenomenAt) ? ` · ${korteDatum(match.candidate.overgenomenAt)}` : ""}
+              </span>
+            ) : (
+              <span>
+                {t("t4r_herkomst_uit_bestand")}
+                {match.candidate.sourceFile ? ` · ${match.candidate.sourceFile}` : ""}
+              </span>
+            )}
+            {!!match.candidate.handmatigAangepast?.length && (
+              <span className="ml-1 text-[hsl(var(--chart-4))]" data-testid="studie-handmatig">
+                · {t("t4r_herkomst_aangepast")}: {match.candidate.handmatigAangepast.join(", ")}
+              </span>
+            )}
           </div>
         </div>
 
