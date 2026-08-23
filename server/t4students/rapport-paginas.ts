@@ -1922,8 +1922,8 @@ export function bouwT4StudentsRapport(
   if (foci.gerangschikt.length > 0) {
     const laagsteFocus = foci.gerangschikt[foci.gerangschikt.length - 1];
     aandacht.push(
-      `${laagsteFocus.construct} is de focus waarin je jezelf het minst herkent. Vraag: is dat ` +
-        `iets waar je omheen kunt werken, of is het iets dat je wilt opbouwen?`,
+      `In deze momentopname herkende je jezelf het minst in ${laagsteFocus.construct}. Vraag: is ` +
+        `dat iets waar je omheen kunt werken, of is het iets dat je wilt opbouwen?`,
     );
   }
   paginas.push(
@@ -1941,6 +1941,23 @@ export function bouwT4StudentsRapport(
             "over jou.",
         },
         { soort: "opsomming", kop: null, punten: aandacht },
+        {
+          // Eerlijkheid over de smalle basis, op de pagina waar de rangordes
+          // tot uitspraken worden. Elk onderdeel rust op een enkele stelling,
+          // dus een verschil van een stap is geen eigenschap van de student.
+          // Deze alinea staat hier en niet in de verantwoording achteraan,
+          // omdat ze gelezen moet worden op het moment dat de uitspraken
+          // gelezen worden.
+          soort: "alinea",
+          tekst:
+            "Waarop deze punten rusten: elk onderdeel in dit rapport is gebouwd op \u00e9\u00e9n " +
+            "stelling. Een verschil van \u00e9\u00e9n stap tussen twee onderdelen kan dus even goed aan " +
+            "die ene vraag liggen als aan jou: aan hoe je de vraag las, aan je humeur op dat moment, " +
+            "aan hoe streng je op dat moment voor jezelf was. Lees daarom vooral de bovenkant en de " +
+            "onderkant van een lijst, en leg geen betekenis in kleine verschillen in het midden. " +
+            "Klopt een punt volgens jou niet, dan is dat geen fout van jou en ook geen fout van het " +
+            "rapport: het is precies het soort punt dat een gesprek waard is.",
+        },
         {
           soort: "alinea",
           tekst:
