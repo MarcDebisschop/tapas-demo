@@ -212,11 +212,20 @@ function Staafgrafiek({
 export default function T4KidsRapport() {
   const params = useParams();
   const id = Number(params.id);
+  // Twee wegen naar hetzelfde boekje (zie App.tsx en
+  // server/routes/t4kids-rapport.ts):
+  //   - vlak na de reis, met het bezitsbewijs uit dit tabblad;
+  //   - later vanuit het dashboard, met het dashboardtoken in het pad.
+  // De pagina zelf verandert niet; enkel waar ze het contract ophaalt.
+  const dashboardToken = typeof params.token === "string" ? params.token : null;
+  const pad = dashboardToken
+    ? `/api/dashboard/${dashboardToken}/afname/${id}/t4kids-rapport.json`
+    : `/api/afnames/${id}/t4kids-rapport.json`;
 
   const { data, isLoading, isError } = useQuery<T4KidsContract>({
-    queryKey: ["/api/afnames", id, "t4kids-rapport"],
+    queryKey: [pad],
     queryFn: async () => {
-      const res = await apiRequest("GET", `/api/afnames/${id}/t4kids-rapport.json`);
+      const res = await apiRequest("GET", pad);
       return res.json();
     },
     enabled: Number.isFinite(id),
@@ -468,11 +477,17 @@ export default function T4KidsRapport() {
               <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
                 {exact.archetypen.map((a) => {
                   const src = beeldVoor(a.id);
+                  // Deze acht beelden dragen bewust GEEN loading="lazy". Wie meteen
+                  // op "Download als PDF" drukt, laat de browser afdrukken voordat
+                  // een uitgesteld beeld geladen is: in de test van augustus 2026
+                  // kwamen de kaarten dan leeg op papier, en stonden ze er wel na
+                  // eerst door het boekje te scrollen. Op een afdruk staat elk beeld
+                  // altijd in beeld, dus uitstellen levert hier niets op.
                   return (
                     <figure key={a.id} className="overflow-hidden rounded-2xl bg-white shadow ring-1 ring-slate-100">
                       <div className="relative">
                         {src ? (
-                          <img src={src} alt={a.naam} className="aspect-square w-full object-cover" loading="lazy" />
+                          <img src={src} alt={a.naam} className="aspect-square w-full object-cover" />
                         ) : (
                           <div className="grid aspect-square w-full place-items-center bg-cyan-50 p-4">
                             <img src={TAPPIE_SRC} alt="" className="h-full w-full object-contain" />

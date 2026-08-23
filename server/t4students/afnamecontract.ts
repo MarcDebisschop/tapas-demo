@@ -21,6 +21,7 @@ import { scoreStudiekompas } from "./kompas-scoring";
 import type { T4SAntwoorden, T4SResultaat, T4STaal } from "./kompas-scoring";
 import type { T4SLicentie } from "./rapport-contract";
 import { naarT4SAntwoorden, ontbrekendeItems } from "./antwoorden";
+import { toestemmingVoorContract } from "../contract-toestemming";
 import {
   berekenAfnamekwaliteit,
   berekenInvulpatroon,
@@ -61,7 +62,10 @@ export interface T4SAfnameContract {
    * antwoorden zijn om iets te zeggen.
    */
   invulpatroon?: Invulpatroon | null;
-  consent?: { scope: string | null; timestamp: string | null };
+  // `given` zegt of de toestemming werkelijk vastligt, met het tijdstip als
+  // onderbouwing. Optioneel, want contracten van voor die wijziging dragen het
+  // veld niet. Zie server/contract-toestemming.ts voor de regel.
+  consent?: { given?: boolean; scope: string | null; timestamp: string | null };
 }
 
 /**
@@ -108,6 +112,8 @@ export function bouwT4StudentsAfnameContract(input: {
   itemTijden?: Record<string, unknown> | null;
   consentScope?: string | null;
   consentTimestamp?: string | null;
+  // Komt uit afnames.consent_given. Zie server/contract-toestemming.ts.
+  consentGiven?: boolean | null;
   datum?: string | null;
   instrument?: T4SInstrument;
 }): T4SAfnameContract {
@@ -145,10 +151,12 @@ export function bouwT4StudentsAfnameContract(input: {
     invulpatroon: berekenInvulpatroon(
       t4studentsItems().map((item) => antwoorden[item.id]?.recognition ?? null),
     ),
-    consent: {
-      scope: input.consentScope ?? null,
-      timestamp: input.consentTimestamp ?? null,
-    },
+    consent: toestemmingVoorContract({
+      consentGiven: input.consentGiven,
+      consentScope: input.consentScope,
+      consentTimestamp: input.consentTimestamp,
+      standaardScope: "studiekompas + rapport",
+    }),
   };
 }
 

@@ -431,6 +431,16 @@ export const STRINGS = {
     es: "Todavía faltan respuestas. Completa el cuestionario y podrás enviarlo.",
     ru: "Некоторые ответы ещё отсутствуют. Заполните анкету, и вы сможете её отправить.",
   },
+  // Wordt gebruikt door de toestemmingspoort op de inleverroutes
+  // (server/toestemming-poort.ts): wie de startstap met de toestemmingsvraag
+  // overslaat, mag geen antwoorden inleveren.
+  toestemming_nog_niet_gegeven: {
+    nl: "We hebben je toestemming nog niet vastgelegd. Doorloop eerst de startpagina, dan kun je je antwoorden bewaren.",
+    fr: "Votre consentement n'a pas encore été enregistré. Passez d'abord par la page de démarrage, puis vous pourrez enregistrer vos réponses.",
+    en: "Your consent has not been recorded yet. Go through the start page first, then you can save your answers.",
+    es: "Todavía no hemos registrado tu consentimiento. Pasa primero por la página de inicio y luego podrás guardar tus respuestas.",
+    ru: "Ваше согласие ещё не зафиксировано. Сначала пройдите начальную страницу, затем вы сможете сохранить ответы.",
+  },
   deel1_meest: { nl: "Meest", fr: "Le plus", en: "Most", es: "Más", ru: "Больше всего" },
   deel1_minst: { nl: "Minst", fr: "Le moins", en: "Least", es: "Menos", ru: "Меньше всего" },
   energie_thema_vraag: {

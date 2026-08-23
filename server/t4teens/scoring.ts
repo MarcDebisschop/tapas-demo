@@ -20,6 +20,7 @@
 
 import type { ConstructRow, FamilyRow } from "../scoring";
 import { laadInstrumentItems } from "../question-manager";
+import { toestemmingVoorContract } from "../contract-toestemming";
 
 const T4TEENS_INSTRUMENT = "tapas-t4teens";
 
@@ -129,6 +130,9 @@ export interface BuildT4TeensOpts {
   role?: string | null;
   consentScope?: string | null;
   consentTimestamp?: string | null;
+  // Komt uit afnames.consent_given. Zie server/contract-toestemming.ts: het
+  // contract bevestigt toestemming alleen met een tijdstip als onderbouwing.
+  consentGiven?: boolean | null;
   // itemId -> ruwe respons (getal of blockResponse-achtig object).
   responses: Record<string, unknown>;
   taal?: string | null;
@@ -215,11 +219,12 @@ export function buildT4TeensContract(opts: BuildT4TeensOpts): T4TeensContract {
       company: opts.company ?? null,
       role: opts.role ?? null,
     },
-    consent: {
-      given: true,
-      scope: opts.consentScope ?? "profiel-generatie + rapport",
-      timestamp: opts.consentTimestamp ?? null,
-    },
+    consent: toestemmingVoorContract({
+      consentGiven: opts.consentGiven,
+      consentScope: opts.consentScope,
+      consentTimestamp: opts.consentTimestamp,
+      standaardScope: "profiel-generatie + rapport",
+    }),
     sections: {
       main: {
         meta: {

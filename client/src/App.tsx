@@ -137,6 +137,11 @@ function AppRouter() {
       <Route path="/reis/start" component={ReisT4KidsStart} />
       <Route path="/reis/:id" component={ReisT4Kids} />
       <Route path="/afname/:id/t4kids-rapport" component={T4KidsRapport} />
+      {/* Zelfde boekje, maar geopend vanuit het deelnemersdashboard. Het
+          bezitsbewijs van de afname leeft enkel in het tabblad waarin het kind
+          de reis maakte; met het dashboardtoken blijft het boekje ook later
+          bereikbaar. Zie server/routes/t4kids-rapport.ts. */}
+      <Route path="/dashboard/:token/afname/:id/t4kids-rapport" component={T4KidsRapport} />
       <Route path="/afname/:id/klaar" component={Klaar} />
       <Route path="/admin">{() => <AdminLoginGate><Admin /></AdminLoginGate>}</Route>
       <Route path="/admin/credits">{() => <AdminLoginGate><AdminCredits /></AdminLoginGate>}</Route>
