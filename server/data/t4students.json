@@ -330,9 +330,9 @@
           "scale": "recognition",
           "energyScale": "energy",
           "text": {
-            "nl": "Voor iemand die ik echt waardeer, doe ik er alles aan om te slagen.",
-            "fr": "Pour quelqu'un que j'apprécie vraiment, je fais tout pour réussir.",
-            "en": "For someone I truly value, I'll do everything to succeed."
+            "nl": "Ik wil iets uitzonderlijks doen voor iemand naar wie ik opkijk en die in mij gelooft.",
+            "fr": "Je veux faire quelque chose d'exceptionnel pour une personne que j'admire et qui croit en moi.",
+            "en": "I want to do something exceptional for someone I look up to and who believes in me."
           },
           "sourceItems": [
             "4.2"

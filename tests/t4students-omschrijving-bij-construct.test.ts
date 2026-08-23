@@ -32,7 +32,15 @@ describe("omschrijvingVan geeft de letterlijke, vaste omschrijving per construct
     "Constructief onderscheidend": "een eigen, onderscheidende aanpak",
     "Be Perfect": "het goed willen doen",
     "Please Others": "het goed willen doen voor anderen",
-    "Try Hard": "hard blijven proberen",
+    // De omschrijving bij Try Hard volgt de vaste constructdefinitie van de
+    // opdrachtgever. Try Hard is niet "hard blijven proberen" in het algemeen:
+    // het is iets uitzonderlijks willen doen voor iemand naar wie je opkijkt en
+    // van wie je weet dat die in je gelooft. Zonder die persoon in de tekst
+    // valt het construct samen met gewone inzet, en dat meet het niet. Deze
+    // korte regel staat in een kolom van 162 punten en mag niet afbreken; het
+    // vertrouwen van die persoon staat daarom in het item en in de
+    // duidingstekst, waar de ruimte er wel is.
+    "Try Hard": "uitblinken voor iemand naar wie je opkijkt",
     "Hurry Up": "snel vooruit willen",
     "Be Strong": "het alleen willen dragen",
     Autonomie: "zelf kunnen bepalen",

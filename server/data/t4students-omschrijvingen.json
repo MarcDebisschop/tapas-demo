@@ -1,5 +1,5 @@
 {
-  "bron": "opdracht Studiekompas persoonlijk maken, onderdeel C, letterlijk overgenomen",
+  "bron": "opdracht Studiekompas persoonlijk maken, onderdeel C, letterlijk overgenomen; de omschrijving bij Try Hard volgt de vaste constructdefinitie van de opdrachtgever: iets uitzonderlijks willen doen voor iemand naar wie je opkijkt en van wie je weet dat die in je gelooft",
   "sleutel": "de constructnaam zoals die in server/data/t4students.json staat",
   "constructen": {
     "Functioneel Innovatief": "creatief probleemoplossen",
@@ -16,7 +16,7 @@
     "Constructief onderscheidend": "een eigen, onderscheidende aanpak",
     "Be Perfect": "het goed willen doen",
     "Please Others": "het goed willen doen voor anderen",
-    "Try Hard": "hard blijven proberen",
+    "Try Hard": "uitblinken voor iemand naar wie je opkijkt",
     "Hurry Up": "snel vooruit willen",
     "Be Strong": "het alleen willen dragen",
     "Autonomie": "zelf kunnen bepalen",
