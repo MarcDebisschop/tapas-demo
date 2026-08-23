@@ -33,7 +33,26 @@ bezoeker kon er de cijfers van een willekeurige organisatie mee opvragen. Er
 zijn geen externe afnemers van deze API. Zou die er wel zijn, dan was dit een
 hoofdversie geweest.
 
-## [Niet vrijgegeven]
+## Over de versienummers 2.5.0 tot en met 2.7.0
+
+Wie deze changelog naast de git-historie legt, vindt hier een gat. Het staat
+beschreven omdat weten beter is dan vermoeden.
+
+- Tot deze versie bestond er geen enkele git-tag. Het beleid vraagt een tag per
+  versie; voor de oudere versies zijn die er niet. Achteraf een tag op een
+  gekozen commit zetten zou een zekerheid suggereren die er niet is, dus dat is
+  niet gedaan.
+- `package.json` ging in commit `ad0a95a` in een stap van 2.4.0 naar 2.7.0, in
+  dezelfde commit als een auditreeks. De nummers 2.5.0 en 2.6.0 zijn dus nooit
+  als aparte versie in het pakket vastgelegd.
+- De kop 2.5.0 hieronder is nooit getagd. Voor 2.6.0 en 2.7.0 bestaat in deze
+  changelog geen kop. Wat die twee nummers inhielden staat enkel in
+  `VERSION.md`, een ouder en apart bijgehouden overzicht dat niet aan de
+  git-historie gekoppeld is. Die inhoud wordt hier niet overgenomen, omdat zij
+  niet uit de historie na te gaan is.
+- Vanaf deze versie lopen `package.json`, deze changelog en de git-tag samen.
+
+## [2.7.1] - 2026-08-23
 
 ### Gewijzigd
 
