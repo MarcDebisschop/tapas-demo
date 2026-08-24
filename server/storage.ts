@@ -460,6 +460,12 @@ try {
   if (!heeft("invite_token")) add(`ALTER TABLE afnames ADD COLUMN invite_token TEXT;`);
   if (!heeft("uitgenodigd_at")) add(`ALTER TABLE afnames ADD COLUMN uitgenodigd_at TEXT;`);
   if (!heeft("herinnerd_at")) add(`ALTER TABLE afnames ADD COLUMN herinnerd_at TEXT;`);
+  // Wat er met de uitnodigingsmail gebeurde: naar wie het bericht ging en wat de
+  // laatste stand van die verzending was. Strikt additief en nullable; bestaande
+  // rijen houden NULL, wat betekent "nooit een bericht verstuurd".
+  if (!heeft("mail_ontvanger_rol")) add(`ALTER TABLE afnames ADD COLUMN mail_ontvanger_rol TEXT;`);
+  if (!heeft("mail_stand")) add(`ALTER TABLE afnames ADD COLUMN mail_stand TEXT;`);
+  if (!heeft("mail_stand_at")) add(`ALTER TABLE afnames ADD COLUMN mail_stand_at TEXT;`);
   // Fase E — afname-taal.
   if (!heeft("taal")) add(`ALTER TABLE afnames ADD COLUMN taal TEXT NOT NULL DEFAULT 'nl';`);
   // TaPas Persoonlijk Fase 1 — koppeling naar deelnemer via e-mail.

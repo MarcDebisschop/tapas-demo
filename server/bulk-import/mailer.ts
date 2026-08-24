@@ -22,6 +22,7 @@ import { sqlite } from "../storage";
 import { bouwToegangsmail } from "../toegangsmail";
 import { bouwAanmeldmail } from "../aanmeldmail";
 import { schrijfVerzendregel, type VerzendSoort } from "./verzendlog";
+import { beoordeelSmtpAntwoord } from "./smtp-antwoord";
 
 const STANDAARD_AFZENDER = "info@tapascity.com";
 
@@ -93,23 +94,37 @@ function afzenderVoor(from?: string | null): string {
   return STANDAARD_AFZENDER;
 }
 
-// Haal onderwerp+body op uit mail_teksten (templateKey "uitnodiging"), val
-// terug op nl en daarna op een ingebouwde standaardtekst.
-function haalSjabloon(taal: string): { onderwerp: string; body: string } {
-  const standaard = {
+// De ingebouwde teksten, voor het geval de tabel mail_teksten geen rij heeft.
+// Beheerders kunnen deze teksten per taal overschrijven in Mailbeheer; de sleutel
+// "herinnering" staat daar al in de lijst met sjablonen.
+const STANDAARDSJABLONEN: Record<string, { onderwerp: string; body: string }> = {
+  uitnodiging: {
     onderwerp: "Uitnodiging voor je TaPas-vragenlijst",
     body:
       "Beste {{naam}},\n\nJe bent uitgenodigd om {{instrument}} in te vullen.\n" +
       "Start via deze persoonlijke link:\n{{link}}\n\nMet vriendelijke groet,\nTaPasCity",
-  };
+  },
+  herinnering: {
+    onderwerp: "Herinnering: je TaPas-vragenlijst staat nog open",
+    body:
+      "Beste {{naam}},\n\nEerder kreeg je een uitnodiging om {{instrument}} in te vullen. " +
+      "Die staat nog open.\nJe gaat verder via dezelfde persoonlijke link:\n{{link}}\n\n" +
+      "Lukt het niet, laat het ons dan weten.\n\nMet vriendelijke groet,\nTaPasCity",
+  },
+};
+
+// Haal onderwerp+body op uit mail_teksten voor deze sjabloonsleutel, val terug
+// op nl en daarna op de ingebouwde standaardtekst hierboven.
+function haalSjabloon(taal: string, sleutel = "uitnodiging"): { onderwerp: string; body: string } {
+  const standaard = STANDAARDSJABLONEN[sleutel] ?? STANDAARDSJABLONEN.uitnodiging;
   try {
     const rij =
       (sqlite
-        .prepare("SELECT onderwerp, body FROM mail_teksten WHERE templateKey = 'uitnodiging' AND taal = ?")
-        .get(taal) as { onderwerp: string; body: string } | undefined) ??
+        .prepare("SELECT onderwerp, body FROM mail_teksten WHERE templateKey = ? AND taal = ?")
+        .get(sleutel, taal) as { onderwerp: string; body: string } | undefined) ??
       (sqlite
-        .prepare("SELECT onderwerp, body FROM mail_teksten WHERE templateKey = 'uitnodiging' AND taal = 'nl'")
-        .get() as { onderwerp: string; body: string } | undefined);
+        .prepare("SELECT onderwerp, body FROM mail_teksten WHERE templateKey = ? AND taal = 'nl'")
+        .get(sleutel) as { onderwerp: string; body: string } | undefined);
     if (rij && (rij.onderwerp || rij.body)) {
       return {
         onderwerp: rij.onderwerp || standaard.onderwerp,
@@ -182,8 +197,63 @@ function getTransporter(): nodemailer.Transporter {
   return transporterCache;
 }
 
-export async function verstuurUitnodiging(input: MailInput): Promise<MailResultaat> {
-  const { onderwerp, body } = haalSjabloon(input.taal);
+// -----------------------------------------------------------------------------
+// De SMTP-weg naar buiten, op één plaats.
+//
+// Tot nu had elke verzendfunctie haar eigen poging met haar eigen try, en gaf
+// elk van die takken "verstuurd" terug zodra nodemailer geen uitzondering
+// gooide. Dat is niet hetzelfde als bezorgd: de server kan het adres weigeren of
+// uitstellen zonder dat er een uitzondering volgt. Sinds die takken hier
+// samenkomen, wordt het antwoord van de server altijd gelezen, door
+// beoordeelSmtpAntwoord in server/bulk-import/smtp-antwoord.ts. Een tak vergeten
+// kan dus niet meer.
+//
+// De tekst van het bericht gaat nooit naar de console; het adres en het
+// onderwerp volstaan om een verzending terug te vinden.
+// -----------------------------------------------------------------------------
+async function verstuurViaSmtp(args: {
+  naar: string;
+  from: string;
+  subject: string;
+  text: string;
+  antwoordNaar?: string | null;
+  /** Wat er misging, in gewone woorden, voor de consoleregel bij een fout. */
+  noem: string;
+}): Promise<MailResultaat> {
+  try {
+    const info = await getTransporter().sendMail({
+      from: args.from,
+      to: args.naar,
+      subject: args.subject,
+      text: args.text,
+      ...(args.antwoordNaar && args.antwoordNaar.trim()
+        ? { replyTo: args.antwoordNaar.trim() }
+        : {}),
+    });
+    const oordeel = beoordeelSmtpAntwoord(args.naar, info as unknown as Record<string, unknown>);
+    if (oordeel.status !== "verstuurd") {
+      console.error(`[mailer] ${args.noem} niet bezorgd aan ${args.naar}: ${oordeel.melding ?? ""}`);
+    }
+    return oordeel;
+  } catch (e) {
+    const melding = e instanceof Error ? e.message : "Onbekende SMTP-fout";
+    console.error(`[mailer] ${args.noem} mislukt naar ${args.naar}: ${melding}`);
+    return { status: "fout", gesimuleerd: false, melding };
+  }
+}
+
+/**
+ * Verstuurt een bericht dat zijn tekst uit een sjabloon haalt: de uitnodiging en
+ * de herinnering. Beide hebben dezelfde tokens ({{naam}}, {{link}},
+ * {{instrument}}) en dezelfde weg naar buiten; alleen de sjabloonsleutel en de
+ * soort in het logboek verschillen. Daarom staat dit hier eenmaal en niet twee keer.
+ */
+async function verstuurSjabloonmail(
+  soort: VerzendSoort,
+  sleutel: string,
+  input: MailInput,
+): Promise<MailResultaat> {
+  const { onderwerp, body } = haalSjabloon(input.taal, sleutel);
   const from = afzenderVoor(input.from);
   const subject = vulTokens(onderwerp, input);
   const text = vulTokens(body, input);
@@ -194,26 +264,40 @@ export async function verstuurUitnodiging(input: MailInput): Promise<MailResulta
     console.log(
       `[bulk-import/mailer] SIMULATIE — mail NIET verstuurd. naar=${input.naar} van=${from} onderwerp="${subject}"`,
     );
-    return boek("uitnodiging", meta, { status: "gesimuleerd", gesimuleerd: true });
+    return boek(soort, meta, { status: "gesimuleerd", gesimuleerd: true });
   }
 
   // C3 — Voorkeur: Brevo HTTP-API (werkt op Render free; SMTP is daar geblokkeerd).
   if (brevoApiGeconfigureerd()) {
     return boek(
-      "uitnodiging",
+      soort,
       meta,
       await verstuurViaBrevoApi({ from, naar: input.naar, naam: input.naam, subject, text }),
     );
   }
 
-  try {
-    await getTransporter().sendMail({ from, to: input.naar, subject, text });
-    return boek("uitnodiging", meta, { status: "verstuurd", gesimuleerd: false });
-  } catch (e) {
-    const melding = e instanceof Error ? e.message : "Onbekende SMTP-fout";
-    console.error(`[bulk-import/mailer] Verzending mislukt naar ${input.naar}: ${melding}`);
-    return boek("uitnodiging", meta, { status: "fout", gesimuleerd: false, melding });
-  }
+  return boek(
+    soort,
+    meta,
+    await verstuurViaSmtp({ naar: input.naar, from, subject, text, noem: soort }),
+  );
+}
+
+/** De eerste uitnodiging met de persoonlijke link. */
+export async function verstuurUitnodiging(input: MailInput): Promise<MailResultaat> {
+  return verstuurSjabloonmail("uitnodiging", "uitnodiging", input);
+}
+
+/**
+ * De herinnering aan een uitnodiging die nog openstaat.
+ *
+ * De belknop in het beheeroverzicht zette tot nu enkel een datum en verstuurde
+ * niets, terwijl de tekst "herinnerd" suggereerde dat er een bericht vertrok. Deze
+ * functie maakt die belofte waar, met dezelfde link als de uitnodiging: die link
+ * blijft geldig, dus er hoort geen nieuwe bij.
+ */
+export async function verstuurHerinnering(input: MailInput): Promise<MailResultaat> {
+  return verstuurSjabloonmail("herinnering", "herinnering", input);
 }
 
 // -----------------------------------------------------------------------------
@@ -256,14 +340,17 @@ export async function verstuurToegangsmail(input: ToegangsmailVerzending): Promi
     );
   }
 
-  try {
-    await getTransporter().sendMail({ from, to: input.naar, subject: onderwerp, text: tekst });
-    return boek("toegangsmail", meta, { status: "verstuurd", gesimuleerd: false });
-  } catch (e) {
-    const melding = e instanceof Error ? e.message : "Onbekende SMTP-fout";
-    console.error(`[mailer] Toegangsmail mislukt naar ${input.naar}: ${melding}`);
-    return boek("toegangsmail", meta, { status: "fout", gesimuleerd: false, melding });
-  }
+  return boek(
+    "toegangsmail",
+    meta,
+    await verstuurViaSmtp({
+      naar: input.naar,
+      from,
+      subject: onderwerp,
+      text: tekst,
+      noem: "Toegangsmail",
+    }),
+  );
 }
 
 // -----------------------------------------------------------------------------
@@ -309,14 +396,17 @@ export async function verstuurAanmeldlink(input: AanmeldlinkVerzending): Promise
     );
   }
 
-  try {
-    await getTransporter().sendMail({ from, to: input.naar, subject: onderwerp, text: tekst });
-    return boek("aanmeldlink", meta, { status: "verstuurd", gesimuleerd: false });
-  } catch (e) {
-    const melding = e instanceof Error ? e.message : "Onbekende SMTP-fout";
-    console.error(`[mailer] Aanmeldlink mislukt naar ${input.naar}: ${melding}`);
-    return boek("aanmeldlink", meta, { status: "fout", gesimuleerd: false, melding });
-  }
+  return boek(
+    "aanmeldlink",
+    meta,
+    await verstuurViaSmtp({
+      naar: input.naar,
+      from,
+      subject: onderwerp,
+      text: tekst,
+      noem: "Aanmeldlink",
+    }),
+  );
 }
 
 // C3 — Verstuur via de Brevo transactionele HTTP-API (POST https://api.brevo.com/v3/smtp/email).
@@ -433,20 +523,16 @@ export async function verstuurBericht(input: BerichtVerzending): Promise<MailRes
     );
   }
 
-  try {
-    await getTransporter().sendMail({
+  return boek(
+    "bericht",
+    meta,
+    await verstuurViaSmtp({
+      naar: input.naar,
       from,
-      to: input.naar,
       subject: input.onderwerp,
       text: input.tekst,
-      ...(input.antwoordNaar && input.antwoordNaar.trim()
-        ? { replyTo: input.antwoordNaar.trim() }
-        : {}),
-    });
-    return boek("bericht", meta, { status: "verstuurd", gesimuleerd: false });
-  } catch (e) {
-    const melding = e instanceof Error ? e.message : "Onbekende SMTP-fout";
-    console.error(`[mailer] Bericht mislukt naar ${input.naar}: ${melding}`);
-    return boek("bericht", meta, { status: "fout", gesimuleerd: false, melding });
-  }
+      antwoordNaar: input.antwoordNaar ?? null,
+      noem: "Bericht",
+    }),
+  );
 }

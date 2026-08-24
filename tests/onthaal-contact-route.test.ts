@@ -124,12 +124,17 @@ describe("D. De generieke verzendweg in de mailer", () => {
     expect(mailerBron).toMatch(/export async function verstuurBericht/);
   });
 
-  it("gebruikt dezelfde drie standen als de bestaande mails", () => {
+  it("gebruikt dezelfde standen en dezelfde verzendwegen als de bestaande mails", () => {
+    // De stand "verstuurd" wordt hier niet zelf geschreven. Ze komt uit de
+    // verzendweg, die het antwoord van de mailserver beoordeelt. Een eigen
+    // literal "verstuurd" in dit blok zou juist de oude fout terugbrengen: een
+    // bericht als bezorgd melden zonder dat de server het aanvaardde.
     const begin = mailerBron.indexOf("export async function verstuurBericht");
     const blok = mailerBron.slice(begin);
     expect(blok).toContain('status: "gesimuleerd"');
-    expect(blok).toContain('status: "verstuurd"');
-    expect(blok).toContain('status: "fout"');
+    expect(blok).toContain("verstuurViaSmtp(");
+    expect(blok).toContain("verstuurViaBrevoApi(");
+    expect(blok).not.toContain('status: "verstuurd"');
     expect(blok).toContain("isSimulatiemodus()");
     expect(blok).toContain("brevoApiGeconfigureerd()");
   });

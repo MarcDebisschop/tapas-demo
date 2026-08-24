@@ -52,6 +52,46 @@ beschreven omdat weten beter is dan vermoeden.
   niet uit de historie na te gaan is.
 - Vanaf deze versie lopen `package.json`, deze changelog en de git-tag samen.
 
+## [Niet vrijgegeven]
+
+### Toegevoegd
+
+- Uitnodigen kan nu zelf een bericht versturen. Het uitnodigingsvenster heeft een
+  adresveld en twee knoppen: "Alleen link aanmaken", de weg die er altijd was en
+  volwaardig blijft, en "Aanmaken en versturen". Nieuw bestand
+  `server/uitnodigingsmail.ts` bouwt de deelnemerslink en de leesbare
+  instrumentnaam en boekt de stand op de afname. Zonder verzendweg staat de
+  verstuurknop uit, met de reden erbij: een knop die niets kan bezorgen is erger
+  dan geen knop.
+- Leeftijdspoort bij het uitnodigen van minderjarigen, in het nieuwe
+  `shared/uitnodigingsontvanger.ts`. Bij T4Kids en bij T4Teens onder 16 gaat de
+  uitnodiging naar een ouder, voogd of begeleider; vanaf 16 mag de jongere zijn
+  eigen adres houden. De grens volgt AVG art. 8 met de Belgische drempel, en de
+  keuze om de zestien- en zeventienjarige zijn eigen bericht te laten krijgen is
+  een keuze en geen vergetelheid: hem dat ontzeggen zou een eigen recht wegnemen.
+  De server weigert een adres dat niet mag voor er een afname en dus een credit
+  ontstaat.
+- Verzendstand per rij in het beheeroverzicht: niets verstuurd, bericht
+  verstuurd, gesimuleerd, of versturen mislukt. Nieuwe kolommen `mail_stand`,
+  `mail_stand_at` en `mail_ontvanger_rol` op `afnames`; het overzicht geeft wel
+  de stand en of er een adres bekend is, maar nooit het adres zelf.
+- De belknop verstuurt een echte herinnering in plaats van enkel een datum te
+  zetten. Eigen sjabloonsleutel `herinnering`, aanpasbaar in Mailbeheer, en de
+  soort `herinnering` in `mail_verzendlog` (migratie
+  `0010_herinnering_in_verzendlog.sql`). Zonder bekend adres of zonder
+  verzendweg staat de knop uit met de reden in de tooltip.
+
+### Gewijzigd
+
+- De verzendmodule leest het antwoord van de mailserver in plaats van
+  "verstuurd" te melden zodra nodemailer geen uitzondering gooit. Nieuw
+  `server/bulk-import/smtp-antwoord.ts` beoordeelt `accepted`, `rejected` en
+  `pending`: een adres dat de server weigerde of uitstelde is een fout. Dit was
+  de kern van het probleem waarbij het overzicht "verstuurd" toonde bij
+  berichten die nooit aankwamen.
+- `VERSION.md` liep sinds 2.7.1 achter op `package.json`. Het overzicht noemt nu
+  dezelfde versie, waarmee de twee toetsen op de versiehygiene weer slagen.
+
 ## [2.7.1] - 2026-08-23
 
 ### Gewijzigd

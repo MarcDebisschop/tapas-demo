@@ -25,12 +25,20 @@
 
 import { sqlite } from "../storage";
 
-export type VerzendSoort = "uitnodiging" | "toegangsmail" | "aanmeldlink" | "bericht";
+export type VerzendSoort =
+  | "uitnodiging"
+  | "herinnering"
+  | "toegangsmail"
+  | "aanmeldlink"
+  | "bericht";
 export type VerzendStatus = "verstuurd" | "gesimuleerd" | "fout";
 export type VerzendKanaal = "brevo-api" | "smtp" | "geen";
 
 export const VERZEND_SOORTEN: VerzendSoort[] = [
   "uitnodiging",
+  // Een herinnering staat naast de uitnodiging en niet in plaats daarvan: bij een
+  // klacht wil je zien of iemand een eerste bericht kreeg of een tweede.
+  "herinnering",
   "toegangsmail",
   "aanmeldlink",
   "bericht",

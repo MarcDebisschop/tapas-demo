@@ -73,6 +73,17 @@ export interface Afname {
   // instrumenten met een minderjarige doelgroep.
   leeftijdsband?: string | null;
   ouderlijkeToestemming?: boolean;
+  // De stand van het bericht bij de uitnodiging: "verstuurd", "gesimuleerd" of
+  // "fout", en null wanneer er nooit een bericht vertrok. Het adres zelf komt
+  // niet mee naar het overzicht; enkel of er een adres bekend is.
+  mailStand?: string | null;
+  mailStandAt?: string | null;
+  mailOntvangerRol?: string | null;
+  heeftMailadres?: boolean;
+  // Enkel in het antwoord op een verzendpoging, niet in het overzicht.
+  mailStatus?: string;
+  mailMelding?: string;
+  mailweg?: boolean;
 }
 
 // --- Fase C1: organisaties & credits ---

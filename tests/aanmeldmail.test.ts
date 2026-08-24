@@ -120,7 +120,9 @@ describe("De verzending is aangesloten op de bestaande weg", () => {
     );
     expect(blok).toMatch(/brevoApiGeconfigureerd\(\)/);
     expect(blok).toMatch(/verstuurViaBrevoApi/);
-    expect(blok).toMatch(/getTransporter\(\)\.sendMail/);
+    // De weg over SMTP loopt langs verstuurViaSmtp, de ene plaats waar het
+    // antwoord van de mailserver werkelijk wordt gelezen.
+    expect(blok).toMatch(/verstuurViaSmtp\(/);
     expect(blok).toMatch(/isSimulatiemodus\(\)/);
   });
 

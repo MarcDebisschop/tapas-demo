@@ -100,7 +100,9 @@ describe("de mailer kan een toegangsmail versturen", () => {
     expect(blok).toMatch(/afzenderVoor\(/);
     expect(blok).toMatch(/isSimulatiemodus\(\)/);
     expect(blok).toMatch(/brevoApiGeconfigureerd\(\)/);
-    expect(blok).toMatch(/getTransporter\(\)/);
+    // De SMTP-weg loopt langs verstuurViaSmtp, waar het antwoord van de
+    // mailserver wordt beoordeeld voordat er "verstuurd" mag staan.
+    expect(blok).toMatch(/verstuurViaSmtp\(/);
   });
 });
 
