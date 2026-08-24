@@ -21,6 +21,7 @@ import {
 import { bepaalSessieCookieNaam } from "./sessie-cookie";
 import { VERSIE, COMMIT, BOUWDATUM, BRON } from "./versie";
 import { createServer } from "node:http";
+import { GEWONE_BODYGRENS, RUIME_BODYGRENS, magRuimBericht } from "./bodygrens";
 
 const app = express();
 const httpServer = createServer(app);
@@ -44,11 +45,23 @@ declare module "http" {
   }
 }
 
+// De wegen die een bestand als base64 ontvangen worden eerst gelezen, met een
+// ruime grens. Wie hier langs komt heeft daarna al een req.body, waardoor de
+// gewone lezer hieronder niets meer doet. Zie server/bodygrens.ts voor de
+// afweging waarom de ruime grens niet voor het hele platform geldt.
+const bewaarRuweBody = (req: Request, _res: Response, buf: Buffer) => {
+  req.rawBody = buf;
+};
+const ruimeJsonLezer = express.json({ limit: RUIME_BODYGRENS, verify: bewaarRuweBody });
+app.use((req, res, next) => {
+  if (!magRuimBericht(req.path)) return next();
+  return ruimeJsonLezer(req, res, next);
+});
+
 app.use(
   express.json({
-    verify: (req, _res, buf) => {
-      req.rawBody = buf;
-    },
+    limit: GEWONE_BODYGRENS,
+    verify: bewaarRuweBody,
   }),
 );
 
