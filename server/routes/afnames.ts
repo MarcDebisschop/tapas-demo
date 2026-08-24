@@ -34,6 +34,10 @@ import {
   bewaartermijnSchema,
 } from "@shared/schema";
 import { valideerLeeftijdspoort } from "@shared/leeftijd";
+import { valideerUitnodigingsontvanger } from "@shared/uitnodigingsontvanger";
+// De uitnodiging en de herinnering versturen. Zie server/uitnodigingsmail.ts: de
+// link blijft altijd de weg naar binnen, het bericht is de dienst erbovenop.
+import { verstuurUitnodigingsmail, mailwegIngesteld } from "../uitnodigingsmail";
 import { leesItemTijden } from "../afnamekwaliteit";
 import { bewijsGeldig, bewijsUitBody, koppelBeslissing } from "../koppel-bewijs";
 import { vereisAfnameBewijs } from "../afname-bewijs";
@@ -326,6 +330,20 @@ export function registerAfnameRoutes(app: Express): void {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
     }
     const gevraagd = parsed.data;
+
+    // Naar wie mag deze uitnodiging? Deze vraag komt vóór alles wat kosten maakt:
+    // een uitnodiging naar een verkeerde ontvanger mag geen credit verbruiken en
+    // bij T4Kids en T4Teens mag het adres van een kind niet eens bewaard worden
+    // zonder dat de leeftijdsgroep en de ontvangerrol kloppen (AVG art. 8).
+    const ontvanger = valideerUitnodigingsontvanger({
+      instrumentId: gevraagd.instrumentId ?? standaardInstrumentId(),
+      leeftijdsband: gevraagd.leeftijdsband ?? null,
+      ontvangerRol: gevraagd.ontvangerRol ?? null,
+      email: gevraagd.deelnemerEmail ?? null,
+      wilVersturen: gevraagd.verstuurMail === true,
+    });
+    if (!ontvanger.ok) return res.status(400).json({ error: ontvanger.fout });
+
     // De organisatie komt uit de scope, niet uit de body. Een organisatie die
     // een ander id meestuurt krijgt 403; anders zou ze uitnodigingen op kosten
     // van een andere organisatie kunnen aanmaken.
@@ -386,7 +404,39 @@ export function registerAfnameRoutes(app: Express): void {
         return res.status(402).json({ error: msg, code: "GEEN_CREDITS" });
       }
     }
-    res.json(inv);
+
+    // Het adres bewaren, ook wanneer er niet verstuurd wordt. Zonder adres op de
+    // afname kan de belknop later geen herinnering sturen en weet niemand nog naar
+    // wie het eerste bericht ging. Bij een verantwoordelijke gaat het adres naar
+    // het ouderveld: dat is het veld dat ook de toestemmingweg gebruikt.
+    let metAdres = inv;
+    if (ontvanger.email) {
+      const patch = ontvanger.naarVerantwoordelijke
+        ? { ouderEmail: ontvanger.email, leeftijdsband: ontvanger.band ?? inv.leeftijdsband }
+        : { deelnemerEmail: ontvanger.email, leeftijdsband: ontvanger.band ?? inv.leeftijdsband };
+      metAdres = (await storage.updateAfname(inv.id, patch)) ?? inv;
+    }
+
+    // Versturen mag de uitnodiging nooit tegenhouden: de link staat er en blijft
+    // werken. Daarom is een mislukte verzending een stand in het antwoord en geen
+    // foutcode, precies zoals bij de toegangsmail.
+    if (gevraagd.verstuurMail === true && ontvanger.email && ontvanger.rol) {
+      const uitkomst = await verstuurUitnodigingsmail({
+        afname: metAdres,
+        naar: ontvanger.email,
+        rol: ontvanger.rol,
+        origin: typeof req.body?.origin === "string" ? req.body.origin : "",
+        soort: "uitnodiging",
+      });
+      return res.json({
+        ...metAdres,
+        mailStatus: uitkomst.status,
+        mailMelding: uitkomst.melding,
+        mailweg: mailwegIngesteld(),
+      });
+    }
+
+    res.json({ ...metAdres, mailweg: mailwegIngesteld() });
   });
 
   // Deelnemer: haal de uitnodiging op via het token (voor het landingsscherm).
@@ -482,12 +532,48 @@ export function registerAfnameRoutes(app: Express): void {
     res.json(updated);
   });
 
-  // Beheerder: markeer dat een herinnering werd verstuurd.
+  // Beheerder: verstuur een herinnering aan een uitnodiging die openstaat.
+  //
+  // Deze route zette tot nu enkel een datum. Het scherm noemde dat "herinnerd",
+  // terwijl er niets vertrok: de beheerder dacht dat de deelnemer een bericht had
+  // gekregen. Nu vertrekt er werkelijk een herinnering wanneer er een adres bekend
+  // is, met dezelfde link als de uitnodiging, want die link blijft geldig.
+  //
+  // Is er geen adres, dan blijft de datum staan en zegt het antwoord eerlijk dat er
+  // niets verstuurd is. Beter een lege stand dan een valse.
   app.post("/api/afnames/:id/herinner", async (req, res) => {
     const id = Number(req.params.id);
-    const a = await storage.markeerHerinnerd(id);
-    if (!a) return res.status(404).json({ error: "Afname niet gevonden" });
-    res.json(a);
+    const bestaand = await storage.getAfname(id);
+    if (!bestaand) return res.status(404).json({ error: "Afname niet gevonden" });
+
+    // Naar wie ging de uitnodiging? Dat adres, en geen ander: bij een minderjarige
+    // mag een herinnering niet plots bij het kind zelf belanden.
+    const naarVerantwoordelijke = !!bestaand.ouderEmail;
+    const naar = (bestaand.ouderEmail ?? bestaand.deelnemerEmail ?? "").trim();
+    const rol = naarVerantwoordelijke
+      ? ((bestaand.mailOntvangerRol as "ouder" | "voogd" | "begeleider" | null) ?? "ouder")
+      : "deelnemer";
+
+    let mailStatus: "verstuurd" | "gesimuleerd" | "fout" | "geen-adres" = "geen-adres";
+    let mailMelding =
+      "Er is geen e-mailadres bekend bij deze uitnodiging, dus er is geen herinnering verstuurd. " +
+      "Geef de link zelf door.";
+    if (naar) {
+      const uitkomst = await verstuurUitnodigingsmail({
+        afname: bestaand,
+        naar,
+        rol,
+        origin: typeof req.body?.origin === "string" ? req.body.origin : "",
+        soort: "herinnering",
+      });
+      mailStatus = uitkomst.status;
+      mailMelding = uitkomst.melding;
+    }
+
+    // De datum blijft, ook bij een mislukte verzending: ze zegt dat er een poging
+    // was, en de stand ernaast zegt wat die poging opleverde.
+    const a = (await storage.markeerHerinnerd(id)) ?? bestaand;
+    res.json({ ...a, mailStatus, mailMelding, mailweg: mailwegIngesteld() });
   });
 
   // --- Tussentijds bewaren van deel 1 (concept) ---

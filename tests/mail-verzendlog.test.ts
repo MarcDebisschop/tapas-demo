@@ -271,18 +271,31 @@ describe("verzendlogboek: de databank bewaakt de toegestane waarden", () => {
 });
 
 describe("verzendlogboek: bronvoorwaarden", () => {
-  it("legt in de verzendmodule alle vier de soorten vast", () => {
-    for (const soort of ["uitnodiging", "toegangsmail", "aanmeldlink", "bericht"]) {
+  it("legt in de verzendmodule elke soort vast", () => {
+    // De uitnodiging en de herinnering delen een verzendfunctie en geven hun
+    // soort als waarde door; de drie andere noemen hun soort ter plaatse.
+    expect(MAILER).toContain('verstuurSjabloonmail("uitnodiging", "uitnodiging"');
+    expect(MAILER).toContain('verstuurSjabloonmail("herinnering", "herinnering"');
+    expect(MAILER).toContain("boek(soort,");
+    for (const soort of ["toegangsmail", "aanmeldlink", "bericht"]) {
       expect(MAILER, `soort ${soort} wordt niet vastgelegd`).toContain(`boek("${soort}"`);
     }
   });
 
-  it("legt in elke verzendfunctie de drie uitgangen vast", () => {
-    // Drie uitgangen per functie (gesimuleerd, de API-weg, SMTP plus fout) maal
-    // vier functies. Zakt een uitgang weg, dan ontstaat er een stil gat in het
-    // logboek, en een gat in een logboek merkt niemand.
-    const aantal = (MAILER.match(/boek\(/g) ?? []).length;
-    expect(aantal).toBeGreaterThanOrEqual(16);
+  it("legt in elke verzendfunctie elke uitgang vast", () => {
+    // Elke verzendfunctie kent drie uitgangen: de simulatie, de weg over de
+    // HTTPS-API en de weg over SMTP. Die laatste levert zelf al zowel een
+    // geslaagde als een mislukte stand op, want het antwoord van de mailserver
+    // wordt op een enkele plaats beoordeeld. Zakt een uitgang weg, dan ontstaat
+    // er een stil gat in het logboek, en een gat in een logboek merkt niemand.
+    for (const soort of ["toegangsmail", "aanmeldlink", "bericht"]) {
+      const aantal = (MAILER.match(new RegExp(`boek\\(\\s*"${soort}"`, "g")) ?? []).length;
+      expect(aantal, `soort ${soort} legt niet elke uitgang vast`).toBe(3);
+    }
+    // De gedeelde functie voor de uitnodiging en de herinnering legt haar drie
+    // uitgangen op dezelfde manier vast, met de soort als waarde.
+    const gedeeld = (MAILER.match(/boek\(\s*soort,/g) ?? []).length;
+    expect(gedeeld, "de gedeelde verzendfunctie legt niet elke uitgang vast").toBe(3);
   });
 
   it("bewaart de persoonlijke link niet en de berichttekst niet", () => {

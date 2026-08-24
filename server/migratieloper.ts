@@ -70,6 +70,13 @@ export const REEDS_TOEGEPAST: Record<string, (db: BetterSqlite3.Database) => boo
   // dezelfde reden als bij 0006: een uitdrukkelijke registerregel is duidelijker
   // dan een migratie die stil opnieuw over de databank gaat.
   "0009_mailverzendlog": (db) => tabelBestaat(db, "mail_verzendlog"),
+  // 0010 herbouwt mail_verzendlog om de soort "herinnering" toe te laten; SQLite
+  // kan een CHECK niet wijzigen. Dat verdraagt GEEN tweede loop: hij zou de tabel
+  // afbreken en opnieuw opbouwen, en het logboek is juist bedoeld om te blijven.
+  // De toets kijkt naar de nieuwe toegestane waarde, met aanhalingstekens om
+  // dezelfde reden als bij 0005 en 0007.
+  "0010_herinnering_in_verzendlog": (db) =>
+    tabelOmschrijvingBevat(db, "mail_verzendlog", "'herinnering'"),
 };
 
 export function tabelBestaat(db: BetterSqlite3.Database, naam: string): boolean {

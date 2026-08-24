@@ -48,6 +48,12 @@ import {
   type Taal,
 } from "@shared/i18n";
 import { useUiTaal } from "@/contexts/TaalContext";
+import {
+  LEEFTIJDSBANDEN,
+  isMinderjarigInstrument,
+  toegestaneBandenVoor,
+  vereistOuderlijkeToestemming,
+} from "@shared/leeftijd";
 
 // Statuslabels per taal — gebonden aan de admin-interfacetaal.
 const STATUS_LABEL: Record<Taal, Record<string, string>> = {
@@ -140,6 +146,9 @@ export default function Admin() {
     organisatieId?: number | null;
     organisatieNaam?: string | null;
   }>({ queryKey: ["/api/admin/me"] });
+  // Staat er een verzendweg ingesteld? Zolang dat niet zo is, mag het scherm geen
+  // verzending beloven; het zegt dat dan vooraf in plaats van achteraf.
+  const { data: mailweg } = useQuery<{ ingesteld: boolean }>({ queryKey: ["/api/admin/mailweg"] });
   const isPrior = mijnProfiel?.scope === "prior";
   const eigenOrganisatieNaam = mijnProfiel?.organisatieNaam ?? null;
 
@@ -152,8 +161,18 @@ export default function Admin() {
   const [invInstrument, setInvInstrument] = useState("");
   // Afnametaal = vaste eigenschap, vastgelegd bij aanmaken van de uitnodiging.
   const [invTaal, setInvTaal] = useState<Taal>(STANDAARD_TAAL);
+  // Het adres waarnaar de uitnodiging mag vertrekken, en bij de instrumenten voor
+  // minderjarigen: wie dat adres toebehoort en in welke leeftijdsgroep de
+  // deelnemer zit. Die twee zijn daar geen extra vragen maar de voorwaarde om
+  // überhaupt een adres te mogen bewaren (AVG art. 8).
+  const [invEmail, setInvEmail] = useState("");
+  const [invOntvangerRol, setInvOntvangerRol] = useState("deelnemer");
+  const [invBand, setInvBand] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [createdLink, setCreatedLink] = useState<string | null>(null);
+  // Wat er met het bericht gebeurde bij het aanmaken: de stand zoals de server ze
+  // meldt, plus de toelichting. Het scherm beweert nooit meer dan dit.
+  const [mailUitkomst, setMailUitkomst] = useState<{ status: string; melding: string } | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Wachtwoord-wijzigen dialog
@@ -217,7 +236,10 @@ export default function Admin() {
     }
   }
 
-  async function maakUitnodiging() {
+  // Eén weg naar de server, met of zonder verzending. Het adres gaat altijd mee
+  // wanneer het ingevuld is: ook zonder verstuurwens is het nuttig, want dan kan de
+  // herinnering later wel vertrekken zonder dat iemand het adres moet opzoeken.
+  async function maakUitnodiging(verstuur: boolean) {
     setSubmitting(true);
     try {
       const res = await apiRequest("POST", "/api/uitnodigingen", {
@@ -228,10 +250,22 @@ export default function Admin() {
         organisatieId: invOrg !== "geen" ? Number(invOrg) : undefined,
         taal: invTaal,
         instrumentId: invInstrument || undefined,
+        deelnemerEmail: invEmail.trim() || undefined,
+        ontvangerRol: invEmail.trim() ? ontvangerRol : undefined,
+        leeftijdsband: invBand || undefined,
+        verstuurMail: verstuur || undefined,
+        // De server kent het publieke adres niet uit zichzelf; het bericht heeft het
+        // nodig om een link te kunnen bevatten die werkelijk opent.
+        origin: `${window.location.origin}${window.location.pathname}`,
       });
       const inv: Afname = await res.json();
       const link = deelnemerLink(inv.inviteToken!);
       setCreatedLink(link);
+      if (verstuur && inv.mailStatus) {
+        setMailUitkomst({ status: inv.mailStatus, melding: inv.mailMelding ?? "" });
+      } else {
+        setMailUitkomst(null);
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/admin/afnames"] });
       queryClient.invalidateQueries({ queryKey: ["/api/organisaties"] });
     } catch (e: any) {
@@ -246,13 +280,31 @@ export default function Admin() {
     }
   }
 
-  async function markeerHerinnerd(id: number) {
+  // De belknop. Die stond hier als "markeer herinnerd" en zette alleen een datum;
+  // nu vertrekt er werkelijk een herinnering wanneer er een adres bekend is. De
+  // melding zegt precies wat er gebeurde, ook wanneer dat "niets" is.
+  async function verstuurHerinnering(id: number) {
     try {
-      await apiRequest("POST", `/api/afnames/${id}/herinner`, {});
+      const res = await apiRequest("POST", `/api/afnames/${id}/herinner`, {
+        origin: `${window.location.origin}${window.location.pathname}`,
+      });
+      const uit: Afname = await res.json();
       queryClient.invalidateQueries({ queryKey: ["/api/admin/afnames"] });
-      toast({ title: t("admin_herinnerd"), description: t("admin_herinnerd") });
+      const gelukt = uit.mailStatus === "verstuurd";
+      toast({
+        title: t("admin_herinnering_titel"),
+        description:
+          uit.mailStatus === "geen-adres"
+            ? t("admin_herinnering_geen_adres")
+            : (uit.mailMelding ?? (gelukt ? t("admin_mail_verstuurd") : t("admin_mail_fout"))),
+        variant: gelukt ? undefined : "destructive",
+      });
     } catch (e: any) {
-      toast({ title: "—", description: String(e?.message ?? e), variant: "destructive" });
+      toast({
+        title: t("admin_herinnering_titel"),
+        description: String(e?.message ?? e),
+        variant: "destructive",
+      });
     }
   }
 
@@ -264,8 +316,27 @@ export default function Admin() {
     setInvNiveau("");
     setInvInstrument("");
     setInvTaal(STANDAARD_TAAL);
+    setInvEmail("");
+    setInvOntvangerRol("deelnemer");
+    setInvBand("");
     setCreatedLink(null);
+    setMailUitkomst(null);
   }
+
+  // Welk instrument staat er gekozen? Leeg betekent het standaardinstrument, en dat
+  // is nooit een instrument voor minderjarigen; daarom volstaat de gekozen waarde.
+  const vraagtLeeftijdsgroep = isMinderjarigInstrument(invInstrument || null);
+  const bandenVoorInstrument = toegestaneBandenVoor(invInstrument || null) ?? LEEFTIJDSBANDEN;
+  // Onder de drempel mag het adres niet van de jongere zelf zijn. Het scherm zegt
+  // dat vooraf; de server houdt dezelfde regel aan en is de echte grendel.
+  const moetNaarVerantwoordelijke =
+    vraagtLeeftijdsgroep && !!invBand && vereistOuderlijkeToestemming(invInstrument || null, invBand as any);
+  // Wie "de deelnemer zelf" koos en daarna een leeftijdsgroep onder de drempel
+  // aanwijst, staat met een keuze die niet meer mag. Dan schuift het scherm naar
+  // "ouder" in plaats van een leeg keuzeveld te tonen; de beheerder kan nog altijd
+  // voogd of begeleider kiezen.
+  const ontvangerRol =
+    moetNaarVerantwoordelijke && invOntvangerRol === "deelnemer" ? "ouder" : invOntvangerRol;
 
   // Enkel de prior kiest vrij een afnemer. Een organisatiebeheerder heeft maar
   // een mogelijke keuze en de server legt die toch al op; een dropdown met een
@@ -573,6 +644,28 @@ export default function Admin() {
                               {t("admin_herinnerd")}
                             </span>
                           )}
+                          {/* De stand van het bericht. Staat er niets, dan vertrok er
+                              nooit een bericht, en dat zegt het scherm ook zo. */}
+                          {isInvite && (
+                            <span
+                              className={
+                                a.mailStand === "verstuurd"
+                                  ? "ml-1.5 text-xs text-emerald-600 dark:text-emerald-400"
+                                  : a.mailStand
+                                    ? "ml-1.5 text-xs text-amber-600 dark:text-amber-400"
+                                    : "ml-1.5 text-xs text-muted-foreground"
+                              }
+                              data-testid={`text-mailstand-${a.id}`}
+                            >
+                              {a.mailStand === "verstuurd"
+                                ? t("admin_mail_verstuurd")
+                                : a.mailStand === "gesimuleerd"
+                                  ? t("admin_mail_gesimuleerd")
+                                  : a.mailStand === "fout"
+                                    ? t("admin_mail_fout")
+                                    : t("admin_mail_niets")}
+                            </span>
+                          )}
                         </TableCell>
                         <TableCell className="hidden sm:table-cell">
                           <span className="text-xs font-medium uppercase text-muted-foreground" data-testid={`text-taal-${a.id}`}>
@@ -598,9 +691,16 @@ export default function Admin() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => markeerHerinnerd(a.id)}
+                                  onClick={() => verstuurHerinnering(a.id)}
                                   data-testid={`button-remind-${a.id}`}
-                                  title={t("admin_herinnerd")}
+                                  disabled={a.heeftMailadres === false || mailweg?.ingesteld === false}
+                                  title={
+                                    a.heeftMailadres === false
+                                      ? t("admin_herinnering_geen_adres")
+                                      : mailweg?.ingesteld === false
+                                        ? t("admin_mail_geen_weg")
+                                        : t("admin_herinnering_titel")
+                                  }
                                 >
                                   <Bell className="h-4 w-4" />
                                 </Button>
@@ -685,6 +785,68 @@ export default function Admin() {
                 </Select>
                 <p className="text-xs text-muted-foreground">{t("admin_veld_taal_hint")}</p>
               </div>
+              {/* Leeftijdsgroep: alleen bij de instrumenten voor minderjarigen, en
+                  daar staat ze vóór het adres, want ze bepaalt naar wie het mag. */}
+              {vraagtLeeftijdsgroep && (
+                <div className="space-y-2">
+                  <Label>{t("admin_veld_leeftijdsband")}</Label>
+                  <Select value={invBand || "geen"} onValueChange={(v) => setInvBand(v === "geen" ? "" : v)}>
+                    <SelectTrigger data-testid="select-invite-leeftijdsband">
+                      <SelectValue placeholder={t("veld_kies_placeholder")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="geen">{t("veld_kies_placeholder")}</SelectItem>
+                      {bandenVoorInstrument.map((b) => (
+                        <SelectItem key={b} value={b} data-testid={`option-invite-band-${b}`}>{b}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">{t("admin_leeftijdsband_hint")}</p>
+                </div>
+              )}
+              {/* Het adres. Blijft leeg mogelijk: dan wordt er enkel een link
+                  aangemaakt, precies zoals dit scherm het altijd deed. */}
+              <div className="space-y-2">
+                <Label htmlFor="inv-email">{t("admin_veld_mail")}</Label>
+                <Input
+                  id="inv-email"
+                  type="email"
+                  autoComplete="off"
+                  value={invEmail}
+                  onChange={(e) => setInvEmail(e.target.value)}
+                  placeholder={t("admin_veld_mail_ph")}
+                  data-testid="input-invite-email"
+                />
+                <p className="text-xs text-muted-foreground">{t("admin_veld_mail_hint")}</p>
+              </div>
+              {invEmail.trim() !== "" && (
+                <div className="space-y-2">
+                  <Label>{t("admin_veld_ontvanger")}</Label>
+                  <Select value={ontvangerRol} onValueChange={setInvOntvangerRol}>
+                    <SelectTrigger data-testid="select-invite-ontvanger"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {!moetNaarVerantwoordelijke && (
+                        <SelectItem value="deelnemer">{t("admin_ontvanger_deelnemer")}</SelectItem>
+                      )}
+                      <SelectItem value="ouder">{t("admin_ontvanger_ouder")}</SelectItem>
+                      <SelectItem value="voogd">{t("admin_ontvanger_voogd")}</SelectItem>
+                      <SelectItem value="begeleider">{t("admin_ontvanger_begeleider")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {moetNaarVerantwoordelijke && (
+                    <p className="text-xs text-muted-foreground" data-testid="text-invite-verantwoordelijke">
+                      {t("admin_mail_naar_verantwoordelijke")}
+                    </p>
+                  )}
+                </div>
+              )}
+              {/* Geen verzendweg ingesteld: dat hoort de beheerder te weten vóór hij
+                  op versturen duwt, niet erna. */}
+              {mailweg?.ingesteld === false && (
+                <p className="rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-700 dark:text-amber-400" data-testid="text-mailweg-waarschuwing">
+                  {t("admin_mail_geen_weg")}
+                </p>
+              )}
               {openOrganisaties && (
                 <div className="space-y-2">
                   <Label>{t("admin_veld_afnemer")}</Label>
@@ -710,6 +872,28 @@ export default function Admin() {
               <div className="flex items-center gap-2 text-sm font-medium text-accent">
                 <Check className="h-4 w-4" /> {t("admin_link_aangemaakt")}
               </div>
+              {/* De stand van het bericht, in de woorden van de server. Bij een
+                  gesimuleerde of mislukte verzending blijft de link eronder de weg
+                  naar binnen, dus er gaat niets verloren. */}
+              {mailUitkomst && (
+                <div
+                  className={
+                    mailUitkomst.status === "verstuurd"
+                      ? "rounded-md border border-accent/30 bg-accent/10 p-2 text-xs text-foreground"
+                      : "rounded-md border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-700 dark:text-amber-400"
+                  }
+                  data-testid="text-invite-mailstand"
+                >
+                  <span className="font-medium">
+                    {mailUitkomst.status === "verstuurd"
+                      ? t("admin_mail_verstuurd")
+                      : mailUitkomst.status === "gesimuleerd"
+                        ? t("admin_mail_gesimuleerd")
+                        : t("admin_mail_fout")}
+                  </span>
+                  {mailUitkomst.melding ? <span> {mailUitkomst.melding}</span> : null}
+                </div>
+              )}
               <p className="text-sm text-muted-foreground">{t("admin_link_kopieer_hint")}</p>
               <div className="flex items-center gap-2 rounded-md border border-border bg-muted/40 p-2">
                 <code className="flex-1 truncate text-xs text-foreground" data-testid="text-created-link">{createdLink}</code>
@@ -728,10 +912,31 @@ export default function Admin() {
 
           <DialogFooter>
             {!createdLink ? (
-              <Button onClick={maakUitnodiging} disabled={submitting} data-testid="button-create-invite">
-                <Send className="mr-1.5 h-4 w-4" />
-                {submitting ? t("admin_knop_bezig") : t("admin_knop_link_aanmaken")}
-              </Button>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                {/* De oude weg blijft bestaan en blijft volwaardig: een link
+                    aanmaken en die zelf doorgeven. */}
+                <Button
+                  variant="outline"
+                  onClick={() => maakUitnodiging(false)}
+                  disabled={submitting}
+                  data-testid="button-create-invite"
+                >
+                  {submitting ? t("admin_knop_bezig") : t("admin_knop_alleen_link")}
+                </Button>
+                <Button
+                  onClick={() => maakUitnodiging(true)}
+                  disabled={
+                    submitting ||
+                    invEmail.trim() === "" ||
+                    (vraagtLeeftijdsgroep && !invBand) ||
+                    mailweg?.ingesteld === false
+                  }
+                  data-testid="button-create-and-send-invite"
+                >
+                  <Send className="mr-1.5 h-4 w-4" />
+                  {submitting ? t("admin_knop_bezig") : t("admin_knop_aanmaken_versturen")}
+                </Button>
+              </div>
             ) : (
               <div className="flex gap-2">
                 <Button variant="outline" onClick={resetDialog} data-testid="button-another-invite">

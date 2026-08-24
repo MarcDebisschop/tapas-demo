@@ -1,9 +1,26 @@
 # TaPasCity Platform — Versie-overzicht
 
-## Huidige versie: v2.7.0 — Publiek coach-register: foto's B&W + Rembrandt-galerij + contactformulier
+## Huidige versie: v2.7.1 - T4Students: constructdefinitie Try Hard en eerlijke rangorde
 
-**Datum:** 2 juli 2026  
+**Datum:** 23 augustus 2026  
 **pplx.app URL:** https://tapas-platform-2.pplx.app/
+
+### Wat is nieuw in v2.7.1
+
+- De driver Try Hard volgt in het T4Students Studiekompas de constructdefinitie
+  van de opdrachtgever: iets uitzonderlijks willen doen voor iemand naar wie de
+  deelnemer opkijkt, die hem inspireert en van wie hij weet dat die in hem
+  gelooft. Herkenningsitem, korte omschrijving en duidingstekst zijn alle drie
+  aangepast, in het Nederlands, Frans en Engels.
+- Het rapport is eerlijk gemaakt over de basis onder zijn rangordes: waar een
+  construct op een enkel herkenningsitem rust, wordt de rangorde niet langer als
+  een uitspraak over de student gepresenteerd.
+
+De volledige beschrijving staat in [CHANGELOG.md](CHANGELOG.md) onder 2.7.1.
+
+## Vorige versie: v2.7.0 - Publiek coach-register: foto's B&W + Rembrandt-galerij + contactformulier
+
+**Datum:** 2 juli 2026
 
 ### Wat is nieuw in v2.7.0 (Strikte Werkregels toegepast)
 

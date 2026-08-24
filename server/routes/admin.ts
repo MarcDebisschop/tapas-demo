@@ -24,6 +24,7 @@ import { vereisScope, scopeVanVerzoek, bepaalScope } from "../scope-guard";
 import { schrijfAuditLog } from "../audit-log";
 import { alleInstrumenten } from "../registry";
 import { isDemoModus } from "../demomodus";
+import { isSimulatiemodus } from "../bulk-import/mailer";
 import {
   parseOrganisatieId,
   filterAfnames,
@@ -181,6 +182,14 @@ export function registerAdminRoutes(app: Express): void {
         inviteToken: a.inviteToken,
         uitgenodigdAt: a.uitgenodigdAt,
         herinnerdAt: a.herinnerdAt,
+        // De stand van de uitnodigingsmail, zodat het overzicht kan tonen of er
+        // werkelijk een bericht vertrok en naar wat voor ontvanger. Het adres zelf
+        // gaat niet mee: het overzicht heeft het niet nodig en een lijst met
+        // adressen van kinderen hoort niet in een overzichtsscherm.
+        mailStand: a.mailStand ?? null,
+        mailStandAt: a.mailStandAt ?? null,
+        mailOntvangerRol: a.mailOntvangerRol ?? null,
+        heeftMailadres: !!(a.ouderEmail || a.deelnemerEmail),
         instrumentId: a.instrumentId ?? null,
         instrumentLabel: a.instrumentId
           ? (labels.get(a.instrumentId) ?? a.instrumentId)
@@ -189,6 +198,15 @@ export function registerAdminRoutes(app: Express): void {
         organisatieNaam: a.organisatieId ? (orgNamen.get(a.organisatieId) ?? null) : null,
       })),
     );
+  });
+
+  // --- Admin: staat er een verzendweg voor e-mail ingesteld? ---------------
+  //
+  // Het uitnodigingsscherm mag geen verzending beloven die niet kan vertrekken.
+  // Deze route zegt enkel of er een weg is, niet welke en met welke sleutel: dat
+  // hoort niet in een antwoord aan de browser.
+  app.get("/api/admin/mailweg", vereisAdmin, (_req, res) => {
+    res.json({ ingesteld: !isSimulatiemodus() });
   });
 
   // --- Admin: volledig profiel + generator-JSON van één afname ---

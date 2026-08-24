@@ -111,6 +111,19 @@ export const afnames = sqliteTable("afnames", {
   // Bron-IP en user-agent van de ouder op het moment van toestemming (bewijs).
   ouderlijkeToestemmingIp: text("ouderlijke_toestemming_ip"),
   ouderlijkeToestemmingUserAgent: text("ouderlijke_toestemming_user_agent"),
+  // --- Wat er met de uitnodigingsmail gebeurde ------------------------------
+  // Het beheeroverzicht toonde tot nu alleen dat een uitnodiging bestond, niet of
+  // er ook een bericht vertrok. Deze drie velden houden dat bij op de afname
+  // zelf, zodat de stand naast de rij staat waar een beheerder kijkt. Het
+  // blijvende logboek in mail_verzendlog blijft de volledige geschiedenis; dit is
+  // de laatste stand.
+  //
+  // mailOntvangerRol legt vast naar wie het bericht ging: de deelnemer zelf, of
+  // een ouder, voogd of begeleider. Bij T4Kids en T4Teens is dat geen detail maar
+  // de verantwoording van de keuze (AVG art. 8); zie shared/uitnodigingsontvanger.ts.
+  mailOntvangerRol: text("mail_ontvanger_rol"),
+  mailStand: text("mail_stand"),
+  mailStandAt: text("mail_stand_at"),
   // --- Verzender (organisatie-scoping fase 6) ------------------------------
   // WIE heeft deze afname aangemaakt, naast de vraag wiens credit ze kost
   // (`organisatieId`). Die twee lopen uiteen: de prior kan een afname aanmaken
@@ -181,6 +194,19 @@ export const inviteAfnameSchema = z.object({
   // Instrument-routing: koppelt de uitnodiging aan een specifiek instrument
   // (bijv. "t4teens", "t4students", "t4kids"). Zonder waarde -> standaard T4P-pad.
   instrumentId: z.string().optional(),
+  // --- De uitnodiging per e-mail versturen ---------------------------------
+  // Tot nu kon een beheerder alleen een link aanmaken en die zelf in een bericht
+  // zetten. Deze vier velden laten het platform de uitnodiging zelf versturen,
+  // langs dezelfde weg als de bulk-import. Alle vier zijn optioneel, dus een
+  // aanroep zonder deze velden gedraagt zich precies zoals voorheen.
+  //
+  // Wie het bericht mag ontvangen wordt niet hier bepaald maar in
+  // shared/uitnodigingsontvanger.ts, samen met de leeftijdsregels van AVG art. 8
+  // voor T4Kids en T4Teens. De route dwingt die regel af.
+  deelnemerEmail: z.string().trim().max(160).optional(),
+  ontvangerRol: z.enum(["deelnemer", "ouder", "voogd", "begeleider"]).optional(),
+  leeftijdsband: z.enum(LEEFTIJDSBANDEN).optional(),
+  verstuurMail: z.boolean().optional(),
 });
 export type InviteAfname = z.infer<typeof inviteAfnameSchema>;
 
@@ -1133,8 +1159,13 @@ export const mailVerzendlog = sqliteTable("mail_verzendlog", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   /** ISO-tijdstip van de poging. */
   tijdstip: text("tijdstip").notNull(),
+  // "herinnering" kwam er bij toen de belknop in het beheeroverzicht werkelijk
+  // een herinnering ging versturen in plaats van enkel een datum te zetten
+  // (migratie 0010). Een herinnering is bewust een eigen soort: anders was in het
+  // logboek niet te zien of iemand een eerste uitnodiging of een tweede bericht
+  // kreeg, en dat is precies wat je wil weten bij een klacht.
   soort: text("soort", {
-    enum: ["uitnodiging", "toegangsmail", "aanmeldlink", "bericht"],
+    enum: ["uitnodiging", "herinnering", "toegangsmail", "aanmeldlink", "bericht"],
   }).notNull(),
   ontvanger: text("ontvanger").notNull(),
   afzender: text("afzender").notNull(),
