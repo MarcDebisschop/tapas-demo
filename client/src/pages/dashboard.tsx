@@ -3,6 +3,7 @@ import { useScrollReveal } from "@/hooks/use-scroll-reveal";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { verkleinAfbeeldingNaarDataUrl } from "@/lib/afbeelding";
 import UitlegPaneel from "@/components/UitlegPaneel";
 import BibliotheekPaneel from "@/components/BibliotheekPaneel";
 import DashboardLeerpad from "@/components/DashboardLeerpad";
@@ -346,6 +347,7 @@ export default function Dashboard() {
   const [, navigate] = useLocation();
   const fileRef = useRef<HTMLInputElement>(null);
   const [quoteIdx, setQuoteIdx] = useState(0);
+  const [fotoFout, setFotoFout] = useState<string | null>(null);
   // Reflectie vanuit een leesmodule wordt hiermee in het chat-invoerveld gezet.
   const [chatPrefill, setChatPrefill] = useState<ChatPrefill | null>(null);
   const chatRef = useRef<HTMLDivElement>(null);
@@ -399,12 +401,19 @@ export default function Dashboard() {
     [gradient.van, gradient.naar],
   );
 
-  function onFoto(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => update.mutate({ fotoUrl: String(reader.result) });
-    reader.readAsDataURL(file);
+  // De foto wordt in de browser verkleind voordat ze verstuurd wordt. Een rauwe
+  // gsm-foto is enkele megabytes; verkleind blijft ze onder de honderd
+  // kilobyte, wat zowel het bericht als de databank spaart.
+  async function onFoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const bestand = e.target.files?.[0];
+    if (!bestand) return;
+    setFotoFout(null);
+    try {
+      const dataUrl = await verkleinAfbeeldingNaarDataUrl(bestand);
+      update.mutate({ fotoUrl: dataUrl });
+    } catch (err: any) {
+      setFotoFout(String(err?.message ?? "Kon de foto niet verwerken."));
+    }
   }
 
   if (isLoading) {
@@ -538,6 +547,14 @@ export default function Dashboard() {
                 <Camera className="h-4 w-4" />
               </button>
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFoto} data-testid="input-foto" />
+              {fotoFout && (
+                <p
+                  className="absolute left-0 top-full mt-2 w-56 text-xs text-amber-100"
+                  data-testid="text-foto-fout"
+                >
+                  {fotoFout}
+                </p>
+              )}
             </div>
 
             <div className="min-w-0 flex-1">

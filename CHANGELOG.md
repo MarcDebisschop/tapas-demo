@@ -54,6 +54,22 @@ beschreven omdat weten beter is dan vermoeden.
 
 ## [Niet vrijgegeven]
 
+### Herstel
+
+- Een bestand uploaden faalde met 413 Payload Too Large. Drie wegen sturen een
+  bestand als base64 in het JSON-bericht, terwijl de server dat bericht nog las
+  met de standaardgrens van Express van 100 kB: het kandidaatrapport bij
+  T4Recruitment (ongeveer 1,3 MB), en de twee wegen van de bulk-import. Nieuw
+  `server/bodygrens.ts` geeft enkel die wegen een ruime grens van 12 MB en zet
+  de rest op een bescheiden 1 MB. De grens voor het hele platform verhogen zou
+  ook de aanmeldweg berichten van vele megabytes laten aannemen, en dat is
+  aanvalsoppervlak dat niemand nodig heeft.
+- De dashboardfoto ging onverkleind naar de server. Een gsm-foto van enkele
+  megabytes kwam daardoor niet door, en zou anders als data-URL in de databank
+  belanden. De browser verkleint nu eerst tot 512 pixels
+  (`client/src/lib/afbeelding.ts`), zoals de coachpagina al deed, en toont een
+  melding wanneer dat niet lukt in plaats van stil te falen.
+
 ### Toegevoegd
 
 - Uitnodigen kan nu zelf een bericht versturen. Het uitnodigingsvenster heeft een
