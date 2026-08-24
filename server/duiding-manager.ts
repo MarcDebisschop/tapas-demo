@@ -514,6 +514,21 @@ interface DuidingInstrumentDef {
   ankers: Record<string, Record<Taal, string>>;
   dimensies: { dimensie: string; familie: string }[];
   label: string;
+  /**
+   * Hangt dit AI-duidingpad werkelijk in de rapportketen van het instrument?
+   *
+   * T4P: NEE. De verrijking werkt op de generieke RapportInhoud-structuur en de
+   * guard in storage.genereerRapport eist daarom dat het instrument GEEN eigen
+   * rapportgenerator heeft. T4P heeft er sinds de kompaslayout wel een, dus die
+   * voorwaarde is voor T4P altijd onwaar en er wordt niets verrijkt. Dat hier
+   * benoemen is eerlijker dan een beheerscherm dat regie belooft die er niet is.
+   *
+   * T4Sports: JA. Dat pad plakt een extra sectie ná de statische HTML en wordt
+   * rechtstreeks vanuit de T4Sports-routes aangeroepen.
+   */
+  inRapportketen: boolean;
+  /** Wat een beheerder moet weten voor hij hier iets verandert. */
+  toelichting: string;
 }
 const DUIDING_INSTRUMENTEN: Record<string, DuidingInstrumentDef> = {
   [DUIDING_INSTRUMENT]: {
@@ -521,12 +536,18 @@ const DUIDING_INSTRUMENTEN: Record<string, DuidingInstrumentDef> = {
     ankers: CONCEPT_ANKERS,
     dimensies: ANKER_DIMENSIES,
     label: "T4P Business Kompas",
+    inRapportketen: false,
+    toelichting:
+      "Deze laag hangt niet in de rapportketen van het Business Kompas. Het Kompas heeft een eigen rapportgenerator, en het AI-duidingpad werkt enkel op de generieke rapportstructuur. Wat u hier bewaart, verandert vandaag dus niets aan een T4P-rapport. Voor de vaste woordkeuze in het Kompas is er tekstbeheer.",
   },
   [T4SPORTS_INSTRUMENT]: {
     regie: CONCEPT_REGIE_PROMPT_T4SPORTS,
     ankers: CONCEPT_ANKERS_T4SPORTS,
     dimensies: ANKER_DIMENSIES_T4SPORTS,
     label: "T4Sports",
+    inRapportketen: true,
+    toelichting:
+      "Deze laag hangt in de rapportketen van T4Sports: staat de schakelaar aan en is er een API-sleutel, dan komt er een extra duidingssectie ná de statische inhoud. Cijfers, tabellen en grafieken blijven ongemoeid.",
   },
 };
 
@@ -544,9 +565,20 @@ function scopeVoor(base: string, instrument: string): string {
   return inst === DUIDING_INSTRUMENT ? base : `${base}:${inst}`;
 }
 
-// Lijst van beheerbare instrumenten (voor de admin-UI).
-export function getDuidingInstrumenten(): { id: string; label: string }[] {
-  return Object.entries(DUIDING_INSTRUMENTEN).map(([id, def]) => ({ id, label: def.label }));
+// Lijst van beheerbare instrumenten (voor de admin-UI). Draagt bewust mee of het
+// pad werkelijk in de rapportketen hangt, zodat het scherm geen regie voorwendt.
+export function getDuidingInstrumenten(): {
+  id: string;
+  label: string;
+  inRapportketen: boolean;
+  toelichting: string;
+}[] {
+  return Object.entries(DUIDING_INSTRUMENTEN).map(([id, def]) => ({
+    id,
+    label: def.label,
+    inRapportketen: def.inRapportketen,
+    toelichting: def.toelichting,
+  }));
 }
 
 const REGIE_SCOPE = "regie-prompt";
@@ -564,7 +596,8 @@ function normTaal(x: unknown): Taal {
 // ─── SQLite voor overschrijvingen (lazy init — spiegel van question-manager.ts) ─
 
 function getSqlite() {
-  return (db as any)._db ?? (storage as any).sqlite ?? null;
+  // Drizzle houdt de sqlite-verbinding onder $client; oudere versies onder _db.
+  return (db as any).$client ?? (db as any)._db ?? (storage as any).sqlite ?? null;
 }
 
 function ensureDuidingTable() {
@@ -1072,6 +1105,8 @@ export function buildDuidingManagerRoutes(app: any) {
       taal,
       instrument: inst,
       liveDuidingAan: isLiveDuidingAan(inst),
+      inRapportketen: DUIDING_INSTRUMENTEN[inst].inRapportketen,
+      toelichting: DUIDING_INSTRUMENTEN[inst].toelichting,
       regiePrompt: {
         tekst: regieOverride ?? DUIDING_INSTRUMENTEN[inst].regie[taal],
         heeftOverride: regieOverride != null,

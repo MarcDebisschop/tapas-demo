@@ -44,6 +44,9 @@
 
 import duidingsBestand from "../data/t4students-duidingsteksten.json";
 import omschrijvingenBestand from "../data/t4students-omschrijvingen.json";
+// Beheerbare stand van dezelfde teksten (prior-beheer, met audit-historiek).
+// Zonder beheerde stand geldt het JSON-bestand hierboven.
+import { tekstVan, SLEUTEL } from "../duidingstekst-register";
 import type { T4SInstrument, T4SItem, T4SVertaalbaar } from "./instrument";
 import type { T4SAntwoorden, T4SResultaat } from "./kompas-scoring";
 import { itemIndex, voedingPerConstruct, type T4SVoeding } from "./voeding";
@@ -304,10 +307,21 @@ interface DuidingsBestand {
 }
 const DUIDING = duidingsBestand as DuidingsBestand;
 
-/** De tekst van de opdrachtgever bij een construct, of leeg als die er niet is. */
+/** Instrument-id in het tekstregister. */
+const T4S_TEKST_ID = "t4students";
+
+/**
+ * De tekst van de opdrachtgever bij een construct, of leeg als die er niet is.
+ *
+ * De tekst is beheerbaar: staat er een beheerde stand in het tekstregister, dan
+ * geldt die, anders het JSON-tekstbestand. Er wordt nooit iets bijverzonnen en
+ * de tekst blijft deterministisch, dus twee gelijke profielen lezen dezelfde
+ * duiding.
+ */
 export function duidingVan(construct: string): string {
   const d = DUIDING.constructen[construct];
-  return d ? d.tekst : "";
+  if (!d) return "";
+  return tekstVan(T4S_TEKST_ID, SLEUTEL.t4sDuiding(construct)) || d.tekst;
 }
 
 // ── Gewone omschrijving naast elke constructnaam (onderdeel C) ─────────────
@@ -335,7 +349,9 @@ const OMSCHRIJVING = omschrijvingenBestand as OmschrijvingenBestand;
  * een construct dat niet in de tabel voorkomt), in plaats van iets te gokken.
  */
 export function omschrijvingVan(construct: string): string {
-  return OMSCHRIJVING.constructen[construct] ?? "";
+  const bron = OMSCHRIJVING.constructen[construct] ?? "";
+  if (!bron) return "";
+  return tekstVan(T4S_TEKST_ID, SLEUTEL.t4sOmschrijving(construct)) || bron;
 }
 
 // ── Wat een construct voedt ──────────────────────────────────────────

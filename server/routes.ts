@@ -4,6 +4,7 @@ import type { Server } from "node:http";
 import { db, storage } from "./storage";
 import { buildQuestionManagerRoutes } from "./question-manager";
 import { buildDuidingManagerRoutes } from "./duiding-manager";
+import { buildTekstbeheerRoutes } from "./tekstbeheer-routes";
 import { buildGidsManagerRoutes } from "./gids-manager";
 import { registerGidsPdfRoutes } from "./gids/routes";
 import { registerCoachesAcademyMailRoutes } from "./routes-coaches-academy-mail";
@@ -158,6 +159,13 @@ export async function registerRoutes(
   // Nieuwe module (Regel 2): eigen bestand, raakt geen bestaand rapportpad aan.
   // -------------------------------------------------------------------------
   buildDuidingManagerRoutes(app);
+
+  // -------------------------------------------------------------------------
+  // Tekstbeheer — prior-beheerder verfijnt de VASTE duidingsteksten van een
+  // instrument (deterministisch, met audit-historiek en herstel naar de bron).
+  // Nieuwe module (Regel 2): eigen bestand, raakt geen rekenlaag aan.
+  // -------------------------------------------------------------------------
+  buildTekstbeheerRoutes(app);
 
   // -------------------------------------------------------------------------
   // Instrument-beschikbaarheid — prior-beheerder geeft instrumenten vrij

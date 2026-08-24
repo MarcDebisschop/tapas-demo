@@ -172,21 +172,36 @@ export interface DoorgifteRegel {
   instrumentId: string;
   label: string;
   liveDuidingAan: boolean;
+  /** Hangt het AI-duidingpad werkelijk in de rapportketen van dit instrument? */
+  inRapportketen: boolean;
+  /** Alleen waar wanneer de vlag aan staat EN het pad in de keten hangt. */
+  doorgifteMogelijk: boolean;
   ontvanger: string;
   land: string;
   grondslagVereist: string;
 }
 
+/**
+ * Bouwt het register. Een instrument waarvan de vlag aan staat maar waarvan het
+ * AI-pad niet in de rapportketen hangt, geeft geen data door. Dat verschil hoort
+ * in het register te staan: anders meldt het een doorgifte die niet gebeurt.
+ */
 export function bouwDoorgifteRegister(
-  instrumenten: Array<{ id: string; label: string }>,
+  instrumenten: Array<{ id: string; label: string; inRapportketen?: boolean }>,
   vlagAan: (instrumentId: string) => boolean,
 ): DoorgifteRegel[] {
-  return instrumenten.map((i) => ({
-    instrumentId: i.id,
-    label: i.label,
-    liveDuidingAan: vlagAan(i.id),
-    ontvanger: "Google (Gemini API)",
-    land: "buiten de EER",
-    grondslagVereist: "DPA met Google + doorgiftetoets (AVG art. 44 e.v.)",
-  }));
+  return instrumenten.map((i) => {
+    const aan = vlagAan(i.id);
+    const inKeten = i.inRapportketen !== false;
+    return {
+      instrumentId: i.id,
+      label: i.label,
+      liveDuidingAan: aan,
+      inRapportketen: inKeten,
+      doorgifteMogelijk: aan && inKeten,
+      ontvanger: "Google (Gemini API)",
+      land: "buiten de EER",
+      grondslagVereist: "DPA met Google + doorgiftetoets (AVG art. 44 e.v.)",
+    };
+  });
 }

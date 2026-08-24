@@ -19,6 +19,12 @@ import {
   INVULLING_NAAM_WOORDEN,
   INVULLING_GEEN_BETROUWBAARHEID,
 } from "../../shared/invulling-index";
+// De vaste woordkeuze per construct staat als tekstbron apart (kompas-teksten)
+// en kan door een prior-beheerder verfijnd worden zonder uitrol. Het register
+// geeft de brontekst terug zolang er geen beheerde stand is, dus het rapport
+// blijft deterministisch: dezelfde stand geeft dezelfde tekst.
+import { KERN_STANDAARD, KORT_STANDAARD, EH_STANDAARD } from "./kompas-teksten";
+import { tekstVan, SLEUTEL } from "../duidingstekst-register";
 
 export interface KompasDeelnemer {
   naam: string;
@@ -143,70 +149,27 @@ function rangorde(a: Rij, b: Rij): number {
 
 // ------------------------------------------------------------- vaste constanten
 
-/** Kernwoord per construct — instrumentkennis, geen persoonsgegeven. */
-const KERN: Record<string, string> = {
-  "Be Perfect": "kwaliteit en correctheid",
-  "Try Hard": "mobiliserende ambitie",
-  "Please Others": "relationele aanpassing",
-  "Be Strong": "emotionele afstand en zelfdragen",
-  "Hurry Up": "snelheid en gejaagdheid",
-  Innovatie: "vernieuwing en nieuwe wegen",
-  "Inter-relationeel": "mensgevoeligheid en afstemming",
-  Operationeel: "processen bruikbaar maken",
-  Strategie: "klassiek strategisch positioneren",
-  "TaPas-Beeld": "identiteit, waarden en betekenis",
-  Analyse: "doorgronden en ontwarren",
-  Coaching: "mensen begeleiden en ontsluiten",
-  Impact: "mensen in beweging brengen",
-  "Constructief onderscheidend": "het verschilmakende beeld vormen",
-  Faciliteren: "groepsafstemming ondersteunen",
-  Resultaatgericht: "een concreet resultaatbeeld vormen",
-};
+const T4P_TEKST_ID = "t4p-business-kompas";
 
-/** Eén woord per construct, voor opsommingen in doorlopende tekst. */
-const KORT: Record<string, string> = {
-  "Be Perfect": "kwaliteit",
-  "Try Hard": "ambitie",
-  "Please Others": "aanpassing",
-  "Be Strong": "zelfdragen",
-  "Hurry Up": "snelheid",
-  Innovatie: "vernieuwing",
-  "Inter-relationeel": "afstemming",
-  Operationeel: "uitvoering",
-  Strategie: "positionering",
-  "TaPas-Beeld": "betekenis",
-  Analyse: "analyse",
-  Coaching: "coaching",
-  Impact: "invloed",
-  "Constructief onderscheidend": "onderscheid",
-  Faciliteren: "facilitering",
-  Resultaatgericht: "resultaat",
-};
+/** Kernwoord per construct: beheerde stand, anders de brontekst. */
+export function kernVan(construct: string): string {
+  return tekstVan(T4P_TEKST_ID, SLEUTEL.t4pKern(construct)) || construct.toLowerCase();
+}
 
-/** E/H-oriëntatie per construct, met de duiding uit de vormspecificatie. */
-const EH: Record<string, { code: string; duiding: string }> = {
-  Innovatie: {
-    code: "E+H",
-    duiding:
-      "Vernieuwt zowel inhoudelijk als verbindend — ideeën waar anderen door geïnspireerd raken.",
-  },
-  "Inter-relationeel": {
-    code: "H",
-    duiding: "Volledig mensgericht: aanvoelen wanneer iemand zich niet goed voelt.",
-  },
-  Operationeel: {
-    code: "E",
-    duiding:
-      "Vooral functioneel: complexe processen vertalen naar bruikbare hulpmiddelen.",
-  },
-  Strategie: { code: "E", duiding: "Het klassiek-functionele wordt niet spontaan gekozen." },
-  Analyse: { code: "E+H", duiding: "Doorgrondt zowel inhoud als mensen." },
-  Coaching: { code: "H", duiding: "Mensgericht: aanvoelen en begeleiden." },
-  Impact: { code: "H", duiding: "Verbindend: mensen in beweging krijgen." },
-  "Constructief onderscheidend": { code: "E", duiding: "Functioneel; niet als kernpad." },
-  Faciliteren: { code: "E", duiding: "Eerder functioneel dan mensgericht." },
-  Resultaatgericht: { code: "E", duiding: "Functioneel-resultaatmatig." },
-};
+/** Kort woord per construct: beheerde stand, anders de brontekst. */
+export function kortVan(construct: string): string {
+  return tekstVan(T4P_TEKST_ID, SLEUTEL.t4pKort(construct)) || construct.toLowerCase();
+}
+
+/** E/H-code en duiding per construct, of null wanneer het construct er geen heeft. */
+function ehVan(construct: string): { code: string; duiding: string } | null {
+  const def = EH_STANDAARD[construct];
+  if (!def) return null;
+  return {
+    code: def.code,
+    duiding: tekstVan(T4P_TEKST_ID, SLEUTEL.t4pEh(construct)) || def.duiding,
+  };
+}
 
 /** Kolombreedtes in pt, letterlijk uit de vormspecificatie (som ≈ 491,3pt). */
 const BREEDTE = {
@@ -289,7 +252,7 @@ function energieKwalificatie(gem: number): string {
 
 /** Lezing in de constructtabellen van 05/07/09 — afgeleid, geen sjabloontekst. */
 function tabelLezing(r: Rij, positie: number): string {
-  const kern = KERN[r.construct] ?? r.construct.toLowerCase();
+  const kern = kernVan(r.construct);
   const st = statusVanEnergie(r.avgEnergy);
   // Kort houden: de lezingkolom is 146,5–188,4pt breed, dus ±44 tekens per regel.
   const energiedeel =
@@ -482,9 +445,9 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
   const tweedeVersneller = versnellers[1];
 
   const kern = (r: Rij | undefined): string =>
-    r ? KERN[r.construct] ?? r.construct.toLowerCase() : "";
+    r ? kernVan(r.construct) : "";
   const kortWoord = (r: Rij | undefined): string =>
-    r ? KORT[r.construct] ?? r.construct.toLowerCase() : "";
+    r ? kortVan(r.construct) : "";
 
   const secties: any[] = [];
 
@@ -981,8 +944,11 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
   const orientatiestrip = (rijen: Rij[]) => ({
     type: "orientatiestrip",
     rijen: rijen
-      .filter((r) => EH[r.construct])
-      .map((r) => [r.construct, EH[r.construct].code, EH[r.construct].duiding]),
+      .filter((r) => ehVan(r.construct) != null)
+      .map((r) => {
+        const eh = ehVan(r.construct)!;
+        return [r.construct, eh.code, eh.duiding];
+      }),
   });
 
   secties.push({
@@ -1792,10 +1758,10 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
             variant: "",
             tekst: (() => {
               const mens = [...foci, ...versnellers].filter(
-                (r) => EH[r.construct] && EH[r.construct].code.includes("H") && r.net > 0
+                (r) => (ehVan(r.construct)?.code ?? "").includes("H") && r.net > 0
               );
               const functioneel = [...foci, ...versnellers].filter(
-                (r) => EH[r.construct] && EH[r.construct].code === "E" && r.net > 0
+                (r) => ehVan(r.construct)?.code === "E" && r.net > 0
               );
               return (
                 "<i>Interpretatie.</i> Leest u de aandachtsgebieden en versnellers op hun " +

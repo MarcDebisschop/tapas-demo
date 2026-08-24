@@ -71,7 +71,10 @@ function TekstKaart({
   tekst,
   origineel,
   heeftOverride,
-  logKey,
+  logUrl,
+  regels = 3,
+  bronLabel = "Concept-default",
+  herstelLabel = "Herstel default",
   onSave,
   onReset,
 }: {
@@ -80,7 +83,10 @@ function TekstKaart({
   tekst: string;
   origineel: string;
   heeftOverride: boolean;
-  logKey: { scope: string; dimensie: string };
+  logUrl: string;
+  regels?: number;
+  bronLabel?: string;
+  herstelLabel?: string;
   onSave: (tekst: string) => Promise<void>;
   onReset: () => Promise<void>;
 }) {
@@ -105,7 +111,7 @@ function TekstKaart({
 
   async function laadLog() {
     try {
-      const r = await fetch(`/api/admin/duidingbeheer/${logKey.scope}/${encodeURIComponent(logKey.dimensie)}/log`);
+      const r = await fetch(logUrl);
       const d = await r.json();
       setLog(d.log ?? []);
     } catch {}
@@ -126,15 +132,15 @@ function TekstKaart({
 
       {heeftOverride && (
         <div className="rounded-lg bg-blue-50/10 border border-blue-400/20 p-2">
-          <p className="text-xs text-blue-400 font-medium mb-0.5">Concept-default:</p>
-          <p className="text-xs text-muted-foreground italic">{origineel || "—"}</p>
+          <p className="text-xs text-blue-400 font-medium mb-0.5">{bronLabel}:</p>
+          <p className="text-xs text-muted-foreground italic">{origineel || "geen"}</p>
         </div>
       )}
 
       <Textarea
         value={huidige}
         onChange={(e) => setEdit(e.target.value)}
-        rows={3}
+        rows={regels}
         className="resize-none text-sm"
       />
 
@@ -152,7 +158,7 @@ function TekstKaart({
         {heeftOverride && (
           <Button size="sm" variant="outline" onClick={onReset} className="gap-1.5 text-muted-foreground">
             <RotateCcw className="h-3.5 w-3.5" />
-            Herstel default
+            {herstelLabel}
           </Button>
         )}
         <Button
@@ -186,6 +192,200 @@ function TekstKaart({
   );
 }
 
+// ─── Paneel: beheer van de VASTE duidingsteksten ──────────────────────────────
+//
+// Dit is het deel dat werkelijk in de rapporten terechtkomt. De tekst in de
+// broncode of in het tekstbestand blijft de terugval; een bewaarde tekst wint op
+// leestijd. Elke wijziging draagt wie en wanneer.
+
+interface TekstVeldData {
+  sleutel: string;
+  label: string;
+  lang: boolean;
+  bron: string;
+  tekst: string;
+  heeftOverride: boolean;
+}
+
+interface TekstOverzicht {
+  instrument: string;
+  label: string;
+  taal: string;
+  talen: string[];
+  waar: string;
+  scope: string;
+  groepen: { groep: string; toelichting: string; velden: TekstVeldData[] }[];
+}
+
+function TekstbeheerPaneel() {
+  const [instrumenten, setInstrumenten] = useState<
+    { id: string; label: string; talen: string[]; waar: string; aantalVelden: number }[]
+  >([]);
+  const [instrument, setInstrument] = useState<string>("");
+  const [taal, setTaal] = useState<string>("nl");
+  const [data, setData] = useState<TekstOverzicht | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [fout, setFout] = useState<string | null>(null);
+  const [open, setOpen] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch("/api/admin/tekstbeheer/instrumenten");
+        if (!r.ok) { setFout("Kan de instrumenten niet laden."); return; }
+        const d = await r.json();
+        setInstrumenten(d.instrumenten ?? []);
+        if (d.instrumenten?.length) {
+          setInstrument(d.instrumenten[0].id);
+          setTaal(d.instrumenten[0].talen?.[0] ?? "nl");
+        }
+      } catch { setFout("Netwerkfout."); }
+    })();
+  }, []);
+
+  const laad = useCallback(async () => {
+    if (!instrument) return;
+    setLoading(true);
+    setFout(null);
+    try {
+      const r = await fetch(`/api/admin/tekstbeheer/${encodeURIComponent(instrument)}/${taal}`);
+      if (!r.ok) { setFout("Kan de teksten niet laden."); return; }
+      const d: TekstOverzicht = await r.json();
+      setData(d);
+      setOpen((vorig) => {
+        const nieuw = { ...vorig };
+        for (const g of d.groepen) if (nieuw[g.groep] === undefined) nieuw[g.groep] = false;
+        return nieuw;
+      });
+    } catch { setFout("Netwerkfout."); }
+    finally { setLoading(false); }
+  }, [instrument, taal]);
+
+  useEffect(() => { laad(); }, [laad]);
+
+  async function bewaar(sleutel: string, tekst: string) {
+    await fetch(`/api/admin/tekstbeheer/${encodeURIComponent(instrument)}/${taal}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sleutel, tekst }),
+    });
+    await laad();
+  }
+
+  async function herstel(sleutel: string) {
+    await fetch(
+      `/api/admin/tekstbeheer/${encodeURIComponent(instrument)}/${taal}?sleutel=${encodeURIComponent(sleutel)}`,
+      { method: "DELETE" },
+    );
+    await laad();
+  }
+
+  const gekozen = instrumenten.find((i) => i.id === instrument);
+  const aantalAangepast =
+    data?.groepen.reduce((n, g) => n + g.velden.filter((v) => v.heeftOverride).length, 0) ?? 0;
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-xl border border-border bg-card p-4">
+        <p className="text-sm text-foreground font-semibold mb-1">Wat u hier beheert</p>
+        <p className="text-sm text-muted-foreground">
+          De vaste duidingsteksten van een instrument: de woorden en zinnen die in elk rapport
+          op dezelfde plaats terugkomen. De tekst blijft deterministisch, dus twee gelijke
+          profielen lezen dezelfde duiding. Herstellen brengt altijd de brontekst terug.
+        </p>
+      </div>
+
+      {/* Instrument-kiezer */}
+      {instrumenten.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider mr-1">Instrument</span>
+          {instrumenten.map((it) => (
+            <button
+              key={it.id}
+              type="button"
+              onClick={() => { setInstrument(it.id); setTaal(it.talen?.[0] ?? "nl"); }}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
+                instrument === it.id ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground hover:bg-accent/20"
+              }`}
+            >
+              {it.label}
+              <span className="ml-1.5 opacity-70">{it.aantalVelden}</span>
+            </button>
+          ))}
+          <a
+            href={`/api/admin/duidingbeheer/export/csv`}
+            download
+            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-accent/60 transition-colors ml-auto"
+          >
+            <Download className="h-4 w-4" />
+            CSV export
+          </a>
+        </div>
+      )}
+
+      {gekozen && (
+        <div className="flex flex-wrap items-center gap-3 text-sm">
+          <span className="text-muted-foreground">{gekozen.waar}</span>
+          {aantalAangepast > 0 && (
+            <Badge className="text-xs bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-400/30">
+              {aantalAangepast} beheerde tekst{aantalAangepast === 1 ? "" : "en"}
+            </Badge>
+          )}
+        </div>
+      )}
+
+      {fout && (
+        <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3">
+          <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0" />
+          <p className="text-sm text-destructive">{fout}</p>
+        </div>
+      )}
+
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <span className="h-6 w-6 animate-spin border-2 border-accent border-t-transparent rounded-full" />
+        </div>
+      )}
+
+      {!loading && data && data.groepen.map((g) => (
+        <section key={g.groep} className="space-y-3">
+          <button
+            type="button"
+            onClick={() => setOpen((v) => ({ ...v, [g.groep]: !v[g.groep] }))}
+            className="flex items-center gap-2 text-sm font-semibold text-foreground uppercase tracking-wider"
+          >
+            {g.groep}
+            <span className="text-xs font-normal normal-case text-muted-foreground">
+              {g.velden.length} velden
+            </span>
+            {open[g.groep] ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </button>
+          {open[g.groep] && (
+            <>
+              <p className="text-xs text-muted-foreground max-w-2xl">{g.toelichting}</p>
+              {g.velden.map((v) => (
+                <TekstKaart
+                  key={v.sleutel}
+                  titel={v.label}
+                  tekst={v.tekst}
+                  origineel={v.bron}
+                  heeftOverride={v.heeftOverride}
+                  regels={v.lang ? 5 : 2}
+                  bronLabel="Brontekst"
+                  herstelLabel="Herstel brontekst"
+                  logUrl={`/api/admin/tekstbeheer/${encodeURIComponent(instrument)}/veldlog?sleutel=${encodeURIComponent(v.sleutel)}`}
+                  onSave={(tekst) => bewaar(v.sleutel, tekst)}
+                  onReset={() => herstel(v.sleutel)}
+                />
+              ))}
+            </>
+          )}
+        </section>
+      ))}
+    </div>
+  );
+}
+
 // ─── Hoofdpagina ──────────────────────────────────────────────────────────────
 
 const DEFAULT_INSTRUMENT = "t4p-business-kompas";
@@ -193,11 +393,17 @@ const DEFAULT_INSTRUMENT = "t4p-business-kompas";
 export default function AdminDuidingbeheer() {
   const [taal, setTaal] = useState<Taal>("nl");
   const [instrument, setInstrument] = useState<string>(DEFAULT_INSTRUMENT);
-  const [instrumenten, setInstrumenten] = useState<{ id: string; label: string }[]>([]);
+  const [instrumenten, setInstrumenten] = useState<
+    { id: string; label: string; inRapportketen?: boolean; toelichting?: string }[]
+  >([]);
   const [data, setData] = useState<DuidingData | null>(null);
   const [loading, setLoading] = useState(false);
   const [fout, setFout] = useState<string | null>(null);
   const [ankersOpen, setAnkersOpen] = useState(true);
+  // Twee werkvormen op dit scherm: de vaste teksten (die altijd meegaan in een
+  // rapport) en de optionele AI-laag. De vaste teksten staan voorop, want dat is
+  // wat een beheerder in de praktijk verfijnt.
+  const [weergave, setWeergave] = useState<"teksten" | "ai">("teksten");
 
   // Query-suffix voor de instrument-parameter (default t4p = backwards compat).
   const instQuery = `?instrument=${encodeURIComponent(instrument)}`;
@@ -304,16 +510,51 @@ export default function AdminDuidingbeheer() {
         </div>
 
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className="text-2xl font-serif font-semibold text-foreground mb-1">
             Duidingsbeheer
           </h1>
           <p className="text-sm text-muted-foreground max-w-2xl">
-            Stuur de LIVE AI-duiding van het T4P-profiel: de regie-prompt (hoe het model duidt)
-            en de per-dimensie ankers (toon en nadruk per T4P-dimensie), per taal. De cijfers
-            komen uitsluitend uit de rekenlaag — het model verzint niets bij. Faalt de AI, dan
-            valt de duiding automatisch terug op de bestaande sjabloontekst. Enkel toegankelijk
-            voor prior-beheerders.
+            Hier beheert een prior-beheerder de duiding in de rapporten. Cijfers, scores en
+            grafieken blijven onaangeraakt: die komen uitsluitend uit de rekenlaag. Elke
+            wijziging draagt wie en wanneer, en is altijd terug te zetten naar de brontekst.
+          </p>
+        </div>
+
+        {/* Werkvorm */}
+        <div className="flex flex-wrap gap-2 mb-8 border-b border-border pb-3">
+          <button
+            type="button"
+            onClick={() => setWeergave("teksten")}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
+              weergave === "teksten" ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground hover:bg-accent/20"
+            }`}
+          >
+            Rapportteksten
+          </button>
+          <button
+            type="button"
+            onClick={() => setWeergave("ai")}
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition ${
+              weergave === "ai" ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground hover:bg-accent/20"
+            }`}
+          >
+            AI-duiding (optioneel)
+          </button>
+        </div>
+
+        {weergave === "teksten" && <TekstbeheerPaneel />}
+
+        {weergave === "ai" && (
+        <div className="space-y-0">
+        <div className="rounded-xl border border-border bg-card p-4 mb-6">
+          <p className="text-sm text-foreground font-semibold mb-1">Wat deze laag doet</p>
+          <p className="text-sm text-muted-foreground">
+            Een optionele laag die een duidingstekst door een taalmodel laat schrijven binnen een
+            vaste regie-prompt en per-dimensie ankers. De cijfers gaan nooit mee als vrije tekst en
+            het model mag geen getal invoeren dat niet uit de rekenlaag komt. Faalt de AI, dan blijft
+            de bestaande tekst staan. De schakelaar staat standaard uit, en aanzetten is een
+            verwerkingsbeslissing: er gaan profielgegevens naar een verwerker buiten de EER.
           </p>
         </div>
 
@@ -336,6 +577,23 @@ export default function AdminDuidingbeheer() {
           </div>
         )}
 
+        {/* Eerlijkheid: hangt dit pad werkelijk in de rapportketen van dit instrument? */}
+        {(() => {
+          const def = instrumenten.find((i) => i.id === instrument);
+          if (!def || def.inRapportketen !== false) return null;
+          return (
+            <div className="flex items-start gap-2 rounded-xl border border-amber-400/40 bg-amber-50/10 p-4 mb-6">
+              <AlertCircle className="h-4 w-4 text-amber-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-amber-700 dark:text-amber-300 mb-0.5">
+                  Niet aangesloten op de rapportketen
+                </p>
+                <p className="text-sm text-muted-foreground">{def.toelichting}</p>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Aan/uit-schakelaar */}
         {data && (
           <div className={`flex items-center justify-between gap-4 rounded-xl border p-4 mb-6 ${data.liveDuidingAan ? "border-emerald-400/50 bg-emerald-50/5" : "border-border"}`}>
@@ -345,8 +603,8 @@ export default function AdminDuidingbeheer() {
                 <p className="text-sm font-semibold text-foreground">Live AI-duiding</p>
                 <p className="text-xs text-muted-foreground">
                   {data.liveDuidingAan
-                    ? "AAN — nieuwe T4P-rapporten krijgen een live AI-duiding (met sjabloon-fallback)."
-                    : "UIT — T4P-rapporten gebruiken de bestaande statische sjabloontekst."}
+                    ? "Aan: nieuwe rapporten van dit instrument krijgen een AI-duiding, met terugval op de vaste tekst."
+                    : "Uit: rapporten van dit instrument gebruiken uitsluitend de vaste tekst."}
                 </p>
               </div>
             </div>
@@ -410,7 +668,8 @@ export default function AdminDuidingbeheer() {
                 tekst={data.regiePrompt.tekst}
                 origineel={data.regiePrompt.origineel}
                 heeftOverride={data.regiePrompt.heeftOverride}
-                logKey={{ scope: scopedScope("regie-prompt"), dimensie: "__algemeen__" }}
+                logUrl={`/api/admin/duidingbeheer/${scopedScope("regie-prompt")}/${encodeURIComponent("__algemeen__")}/log`}
+                regels={10}
                 onSave={saveRegie}
                 onReset={resetRegie}
               />
@@ -437,7 +696,7 @@ export default function AdminDuidingbeheer() {
                       tekst={a.tekst}
                       origineel={a.origineel}
                       heeftOverride={a.heeftOverride}
-                      logKey={{ scope: scopedScope("anker"), dimensie: a.dimensie }}
+                      logUrl={`/api/admin/duidingbeheer/${scopedScope("anker")}/${encodeURIComponent(a.dimensie)}/log`}
                       onSave={(tekst) => saveAnker(a.dimensie, tekst)}
                       onReset={() => resetAnker(a.dimensie)}
                     />
@@ -446,6 +705,8 @@ export default function AdminDuidingbeheer() {
               ))}
             </section>
           </div>
+        )}
+        </div>
         )}
       </main>
     </div>
