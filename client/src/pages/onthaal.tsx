@@ -619,6 +619,38 @@ export default function Onthaal() {
             <p className="eyebrow">Hoe het werkt</p>
             <h2>Van uitnodiging tot verdieping, in vier stappen</h2>
           </div>
+
+          {/* De film staat vóór de vier stappen, want de knop "Bekijk eerst hoe
+              het werkt" rolt naar deze sectie. Wie klikt, komt bij de film uit.
+              Bewust geen automatisch spelen: de film heeft gesproken tekst, en
+              geluid hoort een keuze van de bezoeker te zijn. De vier stappen
+              eronder vertellen hetzelfde verhaal in tekst, en het
+              ondertitelspoor staat klaar voor wie geen geluid kan gebruiken. */}
+          <figure className="film">
+            <video
+              controls
+              playsInline
+              preload="none"
+              poster="/film/tapas-core-nl-beeld.jpg"
+              data-testid="onthaal-film"
+            >
+              <source src="/film/tapas-core-nl.mp4" type="video/mp4" />
+              <track
+                kind="subtitles"
+                srcLang="nl"
+                label="Nederlands"
+                src="/film/tapas-core-nl.vtt"
+              />
+              Uw browser kan deze film niet spelen. De vier stappen hieronder beschrijven
+              dezelfde weg in tekst.
+            </video>
+            <figcaption>
+              Tachtig seconden door het platform, van uitnodiging tot rapport, met gesproken
+              uitleg. Ondertitels zijn in de speler aan te zetten. Wie liever leest: de vier
+              stappen hieronder vertellen dezelfde weg.
+            </figcaption>
+          </figure>
+
           <div className="stappen">
             <div className="stap">
               <p className="nr">STAP 01</p>

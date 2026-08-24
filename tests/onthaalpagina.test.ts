@@ -16,7 +16,7 @@
 // ---------------------------------------------------------------------------
 
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const pagina = readFileSync(resolve(__dirname, "../client/src/pages/onthaal.tsx"), "utf8");
@@ -244,5 +244,62 @@ describe("F. De onopvallende beheerdersdeur in de voettekst", () => {
     );
     expect(regel).toContain("2BQ Consult");
     expect(regel).toContain("Zandstraat 85");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// F. De film in de sectie "Hoe het werkt"
+//
+//   De film staat waar de knop "Bekijk eerst hoe het werkt" naartoe rolt, en
+//   speelt niet uit zichzelf: er is gesproken tekst, dus geluid blijft een
+//   keuze van de bezoeker. Het ondertitelspoor staat klaar maar niet aan, want
+//   dit is de versie zonder ingebrande ondertitels.
+// ---------------------------------------------------------------------------
+
+describe("F. De film", () => {
+  const sectie = pagina.slice(pagina.indexOf('id="werking"'), pagina.indexOf('className="stappen"'));
+
+  it("staat in de sectie waar de kopknop naartoe rolt, vóór de vier stappen", () => {
+    expect(pagina).toContain('naarSectie("werking")');
+    expect(sectie).toContain('data-testid="onthaal-film"');
+    expect(sectie).toContain("/film/tapas-core-nl.mp4");
+  });
+
+  it("speelt niet uit zichzelf en houdt de knoppen bij de bezoeker", () => {
+    expect(sectie).toContain("controls");
+    expect(sectie).toContain('preload="none"');
+    expect(sectie).not.toContain("autoPlay");
+    expect(sectie).not.toContain("loop");
+  });
+
+  it("draagt een stilstaand beeld en een ondertitelspoor dat niet vooraf aan staat", () => {
+    expect(sectie).toContain('poster="/film/tapas-core-nl-beeld.jpg"');
+    expect(sectie).toContain('kind="subtitles"');
+    expect(sectie).toContain("/film/tapas-core-nl.vtt");
+    const spoor = sectie.slice(sectie.indexOf('kind="subtitles"'), sectie.indexOf("</video>"));
+    expect(spoor).not.toMatch(/\bdefault\b/);
+  });
+
+  it("heeft een tekstalternatief voor wie geen geluid kan gebruiken", () => {
+    expect(sectie).toContain("<figcaption>");
+    expect(sectie).toContain("Uw browser kan deze film niet spelen");
+  });
+
+  it("houdt de verhouding vast in de opmaak, zodat de pagina niet verschuift", () => {
+    expect(opmaak).toContain(".onthaal .film video");
+    expect(opmaak).toContain("aspect-ratio:16/9");
+  });
+
+  it("de drie bestanden staan klaar in de openbare map", () => {
+    for (const naam of ["tapas-core-nl.mp4", "tapas-core-nl.vtt", "tapas-core-nl-beeld.jpg"]) {
+      expect(existsSync(resolve(__dirname, `../client/public/film/${naam}`))).toBe(true);
+    }
+  });
+
+  it("het ondertitelspoor is geldige WebVTT met elf blokken", () => {
+    const vtt = readFileSync(resolve(__dirname, "../client/public/film/tapas-core-nl.vtt"), "utf8");
+    expect(vtt.startsWith("WEBVTT")).toBe(true);
+    expect(vtt.match(/-->/g)?.length).toBe(11);
+    expect(vtt).not.toContain("\u2014");
   });
 });
