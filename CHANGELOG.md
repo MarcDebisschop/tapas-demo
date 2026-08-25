@@ -54,6 +54,19 @@ beschreven omdat weten beter is dan vermoeden.
 
 ## [Niet vrijgegeven]
 
+### Toegevoegd
+
+- De 2MinScan-kaart in de instrumentengids heeft een knop "Maak een teamwiel"
+  naast de startknop. Het teamwiel stond wel als route in `client/src/App.tsx`,
+  maar geen enkele kaart, knop of menu verwees ernaar: wie `/2minscan/teamwiel`
+  niet uit het hoofd kende, vond het niet. `client/src/data/instrumentengids.ts`
+  kent daarvoor nu een optioneel veld `nevenweg` (label, route, en of de pagina
+  een aanmelding nodig heeft), en `client/src/pages/instrumenten.tsx` toont dat
+  als tweede knop wanneer een instrument die weg heeft. Bewaarde afnames
+  inlezen vraagt een beheerdersaanmelding; dat staat als toelichting op de knop.
+  `tests/instrumentengids-nevenweg.test.ts` bewaakt dat de knop blijft bestaan
+  en dat de route waar hij naartoe wijst nog in `App.tsx` geregistreerd staat.
+
 ### Herstel
 
 - Op het blad "in energie blijven, kleur per kleur" van het energetisch

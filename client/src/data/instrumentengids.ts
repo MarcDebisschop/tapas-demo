@@ -38,6 +38,26 @@ export interface GidsStart {
   direct: boolean;
 }
 
+/**
+ * Een tweede, optionele weg naast de startknop. Bedoeld voor een instrument dat
+ * naast de individuele afname ook een collectieve weergave kent: de 2MinScan
+ * heeft naast het eigen rapport ook het teamwiel, dat bewaarde afnames van
+ * meerdere deelnemers op één temperamentenwiel zet. Zonder deze weg is die
+ * pagina alleen via de URL bereikbaar.
+ */
+export interface GidsNevenweg {
+  /** Knoplabel, bv. "Maak een teamwiel". */
+  label: string;
+  /** Hash-route binnen de app (Wouter), bv. "/2minscan/teamwiel". */
+  route: string;
+  /**
+   * true = de pagina heeft een beheerdersaanmelding nodig om bewaarde afnames
+   * te kunnen inlezen. De kaart zegt dat er dan bij, zodat niemand op een leeg
+   * vak botst.
+   */
+  vereistAanmelding?: boolean;
+}
+
 export interface GidsInstrument {
   /** Canoniek id — koppelt aan /api/instrumenten/catalogus én aan de override-tabel. */
   id: string;
@@ -57,6 +77,8 @@ export interface GidsInstrument {
   doelgroep: string;
   /** Veld 5 — hoe starten/aanvragen. */
   start: GidsStart;
+  /** Optionele tweede weg naast de startknop, bv. het 2MinScan-teamwiel. */
+  nevenweg?: GidsNevenweg;
   /** Korte tekstuele rapport-teaser (rapport-preview, deel A). */
   rapportTeaser: string;
   /** Optionele visuele preview (rapport-preview, deel B): pad naar afbeelding/pdf. */
@@ -108,6 +130,11 @@ export const INSTRUMENTENGIDS: GidsInstrument[] = [
       "Als vertrekpunt voor een coachgesprek of ontwikkeltraject, en als gedeeld, meertalig beeld binnen een team.",
     doelgroep: "Professionals die hun energetisch gedragsprofiel in een werkcontext willen kennen.",
     start: { label: "Start de 2MinScan", route: "/2minscan", direct: true },
+    nevenweg: {
+      label: "Maak een teamwiel",
+      route: "/2minscan/teamwiel",
+      vereistAanmelding: true,
+    },
     rapportTeaser:
       `Een uitgewerkt "Energetisch Gedragsprofiel"-rapport van ${TWOMINSCAN_PAGINATEKST}, beschikbaar in ${TWOMINSCAN_TALENTEKST_VOLUIT}.`,
     icoon: "Zap",

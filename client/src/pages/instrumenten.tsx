@@ -318,6 +318,28 @@ function GidsKaart({
             </Button>
           );
         })()}
+        {/* Tweede weg naast de startknop (zie GidsNevenweg in
+            client/src/data/instrumentengids.ts). Bij de 2MinScan is dat het
+            teamwiel: bewaarde afnames van meerdere deelnemers op één
+            temperamentenwiel. Enkel getoond wanneer het instrument die weg
+            heeft. */}
+        {instr.nevenweg ? (
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5"
+            onClick={() => navigate(instr.nevenweg!.route)}
+            title={
+              instr.nevenweg.vereistAanmelding
+                ? "Bewaarde afnames inlezen vraagt een beheerdersaanmelding"
+                : undefined
+            }
+            data-testid={`button-nevenweg-${instr.id}`}
+          >
+            <Users className="h-3.5 w-3.5" />
+            {instr.nevenweg.label}
+          </Button>
+        ) : null}
         <a
           href={`/api/instrumentengids/${instr.id}/fiche.pdf?taal=nl`}
           target="_blank"
