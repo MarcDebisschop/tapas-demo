@@ -56,6 +56,43 @@ beschreven omdat weten beter is dan vermoeden.
 
 ### Toegevoegd
 
+- Een temperamentenwiel (het teamwiel van de 2MINSCAN) is een betaald product
+  geworden en kost vier credits. Tot nu werd het zonder verrekening geleverd:
+  wie de pagina bereikte, kreeg een volledig energetisch teamprofiel van tien
+  bladen zonder dat er iets werd afgeboekt. Het tarief staat op één plaats
+  (`shared/twominscan-teamwiel.ts`, met `TWOMINSCAN_TEAMWIEL_CREDITS` als
+  omgevingssleutel volgens hetzelfde patroon als de sessietarieven van
+  T4Recruitment en HDD); server, teamwielpagina en instrumentenkaart lezen alle
+  drie dat getal.
+  - Afdwinging staat op de server, niet in de knop:
+    `server/twominscan/teamwiel-aankoop.ts` biedt
+    `POST /api/twominscan/teamwiel/aankoop` achter `vereisScope` en boekt de
+    credits af van de organisatie van de aangemelde beheerder. De pagina toont
+    het rapport pas nadat die route bevestigt; wie de route uit het hoofd kent,
+    komt er dus niet gratis langs.
+  - Betalen gebeurt één keer per teamsamenstelling. Per organisatie wordt een
+    sleutel bewaard (de gesorteerde, genormaliseerde deelnemerslijst met
+    wielpositie, gehasht) in de nieuwe tabel
+    `twominscan_teamwiel_aankopen`. Hetzelfde wiel opnieuw openen of in een
+    andere taal afdrukken kost niets extra; iemand toevoegen of weglaten is een
+    ander wiel en kost opnieuw. De tabel bewaart geen namen: die staan al in
+    `twominscan_afnames`.
+  - `server/storage.ts` kreeg daarvoor één publieke methode,
+    `verbruikVoorProduct(organisatieId, aantal, omschrijving)`: een directe
+    boeking van beschikbaar naar verbruikt voor een product dat geen afname is,
+    via hetzelfde grootboek als elke andere creditbeweging, zodat de
+    bestuurscijfers en de boekhoudexport blijven kloppen. Bij een te laag saldo
+    werpt ze `CreditError` en levert de route 402 met het saldo erbij.
+  - De teamwielpagina heeft een aankoopstap gekregen (tarief, beschikbaar saldo,
+    de melding dat je één keer per samenstelling betaalt) in NL, FR en EN, en de
+    knop op de 2MinScan-kaart draagt nu het tarief: "Maak een teamwiel · 4
+    credits". Ook de vooraf gevulde lijst via `?d=...` loopt langs dezelfde
+    controle. De hoofdbeheerder heeft geen creditrekening en betaalt dus niet;
+    dat staat als aparte uitkomst in het antwoord.
+  - `tests/twominscan-teamwiel-credits.test.ts` bewaakt het tarief van vier
+    credits, de omgevingssleutel, de idempotentie van de sleutel en dat het
+    tarief op de kaartknop staat.
+
 - De 2MinScan-kaart in de instrumentengids heeft een knop "Maak een teamwiel"
   naast de startknop. Het teamwiel stond wel als route in `client/src/App.tsx`,
   maar geen enkele kaart, knop of menu verwees ernaar: wie `/2minscan/teamwiel`

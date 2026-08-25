@@ -19,6 +19,12 @@ import {
 } from "@/temperamentenwiel";
 import { DEELNEMERS_PER_BLAD, bladenVoor, individueleBladen } from "@/temperamentenwiel/bladen";
 import { verkleinAfbeeldingNaarDataUrl } from "@/lib/afbeelding";
+import {
+  controleerTeamwiel,
+  koopTeamwiel,
+  type AankoopUitkomst,
+} from "@/twominscan/teamwiel-aankoop";
+import { TEAMWIEL_CREDITS_STANDAARD } from "@shared/twominscan-teamwiel";
 
 // =============================================================================
 // 2MINSCAN teamwiel — meerdere afnames samen op één Temperamentenwiel.
@@ -149,13 +155,73 @@ export default function TwominscanTeamwiel() {
   const [leden, setLeden] = useState<Teamlid[]>(
     vooraf?.leden.length ? vooraf.leden : [leegTeamlid(), leegTeamlid(), leegTeamlid()],
   );
-  const [modus, setModus] = useState<"samenstellen" | "rapport">(vooraf?.leden.length ? "rapport" : "samenstellen");
+  const [modus, setModus] = useState<"samenstellen" | "rapport">("samenstellen");
 
   const geldig = leden.filter((l) => l.naam.trim() && positieByWielpositie(l.wielpositie));
 
   function wijzig(i: number, deel: Partial<Teamlid>) {
     setLeden((cur) => cur.map((l, j) => (j === i ? { ...l, ...deel } : l)));
   }
+
+  // -------------------------------------------------------------------------
+  // AFREKENING
+  //   Eén temperamentenwiel kost credits van de organisatie. Het rapport wordt
+  //   dus pas getoond nadat de server de aankoop bevestigt (of vaststelt dat
+  //   precies deze ploeg al betaald werd). De pagina beslist niets zelf: ze
+  //   toont wat de server antwoordt.
+  // -------------------------------------------------------------------------
+  const [betaald, setBetaald] = useState(false);
+  const [aankoop, setAankoop] = useState<AankoopUitkomst | null>(null);
+  const [aankoopBezig, setAankoopBezig] = useState(false);
+
+  function deelnemersVoorAankoop() {
+    return geldig.map((l) => ({ naam: l.naam.trim(), wielpositie: l.wielpositie }));
+  }
+
+  // Klik op "Toon teamrapport": eerst kijken of dit wiel al betaald is. Zo niet,
+  // dan verschijnt de aankoopstap; er wordt nooit stil afgeboekt.
+  async function vraagRapport() {
+    if (geldig.length < 2 || aankoopBezig) return;
+    if (betaald) {
+      setModus("rapport");
+      return;
+    }
+    setAankoopBezig(true);
+    const uitkomst = await controleerTeamwiel(deelnemersVoorAankoop());
+    setAankoopBezig(false);
+    setAankoop(uitkomst);
+    if (uitkomst.vrijgegeven) {
+      setBetaald(true);
+      setModus("rapport");
+    }
+  }
+
+  // De bevestigde aankoop: hier wordt het tarief werkelijk afgeboekt.
+  async function bevestigAankoop() {
+    if (geldig.length < 2 || aankoopBezig) return;
+    setAankoopBezig(true);
+    const uitkomst = await koopTeamwiel(deelnemersVoorAankoop());
+    setAankoopBezig(false);
+    setAankoop(uitkomst);
+    if (uitkomst.vrijgegeven) {
+      setBetaald(true);
+      setModus("rapport");
+    }
+  }
+
+  // Een vooraf gevulde lijst (?d=...) mag het rapport niet gratis openen: ook
+  // dan loopt de weg via dezelfde controle.
+  useEffect(() => {
+    if (vooraf?.leden.length) void vraagRapport();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Een gewijzigde ploeg is een ander teamwiel: de eerdere vrijgave vervalt.
+  const samenstelling = geldig.map((l) => `${l.naam.trim()}|${l.wielpositie}`).sort().join("\n");
+  useEffect(() => {
+    setBetaald(false);
+    setAankoop(null);
+  }, [samenstelling]);
 
   return (
     <div className="twominscan-pagina" style={{ minHeight: "100vh", background: modus === "rapport" ? "#e8e6df" : KLEUR.zacht, color: KLEUR.inkt }}>
@@ -167,6 +233,8 @@ export default function TwominscanTeamwiel() {
         tr={tr}
         taal={taal}
         setTaal={setTaal}
+        naarRapport={vraagRapport}
+        bezig={aankoopBezig}
       />
       {modus === "samenstellen" ? (
         <Samensteller
@@ -178,8 +246,11 @@ export default function TwominscanTeamwiel() {
           setLeden={setLeden}
           wijzig={wijzig}
           geldigAantal={geldig.length}
-          naarRapport={() => setModus("rapport")}
+          naarRapport={vraagRapport}
           tr={tr}
+          aankoop={aankoop}
+          aankoopBezig={aankoopBezig}
+          bevestigAankoop={bevestigAankoop}
         />
       ) : (
         <Teamrapport organisatie={organisatie} datum={datum} leden={geldig} tr={tr} />
@@ -198,6 +269,8 @@ function Balk({
   tr,
   taal,
   setTaal,
+  naarRapport,
+  bezig,
 }: {
   modus: "samenstellen" | "rapport";
   setModus: (m: "samenstellen" | "rapport") => void;
@@ -205,6 +278,8 @@ function Balk({
   tr: Vertaler;
   taal: Taal;
   setTaal: (t: Taal) => void;
+  naarRapport: () => void;
+  bezig: boolean;
 }) {
   return (
     <div
@@ -235,7 +310,7 @@ function Balk({
           </Knop>
         </>
       ) : (
-        <Knop soort="vol" onClick={() => setModus("rapport")} uit={aantal < 2}>
+        <Knop soort="vol" onClick={naarRapport} uit={aantal < 2 || bezig}>
           {tr("ui.tw.toon_rapport", "Toon teamrapport →")}
         </Knop>
       )}
@@ -319,6 +394,9 @@ function Samensteller({
   geldigAantal,
   naarRapport,
   tr,
+  aankoop,
+  aankoopBezig,
+  bevestigAankoop,
 }: {
   organisatie: string;
   setOrganisatie: (v: string) => void;
@@ -330,6 +408,9 @@ function Samensteller({
   geldigAantal: number;
   naarRapport: () => void;
   tr: Vertaler;
+  aankoop: AankoopUitkomst | null;
+  aankoopBezig: boolean;
+  bevestigAankoop: () => void;
 }) {
   return (
     <div style={{ maxWidth: 980, margin: "0 auto", padding: "26px 20px 70px" }}>
@@ -424,12 +505,99 @@ function Samensteller({
         <Knop soort="rand" onClick={() => setLeden((cur) => [...cur, leegTeamlid()])}>
           {tr("ui.tw.toevoegen", "+ Deelnemer toevoegen")}
         </Knop>
-        <Knop soort="vol" onClick={naarRapport} uit={geldigAantal < 2}>
+        <Knop soort="vol" onClick={naarRapport} uit={geldigAantal < 2 || aankoopBezig}>
           {tr("ui.tw.toon_rapport", "Toon teamrapport →")}
         </Knop>
+        <span style={{ alignSelf: "center", fontSize: 13, color: "#6b6b6b" }}>
+          {tr("ui.tw.tarief_hint", "Eén teamwiel kost")}{" "}
+          {aankoop?.tarief ?? TEAMWIEL_CREDITS_STANDAARD} credits
+        </span>
       </div>
 
+      <Aankooppaneel
+        aankoop={aankoop}
+        bezig={aankoopBezig}
+        bevestig={bevestigAankoop}
+        tr={tr}
+      />
+
       <Fotopaneel leden={leden} wijzig={wijzig} tr={tr} />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Aankooppaneel
+//   Verschijnt zodra de server zegt dat dit teamwiel nog niet betaald is. Drie
+//   uitkomsten, elk met een eigen weg vooruit: kopen kan, saldo volstaat niet,
+//   of er is geen organisatie aangemeld die kan betalen.
+// ---------------------------------------------------------------------------
+function Aankooppaneel({
+  aankoop,
+  bezig,
+  bevestig,
+  tr,
+}: {
+  aankoop: AankoopUitkomst | null;
+  bezig: boolean;
+  bevestig: () => void;
+  tr: Vertaler;
+}) {
+  if (!aankoop || aankoop.vrijgegeven) return null;
+  const tarief = aankoop.tarief;
+  const kanKopen = aankoop.status === "te-koop" && !aankoop.melding;
+  return (
+    <div
+      className="geen-print"
+      data-testid="paneel-teamwiel-aankoop"
+      style={{
+        marginTop: 18,
+        background: "#fff",
+        border: `1.5px solid ${KLEUR.lijn}`,
+        borderRadius: 12,
+        padding: "16px 18px",
+        maxWidth: 680,
+      }}
+    >
+      <div style={{ fontWeight: 800, color: KLEUR.petrol, fontSize: 15.5 }}>
+        {tr("ui.tw.aankoop_titel", "Dit teamwiel wordt met credits betaald")}
+      </div>
+      <p style={{ fontSize: 14, lineHeight: 1.6, margin: "8px 0 0" }}>
+        {tr(
+          "ui.tw.aankoop_uitleg",
+          "Een temperamentenwiel is een eigen product: het brengt de afgenomen 2MINSCANs samen in één teamrapport.",
+        )}{" "}
+        {tr("ui.tw.aankoop_tarief", "Kostprijs:")} <strong>{tarief} credits</strong>.
+        {typeof aankoop.saldo === "number" ? (
+          <>
+            {" "}
+            {tr("ui.tw.aankoop_saldo", "Beschikbaar saldo:")} <strong>{aankoop.saldo}</strong>.
+          </>
+        ) : null}
+      </p>
+      <p style={{ fontSize: 13.5, lineHeight: 1.6, margin: "6px 0 0", color: "#6b6b6b" }}>
+        {tr(
+          "ui.tw.aankoop_eenmalig",
+          "Je betaalt één keer per teamsamenstelling. Hetzelfde wiel opnieuw openen of in een andere taal afdrukken kost niets extra.",
+        )}
+      </p>
+      {aankoop.melding ? (
+        <p
+          data-testid="tekst-teamwiel-aankoop-fout"
+          style={{ fontSize: 14, lineHeight: 1.6, margin: "10px 0 0", color: "#a4462e" }}
+        >
+          {aankoop.melding}
+        </p>
+      ) : null}
+      {kanKopen ? (
+        <div style={{ marginTop: 14 }}>
+          <Knop soort="vol" onClick={bevestig} uit={bezig}>
+            {bezig
+              ? tr("ui.tw.aankoop_bezig", "Bezig met afrekenen")
+              : `${tr("ui.tw.aankoop_knop", "Koop dit teamwiel voor")} ${tarief} credits`}
+          </Knop>
+        </div>
+      ) : null}
     </div>
   );
 }

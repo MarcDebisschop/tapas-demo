@@ -50,6 +50,9 @@ import {
 // bestaande gedrag krijgt.
 import { priveAankoopVoor } from "@/data/prive-aankoop";
 import { Lock, ShoppingCart } from "lucide-react";
+// Het tarief van een nevenweg wordt als "4 credits" op de knop gezet; de
+// woordvorm komt uit dezelfde bron als het getal.
+import { teamwielCreditsTekst } from "@shared/twominscan-teamwiel";
 
 // Facilitator-instrumenten: collaboratieve trajecten die een begeleider/coach
 // opstart (niet zelf-afneembaar door een deelnemer). Hun startscherm zit achter
@@ -338,6 +341,9 @@ function GidsKaart({
           >
             <Users className="h-3.5 w-3.5" />
             {instr.nevenweg.label}
+            {instr.nevenweg.credits
+              ? ` · ${teamwielCreditsTekst(instr.nevenweg.credits)}`
+              : ""}
           </Button>
         ) : null}
         <a

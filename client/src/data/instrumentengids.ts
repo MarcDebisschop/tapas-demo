@@ -26,6 +26,7 @@ import {
   T4STUDENTS_LEEFTIJDSTEKST_VOLUIT,
 } from "@shared/doelgroep-leeftijd";
 import { TWOMINSCAN_PAGINATEKST, TWOMINSCAN_TALENTEKST_VOLUIT } from "@shared/twominscan-rapport";
+import { TEAMWIEL_CREDITS_STANDAARD } from "@shared/twominscan-teamwiel";
 
 export type Orientatie = "business" | "education" | "beide" | "sport";
 
@@ -56,6 +57,12 @@ export interface GidsNevenweg {
    * vak botst.
    */
   vereistAanmelding?: boolean;
+  /**
+   * Creditkost van dit product, wanneer de weg iets kost. De kaart zet het op
+   * de knop, zodat niemand denkt dat het gratis is. Het getal zelf komt uit de
+   * bron van dat tarief (voor het teamwiel: `shared/twominscan-teamwiel.ts`).
+   */
+  credits?: number;
 }
 
 export interface GidsInstrument {
@@ -134,6 +141,7 @@ export const INSTRUMENTENGIDS: GidsInstrument[] = [
       label: "Maak een teamwiel",
       route: "/2minscan/teamwiel",
       vereistAanmelding: true,
+      credits: TEAMWIEL_CREDITS_STANDAARD,
     },
     rapportTeaser:
       `Een uitgewerkt "Energetisch Gedragsprofiel"-rapport van ${TWOMINSCAN_PAGINATEKST}, beschikbaar in ${TWOMINSCAN_TALENTEKST_VOLUIT}.`,

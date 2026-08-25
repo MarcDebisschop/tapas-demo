@@ -1745,6 +1745,9 @@ export interface IStorage {
   laadCredits(organisatieId: number, aantal: number, omschrijving?: string): Promise<CreditSaldo>;
   reserveer(organisatieId: number, afnameId: number): Promise<CreditSaldo>;
   verbruik(organisatieId: number, afnameId: number): Promise<CreditSaldo>;
+  // Directe afboeking van een product dat geen afname is (bv. één
+  // temperamentenwiel): beschikbaar -> verbruikt, in één boeking.
+  verbruikVoorProduct(organisatieId: number, aantal: number, omschrijving: string): Promise<CreditSaldo>;
   geefVrij(organisatieId: number, afnameId: number): Promise<CreditSaldo>;
   overdracht(vanId: number, naarId: number, aantal: number, omschrijving?: string): Promise<void>;
   listTransacties(organisatieId?: number): Promise<CreditTransactie[]>;
@@ -2176,6 +2179,40 @@ export class DatabaseStorage implements IStorage {
       -1,
       { gereserveerd: s.gereserveerd - 1, verbruikt: s.verbruikt + 1 },
       { afnameId, omschrijving: `Verbruik bij voltooiing afname #${afnameId}` }
+    );
+  }
+
+  // Directe afboeking voor een product dat geen afname is.
+  //
+  // De bestaande weg is tweetraps: bij het aanmaken van een uitnodiging wordt
+  // één credit gereserveerd, bij het voltooien van de afname verbruikt. Een
+  // temperamentenwiel kent die twee momenten niet: het wordt in één handeling
+  // samengesteld en geleverd. Daarom gaat het hier van beschikbaar rechtstreeks
+  // naar verbruikt, met dezelfde grootboekregel als elke andere beweging, zodat
+  // de bestuurscijfers en de boekhoudexport blijven kloppen.
+  //
+  // Werpt `CreditError` wanneer het saldo niet volstaat. De oproeper hoort dan
+  // niets te leveren; half leveren en niet afboeken is de fout die dit tegengaat.
+  async verbruikVoorProduct(
+    organisatieId: number,
+    aantal: number,
+    omschrijving: string,
+  ): Promise<CreditSaldo> {
+    if (!Number.isInteger(aantal) || aantal <= 0) {
+      throw new CreditError("Een afboeking moet een geheel aantal credits groter dan nul zijn.");
+    }
+    const s = this.saldoSync(organisatieId);
+    if (s.beschikbaar < aantal) {
+      throw new CreditError(
+        `Onvoldoende credits: dit kost ${aantal} ${aantal === 1 ? "credit" : "credits"} en er ${s.beschikbaar === 1 ? "is" : "zijn"} er ${s.beschikbaar} beschikbaar.`,
+      );
+    }
+    return this.boekTransactie(
+      organisatieId,
+      "verbruik",
+      -aantal,
+      { beschikbaar: s.beschikbaar - aantal, verbruikt: s.verbruikt + aantal },
+      { omschrijving },
     );
   }
 

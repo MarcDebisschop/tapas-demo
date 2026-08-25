@@ -26,6 +26,7 @@ import {
 } from "./rapport-selectie";
 import { registerOrganisatiefotoRoutes } from "./organisatiefotos";
 import { registerTwominscanAfnameRoutes } from "./afname-opslag";
+import { registerTwominscanTeamwielAankoopRoutes } from "./teamwiel-aankoop";
 import { voegWielpaginaToe, wielbijlageSchema } from "./wielbijlage";
 
 const KLEUR = z.enum(["rood", "geel", "groen", "blauw"]);
@@ -64,6 +65,11 @@ export function registerTwominscanRoutes(app: Express): void {
   // Bewaarde afnames (naam + wielpositie) zodat de teamwielpagina de deelnemers
   // automatisch kan inladen in plaats van ze met de hand te laten overtypen.
   registerTwominscanAfnameRoutes(app);
+
+  // Een temperamentenwiel is een betaald product: de teamwielpagina levert het
+  // rapport pas nadat deze route het tarief heeft afgeboekt (of vastgesteld dat
+  // dit wiel al betaald is).
+  registerTwominscanTeamwielAankoopRoutes(app);
 
   app.post("/api/twominscan/rapport.pdf", async (req: Request, res: Response) => {
     const parsed = rapportSchema.safeParse(req.body);

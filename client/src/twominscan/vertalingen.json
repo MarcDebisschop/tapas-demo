@@ -704,7 +704,15 @@
     "tekst.overleg.rood.titel": "Décider",
     "tekst.overleg.rood.tekst": "Un moment de décision clair, avec une conclusion, un responsable et une date.",
     "tekst.overleg.afronden.titel": "Clôturer",
-    "tekst.overleg.afronden.tekst": "Deux minutes : qui reprend quoi, et ce que cela coûte en énergie."
+    "tekst.overleg.afronden.tekst": "Deux minutes : qui reprend quoi, et ce que cela coûte en énergie.",
+    "ui.tw.tarief_hint": "Une roue d'équipe coûte",
+    "ui.tw.aankoop_titel": "Cette roue d'équipe se paie en crédits",
+    "ui.tw.aankoop_uitleg": "La roue des tempéraments est un produit à part entière : elle réunit les 2MINSCAN réalisés dans un seul rapport d'équipe.",
+    "ui.tw.aankoop_tarief": "Prix :",
+    "ui.tw.aankoop_saldo": "Solde disponible :",
+    "ui.tw.aankoop_eenmalig": "Vous payez une seule fois par composition d'équipe. Rouvrir la même roue ou l'imprimer dans une autre langue ne coûte rien de plus.",
+    "ui.tw.aankoop_knop": "Acheter cette roue d'équipe pour",
+    "ui.tw.aankoop_bezig": "Paiement en cours"
   },
   "en": {
     "afstemming.blauw.ander.0": "Relational",
@@ -1411,7 +1419,15 @@
     "tekst.overleg.rood.titel": "Deciding",
     "tekst.overleg.rood.tekst": "A clear decision moment with a conclusion, an owner and a date.",
     "tekst.overleg.afronden.titel": "Closing",
-    "tekst.overleg.afronden.tekst": "Two minutes: who picks up what, and what that costs someone in energy."
+    "tekst.overleg.afronden.tekst": "Two minutes: who picks up what, and what that costs someone in energy.",
+    "ui.tw.tarief_hint": "One team wheel costs",
+    "ui.tw.aankoop_titel": "This team wheel is paid with credits",
+    "ui.tw.aankoop_uitleg": "A temperament wheel is a product in its own right: it brings the completed 2MINSCANs together into one team report.",
+    "ui.tw.aankoop_tarief": "Price:",
+    "ui.tw.aankoop_saldo": "Available balance:",
+    "ui.tw.aankoop_eenmalig": "You pay once per team composition. Reopening the same wheel or printing it in another language costs nothing extra.",
+    "ui.tw.aankoop_knop": "Buy this team wheel for",
+    "ui.tw.aankoop_bezig": "Processing payment"
   },
   "es": {
     "afstemming.blauw.ander.0": "Relacional",
