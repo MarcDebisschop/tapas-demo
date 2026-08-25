@@ -220,6 +220,12 @@ export function leesRapportBuffer(egCode: string, taal: unknown): { buffer: Buff
 export interface InjectieOpties {
   naam?: string | null;
   datum?: string | null; // vrije tekst, bv. "18/07/2026"
+  // Naam van de organisatie. De 120 vooraf opgemaakte covers hebben hier GEEN
+  // plaatshouder voor (enkel NAAM, DATUM, EG-CODE en ENERGIESTAND), dus deze
+  // regel wordt bijgezet in de vrije band boven NAAM. Is ze leeg, dan komt er
+  // niets: geen label en geen streepje.
+  organisatie?: string | null;
+  taal?: Taal | null; // enkel voor het opschrift van de organisatieregel
 }
 
 // Achtergrondkleur van de PDF-template. De cover-pagina gebruikt een WITTE
@@ -237,14 +243,68 @@ const DATUM_TOP_Y = 321.8;            // yMin van de DATUM-waardregel
 const DATUM_HOOGTE = 13;
 const DEK_BREEDTE = 380;             // breed genoeg voor lange namen
 
+// De organisatieregel. Ze staat één rij (24 pt) boven NAAM, in de band die op
+// de cover leeg is: de ondertitel eindigt op yMax 248.76 en NAAM begint op
+// yMin 297.78. Label en waarde volgen exact de maten van de bestaande rijen,
+// gemeten met pdftotext -bbox op de template: label op x 40.5 in kleine grijze
+// kapitalen met spatiëring, waarde op x 153.
+const ORGANISATIE_TOP_Y = 273.8;
+
+// De Franse cover heeft een langere titel, waardoor het hele gegevensblok exact
+// negenendertig punten lager staat (gemeten op alle vierentwintig Franse
+// bestanden: NOM op yMin 336.8 tegenover NAAM op 297.8). Zonder deze
+// verschuiving zou de ingevulde naam over de ondertitel vallen.
+const TAAL_VERSCHUIVING: Record<Taal, number> = { nl: 0, fr: 39, en: 0, es: 0, ru: 0 };
+const ORGANISATIE_HOOGTE = 13;
+const LABEL_X = 40.5;
+const LABEL_GROOTTE = 7.5;
+const LABEL_SPATIE = 1.9;            // spatiëring tussen de kapitalen
+const LABEL_GRIJS = { r: 154 / 255, g: 154 / 255, b: 154 / 255 }; // #9A9A9A
+
+// De bovenrand van het gegevensblok. Ze staat op top-y 282.3, loopt van x 40.3
+// tot 554.8 en is lichtgrijs (#DDDDDD). Komt er een organisatieregel bij, dan
+// wordt deze lijn afgedekt en vierentwintig punten hoger opnieuw getekend, zodat
+// de nieuwe regel binnen het kader valt in plaats van erdoor.
+const BLOKLIJN_TOP_Y = 282.3;
+const BLOKLIJN_X = 40.3;
+const BLOKLIJN_BREEDTE = 514.5;
+const BLOKLIJN_DIKTE = 0.8;
+const BLOKLIJN_GRIJS = { r: 221 / 255, g: 221 / 255, b: 221 / 255 }; // #DDDDDD
+const RIJHOOGTE = 24;
+
+// Het opschrift per taal. Het Russische opschrift kan niet met de ingebouwde
+// Helvetica geschreven worden (WinAnsi kent geen cyrillisch) en valt daarom
+// terug op de Latijnse vorm; de waarde zelf ondergaat dezelfde controle.
+const ORGANISATIE_LABEL: Record<Taal, string> = {
+  nl: "ORGANISATIE",
+  fr: "ORGANISATION",
+  en: "ORGANISATION",
+  es: "ORGANIZACION",
+  ru: "ORGANISATION",
+};
+
+// Helvetica schrijft in WinAnsi. Wat daarbuiten valt (cyrillisch, Chinees, een
+// emoji) laat pdf-lib struikelen, en dan zou de hele download falen op een
+// bijzaak. Zulke tekens worden daarom weggelaten; blijft er niets over, dan
+// wordt de regel overgeslagen.
+function winAnsiVeilig(tekst: string): string {
+  let uit = "";
+  for (const teken of tekst.normalize("NFC")) {
+    const code = teken.codePointAt(0) ?? 0;
+    if (code === 32 || (code >= 33 && code <= 126) || (code >= 160 && code <= 255)) uit += teken;
+  }
+  return uit.replace(/\s+/g, " ").trim();
+}
+
 export async function injecteerNaamDatum(
   pdfBuffer: Buffer,
   opts: InjectieOpties,
 ): Promise<Buffer> {
   const naam = (opts.naam ?? "").trim();
   const datum = (opts.datum ?? "").trim();
+  const organisatie = winAnsiVeilig((opts.organisatie ?? "").trim()).slice(0, 60);
   // Niets in te vullen -> geef de originele buffer terug.
-  if (!naam && !datum) return pdfBuffer;
+  if (!naam && !datum && !organisatie) return pdfBuffer;
 
   // Dynamische import zodat de module ook zonder pdf-lib laadbaar blijft
   // (bv. in de selectie-only unit tests).
@@ -257,7 +317,10 @@ export async function injecteerNaamDatum(
   const achtergrond = rgb(PAGINA_ACHTERGROND.r, PAGINA_ACHTERGROND.g, PAGINA_ACHTERGROND.b);
   const inkt = rgb(INKT.r, INKT.g, INKT.b);
 
-  const teken = (waarde: string, topY: number, dekHoogte: number, vet: boolean) => {
+  const schuif = TAAL_VERSCHUIVING[opts.taal ?? "nl"] ?? 0;
+
+  const teken = (waarde: string, ruweTopY: number, dekHoogte: number, vet: boolean) => {
+    const topY = ruweTopY + schuif;
     // 1) Dek de bestaande placeholder af.
     pagina.drawRectangle({
       x: WAARDE_X - 2,
@@ -276,8 +339,59 @@ export async function injecteerNaamDatum(
     });
   };
 
-  if (naam) teken(naam, NAAM_TOP_Y, NAAM_HOOGTE, true);
+  // Ook zonder naam wordt de naamrij gedekt: de template zet daar een streepje
+  // als plaatshouder, en dat streepje hoort niet in een afgeleverd rapport.
+  teken(naam, NAAM_TOP_Y, NAAM_HOOGTE, true);
   if (datum) teken(datum, DATUM_TOP_Y, DATUM_HOOGTE, true);
+
+  if (organisatie) {
+    // De organisatieregel komt in de band die op de template leeg is, tussen de
+    // ondertitel en de bovenrand van het gegevensblok. Die bovenrand schuift een
+    // rij mee omhoog, anders zou de lijn door de nieuwe regel lopen.
+    const lijnTop = BLOKLIJN_TOP_Y + schuif;
+    pagina.drawRectangle({
+      x: BLOKLIJN_X - 1,
+      y: hoogte - lijnTop - 2,
+      width: BLOKLIJN_BREEDTE + 2,
+      height: 4,
+      color: achtergrond,
+    });
+    pagina.drawRectangle({
+      x: BLOKLIJN_X,
+      y: hoogte - (lijnTop - RIJHOOGTE),
+      width: BLOKLIJN_BREEDTE,
+      height: BLOKLIJN_DIKTE,
+      color: rgb(BLOKLIJN_GRIJS.r, BLOKLIJN_GRIJS.g, BLOKLIJN_GRIJS.b),
+    });
+
+    const label = ORGANISATIE_LABEL[opts.taal ?? "nl"] ?? ORGANISATIE_LABEL.nl;
+    const grijs = rgb(LABEL_GRIJS.r, LABEL_GRIJS.g, LABEL_GRIJS.b);
+    const basislijn = hoogte - (ORGANISATIE_TOP_Y + schuif) - ORGANISATIE_HOOGTE + 4;
+    let x = LABEL_X;
+    for (const teken of label) {
+      pagina.drawText(teken, { x, y: basislijn, size: LABEL_GROOTTE, font, color: grijs });
+      x += font.widthOfTextAtSize(teken, LABEL_GROOTTE) + LABEL_SPATIE;
+    }
+    // De waarde mag nooit voorbij de rechterrand van het blok lopen. Ze wordt
+    // eerst binnen leesbare grenzen verkleind en pas daarna, als laatste
+    // redmiddel, ingekort. Er komt geen puntjesteken bij: dat leest als een
+    // fout in het rapport.
+    const rechterGrens = BLOKLIJN_X + BLOKLIJN_BREEDTE;
+    const ruimte = rechterGrens - WAARDE_X;
+    let grootte = 10.5;
+    while (grootte > 8.5 && bold.widthOfTextAtSize(organisatie, grootte) > ruimte) grootte -= 0.25;
+    let waarde = organisatie;
+    while (waarde.length > 1 && bold.widthOfTextAtSize(waarde, grootte) > ruimte) {
+      waarde = waarde.slice(0, -1).trimEnd();
+    }
+    pagina.drawText(waarde, {
+      x: WAARDE_X,
+      y: basislijn,
+      size: grootte,
+      font: bold,
+      color: inkt,
+    });
+  }
 
   const uit = await doc.save();
   return Buffer.from(uit);

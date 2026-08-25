@@ -56,6 +56,32 @@ beschreven omdat weten beter is dan vermoeden.
 
 ### Toegevoegd
 
+- De naam van de organisatie staat nu ook op de cover van het gedownloade
+  individuele 2MINSCAN-profielrapport. Op het scherm stond ze er al, in het
+  bindende document niet: de honderdtwintig vooraf opgemaakte covers hebben
+  enkel een plaatshouder voor naam, datum, EG-code en energiestand. De regel
+  wordt daarom bijgetekend in de band die op elke cover vrij is, tussen de
+  ondertitel en de bovenrand van het gegevensblok, met hetzelfde soort opschrift,
+  dezelfde kolom en dezelfde tekstmaat als de bestaande rijen
+  (`server/twominscan/rapport-selectie.ts`). Die bovenrand schuift één rij mee
+  omhoog, zodat de lijn niet door de nieuwe regel loopt. Blijft het veld leeg,
+  dan verandert er niets aan de cover.
+  - De rapportroute (`POST /api/twominscan/rapport.pdf`) neemt `organisatie` als
+    optioneel veld aan en de rapportpagina stuurt het mee bij het downloaden.
+  - Twee zaken zijn onderweg rechtgezet. Het Franse gegevensblok staat
+    negenendertig punten lager dan het Nederlandse, omdat de Franse titel over
+    drie regels loopt; naam en datum werden daardoor tot nu over de ondertitel
+    geschreven in plaats van in hun eigen rij. En de naamrij wordt voortaan ook
+    afgedekt wanneer er geen naam bekend is, zodat het streepje van de
+    plaatshouder niet meer in een afgeleverd rapport blijft staan.
+  - De ingevulde waarde wordt binnen leesbare grenzen verkleind en pas als
+    laatste redmiddel ingekort; er komt nooit een puntjesteken bij. Tekens die
+    het ingebouwde lettertype niet kan schrijven, zoals cyrillisch, worden
+    weggelaten in plaats van de download te laten falen.
+  - Vijf nieuwe toetsen in `tests/twominscan-organisatie-cover.test.ts` dekken
+    de gevulde cover, de ongewijzigde cover zonder organisatie, tekens buiten
+    het lettertype, een zeer lange naam en het geval waarin er niets in te
+    vullen valt.
 - Een temperamentenwiel (het teamwiel van de 2MINSCAN) is een betaald product
   geworden en kost vier credits. Tot nu werd het zonder verrekening geleverd:
   wie de pagina bereikte, kreeg een volledig energetisch teamprofiel van tien

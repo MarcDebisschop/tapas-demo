@@ -150,6 +150,9 @@ function PrintBalk({ tr, egCode, volgorde, xStand, naam, datum, taal, wielpositi
           naam: naam || undefined,
           taal,
           datum: datum || undefined,
+          // De organisatie staat al op de cover van de webweergave; ze hoort ook
+          // op de cover van het gedownloade profiel te staan.
+          organisatie: organisatie || undefined,
           // Ontbreekt de wielpagina op het scherm, dan gaat het rapport gewoon
           // zonder bijlage mee: de download mag daar niet op stranden.
           wielbijlage: await bouwWielbijlage(),

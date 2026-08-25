@@ -40,6 +40,9 @@ const rapportSchema = z.object({
   naam: z.string().optional(),
   taal: z.enum(["nl", "fr", "en", "es", "ru"]).optional(),
   datum: z.string().optional(),
+  // Naam van de organisatie voor de cover. Optioneel: is ze leeg, dan blijft de
+  // cover zoals ze was.
+  organisatie: z.string().max(80).optional(),
   // Optionele wielpagina achteraan: de browser stuurt het al getekende wiel mee
   // als PNG plus de al vertaalde regels. Zie wielbijlage.ts voor het waarom.
   wielbijlage: wielbijlageSchema.optional(),
@@ -76,7 +79,7 @@ export function registerTwominscanRoutes(app: Express): void {
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige aanvraag" });
     }
-    const { egCode, volgorde, xStand, naam, taal, datum, wielbijlage } = parsed.data;
+    const { egCode, volgorde, xStand, naam, taal, datum, organisatie, wielbijlage } = parsed.data;
     const afnamedatum = datum && datum.trim() ? datum : new Date().toLocaleDateString("nl-BE");
 
     try {
@@ -87,10 +90,14 @@ export function registerTwominscanRoutes(app: Express): void {
           ? await genereer2msRapportOpVolgorde(volgorde, xStand ?? null, taal ?? "nl", {
               naam: naam ?? null,
               datum: afnamedatum,
+              organisatie: organisatie ?? null,
+              taal: taal ?? "nl",
             })
           : await genereer2msRapportPdf(egCode as string, taal ?? "nl", {
               naam: naam ?? null,
               datum: afnamedatum,
+              organisatie: organisatie ?? null,
+              taal: taal ?? "nl",
             });
       // De wielpagina is een aanvulling: mislukt ze, dan komt het rapport
       // ongewijzigd terug (zie wielbijlage.ts).
