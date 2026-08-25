@@ -467,7 +467,17 @@
     "ui.kop.verliest_energie": "PERD DE L'ÉNERGIE",
     "ui.kop.herstelt_energie": "RÉCUPÈRE DE L'ÉNERGIE",
     "ui.kop.kernbeweging": "LE MOUVEMENT CENTRAL",
-    "ui.h1.eg_legenda": "EG = Comportement Énergétique · état d'énergie :"
+    "ui.h1.eg_legenda": "EG = Comportement Énergétique · état d'énergie :",
+    "ui.h11wiel.kop": "TA PLACE SUR LA ROUE DES TEMPÉRAMENTS",
+    "ui.h11wiel.titel": "Où se situe ton énergie sur la roue",
+    "ui.h11wiel.lead": "La roue des tempéraments est une visualisation énergétique du comportement. Chaque position possède son propre ordre de quatre couleurs d'énergie : la première couleur dans la bande extérieure, puis la deuxième et la troisième, et au centre la couleur qui coûte de l'énergie. Ton repère se trouve sur la position qui correspond à ton ordre de couleurs.",
+    "ui.h11wiel.alt": "Roue des tempéraments avec ta position indiquée",
+    "ui.h11wiel.sector.titel": "Secteur sur la roue",
+    "ui.h11wiel.sector.uitleg": "Le secteur indique quel style de collaboration donne de l'énergie dans cette zone de la roue.",
+    "ui.h11wiel.lezen.kop": "COMMENT LIRE CETTE PLACE",
+    "ui.h11wiel.lezen.tekst": "Le repère ne dit rien sur la quantité d'énergie dont tu disposes, ni sur la qualité de ce que tu fais. Il montre dans quelle direction ton énergie circule le plus facilement. Être côte à côte facilite la compréhension ; être face à face demande un accord conscient sur le rythme, le niveau de détail et le contact.",
+    "ui.h11wiel.team.kop": "DANS UNE ÉQUIPE",
+    "ui.h11wiel.team.tekst": "Lorsque plusieurs personnes figurent sur la même roue, la dynamique d'équipe devient visible : là où l'énergie du groupe se rejoint, là où elle s'écarte, et quel travail coûte de l'énergie à l'ensemble du groupe. La roue n'est alors pas une étiquette individuelle, mais une image de dialogue pour rester ensemble en énergie."
   },
   "en": {
     "afstemming.blauw.ander.0": "Relational",
@@ -937,7 +947,17 @@
     "ui.kop.verliest_energie": "LOSES ENERGY",
     "ui.kop.herstelt_energie": "RESTORES ENERGY",
     "ui.kop.kernbeweging": "THE CORE MOVEMENT",
-    "ui.h1.eg_legenda": "EG = Energetic Behaviour · energy mode:"
+    "ui.h1.eg_legenda": "EG = Energetic Behaviour · energy mode:",
+    "ui.h11wiel.kop": "YOUR PLACE ON THE TEMPERAMENT WHEEL",
+    "ui.h11wiel.titel": "Where your energy sits on the wheel",
+    "ui.h11wiel.lead": "The temperament wheel is an energetic behaviour visualisation. Every position has its own order of four energy colours: the first colour in the outer band, then the second and the third, and in the centre the colour that costs energy. Your marker sits on the position that matches your colour order.",
+    "ui.h11wiel.alt": "Temperament wheel with your position marked",
+    "ui.h11wiel.sector.titel": "Sector on the wheel",
+    "ui.h11wiel.sector.uitleg": "The sector indicates which style of working together gives energy in this zone of the wheel.",
+    "ui.h11wiel.lezen.kop": "HOW TO READ THIS PLACE",
+    "ui.h11wiel.lezen.tekst": "The marker says nothing about how much energy you have or how well you do something. It shows in which direction your energy moves most easily. Standing side by side brings quick understanding; standing opposite each other asks for conscious tuning on pace, detail and contact.",
+    "ui.h11wiel.team.kop": "IN A TEAM",
+    "ui.h11wiel.team.tekst": "When several people appear on the same wheel, the team dynamic becomes visible: where the group's energy converges, where it moves apart, and which work costs the group as a whole energy. The wheel is then not a label per person, but a shared picture for staying in energy together."
   },
   "es": {
     "afstemming.blauw.ander.0": "Relacional",
@@ -1407,7 +1427,17 @@
     "ui.kop.verliest_energie": "PIERDE ENERGÍA",
     "ui.kop.herstelt_energie": "RECUPERA ENERGÍA",
     "ui.kop.kernbeweging": "EL MOVIMIENTO CENTRAL",
-    "ui.h1.eg_legenda": "EG = Comportamiento Energético · estado de energía:"
+    "ui.h1.eg_legenda": "EG = Comportamiento Energético · estado de energía:",
+    "ui.h11wiel.kop": "TU LUGAR EN LA RUEDA DE TEMPERAMENTOS",
+    "ui.h11wiel.titel": "Dónde se sitúa tu energía en la rueda",
+    "ui.h11wiel.lead": "La rueda de temperamentos es una visualización energética del comportamiento. Cada posición tiene su propio orden de cuatro colores de energía: el primer color en la banda exterior, después el segundo y el tercero, y en el centro el color que cuesta energía. Tu marca está en la posición que corresponde a tu orden de colores.",
+    "ui.h11wiel.alt": "Rueda de temperamentos con tu posición indicada",
+    "ui.h11wiel.sector.titel": "Sector en la rueda",
+    "ui.h11wiel.sector.uitleg": "El sector indica qué estilo de colaboración da energía en esta zona de la rueda.",
+    "ui.h11wiel.lezen.kop": "CÓMO LEER ESTE LUGAR",
+    "ui.h11wiel.lezen.tekst": "La marca no dice nada sobre cuánta energía tienes ni sobre lo bien que haces algo. Muestra en qué dirección se mueve tu energía con mayor facilidad. Estar al lado facilita la comprensión; estar enfrente pide una sintonía consciente sobre ritmo, detalle y contacto.",
+    "ui.h11wiel.team.kop": "EN UN EQUIPO",
+    "ui.h11wiel.team.tekst": "Cuando varias personas aparecen en la misma rueda, la dinámica de equipo se hace visible: dónde coincide la energía del grupo, dónde se separa y qué trabajo cuesta energía al grupo en su conjunto. Entonces la rueda no es una etiqueta por persona, sino una imagen de conversación para mantenerse en energía juntos."
   },
   "ru": {
     "afstemming.blauw.ander.0": "Реляционный",
@@ -1877,6 +1907,16 @@
     "ui.kop.verliest_energie": "ТЕРЯЕТ ЭНЕРГИЮ",
     "ui.kop.herstelt_energie": "ВОССТАНАВЛИВАЕТ ЭНЕРГИЮ",
     "ui.kop.kernbeweging": "КЛЮЧЕВОЕ ДВИЖЕНИЕ",
-    "ui.h1.eg_legenda": "EG = Энергетическое поведение · режим энергии:"
+    "ui.h1.eg_legenda": "EG = Энергетическое поведение · режим энергии:",
+    "ui.h11wiel.kop": "ВАШЕ МЕСТО НА КОЛЕСЕ ТЕМПЕРАМЕНТОВ",
+    "ui.h11wiel.titel": "Где ваша энергия находится на колесе",
+    "ui.h11wiel.lead": "Колесо темпераментов — это энергетическая визуализация поведения. У каждой позиции свой порядок четырёх энергетических цветов: первый цвет во внешней полосе, затем второй и третий, а в центре цвет, который расходует энергию. Ваша отметка стоит на позиции, соответствующей вашему порядку цветов.",
+    "ui.h11wiel.alt": "Колесо темпераментов с обозначенной вашей позицией",
+    "ui.h11wiel.sector.titel": "Сектор на колесе",
+    "ui.h11wiel.sector.uitleg": "Сектор показывает, какой стиль совместной работы даёт энергию в этой зоне колеса.",
+    "ui.h11wiel.lezen.kop": "КАК ЧИТАТЬ ЭТО МЕСТО",
+    "ui.h11wiel.lezen.tekst": "Отметка ничего не говорит о том, сколько у вас энергии или насколько хорошо вы что-то делаете. Она показывает, в каком направлении ваша энергия движется легче всего. Рядом стоящие быстро понимают друг друга; стоящие напротив нуждаются в осознанной настройке по темпу, детальности и контакту.",
+    "ui.h11wiel.team.kop": "В КОМАНДЕ",
+    "ui.h11wiel.team.tekst": "Когда на одном колесе оказываются несколько человек, становится видна командная динамика: где энергия группы совпадает, где расходится и какая работа расходует энергию группы в целом. Тогда колесо — не ярлык для отдельного человека, а общая картина для разговора о том, как вместе оставаться в энергии."
   }
 }

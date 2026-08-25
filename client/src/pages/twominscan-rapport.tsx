@@ -6,6 +6,7 @@ import { ontleedEGCode } from "@/twominscan/egcode";
 import { KLEUR, KLEUR_HEX } from "@/twominscan/theme";
 import { maakT, type Vertaler, type Taal } from "@/twominscan/i18n";
 import { normaliseerTaal } from "@shared/talen";
+import { Temperamentenwiel, positieByWielpositie, sectorLabel } from "@/temperamentenwiel";
 
 // 2MINSCAN rapport — T4P Business Kompas-stijl, Energetic Flow-inhoud.
 // 14 hoofdstukken. Web-weergave + print (PDF via venster-print).
@@ -75,6 +76,7 @@ export default function TwominscanRapport() {
         <H9 data={data} tr={tr} />
         <H10 data={data} tr={tr} />
         <H11 data={data} ieLabel={ieLabel} tr={tr} />
+        <H11Wiel data={data} tr={tr} />
         <Slot data={data} tr={tr} />
       </div>
 
@@ -599,6 +601,82 @@ function H11({ data, ieLabel, tr }: { data: any; ieLabel: string; tr: Vertaler }
       </InfoBlok>
       <InfoBlok kop={tr("ui.h11.dieper.kop", "ALS JE DIEPER WIL KIJKEN")} kleur={KLEUR.petrol}>
         {tr("ui.h11.dieper.tekst", "Wanneer de vraag niet langer gaat over energiemanagement maar over het waarom van voorkeursgedrag, talentpotentieel of diepere zijns-kenmerken, kan een TaPas Kompas een zorgvuldige vervolgstap zijn.")}
+      </InfoBlok>
+    </Pagina>
+  );
+}
+
+// ---- 11 (vervolg) Positie op het temperamentenwiel ----
+// Hoort bij hoofdstuk 11 en krijgt daarom geen eigen nummer: de inhoudsopgave
+// blijft ongewijzigd. De wielpositie zelf komt uit hetzelfde profiel dat de
+// Insights-kaart hierboven toont.
+function H11Wiel({ data, tr }: { data: any; tr: Vertaler }) {
+  const deelnemers = useMemo(() => {
+    const initialen =
+      (data.naam || "")
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((deel: string) => deel.charAt(0).toUpperCase())
+        .join("") || "IK";
+    return [{ naam: data.naam || "", initialen, wielpositie: data.wielpositie }];
+  }, [data.naam, data.wielpositie]);
+
+  // Onbekende wielpositie: pagina stil weglaten in plaats van een leeg wiel tonen.
+  const positie = positieByWielpositie(data.wielpositie);
+  if (!positie) return null;
+
+  return (
+    <Pagina kicker={kickerVan(tr, "lead_balance", "LEAD & BALANCE")}>
+      <div style={{ fontFamily: "Arial, sans-serif", fontSize: 11.5, fontWeight: 800, letterSpacing: 1.4, color: KLEUR.teal, marginBottom: 8 }}>
+        {tr("ui.h11wiel.kop", "JOUW PLAATS OP HET TEMPERAMENTENWIEL")}
+      </div>
+      <h2 style={{ fontFamily: "Arial, sans-serif", fontSize: 27, fontWeight: 800, color: KLEUR.petrol, margin: "0 0 10px", lineHeight: 1.12 }}>
+        {tr("ui.h11wiel.titel", "Waar jouw energie op het wiel staat")}
+      </h2>
+      <div style={{ height: 2, background: KLEUR.petrol, marginBottom: 14 }} />
+      <p style={{ fontSize: 14, lineHeight: 1.6, margin: "0 0 8px" }}>
+        {tr(
+          "ui.h11wiel.lead",
+          "Het temperamentenwiel is een energetische gedragsvisualisatie. Elke positie op het wiel heeft haar eigen volgorde van vier energiekleuren: de eerste kleur in de buitenste band, daarna de tweede en de derde, en in de kern de kleur die energie kost. Jouw markering staat op de positie die bij jouw kleurvolgorde hoort.",
+        )}
+      </p>
+
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <div style={{ width: 395, maxWidth: "100%" }}>
+          <Temperamentenwiel
+            deelnemers={deelnemers}
+            titel={tr("ui.h11wiel.alt", "Temperamentenwiel met jouw positie aangeduid")}
+          />
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, margin: "10px 0" }}>
+        <Kaart titel={tr("ui.h11.wielpositie", "Wielpositie")} accent={KLEUR.aubergine}>
+          <b style={{ fontSize: 16 }}>{data.wielpositie}</b>
+          <div style={{ marginTop: 5 }}>
+            <Kleurvolgorde volgorde={data.profiel.kleurvolgorde} />
+          </div>
+        </Kaart>
+        <Kaart titel={tr("ui.h11wiel.sector.titel", "Sector op het wiel")} accent={KLEUR.teal}>
+          <b>{sectorLabel(positie)}</b>
+          <div style={{ fontSize: 12.5, color: "#777", marginTop: 4 }}>
+            {tr("ui.h11wiel.sector.uitleg", "De sector geeft aan welke stijl van samenwerken in deze zone van het wiel energie geeft.")}
+          </div>
+        </Kaart>
+      </div>
+
+      <InfoBlok kop={tr("ui.h11wiel.lezen.kop", "HOE JE DEZE PLAATS LEEST")} kleur={KLEUR.goud}>
+        {tr(
+          "ui.h11wiel.lezen.tekst",
+          "De markering zegt niets over hoeveel energie je hebt of hoe goed je iets doet. Ze laat zien in welke richting jouw energie het makkelijkst beweegt. Naast elkaar staan geeft snel begrip; tegenover elkaar staan vraagt bewuste afstemming over tempo, detail en contact.",
+        )}
+      </InfoBlok>
+      <InfoBlok kop={tr("ui.h11wiel.team.kop", "IN EEN TEAM")} kleur={KLEUR.petrol}>
+        {tr(
+          "ui.h11wiel.team.tekst",
+          "Staan meerdere mensen op hetzelfde wiel, dan wordt de teamdynamiek zichtbaar: waar de energie van de groep samenvalt, waar ze uit elkaar loopt en welk werk de groep als geheel energie kost. Het wiel is dan geen etiket per persoon, maar een gespreksbeeld om samen in energie te blijven.",
+        )}
       </InfoBlok>
     </Pagina>
   );

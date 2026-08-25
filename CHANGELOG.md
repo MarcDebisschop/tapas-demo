@@ -87,6 +87,25 @@ beschreven omdat weten beter is dan vermoeden.
   `profielen.ts` (wielpositie 128-148 en 35-55) staan gedocumenteerd in de README
   en zijn bewust niet aangepast: dat raakt de matching van de 2MINSCAN en hoort
   bij een eigen stap.
+- Het 2MINSCAN-rapport krijgt een wielpagina, als tweede stap van vier. Na
+  hoofdstuk 11 en voor de slotpagina toont `twominscan-rapport.tsx` het volledige
+  temperamentenwiel met de eigen positie gemarkeerd, plus de wielpositie, de
+  kleurvolgorde van die positie en de sector waarin ze valt. De pagina krijgt
+  geen hoofdstuknummer en staat niet in de inhoudsopgave, zodat de bestaande
+  nummering van twaalf hoofdstukken ongewijzigd blijft. De teksten staan in
+  `vertalingen.json` onder `ui.h11wiel.*`, in de vier talen die het rapport al
+  kende. De wielmodule uit stap 1 is hiervoor niet gewijzigd: de kleurvolgorde
+  per positie blijft de gemeten bronwaarheid van de speelmat. Het wiel is
+  ingesteld op een breedte die de pagina binnen één A4 houdt; bij een grotere maat
+  liep de voetregel over naar een extra, nagenoeg lege pagina.
+  `tests/temperamentenwiel-rapport.test.ts` legt vast dat de pagina bestaat, dat
+  ze buiten de nummering blijft en dat alle vertaalsleutels in elke taal aanwezig
+  zijn. De weg is nagelopen met vijf afnames van het fictieve bedrijf Newco: vijf
+  keer de vragenlijst effectief ingevuld in de browser, vijf rapporten van zestien
+  pagina's zonder overloop, en de vijf berekende wielposities samen op één
+  teamwiel. Twee zaken zijn bewust nog niet gedaan en horen bij een volgende stap:
+  het profieldocument achter "Download als PDF" komt van de server en bevat de
+  wielpagina nog niet, en het teamwiel is nog niet in het platform aangesloten.
 - Uitnodigen kan nu zelf een bericht versturen. Het uitnodigingsvenster heeft een
   adresveld en twee knoppen: "Alleen link aanmaken", de weg die er altijd was en
   volwaardig blijft, en "Aanmaken en versturen". Nieuw bestand
