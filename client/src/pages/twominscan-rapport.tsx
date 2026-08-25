@@ -65,7 +65,7 @@ export default function TwominscanRapport() {
 
   return (
     <div className="twominscan-pagina rapport-achtergrond" style={{ background: "#e8e6df", minHeight: "100vh", paddingBottom: 60 }}>
-      <PrintBalk tr={tr} egCode={data.egCode} volgorde={volgorde} xStand={xStand} naam={data.naam} datum={data.datum} taal={taal} />
+      <PrintBalk tr={tr} egCode={data.egCode} volgorde={volgorde} xStand={xStand} naam={data.naam} datum={data.datum} taal={taal} wielpositie={data.wielpositie} organisatie={organisatie} />
       <div className="rapport-doc" style={docStyle}>
         <Cover data={data} ieLabel={ieLabel} organisatie={organisatie} foto={foto} tr={tr} />
         <Inhoud tr={tr} />
@@ -98,7 +98,7 @@ const docStyle: React.CSSProperties = {
   fontFamily: "Georgia, 'Times New Roman', serif",
 };
 
-function PrintBalk({ tr, egCode, volgorde, xStand, naam, datum, taal }: { tr: Vertaler; egCode: string; volgorde?: string[]; xStand?: string; naam?: string; datum?: string; taal: Taal }) {
+function PrintBalk({ tr, egCode, volgorde, xStand, naam, datum, taal, wielpositie, organisatie }: { tr: Vertaler; egCode: string; volgorde?: string[]; xStand?: string; naam?: string; datum?: string; taal: Taal; wielpositie?: string; organisatie?: string }) {
   const [bezig, setBezig] = useState(false);
 
   // Download het OFFICIËLE, vooraf ontwikkelde energetische rapport-PDF
@@ -153,7 +153,102 @@ function PrintBalk({ tr, egCode, volgorde, xStand, naam, datum, taal }: { tr: Ve
       >
         {bezig ? tr("ui.rapport.download_bezig", "⏳ Rapport wordt opgehaald…") : tr("ui.rapport.download_pdf", "⬇ Download als PDF")}
       </button>
+      <BewaarVoorTeam
+        tr={tr}
+        naam={naam}
+        wielpositie={wielpositie}
+        egCode={egCode}
+        organisatie={organisatie}
+        taal={taal}
+        datum={datum}
+      />
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Bewaren voor het teamwiel
+// ---------------------------------------------------------------------------
+// Eén knop die enkel bewaart wat een teamwiel nodig heeft: naam, eventueel de
+// organisatie, de EG-code en de wielpositie. Geen antwoorden, geen scores, geen
+// foto. De teamwielpagina kan de deelnemers daarna zelf inladen in plaats van
+// dat iemand de wielposities moet overtypen.
+function BewaarVoorTeam({
+  tr,
+  naam,
+  wielpositie,
+  egCode,
+  organisatie,
+  taal,
+  datum,
+}: {
+  tr: Vertaler;
+  naam?: string;
+  wielpositie?: string;
+  egCode: string;
+  organisatie?: string;
+  taal: Taal;
+  datum?: string;
+}) {
+  const [stand, setStand] = useState<"klaar" | "bezig" | "bewaard" | "fout">("klaar");
+
+  if (!naam?.trim() || !wielpositie?.trim()) return null;
+
+  async function bewaar() {
+    if (stand === "bezig" || stand === "bewaard") return;
+    setStand("bezig");
+    try {
+      const resp = await fetch("/api/twominscan/afname", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          naam,
+          wielpositie,
+          egCode,
+          organisatie: organisatie || undefined,
+          taal,
+          datum: datum || undefined,
+        }),
+      });
+      if (!resp.ok) throw new Error(`status ${resp.status}`);
+      setStand("bewaard");
+    } catch (e) {
+      console.error("[2MINSCAN] bewaren voor het teamwiel mislukt:", e);
+      setStand("fout");
+    }
+  }
+
+  const label =
+    stand === "bewaard"
+      ? tr("ui.rapport.bewaard_team", "In de teamlijst")
+      : stand === "bezig"
+        ? tr("ui.rapport.bewaren_bezig", "Bezig…")
+        : stand === "fout"
+          ? tr("ui.rapport.bewaren_fout", "Bewaren lukte niet — opnieuw")
+          : tr("ui.rapport.bewaar_team", "Bewaar voor teamrapport");
+
+  return (
+    <button
+      onClick={bewaar}
+      disabled={stand === "bezig" || stand === "bewaard"}
+      title={tr(
+        "ui.rapport.bewaar_team_uitleg",
+        "Bewaart enkel naam, organisatie, EG-code en wielpositie, zodat deze afname in een teamwiel kan meegaan.",
+      )}
+      style={{
+        background: "transparent",
+        color: "#fff",
+        border: "1.5px solid rgba(255,255,255,.55)",
+        borderRadius: 8,
+        padding: "8px 14px",
+        fontWeight: 700,
+        fontSize: 13,
+        cursor: stand === "bezig" || stand === "bewaard" ? "default" : "pointer",
+        opacity: stand === "bewaard" ? 0.75 : 1,
+      }}
+    >
+      {label}
+    </button>
   );
 }
 

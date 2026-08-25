@@ -72,6 +72,37 @@ beschreven omdat weten beter is dan vermoeden.
 
 ### Toegevoegd
 
+- Bewaarde 2MINSCAN-afnames voor het teamwiel. Wie het eigen rapport ziet, kan
+  het met één knop in de teamlijst zetten (`Bewaar voor teamrapport` op de
+  printbalk van `client/src/pages/twominscan-rapport.tsx`). De teamwielpagina
+  laadt die deelnemers daarna zelf in, in plaats van dat iemand 24 wielposities
+  met de hand overtypt. Nieuw `server/twominscan/afname-opslag.ts` met POST
+  `/api/twominscan/afname` (publiek, want de deelnemer beslist over de eigen
+  afname), GET `/api/twominscan/afnames` en DELETE
+  `/api/twominscan/afname/:id` (beide achter `vereisAdmin`, want dat is een
+  lijst met namen). Bewaard wordt enkel wat een teamwiel nodig heeft: naam,
+  rol, organisatie, EG-code, wielpositie, taal en datum. Niet bewaard: de
+  gegeven antwoorden, de losse scores, de portretfoto of enige rapporttekst —
+  een bewaarde rij kan het individuele rapport dus niet reconstrueren
+  (dataminimalisatie, AVG art. 5.1.c). De tabel `twominscan_afnames` wordt lazy
+  aangemaakt volgens het patroon dat hier al bestaat
+  (`server/instrument-beschikbaarheid.ts`, `server/gids-manager.ts`), dus zonder
+  Drizzle-schema en zonder migratie; `shared/schema.ts` en de bestaande tabellen
+  blijven onaangeroerd. Let op: `tests/schema-dekt-databank.test.ts` faalt al
+  vóór deze wijziging omdat zestien zulke lazy tabellen geen schemadefinitie
+  hebben; deze tabel wordt daar de zeventiende naam in dezelfde, bestaande
+  faalmelding. Dekking: `tests/twominscan-afname-opslag.test.ts`.
+- Teamwielpagina in drie talen (Nederlands, Frans, Engels), met een taalkeuze in
+  de balk. `client/src/temperamentenwiel/dynamiek.ts` haalt zijn teksten nu op
+  via een optionele vertaler (`WielVertaler`) in plaats van ze hard in het
+  Nederlands te bevatten; de rekenlogica van de teamdynamiek is niet gewijzigd,
+  enkel de tekst is eruit gelicht. `client/src/twominscan/vertalingen.json` krijgt
+  121 nieuwe sleutels per doeltaal voor `fr` en `en` (achteraan toegevoegd, de
+  bestaande volgorde en de talen `es` en `ru` blijven zoals ze waren).
+  `tests/twominscan-teamwiel-vertaling.test.ts` laat de bouw falen wanneer een
+  sleutel in fr of en ontbreekt, wanneer een vertaling een accolade-plaatshouder
+  laat vallen, of wanneer een brontekst talent-, potentieel-, competentie-,
+  diagnose- of geschiktheidstaal binnenbrengt.
 - Module Temperamentenwiel, als eerste stap van vier en nog niet aangesloten:
   `client/src/temperamentenwiel/` met de 24 posities van de speelmat
   (`posities.ts`), de renderer die het wiel tekent (`wiel.ts`), de

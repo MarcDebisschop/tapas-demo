@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { KLEUR, KLEUR_HEX } from "@/twominscan/theme";
+import { maakT, type Taal, type Vertaler } from "@/twominscan/i18n";
 import {
   POSITIES,
   KLEURWOORD,
@@ -26,13 +27,37 @@ import { verkleinAfbeeldingNaarDataUrl } from "@/lib/afbeelding";
 // client/src/temperamentenwiel/ en blijft ongewijzigd bronwaarheid van de mat.
 //
 // Vooraf gevulde lijst kan via /2minscan/teamwiel?d=<encodeURIComponent(JSON)>
-// met { organisatie, datum, deelnemers: [{ naam, wielpositie, rol }] }.
+// met { organisatie, datum, taal, deelnemers: [{ naam, wielpositie, rol }] }.
 //
 // Portretten zijn altijd optioneel. Wie geen foto heeft, staat gewoon zonder
 // foto in het rapport: geen leeg kader en geen melding dat er iets ontbreekt.
+//
+// AUTOMATISCH INLADEN
+//   Wie een 2MINSCAN afrondt, kan die met één knop bewaren voor het teamrapport
+//   (server/twominscan/afname-opslag.ts). Het paneel "Deelnemers uit bewaarde
+//   afnames" haalt die lijst op, zodat wielposities niet meer overgetypt worden.
+//   Lezen vraagt een beheerderssessie; met de hand invullen blijft mogelijk.
+//
+// TALEN
+//   NL, FR en EN. De berekening blijft identiek; alleen de zichtbare tekst gaat
+//   door de bestaande 2MINSCAN-vertaallaag (client/src/twominscan/i18n.ts), met
+//   het Nederlands als bron en terugval.
 // =============================================================================
 
 const CONTACT = { web: "www.tapascity.com", mail: "info@tapascity.com" };
+
+const TEAMTALEN: { code: Taal; label: string }[] = [
+  { code: "nl", label: "NL" },
+  { code: "fr", label: "FR" },
+  { code: "en", label: "EN" },
+];
+
+const DATUM_LOCALE: Record<string, string> = { nl: "nl-BE", fr: "fr-BE", en: "en-GB" };
+
+function normaliseerTaal(ruw: unknown): Taal {
+  const kort = String(ruw ?? "").slice(0, 2).toLowerCase();
+  return (TEAMTALEN.some((t) => t.code === kort) ? kort : "nl") as Taal;
+}
 
 interface Portret {
   src: string;
@@ -55,12 +80,25 @@ interface FotoKandidaat {
   score: number;
 }
 
+interface BewaardeAfname {
+  id: number;
+  organisatie: string;
+  naam: string;
+  rol: string;
+  egCode: string;
+  wielpositie: string;
+  taal: string;
+  datum: string;
+  bewaardOp: string;
+}
+
 function leegTeamlid(): Teamlid {
   return { naam: "", rol: "", wielpositie: POSITIES[0].wielpositie, foto: null };
 }
 
-function leesPayload(): { organisatie: string; datum: string; leden: Teamlid[] } | null {
-  const ruw = new URLSearchParams(window.location.search).get("d");
+function leesPayload(): { organisatie: string; datum: string; taal: Taal; leden: Teamlid[] } | null {
+  const params = new URLSearchParams(window.location.search);
+  const ruw = params.get("d");
   if (!ruw) return null;
   try {
     const p = JSON.parse(decodeURIComponent(ruw));
@@ -80,6 +118,7 @@ function leesPayload(): { organisatie: string; datum: string; leden: Teamlid[] }
     return {
       organisatie: String(p?.organisatie ?? ""),
       datum: String(p?.datum ?? ""),
+      taal: normaliseerTaal(p?.taal ?? params.get("taal")),
       leden,
     };
   } catch {
@@ -89,8 +128,12 @@ function leesPayload(): { organisatie: string; datum: string; leden: Teamlid[] }
 
 export default function TwominscanTeamwiel() {
   const vooraf = useMemo(leesPayload, []);
+  const [taal, setTaal] = useState<Taal>(vooraf?.taal ?? "nl");
+  const tr = useMemo(() => maakT(taal), [taal]);
   const [organisatie, setOrganisatie] = useState(vooraf?.organisatie ?? "");
-  const [datum, setDatum] = useState(vooraf?.datum || new Date().toLocaleDateString("nl-BE"));
+  const [datum, setDatum] = useState(
+    vooraf?.datum || new Date().toLocaleDateString(DATUM_LOCALE[vooraf?.taal ?? "nl"] ?? "nl-BE"),
+  );
   const [leden, setLeden] = useState<Teamlid[]>(
     vooraf?.leden.length ? vooraf.leden : [leegTeamlid(), leegTeamlid(), leegTeamlid()],
   );
@@ -109,6 +152,9 @@ export default function TwominscanTeamwiel() {
         modus={modus}
         setModus={setModus}
         aantal={geldig.length}
+        tr={tr}
+        taal={taal}
+        setTaal={setTaal}
       />
       {modus === "samenstellen" ? (
         <Samensteller
@@ -121,9 +167,10 @@ export default function TwominscanTeamwiel() {
           wijzig={wijzig}
           geldigAantal={geldig.length}
           naarRapport={() => setModus("rapport")}
+          tr={tr}
         />
       ) : (
-        <Teamrapport organisatie={organisatie} datum={datum} leden={geldig} />
+        <Teamrapport organisatie={organisatie} datum={datum} leden={geldig} tr={tr} />
       )}
     </div>
   );
@@ -136,10 +183,16 @@ function Balk({
   modus,
   setModus,
   aantal,
+  tr,
+  taal,
+  setTaal,
 }: {
   modus: "samenstellen" | "rapport";
   setModus: (m: "samenstellen" | "rapport") => void;
   aantal: number;
+  tr: Vertaler;
+  taal: Taal;
+  setTaal: (t: Taal) => void;
 }) {
   return (
     <div
@@ -154,23 +207,55 @@ function Balk({
         flexWrap: "wrap",
       }}
     >
-      <span style={{ fontWeight: 800, color: KLEUR.petrol }}>2MINSCAN · teamwiel</span>
-      <span style={{ fontSize: 13, color: "#6b6b6b" }}>{aantal} deelnemer(s) klaar</span>
+      <span style={{ fontWeight: 800, color: KLEUR.petrol }}>2MINSCAN · {tr("ui.tw.teamwiel", "teamwiel")}</span>
+      <span style={{ fontSize: 13, color: "#6b6b6b" }}>
+        {aantal} {tr("ui.tw.klaar", "deelnemer(s) klaar")}
+      </span>
+      <Taalkeuze taal={taal} setTaal={setTaal} />
       <div style={{ flex: 1 }} />
       {modus === "rapport" ? (
         <>
           <Knop soort="rand" onClick={() => setModus("samenstellen")}>
-            Deelnemers aanpassen
+            {tr("ui.tw.aanpassen", "Deelnemers aanpassen")}
           </Knop>
           <Knop soort="vol" onClick={() => window.print()}>
-            Rapport afdrukken / PDF
+            {tr("ui.tw.afdrukken", "Rapport afdrukken / PDF")}
           </Knop>
         </>
       ) : (
         <Knop soort="vol" onClick={() => setModus("rapport")} uit={aantal < 2}>
-          Toon teamrapport →
+          {tr("ui.tw.toon_rapport", "Toon teamrapport →")}
         </Knop>
       )}
+    </div>
+  );
+}
+
+function Taalkeuze({ taal, setTaal }: { taal: Taal; setTaal: (t: Taal) => void }) {
+  return (
+    <div style={{ display: "flex", gap: 4 }}>
+      {TEAMTALEN.map((optie) => {
+        const aan = optie.code === taal;
+        return (
+          <button
+            key={optie.code}
+            onClick={() => setTaal(optie.code)}
+            aria-pressed={aan}
+            style={{
+              padding: "5px 10px",
+              borderRadius: 7,
+              border: `1.5px solid ${aan ? KLEUR.petrol : KLEUR.lijn}`,
+              background: aan ? KLEUR.petrol : "transparent",
+              color: aan ? "#fff" : KLEUR.petrol,
+              fontWeight: 800,
+              fontSize: 12,
+              cursor: "pointer",
+            }}
+          >
+            {optie.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -221,6 +306,7 @@ function Samensteller({
   wijzig,
   geldigAantal,
   naarRapport,
+  tr,
 }: {
   organisatie: string;
   setOrganisatie: (v: string) => void;
@@ -231,23 +317,30 @@ function Samensteller({
   wijzig: (i: number, deel: Partial<Teamlid>) => void;
   geldigAantal: number;
   naarRapport: () => void;
+  tr: Vertaler;
 }) {
   return (
     <div style={{ maxWidth: 980, margin: "0 auto", padding: "26px 20px 70px" }}>
-      <div style={{ color: KLEUR.goud, fontWeight: 800, letterSpacing: 2, fontSize: 12 }}>TEAMWIEL</div>
+      <div style={{ color: KLEUR.goud, fontWeight: 800, letterSpacing: 2, fontSize: 12 }}>
+        {tr("ui.tw.kicker", "TEAMWIEL")}
+      </div>
       <h1 style={{ color: KLEUR.petrol, fontSize: 34, lineHeight: 1.1, margin: "8px 0 12px", fontWeight: 800 }}>
-        Zet de afgenomen 2MINSCANs samen op één wiel
+        {tr("ui.tw.titel", "Zet de afgenomen 2MINSCANs samen op één wiel")}
       </h1>
       <p style={{ fontSize: 15.5, lineHeight: 1.6, maxWidth: 680 }}>
-        Vul per deelnemer de naam en de wielpositie in zoals die uit de 2MINSCAN kwam. Het wiel zelf blijft
-        onveranderd: elke positie houdt haar eigen kleurvolgorde.
+        {tr(
+          "ui.tw.intro",
+          "Laad de deelnemers uit de bewaarde afnames, of vul per deelnemer de naam en de wielpositie in zoals die uit de 2MINSCAN kwam. Het wiel zelf blijft onveranderd: elke positie houdt haar eigen kleurvolgorde.",
+        )}
       </p>
 
+      <Afnamepaneel setLeden={setLeden} setOrganisatie={setOrganisatie} tr={tr} />
+
       <div style={{ display: "flex", gap: 18, flexWrap: "wrap", margin: "22px 0 10px" }}>
-        <Veldje label="Organisatie (optioneel)">
+        <Veldje label={tr("ui.tw.organisatie", "Organisatie (optioneel)")}>
           <input value={organisatie} onChange={(e) => setOrganisatie(e.target.value)} placeholder="bv. Newco" style={veldStijl} />
         </Veldje>
-        <Veldje label="Datum">
+        <Veldje label={tr("ui.tw.datum", "Datum")}>
           <input value={datum} onChange={(e) => setDatum(e.target.value)} style={veldStijl} />
         </Veldje>
       </div>
@@ -274,13 +367,13 @@ function Samensteller({
                 style={{ width: 48, height: 60, objectFit: "cover", borderRadius: 6, border: `1px solid ${KLEUR.lijn}` }}
               />
             ) : null}
-            <Veldje label="Naam">
+            <Veldje label={tr("ui.tw.naam", "Naam")}>
               <input value={lid.naam} onChange={(e) => wijzig(i, { naam: e.target.value })} placeholder="bv. Ilse Verhoeven" style={{ ...veldStijl, maxWidth: 230 }} />
             </Veldje>
-            <Veldje label="Rol (optioneel)">
+            <Veldje label={tr("ui.tw.rol", "Rol (optioneel)")}>
               <input value={lid.rol} onChange={(e) => wijzig(i, { rol: e.target.value })} placeholder="bv. algemeen directeur" style={{ ...veldStijl, maxWidth: 200 }} />
             </Veldje>
-            <Veldje label="Wielpositie">
+            <Veldje label={tr("ui.tw.wielpositie", "Wielpositie")}>
               <select value={lid.wielpositie} onChange={(e) => wijzig(i, { wielpositie: e.target.value })} style={{ ...veldStijl, maxWidth: 220 }}>
                 {POSITIES.map((p) => (
                   <option key={p.wielpositie} value={p.wielpositie}>
@@ -289,7 +382,7 @@ function Samensteller({
                 ))}
               </select>
             </Veldje>
-            <Veldje label="Foto (optioneel)">
+            <Veldje label={tr("ui.tw.foto", "Foto (optioneel)")}>
               <input
                 type="file"
                 accept="image/*"
@@ -309,7 +402,7 @@ function Samensteller({
               onClick={() => setLeden((cur) => cur.filter((_, j) => j !== i))}
               style={{ marginLeft: "auto", border: "none", background: "transparent", color: "#a4462e", fontSize: 13, cursor: "pointer" }}
             >
-              verwijderen
+              {tr("ui.tw.verwijderen", "verwijderen")}
             </button>
           </div>
         ))}
@@ -317,14 +410,14 @@ function Samensteller({
 
       <div style={{ marginTop: 14, display: "flex", gap: 12, flexWrap: "wrap" }}>
         <Knop soort="rand" onClick={() => setLeden((cur) => [...cur, leegTeamlid()])}>
-          + Deelnemer toevoegen
+          {tr("ui.tw.toevoegen", "+ Deelnemer toevoegen")}
         </Knop>
         <Knop soort="vol" onClick={naarRapport} uit={geldigAantal < 2}>
-          Toon teamrapport →
+          {tr("ui.tw.toon_rapport", "Toon teamrapport →")}
         </Knop>
       </div>
 
-      <Fotopaneel leden={leden} wijzig={wijzig} />
+      <Fotopaneel leden={leden} wijzig={wijzig} tr={tr} />
     </div>
   );
 }
@@ -350,6 +443,162 @@ const veldStijl: React.CSSProperties = {
 };
 
 // ---------------------------------------------------------------------------
+// Deelnemers uit bewaarde afnames
+// ---------------------------------------------------------------------------
+// De afnames die deelnemers zelf bewaarden na hun 2MINSCAN. Lezen vraagt een
+// beheerderssessie: het is een lijst met namen. Wie niet aangemeld is, ziet dat
+// en kan gewoon met de hand verder werken.
+function Afnamepaneel({
+  setLeden,
+  setOrganisatie,
+  tr,
+}: {
+  setLeden: (fn: (cur: Teamlid[]) => Teamlid[]) => void;
+  setOrganisatie: (v: string) => void;
+  tr: Vertaler;
+}) {
+  const [open, setOpen] = useState(false);
+  const [bezig, setBezig] = useState(false);
+  const [fout, setFout] = useState("");
+  const [afnames, setAfnames] = useState<BewaardeAfname[]>([]);
+  const [organisaties, setOrganisaties] = useState<{ organisatie: string; aantal: number }[]>([]);
+  const [gekozenOrg, setGekozenOrg] = useState("");
+  const [aangevinkt, setAangevinkt] = useState<Record<number, boolean>>({});
+
+  async function haal(org: string) {
+    setBezig(true);
+    setFout("");
+    try {
+      const vraag = org ? `?organisatie=${encodeURIComponent(org)}` : "";
+      const antwoord = await fetch(`/api/twominscan/afnames${vraag}`, { credentials: "same-origin" });
+      if (antwoord.status === 401 || antwoord.status === 403) {
+        throw new Error(
+          tr(
+            "ui.tw.afnames_aanmelden",
+            "Meld je aan als beheerder om de bewaarde afnames te zien. Je kan de deelnemers ook met de hand invullen.",
+          ),
+        );
+      }
+      const data = await antwoord.json();
+      if (!antwoord.ok) throw new Error(data?.error ?? tr("ui.tw.afnames_fout", "Kon de afnames niet ophalen."));
+      setAfnames(Array.isArray(data.afnames) ? data.afnames : []);
+      setOrganisaties(Array.isArray(data.organisaties) ? data.organisaties : []);
+      setAangevinkt({});
+      if (!data.afnames?.length) {
+        setFout(tr("ui.tw.afnames_leeg", "Er zijn nog geen afnames bewaard voor deze keuze."));
+      }
+    } catch (e: any) {
+      setAfnames([]);
+      setFout(e?.message ?? tr("ui.tw.afnames_fout", "Kon de afnames niet ophalen."));
+    } finally {
+      setBezig(false);
+    }
+  }
+
+  function voegToe() {
+    const gekozen = afnames.filter((a) => aangevinkt[a.id]);
+    if (!gekozen.length) return;
+    const nieuw: Teamlid[] = gekozen.map((a) => ({
+      naam: a.naam,
+      rol: a.rol,
+      wielpositie: a.wielpositie,
+      foto: null,
+    }));
+    // Lege rijen uit de begintoestand vervangen; ingevulde rijen blijven staan.
+    setLeden((cur) => [...cur.filter((l) => l.naam.trim()), ...nieuw]);
+    const org = gekozen.find((a) => a.organisatie)?.organisatie;
+    if (org) setOrganisatie(org);
+    setAangevinkt({});
+  }
+
+  const aantalGekozen = afnames.filter((a) => aangevinkt[a.id]).length;
+
+  return (
+    <div style={{ marginTop: 22, background: "#fff", border: `1px solid ${KLEUR.lijn}`, borderRadius: 12, padding: "16px 18px" }}>
+      <button
+        onClick={() => {
+          const nu = !open;
+          setOpen(nu);
+          if (nu && !afnames.length && !fout) void haal("");
+        }}
+        style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer", fontWeight: 800, color: KLEUR.petrol, fontSize: 15 }}
+      >
+        {open ? "▾" : "▸"} {tr("ui.tw.afnames_titel", "Deelnemers uit bewaarde afnames")}
+      </button>
+      {open ? (
+        <>
+          <p style={{ fontSize: 13, color: "#5b5b5b", lineHeight: 1.55, maxWidth: 700, marginTop: 10 }}>
+            {tr(
+              "ui.tw.afnames_uitleg",
+              "Dit zijn de afnames die deelnemers zelf bewaarden na hun 2MINSCAN. Er is enkel naam, rol, EG-code en wielpositie bewaard — geen antwoorden en geen foto. Vink aan wie in dit teamwiel meegaat.",
+            )}
+          </p>
+          <div style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap", marginTop: 12 }}>
+            <Veldje label={tr("ui.tw.afnames_org", "Organisatie")}>
+              <select
+                value={gekozenOrg}
+                onChange={(e) => {
+                  setGekozenOrg(e.target.value);
+                  void haal(e.target.value);
+                }}
+                style={{ ...veldStijl, maxWidth: 300 }}
+              >
+                <option value="">{tr("ui.tw.afnames_alle", "Alle organisaties")}</option>
+                {organisaties.map((o) => (
+                  <option key={o.organisatie || "(leeg)"} value={o.organisatie}>
+                    {o.organisatie || tr("ui.tw.afnames_zonder_org", "Zonder organisatie")} ({o.aantal})
+                  </option>
+                ))}
+              </select>
+            </Veldje>
+            <Knop soort="rand" onClick={() => void haal(gekozenOrg)} uit={bezig}>
+              {bezig ? tr("ui.tw.bezig", "Bezig…") : tr("ui.tw.afnames_verversen", "Lijst verversen")}
+            </Knop>
+            <Knop soort="vol" onClick={voegToe} uit={aantalGekozen === 0}>
+              {tr("ui.tw.afnames_toevoegen", "Toevoegen aan het teamwiel")}
+              {aantalGekozen ? ` (${aantalGekozen})` : ""}
+            </Knop>
+          </div>
+          {fout ? <p style={{ fontSize: 13, color: "#a4462e", marginTop: 10 }}>{fout}</p> : null}
+
+          {afnames.length ? (
+            <div style={{ display: "grid", gap: 6, marginTop: 12 }}>
+              {afnames.map((a) => (
+                <label
+                  key={a.id}
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    alignItems: "center",
+                    border: `1px solid ${KLEUR.lijn}`,
+                    borderRadius: 8,
+                    padding: "8px 11px",
+                    fontSize: 13,
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={!!aangevinkt[a.id]}
+                    onChange={(e) => setAangevinkt((cur) => ({ ...cur, [a.id]: e.target.checked }))}
+                  />
+                  <span style={{ fontWeight: 700 }}>{a.naam}</span>
+                  {a.rol ? <span style={{ color: "#6b6b6b" }}>· {a.rol}</span> : null}
+                  <span style={{ flex: 1 }} />
+                  <span style={{ color: "#6b6b6b" }}>{a.egCode}</span>
+                  <span style={{ fontWeight: 700, color: KLEUR.petrol }}>{a.wielpositie}</span>
+                  {a.organisatie ? <span style={{ color: "#9a9a9a", fontSize: 11.5 }}>{a.organisatie}</span> : null}
+                </label>
+              ))}
+            </div>
+          ) : null}
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Portretten van de website van de organisatie zelf
 // ---------------------------------------------------------------------------
 // Geen zoektocht over het web: één pagina die de organisatie zelf publiceerde,
@@ -358,9 +607,11 @@ const veldStijl: React.CSSProperties = {
 function Fotopaneel({
   leden,
   wijzig,
+  tr,
 }: {
   leden: Teamlid[];
   wijzig: (i: number, deel: Partial<Teamlid>) => void;
+  tr: Vertaler;
 }) {
   const [open, setOpen] = useState(false);
   const [paginaUrl, setPaginaUrl] = useState("");
@@ -380,12 +631,14 @@ function Fotopaneel({
         body: JSON.stringify({ paginaUrl, namen: leden.map((l) => l.naam).filter(Boolean) }),
       });
       const data = await antwoord.json();
-      if (!antwoord.ok) throw new Error(data?.error ?? "Kon de pagina niet lezen.");
+      if (!antwoord.ok) throw new Error(data?.error ?? tr("ui.tw.foto_fout", "Kon de pagina niet lezen."));
       setBron(data.bron ?? paginaUrl);
       setKandidaten(Array.isArray(data.kandidaten) ? data.kandidaten : []);
-      if (!data.kandidaten?.length) setFout("Op deze pagina staan geen bruikbare portretten.");
+      if (!data.kandidaten?.length) {
+        setFout(tr("ui.tw.foto_leeg", "Op deze pagina staan geen bruikbare portretten."));
+      }
     } catch (e: any) {
-      setFout(e?.message ?? "Kon de pagina niet lezen.");
+      setFout(e?.message ?? tr("ui.tw.foto_fout", "Kon de pagina niet lezen."));
     } finally {
       setBezig(false);
     }
@@ -397,19 +650,18 @@ function Fotopaneel({
         onClick={() => setOpen(!open)}
         style={{ border: "none", background: "transparent", padding: 0, cursor: "pointer", fontWeight: 800, color: KLEUR.petrol, fontSize: 15 }}
       >
-        {open ? "▾" : "▸"} Portretten van de website van de organisatie
+        {open ? "▾" : "▸"} {tr("ui.tw.foto_titel", "Portretten van de website van de organisatie")}
       </button>
       {open ? (
         <>
           <p style={{ fontSize: 13, color: "#5b5b5b", lineHeight: 1.55, maxWidth: 700, marginTop: 10 }}>
-            Geef één pagina op die de organisatie zelf publiceerde, bijvoorbeeld de directie- of teampagina. Je krijgt de
-            portretten van die pagina te zien en bevestigt zelf welke foto bij wie hoort. Er wordt niet op het web
-            gezocht, geen andere pagina gelezen en niets bewaard. De website blijft als bron in het rapport staan. Vraag
-            de betrokkenen of ze het goed vinden dat hun foto in dit teamrapport komt; wie dat niet wil, laat je gewoon
-            zonder foto.
+            {tr(
+              "ui.tw.foto_uitleg",
+              "Geef één pagina op die de organisatie zelf publiceerde, bijvoorbeeld de directie- of teampagina. Je krijgt de portretten van die pagina te zien en bevestigt zelf welke foto bij wie hoort. Er wordt niet op het web gezocht, geen andere pagina gelezen en niets bewaard. De website blijft als bron in het rapport staan. Vraag de betrokkenen of ze het goed vinden dat hun foto in dit teamrapport komt; wie dat niet wil, laat je gewoon zonder foto.",
+            )}
           </p>
           <div style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap", marginTop: 12 }}>
-            <Veldje label="Pagina op de website van de organisatie">
+            <Veldje label={tr("ui.tw.foto_pagina", "Pagina op de website van de organisatie")}>
               <input
                 value={paginaUrl}
                 onChange={(e) => setPaginaUrl(e.target.value)}
@@ -418,7 +670,7 @@ function Fotopaneel({
               />
             </Veldje>
             <Knop soort="rand" onClick={zoek} uit={bezig || !paginaUrl.trim()}>
-              {bezig ? "Bezig…" : "Portretten ophalen"}
+              {bezig ? tr("ui.tw.bezig", "Bezig…") : tr("ui.tw.foto_ophalen", "Portretten ophalen")}
             </Knop>
           </div>
           {fout ? <p style={{ fontSize: 13, color: "#a4462e", marginTop: 10 }}>{fout}</p> : null}
@@ -426,15 +678,20 @@ function Fotopaneel({
           {kandidaten.length ? (
             <>
             <p style={{ fontSize: 12.5, color: "#6b6b6b", marginTop: 14, marginBottom: 0 }}>
-              Bron: {bron} · {kandidaten.length} beeld(en) van deze pagina. Wijs alleen toe wat een portret van die
-              persoon is; deze bron komt in het rapport te staan.
+              {tr("ui.tw.foto_bron", "Bron")}: {bron} · {kandidaten.length}{" "}
+              {tr(
+                "ui.tw.foto_aantal",
+                "beeld(en) van deze pagina. Wijs alleen toe wat een portret van die persoon is; deze bron komt in het rapport te staan.",
+              )}
             </p>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))", gap: 12, marginTop: 12 }}>
               {kandidaten.map((k) => (
                 <div key={k.url} style={{ border: `1px solid ${KLEUR.lijn}`, borderRadius: 10, padding: 8 }}>
                   <img src={k.dataUrl} alt="" style={{ width: "100%", height: 120, objectFit: "cover", borderRadius: 6 }} />
                   <div style={{ fontSize: 11.5, color: "#6b6b6b", margin: "6px 0 4px", minHeight: 28, lineHeight: 1.3 }}>
-                    {k.naamGok ? `Waarschijnlijk ${k.naamGok}` : k.alt || "Onbekend portret"}
+                    {k.naamGok
+                      ? `${tr("ui.tw.foto_waarschijnlijk", "Waarschijnlijk")} ${k.naamGok}`
+                      : k.alt || tr("ui.tw.foto_onbekend", "Onbekend portret")}
                   </div>
                   <select
                     defaultValue=""
@@ -444,7 +701,7 @@ function Fotopaneel({
                     }}
                     style={{ ...veldStijl, maxWidth: "100%", fontSize: 12.5, padding: "7px 9px" }}
                   >
-                    <option value="">Toewijzen aan…</option>
+                    <option value="">{tr("ui.tw.foto_toewijzen", "Toewijzen aan…")}</option>
                     {leden.map((l, i) =>
                       l.naam.trim() ? (
                         <option key={i} value={i}>
@@ -467,37 +724,43 @@ function Fotopaneel({
 // ---------------------------------------------------------------------------
 // Rapport
 // ---------------------------------------------------------------------------
-function Teamrapport({ organisatie, datum, leden }: { organisatie: string; datum: string; leden: Teamlid[] }) {
+function Teamrapport({ organisatie, datum, leden, tr }: { organisatie: string; datum: string; leden: Teamlid[]; tr: Vertaler }) {
   const deelnemers: WielDeelnemer[] = useMemo(
     () => leden.map((l) => ({ naam: l.naam, initialen: initialenVan(l.naam), wielpositie: l.wielpositie })),
     [leden],
   );
-  const analyse = useMemo(() => analyseerTeam(deelnemers), [deelnemers]);
+  const analyse = useMemo(() => analyseerTeam(deelnemers, tr), [deelnemers, tr]);
 
+  const rapportTitel = tr("ui.tw.doc_titel", "Energetisch teamprofiel");
   useEffect(() => {
-    document.title = organisatie ? `Energetisch teamprofiel — ${organisatie}` : "Energetisch teamprofiel";
-  }, [organisatie]);
+    document.title = organisatie ? `${rapportTitel} — ${organisatie}` : rapportTitel;
+  }, [organisatie, rapportTitel]);
 
   if (!analyse) {
     return (
       <div style={{ maxWidth: 700, margin: "40px auto", padding: 20 }}>
-        <p>Er zijn minstens twee deelnemers met een geldige wielpositie nodig voor een teamrapport.</p>
+        <p>
+          {tr(
+            "ui.tw.te_weinig",
+            "Er zijn minstens twee deelnemers met een geldige wielpositie nodig voor een teamrapport.",
+          )}
+        </p>
       </div>
     );
   }
 
   return (
     <div className="rapport-doc" style={docStyle}>
-      <Cover organisatie={organisatie} datum={datum} aantal={leden.length} />
-      <Wielpagina deelnemers={deelnemers} organisatie={organisatie} />
-      <Deelnemerspagina leden={leden} organisatie={organisatie} />
-      <Dynamiekpagina analyse={analyse} organisatie={organisatie} />
-      <Slotpagina analyse={analyse} organisatie={organisatie} />
+      <Cover organisatie={organisatie} datum={datum} aantal={leden.length} tr={tr} />
+      <Wielpagina deelnemers={deelnemers} organisatie={organisatie} tr={tr} />
+      <Deelnemerspagina leden={leden} organisatie={organisatie} tr={tr} />
+      <Dynamiekpagina analyse={analyse} organisatie={organisatie} tr={tr} />
+      <Slotpagina analyse={analyse} organisatie={organisatie} tr={tr} />
     </div>
   );
 }
 
-function Cover({ organisatie, datum, aantal }: { organisatie: string; datum: string; aantal: number }) {
+function Cover({ organisatie, datum, aantal, tr }: { organisatie: string; datum: string; aantal: number; tr: Vertaler }) {
   return (
     <section className="pagina" style={{ padding: "60px 54px 50px", minHeight: 560, display: "flex", flexDirection: "column", background: "#fff" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -508,24 +771,24 @@ function Cover({ organisatie, datum, aantal }: { organisatie: string; datum: str
       <div style={{ marginTop: 70 }}>
         <div style={{ fontFamily: "Arial, sans-serif", color: KLEUR.goud, fontWeight: 800, letterSpacing: 4, fontSize: 14 }}>2MINSCAN</div>
         <h1 style={{ fontFamily: "Arial, sans-serif", fontSize: 52, fontWeight: 800, color: KLEUR.petrol, margin: "6px 0 4px", lineHeight: 1 }}>
-          Energetisch
+          {tr("ui.tw.cover_regel1", "Energetisch")}
         </h1>
         <h1 style={{ fontFamily: "Arial, sans-serif", fontSize: 52, fontWeight: 800, color: KLEUR.petrol, margin: 0, lineHeight: 1 }}>
-          Teamprofiel
+          {tr("ui.tw.cover_regel2", "Teamprofiel")}
         </h1>
         <p style={{ fontStyle: "italic", color: "#5b5b5b", fontSize: 17, marginTop: 14 }}>
-          Hoe de energie van dit team samen beweegt
+          {tr("ui.tw.cover_onder", "Hoe de energie van dit team samen beweegt")}
         </p>
       </div>
 
       <div style={{ marginTop: "auto", paddingTop: 40 }}>
         <div style={{ height: 1, background: KLEUR.lijn, marginBottom: 18 }} />
-        {organisatie ? <Veld label="ORGANISATIE" waarde={organisatie} /> : null}
-        <Veld label="DATUM" waarde={datum} />
-        <Veld label="DEELNEMERS" waarde={String(aantal)} />
+        {organisatie ? <Veld label={tr("ui.tw.label_org", "ORGANISATIE")} waarde={organisatie} /> : null}
+        <Veld label={tr("ui.tw.label_datum", "DATUM")} waarde={datum} />
+        <Veld label={tr("ui.tw.label_deelnemers", "DEELNEMERS")} waarde={String(aantal)} />
         <div style={{ height: 1, background: KLEUR.lijn, margin: "18px 0 10px" }} />
         <div style={{ fontFamily: "Arial, sans-serif", letterSpacing: 2, fontSize: 11.5, color: KLEUR.teal, fontWeight: 700 }}>
-          VERTROUWELIJK TEAMRAPPORT
+          {tr("ui.tw.vertrouwelijk", "VERTROUWELIJK TEAMRAPPORT")}
         </div>
       </div>
     </section>
@@ -541,22 +804,25 @@ function Veld({ label, waarde }: { label: string; waarde: string }) {
   );
 }
 
-function Pagina({ kicker, titel, organisatie, nr, children }: { kicker: string; titel: string; organisatie: string; nr: number; children: React.ReactNode }) {
+function Pagina({ kicker, titel, organisatie, nr, tr, children }: { kicker: string; titel: string; organisatie: string; nr: number; tr: Vertaler; children: React.ReactNode }) {
   return (
     <section className="pagina" style={{ padding: "44px 54px 40px", minHeight: 560, display: "flex", flexDirection: "column", background: "#fff", borderTop: `1px solid ${KLEUR.lijn}` }}>
       <div style={{ fontFamily: "Arial, sans-serif", fontSize: 10.5, letterSpacing: 2.5, color: KLEUR.goud, fontWeight: 800 }}>{kicker}</div>
       <h2 style={{ fontFamily: "Arial, sans-serif", fontSize: 28, fontWeight: 800, color: KLEUR.petrol, margin: "6px 0 8px", lineHeight: 1.15 }}>{titel}</h2>
       <div style={{ height: 2, background: KLEUR.petrol, marginBottom: 16 }} />
       <div style={{ flex: 1, minHeight: 0 }}>{children}</div>
-      <Voet organisatie={organisatie} nr={nr} />
+      <Voet organisatie={organisatie} nr={nr} tr={tr} />
     </section>
   );
 }
 
-function Voet({ organisatie, nr }: { organisatie: string; nr: number }) {
+function Voet({ organisatie, nr, tr }: { organisatie: string; nr: number; tr: Vertaler }) {
   return (
     <div style={{ marginTop: 22, paddingTop: 10, borderTop: `1px solid ${KLEUR.lijn}`, display: "flex", gap: 12, alignItems: "baseline", fontFamily: "Arial, sans-serif", fontSize: 9, color: "#9a9a9a" }}>
-      <span>2MINSCAN · energetisch teamprofiel{organisatie ? ` · ${organisatie}` : ""}</span>
+      <span>
+        2MINSCAN · {tr("ui.tw.voet", "energetisch teamprofiel")}
+        {organisatie ? ` · ${organisatie}` : ""}
+      </span>
       <span style={{ flex: 1 }} />
       <a href={`https://${CONTACT.web}`} style={{ color: "#9a9a9a", textDecoration: "none" }}>{CONTACT.web}</a>
       <a href={`mailto:${CONTACT.mail}`} style={{ color: "#9a9a9a", textDecoration: "none" }}>{CONTACT.mail}</a>
@@ -565,13 +831,20 @@ function Voet({ organisatie, nr }: { organisatie: string; nr: number }) {
   );
 }
 
-function Wielpagina({ deelnemers, organisatie }: { deelnemers: WielDeelnemer[]; organisatie: string }) {
+function Wielpagina({ deelnemers, organisatie, tr }: { deelnemers: WielDeelnemer[]; organisatie: string; tr: Vertaler }) {
   return (
-    <Pagina kicker="HET TEAM OP HET WIEL" titel="Waar ieders energie vandaan komt" organisatie={organisatie} nr={2}>
+    <Pagina
+      kicker={tr("ui.tw.wiel_kicker", "HET TEAM OP HET WIEL")}
+      titel={tr("ui.tw.wiel_titel", "Waar ieders energie vandaan komt")}
+      organisatie={organisatie}
+      nr={2}
+      tr={tr}
+    >
       <p style={{ fontSize: 12.5, lineHeight: 1.6, color: "#4a4a4a", margin: "0 0 10px", maxWidth: 660 }}>
-        Elke positie op dit wiel heeft haar eigen kleurvolgorde: de buitenste band is de eerste energie, daarbinnen de
-        tweede en de derde, en de kern toont de kleur die energie kost. De initialen staan op de positie die uit de
-        2MINSCAN van die persoon kwam.
+        {tr(
+          "ui.tw.wiel_tekst",
+          "Elke positie op dit wiel heeft haar eigen kleurvolgorde: de buitenste band is de eerste energie, daarbinnen de tweede en de derde, en de kern toont de kleur die energie kost. De initialen staan op de positie die uit de 2MINSCAN van die persoon kwam.",
+        )}
       </p>
       <div style={{ display: "flex", justifyContent: "center" }}>
         <div style={{ width: 470 }}>
@@ -585,10 +858,16 @@ function Wielpagina({ deelnemers, organisatie }: { deelnemers: WielDeelnemer[]; 
   );
 }
 
-function Deelnemerspagina({ leden, organisatie }: { leden: Teamlid[]; organisatie: string }) {
+function Deelnemerspagina({ leden, organisatie, tr }: { leden: Teamlid[]; organisatie: string; tr: Vertaler }) {
   const metFoto = leden.some((l) => l.foto);
   return (
-    <Pagina kicker="DE DEELNEMERS" titel="Wie staat waar op het wiel" organisatie={organisatie} nr={3}>
+    <Pagina
+      kicker={tr("ui.tw.deel_kicker", "DE DEELNEMERS")}
+      titel={tr("ui.tw.deel_titel", "Wie staat waar op het wiel")}
+      organisatie={organisatie}
+      nr={3}
+      tr={tr}
+    >
       <div style={{ display: "grid", gap: 8 }}>
         {leden.map((lid) => {
           const positie = positieByWielpositie(lid.wielpositie);
@@ -640,14 +919,14 @@ function Deelnemerspagina({ leden, organisatie }: { leden: Teamlid[]; organisati
                   {lid.rol ? <span style={{ fontWeight: 400, color: "#6b6b6b" }}> · {lid.rol}</span> : null}
                 </div>
                 <div style={{ fontSize: 11, color: "#6b6b6b", marginTop: 2 }}>
-                  Wielpositie {positie.wielpositie} · {sectorLabel(positie)}
+                  {tr("ui.tw.wielpositie_label", "Wielpositie")} {positie.wielpositie} · {sectorLabel(positie, tr)}
                 </div>
               </div>
               <div style={{ display: "flex", gap: 5, alignItems: "center", flexShrink: 0 }}>
                 {positie.volgorde.map((kleur, i) => (
                   <span
                     key={kleur}
-                    title={KLEURWOORD[kleur].titel}
+                    title={tr(`wiel.kleur.${kleur}.titel`, KLEURWOORD[kleur].titel)}
                     style={{
                       width: i === 3 ? 9 : 13,
                       height: i === 3 ? 9 : 13,
@@ -664,8 +943,10 @@ function Deelnemerspagina({ leden, organisatie }: { leden: Teamlid[]; organisati
         })}
       </div>
       <p style={{ fontSize: 10.5, lineHeight: 1.5, color: "#6b6b6b", marginTop: 12 }}>
-        De bolletjes volgen de kleurvolgorde van de positie: eerste, tweede en derde energie, en daarna kleiner de kleur
-        die energie kost.
+        {tr(
+          "ui.tw.deel_voetnoot",
+          "De bolletjes volgen de kleurvolgorde van de positie: eerste, tweede en derde energie, en daarna kleiner de kleur die energie kost.",
+        )}
       </p>
     </Pagina>
   );
@@ -678,15 +959,21 @@ const INZICHT_KLEUR: Record<Inzicht["soort"], string> = {
   wrijving: "#7a4b6b",
 };
 
-function Dynamiekpagina({ analyse, organisatie }: { analyse: NonNullable<ReturnType<typeof analyseerTeam>>; organisatie: string }) {
+function Dynamiekpagina({ analyse, organisatie, tr }: { analyse: NonNullable<ReturnType<typeof analyseerTeam>>; organisatie: string; tr: Vertaler }) {
   return (
-    <Pagina kicker="TEAMDYNAMIEK" titel="Hoe de energie van dit team samen beweegt" organisatie={organisatie} nr={4}>
+    <Pagina
+      kicker={tr("ui.tw.dyn_kicker", "TEAMDYNAMIEK")}
+      titel={tr("ui.tw.dyn_titel", "Hoe de energie van dit team samen beweegt")}
+      organisatie={organisatie}
+      nr={4}
+      tr={tr}
+    >
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
-        <Cijfer label="Deelnemers" waarde={String(analyse.n)} />
-        <Cijfer label="Kleuren aanwezig" waarde={`${analyse.gedektKleuren}/4`} />
-        <Cijfer label="Sectoren bezet" waarde={`${analyse.bezetteSectoren}/8`} />
-        <Cijfer label="Gem. afstand" waarde={`${analyse.gemAfstand}°`} />
-        <Cijfer label="Grootste afstand" waarde={`${analyse.maxAfstand}°`} />
+        <Cijfer label={tr("ui.tw.cijfer_deelnemers", "Deelnemers")} waarde={String(analyse.n)} />
+        <Cijfer label={tr("ui.tw.cijfer_kleuren", "Kleuren aanwezig")} waarde={`${analyse.gedektKleuren}/4`} />
+        <Cijfer label={tr("ui.tw.cijfer_sectoren", "Sectoren bezet")} waarde={`${analyse.bezetteSectoren}/8`} />
+        <Cijfer label={tr("ui.tw.cijfer_gem", "Gem. afstand")} waarde={`${analyse.gemAfstand}°`} />
+        <Cijfer label={tr("ui.tw.cijfer_max", "Grootste afstand")} waarde={`${analyse.maxAfstand}°`} />
       </div>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
@@ -694,10 +981,12 @@ function Dynamiekpagina({ analyse, organisatie }: { analyse: NonNullable<ReturnT
           <div key={kleur} style={{ flex: 1, border: `1px solid ${KLEUR.lijn}`, borderRadius: 8, padding: "8px 10px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ width: 10, height: 10, borderRadius: "50%", background: KLEUR_HEX[kleur] ?? "#999" }} />
-              <span style={{ fontWeight: 700, fontSize: 12 }}>{KLEURWOORD[kleur].titel}</span>
+              <span style={{ fontWeight: 700, fontSize: 12 }}>{tr(`wiel.kleur.${kleur}.titel`, KLEURWOORD[kleur].titel)}</span>
             </div>
             <div style={{ fontSize: 18, fontWeight: 800, color: KLEUR.petrol, marginTop: 4 }}>{analyse.pct[kleur]}%</div>
-            <div style={{ fontSize: 10, color: "#6b6b6b", lineHeight: 1.35 }}>eerste energie · {KLEURWOORD[kleur].kern}</div>
+            <div style={{ fontSize: 10, color: "#6b6b6b", lineHeight: 1.35 }}>
+              {tr("ui.tw.eerste_energie", "eerste energie")} · {tr(`wiel.kleur.${kleur}.kern`, KLEURWOORD[kleur].kern)}
+            </div>
           </div>
         ))}
       </div>
@@ -723,9 +1012,15 @@ function Cijfer({ label, waarde }: { label: string; waarde: string }) {
   );
 }
 
-function Slotpagina({ analyse, organisatie }: { analyse: NonNullable<ReturnType<typeof analyseerTeam>>; organisatie: string }) {
+function Slotpagina({ analyse, organisatie, tr }: { analyse: NonNullable<ReturnType<typeof analyseerTeam>>; organisatie: string; tr: Vertaler }) {
   return (
-    <Pagina kicker="AAN DE SLAG" titel="Werkafspraken die energie sparen" organisatie={organisatie} nr={5}>
+    <Pagina
+      kicker={tr("ui.tw.slot_kicker", "AAN DE SLAG")}
+      titel={tr("ui.tw.slot_titel", "Werkafspraken die energie sparen")}
+      organisatie={organisatie}
+      nr={5}
+      tr={tr}
+    >
       <div style={{ display: "grid", gap: 7 }}>
         {analyse.afspraken.map((afspraak, i) => (
           <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
@@ -739,24 +1034,24 @@ function Slotpagina({ analyse, organisatie }: { analyse: NonNullable<ReturnType<
 
       <div style={{ marginTop: 18, background: "#f4f2ec", borderRadius: 10, padding: "14px 16px" }}>
         <div style={{ fontFamily: "Arial, sans-serif", fontSize: 10.5, letterSpacing: 2, color: KLEUR.teal, fontWeight: 800 }}>
-          EERLIJK OVER WAT DIT WEL EN NIET IS
+          {tr("ui.tw.eerlijk_kop", "EERLIJK OVER WAT DIT WEL EN NIET IS")}
         </div>
         <p style={{ fontSize: 11.5, lineHeight: 1.6, color: "#4a4a4a", margin: "8px 0 0" }}>
-          De 2MINSCAN vertrekt vanuit Jungiaans geïnspireerde voorkeuren. Die theorie heeft niet dezelfde
-          validatiestatus als moderne psychometrische modellen. Toch geeft ze een bruikbare taal om samenwerking en
-          energiemanagement bespreekbaar te maken. Dit teamprofiel zegt niets over wie iemand is, over talent of
-          potentieel, en het is geen basis voor selectie of beoordeling. Gaat de vraag over het waarom van
-          voorkeursgedrag of over talentpotentieel, dan is een TaPas Kompas een zorgvuldiger vervolgstap.
+          {tr(
+            "ui.tw.eerlijk_1",
+            "De 2MINSCAN vertrekt vanuit Jungiaans geïnspireerde voorkeuren. Die theorie heeft niet dezelfde validatiestatus als moderne psychometrische modellen. Toch geeft ze een bruikbare taal om samenwerking en energiemanagement bespreekbaar te maken. Dit teamprofiel zegt niets over wie iemand is, over talent of potentieel, en het is geen basis voor selectie of beoordeling. Gaat de vraag over het waarom van voorkeursgedrag of over talentpotentieel, dan is een TaPas Kompas een zorgvuldiger vervolgstap.",
+          )}
         </p>
         <p style={{ fontSize: 11.5, lineHeight: 1.6, color: "#4a4a4a", margin: "10px 0 0" }}>
-          Energie is geen vast etiket. Het is een beweging tussen jullie, elkaar en de context waarin jullie werken.
-          Blijf bewegen met de energie van dit team door te blijven benoemen wat elk van jullie nodig heeft om erin te
-          blijven.
+          {tr(
+            "ui.tw.eerlijk_2",
+            "Energie is geen vast etiket. Het is een beweging tussen jullie, elkaar en de context waarin jullie werken. Blijf bewegen met de energie van dit team door te blijven benoemen wat elk van jullie nodig heeft om erin te blijven.",
+          )}
         </p>
       </div>
 
       <div style={{ marginTop: 16, fontFamily: "Arial, sans-serif", fontSize: 10.5, color: "#6b6b6b" }}>
-        2MINSCAN is een product van TaPasCity ·{" "}
+        {tr("ui.tw.product", "2MINSCAN is een product van TaPasCity")} ·{" "}
         <a href={`https://${CONTACT.web}`} style={{ color: KLEUR.teal, textDecoration: "none" }}>{CONTACT.web}</a> ·{" "}
         <a href={`mailto:${CONTACT.mail}`} style={{ color: KLEUR.teal, textDecoration: "none" }}>{CONTACT.mail}</a>
       </div>

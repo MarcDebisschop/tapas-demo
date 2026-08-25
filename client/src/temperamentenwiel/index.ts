@@ -28,6 +28,7 @@ export {
   type Inzicht,
   type InzichtSoort,
   type TeamAnalyse,
+  type WielVertaler,
 } from "./dynamiek";
 
 export { Temperamentenwiel, default as TemperamentenwielComponent } from "./Temperamentenwiel";

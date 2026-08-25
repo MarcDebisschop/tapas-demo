@@ -25,6 +25,7 @@ import {
   TALEN,
 } from "./rapport-selectie";
 import { registerOrganisatiefotoRoutes } from "./organisatiefotos";
+import { registerTwominscanAfnameRoutes } from "./afname-opslag";
 
 const KLEUR = z.enum(["rood", "geel", "groen", "blauw"]);
 
@@ -55,6 +56,10 @@ export function registerTwominscanRoutes(app: Express): void {
   // Portretfoto's van één pagina die de organisatie zelf publiceerde, per
   // persoon te bevestigen door de coach. Zie organisatiefotos.ts voor de grenzen.
   registerOrganisatiefotoRoutes(app);
+
+  // Bewaarde afnames (naam + wielpositie) zodat de teamwielpagina de deelnemers
+  // automatisch kan inladen in plaats van ze met de hand te laten overtypen.
+  registerTwominscanAfnameRoutes(app);
 
   app.post("/api/twominscan/rapport.pdf", async (req: Request, res: Response) => {
     const parsed = rapportSchema.safeParse(req.body);
