@@ -72,6 +72,21 @@ beschreven omdat weten beter is dan vermoeden.
 
 ### Toegevoegd
 
+- Module Temperamentenwiel, als eerste stap van vier en nog niet aangesloten:
+  `client/src/temperamentenwiel/` met de 24 posities van de speelmat
+  (`posities.ts`), de renderer die het wiel tekent (`wiel.ts`), de
+  teamdynamiek-analyse (`dynamiek.ts`), een dun React-omhulsel
+  (`Temperamentenwiel.tsx`) en een README met de bronwaarheid. Geen bestaande
+  pagina, route of component is gewijzigd: wie de map verwijdert, verandert niets
+  aan het gedrag van het platform. De kleurvolgorde staat per positie vast zoals
+  gemeten op de Speelmat Temperamenten version 1.0 (2022) — vier radiale banden
+  per positie, geen vlakke kwadranten en geen gradiënten. De wielposities en
+  MBTI-equivalenten volgen `client/src/twominscan/profielen.ts`, en
+  `tests/temperamentenwiel-bronwaarheid.test.ts` laat de bouw falen wanneer een
+  van beide alsnog zou schuiven. De twee eerder gemelde verschillen tussen mat en
+  `profielen.ts` (wielpositie 128-148 en 35-55) staan gedocumenteerd in de README
+  en zijn bewust niet aangepast: dat raakt de matching van de 2MINSCAN en hoort
+  bij een eigen stap.
 - Uitnodigen kan nu zelf een bericht versturen. Het uitnodigingsvenster heeft een
   adresveld en twee knoppen: "Alleen link aanmaken", de weg die er altijd was en
   volwaardig blijft, en "Aanmaken en versturen". Nieuw bestand
