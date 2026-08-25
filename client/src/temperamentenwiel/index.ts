@@ -31,5 +31,24 @@ export {
   type WielVertaler,
 } from "./dynamiek";
 
+export {
+  BLADEN,
+  DEELNEMERS_PER_BLAD,
+  bladenVoor,
+  individueleBladen,
+  type BladSoort,
+} from "./bladen";
+
+export {
+  aanwezigeKleuren,
+  individueleLezing,
+  overlegOntwerp,
+  teamEnergie,
+  type IndividueleLezing,
+  type Overlegblok,
+} from "./teamtekst";
+
+export { wielAlsPng } from "./naar-png";
+
 export { Temperamentenwiel, default as TemperamentenwielComponent } from "./Temperamentenwiel";
 export type { TemperamentenwielProps } from "./Temperamentenwiel";

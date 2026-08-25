@@ -5,13 +5,19 @@ import {
   POSITIES,
   KLEURWOORD,
   Temperamentenwiel,
+  aanwezigeKleuren,
   analyseerTeam,
+  individueleLezing,
   initialenVan,
+  overlegOntwerp,
   positieByWielpositie,
   sectorLabel,
+  teamEnergie,
+  type EnergieKleur,
   type Inzicht,
   type WielDeelnemer,
 } from "@/temperamentenwiel";
+import { DEELNEMERS_PER_BLAD, bladenVoor, individueleBladen } from "@/temperamentenwiel/bladen";
 import { verkleinAfbeeldingNaarDataUrl } from "@/lib/afbeelding";
 
 // =============================================================================
@@ -20,8 +26,14 @@ import { verkleinAfbeeldingNaarDataUrl } from "@/lib/afbeelding";
 // Twee standen op één pagina:
 //   samenstellen  de coach zet de deelnemers klaar (naam + wielpositie, en
 //                 optioneel een portret);
-//   rapport       vijf printklare pagina's: cover, wiel, deelnemersoverzicht,
-//                 teamdynamiek en werkafspraken met slotnuance.
+//   rapport       de vaste bladstructuur van het goedgekeurde teamprofiel:
+//                 cover, leeswijzer, teamwiel, deelnemersoverzicht, individuele
+//                 energie (drie deelnemers per blad), teamdynamiek, in energie
+//                 blijven per energiekleur, overleg en afspraken, en tot slot
+//                 verantwoorde toepassing. Bij vijf deelnemers zijn dat tien
+//                 bladen. De structuur staat vast in BLADEN/bladenVoor() en
+//                 wordt door tests/twominscan-teamrapport-bladen.test.ts
+//                 bewaakt, zodat er nooit stil bladen kunnen wegvallen.
 //
 // De wielposities komen uit de bestaande 24 profielen; het wiel zelf komt uit
 // client/src/temperamentenwiel/ en blijft ongewijzigd bronwaarheid van de mat.
@@ -749,13 +761,63 @@ function Teamrapport({ organisatie, datum, leden, tr }: { organisatie: string; d
     );
   }
 
+  // De bladorde komt uit de vaste structuur (client/src/temperamentenwiel/bladen.ts),
+  // zodat een blad niet stil kan wegvallen. De nummering volgt die orde.
+  const bruikbaar = leden.filter((l) => positieByWielpositie(l.wielpositie));
+  const bladen = bladenVoor(bruikbaar.length);
+  const aanwezig = aanwezigeKleuren(analyse.dominant);
+  let individueelTeller = 0;
+  const totaalIndividueel = individueleBladen(bruikbaar.length);
+
   return (
     <div className="rapport-doc" style={docStyle}>
-      <Cover organisatie={organisatie} datum={datum} aantal={leden.length} tr={tr} />
-      <Wielpagina deelnemers={deelnemers} organisatie={organisatie} tr={tr} />
-      <Deelnemerspagina leden={leden} organisatie={organisatie} tr={tr} />
-      <Dynamiekpagina analyse={analyse} organisatie={organisatie} tr={tr} />
-      <Slotpagina analyse={analyse} organisatie={organisatie} tr={tr} />
+      {bladen.map((soort, i) => {
+        const nr = i + 1;
+        switch (soort) {
+          case "cover":
+            return <Cover key="cover" organisatie={organisatie} datum={datum} aantal={leden.length} tr={tr} />;
+          case "leeswijzer":
+            return <Leeswijzerpagina key="leeswijzer" organisatie={organisatie} nr={nr} tr={tr} />;
+          case "teamwiel":
+            return <Wielpagina key="teamwiel" deelnemers={deelnemers} organisatie={organisatie} nr={nr} tr={tr} />;
+          case "deelnemers":
+            return <Deelnemerspagina key="deelnemers" leden={leden} analyse={analyse} organisatie={organisatie} nr={nr} tr={tr} />;
+          case "individueel": {
+            const deel = individueelTeller++;
+            return (
+              <Individueelpagina
+                key={`individueel-${deel}`}
+                leden={bruikbaar.slice(deel * DEELNEMERS_PER_BLAD, (deel + 1) * DEELNEMERS_PER_BLAD)}
+                deelnr={deel + 1}
+                totaal={totaalIndividueel}
+                organisatie={organisatie}
+                nr={nr}
+                tr={tr}
+              />
+            );
+          }
+          case "dynamiek":
+            return <Dynamiekpagina key="dynamiek" analyse={analyse} organisatie={organisatie} nr={nr} tr={tr} />;
+          case "kleuren":
+            return <Kleurenpagina key="kleuren" analyse={analyse} aanwezig={aanwezig} organisatie={organisatie} nr={nr} tr={tr} />;
+          case "overleg":
+            return (
+              <Overlegpagina
+                key="overleg"
+                analyse={analyse}
+                aanwezig={aanwezig}
+                leden={bruikbaar}
+                organisatie={organisatie}
+                nr={nr}
+                tr={tr}
+              />
+            );
+          case "slot":
+            return <Slotpagina key="slot" organisatie={organisatie} nr={nr} tr={tr} />;
+          default:
+            return null;
+        }
+      })}
     </div>
   );
 }
@@ -831,13 +893,74 @@ function Voet({ organisatie, nr, tr }: { organisatie: string; nr: number; tr: Ve
   );
 }
 
-function Wielpagina({ deelnemers, organisatie, tr }: { deelnemers: WielDeelnemer[]; organisatie: string; tr: Vertaler }) {
+function Leeswijzerpagina({ organisatie, nr, tr }: { organisatie: string; nr: number; tr: Vertaler }) {
+  const lijstStijl: React.CSSProperties = { margin: "6px 0 0", paddingLeft: 16, fontSize: 11.5, lineHeight: 1.55, color: "#4a4a4a" };
+  return (
+    <Pagina
+      kicker={tr("ui.tw.lees_kicker", "LEESWIJZER")}
+      titel={tr("ui.tw.lees_titel", "Wat dit teamwiel wel en niet doet")}
+      organisatie={organisatie}
+      nr={nr}
+      tr={tr}
+    >
+      <p style={{ fontSize: 12.5, lineHeight: 1.6, color: "#4a4a4a", margin: "0 0 8px" }}>
+        {tr(
+          "ui.tw.lees_lead",
+          "Elke deelnemer vulde de 2MINSCAN in. Die scan beschrijft geen talent, geen potentieel en geen geschiktheid. Ze beschrijft hoe iemand energie geeft in samenwerking, welke context energie oplevert en waar energie voorspelbaar weglekt.",
+        )}
+      </p>
+      <p style={{ fontSize: 11.5, lineHeight: 1.6, color: "#4a4a4a", margin: "0 0 12px" }}>
+        {tr(
+          "ui.tw.lees_tekst",
+          "Door alle deelnemers samen op één wiel te plaatsen, wordt zichtbaar wat in een team meestal onbenoemd blijft: welke energie hier vanzelf op gang komt, welke energie iemand elke keer bewust moet opbrengen, en tussen wie de grootste afstand zit. Dat zegt iets over de dynamiek van deze groep, niet over de waarde van de mensen erin.",
+        )}
+      </p>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div style={{ border: `1px solid ${KLEUR.lijn}`, borderRadius: 8, padding: "10px 12px" }}>
+          <div style={{ fontWeight: 700, fontSize: 12.5, color: KLEUR.petrol }}>
+            {tr("ui.tw.lees_hoe_kop", "Hoe je het wiel leest")}
+          </div>
+          <ul style={lijstStijl}>
+            <li>{tr("ui.tw.lees_hoe_1", "Elke positie op het wiel heeft haar eigen kleurvolgorde. Van buiten naar binnen: eerste, tweede en derde energiekleur, en in het hart de kleur die energie kost.")}</li>
+            <li>{tr("ui.tw.lees_hoe_2", "De initialen staan in de positie van die deelnemer.")}</li>
+            <li>{tr("ui.tw.lees_hoe_3", "Dichtbij elkaar staan betekent: elkaar snel begrijpen. Ver van elkaar staan betekent: elkaar aanvullen en elkaar sneller energie kosten.")}</li>
+            <li>{tr("ui.tw.lees_hoe_4", "Het buitenste getal is de wielpositie, het label ernaast de code van die positie.")}</li>
+          </ul>
+        </div>
+        <div style={{ border: `1px solid ${KLEUR.lijn}`, borderRadius: 8, padding: "10px 12px", background: "#f4f2ec" }}>
+          <div style={{ fontWeight: 700, fontSize: 12.5, color: KLEUR.petrol }}>
+            {tr("ui.tw.lees_niet_kop", "Wat dit wiel niet doet")}
+          </div>
+          <ul style={lijstStijl}>
+            <li>{tr("ui.tw.lees_niet_1", "Het meet geen talent, potentieel of competentie.")}</li>
+            <li>{tr("ui.tw.lees_niet_2", "Het zegt niets over geschiktheid voor een rol of over selectie.")}</li>
+            <li>{tr("ui.tw.lees_niet_3", "Het is geen diagnose en geen beschrijving van wie iemand is.")}</li>
+            <li>{tr("ui.tw.lees_niet_4", "Het verklaart niet waarom iemand dit voorkeursgedrag toont.")}</li>
+          </ul>
+        </div>
+      </div>
+      <div style={{ marginTop: 12, border: `1px solid ${KLEUR.lijn}`, borderRadius: 8, padding: "10px 12px" }}>
+        <div style={{ fontWeight: 700, fontSize: 12.5, color: KLEUR.petrol }}>
+          {tr("ui.tw.lees_samen_kop", "Waarom energie en teamdynamiek samenhangen")}
+        </div>
+        <p style={{ fontSize: 11.5, lineHeight: 1.6, color: "#4a4a4a", margin: "6px 0 0" }}>
+          {tr(
+            "ui.tw.lees_samen_tekst",
+            "Teamdynamiek is grotendeels een energiekwestie. Waar de energie van mensen samenvalt, gaat het snel en voelt het licht. Waar energie tegen de stroom in moet, ontstaat vertraging, irritatie of stilte, vaak zonder dat iemand het over energie heeft. Dit rapport maakt die beweging bespreekbaar en geeft concrete afspraken, zodat de verschillen in deze groep niet slijten maar renderen.",
+          )}
+        </p>
+      </div>
+    </Pagina>
+  );
+}
+
+function Wielpagina({ deelnemers, organisatie, nr, tr }: { deelnemers: WielDeelnemer[]; organisatie: string; nr: number; tr: Vertaler }) {
   return (
     <Pagina
       kicker={tr("ui.tw.wiel_kicker", "HET TEAM OP HET WIEL")}
       titel={tr("ui.tw.wiel_titel", "Waar ieders energie vandaan komt")}
       organisatie={organisatie}
-      nr={2}
+      nr={nr}
       tr={tr}
     >
       <p style={{ fontSize: 12.5, lineHeight: 1.6, color: "#4a4a4a", margin: "0 0 10px", maxWidth: 660 }}>
@@ -858,14 +981,26 @@ function Wielpagina({ deelnemers, organisatie, tr }: { deelnemers: WielDeelnemer
   );
 }
 
-function Deelnemerspagina({ leden, organisatie, tr }: { leden: Teamlid[]; organisatie: string; tr: Vertaler }) {
+function Deelnemerspagina({
+  leden,
+  analyse,
+  organisatie,
+  nr,
+  tr,
+}: {
+  leden: Teamlid[];
+  analyse: NonNullable<ReturnType<typeof analyseerTeam>>;
+  organisatie: string;
+  nr: number;
+  tr: Vertaler;
+}) {
   const metFoto = leden.some((l) => l.foto);
   return (
     <Pagina
       kicker={tr("ui.tw.deel_kicker", "DE DEELNEMERS")}
       titel={tr("ui.tw.deel_titel", "Wie staat waar op het wiel")}
       organisatie={organisatie}
-      nr={3}
+      nr={nr}
       tr={tr}
     >
       <div style={{ display: "grid", gap: 8 }}>
@@ -948,6 +1083,123 @@ function Deelnemerspagina({ leden, organisatie, tr }: { leden: Teamlid[]; organi
           "De bolletjes volgen de kleurvolgorde van de positie: eerste, tweede en derde energie, en daarna kleiner de kleur die energie kost.",
         )}
       </p>
+      <div style={{ marginTop: 10, background: "#f4f2ec", borderRadius: 8, padding: "10px 12px" }}>
+        <div style={{ fontWeight: 700, fontSize: 12.5, color: KLEUR.petrol }}>
+          {tr("ui.tw.deel_spreiding_kop", "Wat de spreiding van deze groep laat zien")}
+        </div>
+        <p style={{ fontSize: 11.5, lineHeight: 1.6, color: "#4a4a4a", margin: "6px 0 0" }}>
+          {vulIn(
+            tr(
+              "ui.tw.deel_spreiding_tekst",
+              "{kleuren} van de 4 energiekleuren komen als eerste kleur voor, verspreid over {sectoren} van de 8 sectoren. De gemiddelde onderlinge afstand op het wiel is {gem}°, de grootste afstand {max}°. Hoe groter die afstand, hoe meer dit team vanzelf verschillende invalshoeken binnenbrengt, en hoe meer expliciete afstemming nodig is om iedereen in energie te houden.",
+            ),
+            {
+              kleuren: analyse.gedektKleuren,
+              sectoren: analyse.bezetteSectoren,
+              gem: analyse.gemAfstand,
+              max: analyse.maxAfstand,
+            },
+          )}
+        </p>
+      </div>
+    </Pagina>
+  );
+}
+
+/** Vult {plaatshouders} in een vertaalde tekst. */
+function vulIn(sjabloon: string, waarden: Record<string, string | number>): string {
+  return sjabloon.replace(/\{(\w+)\}/g, (heel, naam) =>
+    Object.prototype.hasOwnProperty.call(waarden, naam) ? String(waarden[naam]) : heel,
+  );
+}
+
+function Individueelpagina({
+  leden,
+  deelnr,
+  totaal,
+  organisatie,
+  nr,
+  tr,
+}: {
+  leden: Teamlid[];
+  deelnr: number;
+  totaal: number;
+  organisatie: string;
+  nr: number;
+  tr: Vertaler;
+}) {
+  return (
+    <Pagina
+      kicker={tr("ui.tw.ind_kicker", "PER DEELNEMER")}
+      titel={`${tr("ui.tw.ind_titel", "Individuele energie")}${totaal > 1 ? ` (${deelnr}/${totaal})` : ""}`}
+      organisatie={organisatie}
+      nr={nr}
+      tr={tr}
+    >
+      <div style={{ display: "grid", gap: 10 }}>
+        {leden.map((lid) => {
+          const positie = positieByWielpositie(lid.wielpositie);
+          if (!positie) return null;
+          const lezing = individueleLezing(positie, tr);
+          const eerste = KLEUR_HEX[positie.volgorde[0]] ?? "#999";
+          const regels: [string, string][] = [
+            [tr("ui.tw.ind_stroomt", "Stroomt"), lezing.flow],
+            [tr("ui.tw.ind_steunt", "Steunt"), lezing.steun],
+            [tr("ui.tw.ind_vraagt", "Vraagt"), lezing.inspanning],
+            [tr("ui.tw.ind_lekt", "Lekt"), lezing.kost],
+          ];
+          return (
+            <div
+              key={`${lid.naam}-${lid.wielpositie}`}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "138px 1fr",
+                gap: 14,
+                border: `1px solid ${KLEUR.lijn}`,
+                borderLeft: `4px solid ${eerste}`,
+                borderRadius: 8,
+                padding: "10px 12px",
+              }}
+            >
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 13, color: KLEUR.inkt, lineHeight: 1.25 }}>{lid.naam}</div>
+                <div style={{ fontSize: 10.5, color: "#6b6b6b", marginTop: 3 }}>
+                  {tr("ui.tw.wielpositie_label", "Wielpositie")} <b>{positie.wielpositie}</b>
+                </div>
+                <div style={{ fontSize: 10.5, color: "#6b6b6b" }}>{positie.acroniem}</div>
+                <div style={{ display: "flex", gap: 4, marginTop: 5 }}>
+                  {positie.volgorde.map((kleur, i) => (
+                    <span
+                      key={kleur}
+                      style={{
+                        width: i === 3 ? 8 : 11,
+                        height: i === 3 ? 8 : 11,
+                        borderRadius: "50%",
+                        background: KLEUR_HEX[kleur] ?? "#999",
+                        opacity: i === 3 ? 0.5 : 1,
+                        alignSelf: "center",
+                      }}
+                    />
+                  ))}
+                </div>
+                <div style={{ fontSize: 10, color: "#8a8a8a", marginTop: 5, lineHeight: 1.35 }}>
+                  {sectorLabel(positie, tr)}
+                </div>
+              </div>
+              <div style={{ display: "grid", gap: 4 }}>
+                {regels.map(([label, tekst]) => (
+                  <div key={label} style={{ display: "grid", gridTemplateColumns: "62px 1fr", gap: 8 }}>
+                    <span style={{ fontFamily: "Arial, sans-serif", fontSize: 9.5, letterSpacing: 1, color: "#8a8a8a", fontWeight: 700, paddingTop: 2 }}>
+                      {label.toUpperCase()}
+                    </span>
+                    <span style={{ fontSize: 11, lineHeight: 1.5, color: "#4a4a4a" }}>{tekst}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </Pagina>
   );
 }
@@ -959,13 +1211,13 @@ const INZICHT_KLEUR: Record<Inzicht["soort"], string> = {
   wrijving: "#7a4b6b",
 };
 
-function Dynamiekpagina({ analyse, organisatie, tr }: { analyse: NonNullable<ReturnType<typeof analyseerTeam>>; organisatie: string; tr: Vertaler }) {
+function Dynamiekpagina({ analyse, organisatie, nr, tr }: { analyse: NonNullable<ReturnType<typeof analyseerTeam>>; organisatie: string; nr: number; tr: Vertaler }) {
   return (
     <Pagina
       kicker={tr("ui.tw.dyn_kicker", "TEAMDYNAMIEK")}
       titel={tr("ui.tw.dyn_titel", "Hoe de energie van dit team samen beweegt")}
       organisatie={organisatie}
-      nr={4}
+      nr={nr}
       tr={tr}
     >
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
@@ -1012,27 +1264,221 @@ function Cijfer({ label, waarde }: { label: string; waarde: string }) {
   );
 }
 
-function Slotpagina({ analyse, organisatie, tr }: { analyse: NonNullable<ReturnType<typeof analyseerTeam>>; organisatie: string; tr: Vertaler }) {
+function Kleurenpagina({
+  analyse,
+  aanwezig,
+  organisatie,
+  nr,
+  tr,
+}: {
+  analyse: NonNullable<ReturnType<typeof analyseerTeam>>;
+  aanwezig: EnergieKleur[];
+  organisatie: string;
+  nr: number;
+  tr: Vertaler;
+}) {
   return (
     <Pagina
-      kicker={tr("ui.tw.slot_kicker", "AAN DE SLAG")}
-      titel={tr("ui.tw.slot_titel", "Werkafspraken die energie sparen")}
+      kicker={tr("ui.tw.kleur_kicker", "OMGAAN MET DE DYNAMIEK")}
+      titel={tr("ui.tw.kleur_titel", "In energie blijven, kleur per kleur")}
       organisatie={organisatie}
-      nr={5}
+      nr={nr}
       tr={tr}
     >
-      <div style={{ display: "grid", gap: 7 }}>
-        {analyse.afspraken.map((afspraak, i) => (
-          <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-            <span style={{ width: 20, height: 20, borderRadius: "50%", background: KLEUR.goud, color: "#fff", fontFamily: "Arial, sans-serif", fontSize: 11, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
-              {i + 1}
-            </span>
-            <span style={{ fontSize: 12, lineHeight: 1.55, color: "#4a4a4a" }}>{afspraak}</span>
+      <p style={{ fontSize: 12, lineHeight: 1.6, color: "#4a4a4a", margin: "0 0 10px" }}>
+        {tr(
+          "ui.tw.kleur_lead",
+          "Elke energie in dit team heeft iets nodig om te blijven stromen, en iets waar ze op leegloopt. Hieronder staat per aanwezige energiekleur wat werkt, wat lekt, welke afspraak helpt en welk signaal je ziet wanneer de energie zakt.",
+        )}
+      </p>
+      <div style={{ display: "grid", gap: 8 }}>
+        {aanwezig.map((kleur) => {
+          const blok = teamEnergie(kleur, tr);
+          const regels: [string, string][] = [
+            [tr("ui.tw.kleur_geeft", "Geeft"), blok.geeft],
+            [tr("ui.tw.kleur_lekt", "Lekt op"), blok.lekt],
+            [tr("ui.tw.kleur_afspraak", "Afspraak"), blok.afspraak],
+            [tr("ui.tw.kleur_signaal", "Signaal"), blok.signaal],
+          ];
+          return (
+            <div
+              key={kleur}
+              style={{
+                border: `1px solid ${KLEUR.lijn}`,
+                borderLeft: `4px solid ${KLEUR_HEX[kleur] ?? "#999"}`,
+                borderRadius: 8,
+                padding: "9px 12px",
+              }}
+            >
+              <div style={{ fontWeight: 700, fontSize: 12.5, color: KLEUR.inkt }}>
+                {tr(`wiel.kleur.${kleur}.titel`, KLEURWOORD[kleur].titel)}
+                <span style={{ fontWeight: 400, color: "#6b6b6b" }}>
+                  {" — "}
+                  {tr(`wiel.kleur.${kleur}.kern`, KLEURWOORD[kleur].kern)} ·{" "}
+                  {vulIn(tr("ui.tw.kleur_aantal", "{n} van {totaal} als eerste kleur"), {
+                    n: analyse.dominant[kleur],
+                    totaal: analyse.n,
+                  })}
+                </span>
+              </div>
+              <div style={{ display: "grid", gap: 3, marginTop: 5 }}>
+                {regels.map(([label, tekst]) => (
+                  <div key={label} style={{ display: "grid", gridTemplateColumns: "74px 1fr", gap: 8 }}>
+                    <span style={{ fontFamily: "Arial, sans-serif", fontSize: 9.5, letterSpacing: 1, color: "#8a8a8a", fontWeight: 700, paddingTop: 2 }}>
+                      {label.toUpperCase()}
+                    </span>
+                    <span style={{ fontSize: 11, lineHeight: 1.5, color: "#4a4a4a" }}>{tekst}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {analyse.ontbrekend.length ? (
+        <div style={{ marginTop: 10, background: "#f4f2ec", borderRadius: 8, padding: "10px 12px" }}>
+          <div style={{ fontWeight: 700, fontSize: 12, color: KLEUR.petrol }}>
+            {vulIn(tr("ui.tw.kleur_geen_kop", "Niet aanwezig als eerste kleur: {kleuren}"), {
+              kleuren: analyse.ontbrekend
+                .map((k) => tr(`wiel.kleur.${k}.laag`, KLEURWOORD[k].titel.toLowerCase()))
+                .join(", "),
+            })}
+          </div>
+          <p style={{ fontSize: 11.5, lineHeight: 1.6, color: "#4a4a4a", margin: "5px 0 0" }}>
+            {vulIn(
+              tr(
+                "ui.tw.kleur_geen_tekst",
+                "Werk dat vraagt om {kernen} kost dit team energie in plaats van dat het energie geeft. Dat is geen tekort. Het betekent dat je het bewust moet plannen, verdelen en begrenzen, en dat je het niet stilzwijgend bij dezelfde persoon laat landen.",
+              ),
+              {
+                kernen: analyse.ontbrekend
+                  .map((k) => tr(`wiel.kleur.${k}.kern`, KLEURWOORD[k].kern))
+                  .join(tr("wiel.lijst.of", " of ")),
+              },
+            )}
+          </p>
+        </div>
+      ) : null}
+    </Pagina>
+  );
+}
+
+function Overlegpagina({
+  analyse,
+  aanwezig,
+  leden,
+  organisatie,
+  nr,
+  tr,
+}: {
+  analyse: NonNullable<ReturnType<typeof analyseerTeam>>;
+  aanwezig: EnergieKleur[];
+  leden: Teamlid[];
+  organisatie: string;
+  nr: number;
+  tr: Vertaler;
+}) {
+  const blokken = overlegOntwerp(aanwezig, tr);
+  return (
+    <Pagina
+      kicker={tr("ui.tw.overleg_kicker", "OMGAAN MET DE DYNAMIEK")}
+      titel={tr("ui.tw.overleg_titel", "Samenwerken zonder energie te verliezen")}
+      organisatie={organisatie}
+      nr={nr}
+      tr={tr}
+    >
+      <div style={{ fontWeight: 700, fontSize: 12.5, color: KLEUR.petrol, marginBottom: 6 }}>
+        {tr("ui.tw.overleg_vorm_kop", "Een overlegvorm die bij deze groep past")}
+      </div>
+      <div style={{ display: "grid", gap: 4, marginBottom: 14 }}>
+        {blokken.map((blok) => (
+          <div key={blok.titel} style={{ display: "grid", gridTemplateColumns: "92px 1fr", gap: 10, borderBottom: `1px solid ${KLEUR.lijn}`, paddingBottom: 4 }}>
+            <span style={{ fontWeight: 700, fontSize: 11.5, color: KLEUR.inkt }}>{blok.titel}</span>
+            <span style={{ fontSize: 11, lineHeight: 1.5, color: "#4a4a4a" }}>{blok.tekst}</span>
           </div>
         ))}
       </div>
 
-      <div style={{ marginTop: 18, background: "#f4f2ec", borderRadius: 10, padding: "14px 16px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div style={{ border: `1px solid ${KLEUR.lijn}`, borderRadius: 8, padding: "10px 12px" }}>
+          <div style={{ fontWeight: 700, fontSize: 12, color: KLEUR.petrol }}>
+            {tr("ui.tw.overleg_afspraken_kop", "Vaste afspraken voor dit team")}
+          </div>
+          <ul style={{ margin: "6px 0 0", paddingLeft: 16, fontSize: 11, lineHeight: 1.55, color: "#4a4a4a" }}>
+            {analyse.afspraken.map((afspraak, i) => (
+              <li key={i}>{afspraak}</li>
+            ))}
+          </ul>
+        </div>
+        <div style={{ border: `1px solid ${KLEUR.lijn}`, borderRadius: 8, padding: "10px 12px", background: "#f4f2ec" }}>
+          <div style={{ fontWeight: 700, fontSize: 12, color: KLEUR.petrol }}>
+            {tr("ui.tw.overleg_hygiene_kop", "Energie per persoon, kort")}
+          </div>
+          <div style={{ display: "grid", gap: 3, marginTop: 6 }}>
+            {leden.map((lid) => {
+              const positie = positieByWielpositie(lid.wielpositie);
+              if (!positie) return null;
+              return (
+                <div key={`${lid.naam}-${lid.wielpositie}`} style={{ display: "grid", gridTemplateColumns: "62px 1fr", gap: 8 }}>
+                  <span style={{ fontWeight: 700, fontSize: 10.5, color: KLEUR.inkt }}>{lid.naam.split(" ")[0]}</span>
+                  <span style={{ fontSize: 10.5, lineHeight: 1.45, color: "#4a4a4a" }}>
+                    {vulIn(tr("ui.tw.overleg_hygiene_regel", "Werkt op {geeft}; loopt leeg op {kost}."), {
+                      geeft: tr(`wiel.kleur.${positie.volgorde[0]}.kern`, KLEURWOORD[positie.volgorde[0]].kern),
+                      kost: tr(`wiel.kleur.${positie.volgorde[3]}.kern`, KLEURWOORD[positie.volgorde[3]].kern),
+                    })}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 12, border: `1px solid ${KLEUR.lijn}`, borderRadius: 8, padding: "10px 12px" }}>
+        <div style={{ fontWeight: 700, fontSize: 12, color: KLEUR.petrol }}>
+          {tr("ui.tw.overleg_momenten_kop", "Drie momenten om dit gesprek te herhalen")}
+        </div>
+        <ul style={{ margin: "6px 0 0", paddingLeft: 16, fontSize: 11, lineHeight: 1.55, color: "#4a4a4a" }}>
+          <li>{tr("ui.tw.overleg_moment_1", "Bij de start van een project: benoem welke energie het meest gevraagd wordt en wie daarvoor in de stroom zit.")}</li>
+          <li>{tr("ui.tw.overleg_moment_2", "Halverwege: vraag expliciet waar energie weglekt. Niet of het goed gaat, maar wat op dit moment het meest kost.")}</li>
+          <li>{tr("ui.tw.overleg_moment_3", "Na een spanning: leg de spanning naast het wiel. Meestal blijkt het een energieverschil in tempo, detail of contact, en geen kwestie van onwil.")}</li>
+        </ul>
+      </div>
+    </Pagina>
+  );
+}
+
+function Slotpagina({ organisatie, nr, tr }: { organisatie: string; nr: number; tr: Vertaler }) {
+  return (
+    <Pagina
+      kicker={tr("ui.tw.slot_kicker2", "TOT SLOT")}
+      titel={tr("ui.tw.slot_titel2", "Verantwoorde toepassing")}
+      organisatie={organisatie}
+      nr={nr}
+      tr={tr}
+    >
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div style={{ border: `1px solid ${KLEUR.lijn}`, borderRadius: 8, padding: "10px 12px" }}>
+          <div style={{ fontWeight: 700, fontSize: 12, color: KLEUR.petrol }}>{tr("ui.tw.slot_wel_kop", "Wel gebruiken voor")}</div>
+          <ul style={{ margin: "6px 0 0", paddingLeft: 16, fontSize: 11, lineHeight: 1.55, color: "#4a4a4a" }}>
+            <li>{tr("ui.tw.slot_wel_1", "gesprek over samenwerking en energie")}</li>
+            <li>{tr("ui.tw.slot_wel_2", "overlegvormen en werkafspraken")}</li>
+            <li>{tr("ui.tw.slot_wel_3", "begrijpen waar spanning vandaan komt")}</li>
+            <li>{tr("ui.tw.slot_wel_4", "bewust omgaan met eigen energie")}</li>
+          </ul>
+        </div>
+        <div style={{ border: `1px solid ${KLEUR.lijn}`, borderRadius: 8, padding: "10px 12px", background: "#f4f2ec" }}>
+          <div style={{ fontWeight: 700, fontSize: 12, color: KLEUR.petrol }}>{tr("ui.tw.slot_niet_kop", "Niet gebruiken voor")}</div>
+          <ul style={{ margin: "6px 0 0", paddingLeft: 16, fontSize: 11, lineHeight: 1.55, color: "#4a4a4a" }}>
+            <li>{tr("ui.tw.slot_niet_1", "selectie, promotie of beoordeling")}</li>
+            <li>{tr("ui.tw.slot_niet_2", "uitspraken over talent of potentieel")}</li>
+            <li>{tr("ui.tw.slot_niet_3", "diagnose of persoonlijkheidsoordeel")}</li>
+            <li>{tr("ui.tw.slot_niet_4", "vaste labels op mensen plakken")}</li>
+          </ul>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 12, background: "#f4f2ec", borderRadius: 10, padding: "14px 16px" }}>
         <div style={{ fontFamily: "Arial, sans-serif", fontSize: 10.5, letterSpacing: 2, color: KLEUR.teal, fontWeight: 800 }}>
           {tr("ui.tw.eerlijk_kop", "EERLIJK OVER WAT DIT WEL EN NIET IS")}
         </div>

@@ -56,6 +56,20 @@ beschreven omdat weten beter is dan vermoeden.
 
 ### Herstel
 
+- Het energetisch teamprofiel uit het platform gaf maar 5 bladen, terwijl het
+  goedgekeurde rapport er 10 heeft. De platformpagina was los gebouwd van het
+  prototype en miste de leeswijzer, de bladen met individuele energie, het blad
+  "in energie blijven, kleur per kleur" en het blad over overleg en afspraken;
+  de verantwoorde toepassing stond samengedrukt op het slotblad. De teksten van
+  het goedgekeurde rapport staan nu in `client/src/temperamentenwiel/teamtekst.ts`
+  en de bladstructuur zelf in `client/src/temperamentenwiel/bladen.ts`. Dat laatste
+  bestand is de enige waarheid over welke bladen het rapport heeft en in welke
+  orde; `client/src/pages/twominscan-teamwiel.tsx` bouwt het rapport nu uit die
+  lijst op en nummert de bladen zelf, zodat een blad niet meer stil kan
+  wegvallen. Op één blad individuele energie staan drie deelnemers, dus bij vijf
+  deelnemers levert dat opnieuw 10 bladen. `tests/twominscan-teamrapport-bladen.test.ts`
+  bewaakt de orde en het aantal. Nagekeken in NL, FR en EN: 10 bladen per taal,
+  geen afgekapte tekst.
 - Een bestand uploaden faalde met 413 Payload Too Large. Drie wegen sturen een
   bestand als base64 in het JSON-bericht, terwijl de server dat bericht nog las
   met de standaardgrens van Express van 100 kB: het kandidaatrapport bij
@@ -72,6 +86,14 @@ beschreven omdat weten beter is dan vermoeden.
 
 ### Toegevoegd
 
+- Het temperamentenwiel staat nu ook achteraan de gedownloade individuele
+  2MINSCAN-PDF. De rapportpagina stuurt het wiel als afbeelding mee
+  (`client/src/temperamentenwiel/naar-png.ts`) en nieuw
+  `server/twominscan/wielbijlage.ts` zet daar met pdf-lib een laatste blad
+  "jouw plaats op het temperamentenwiel" van, met wielpositie en sector. Lukt
+  dat niet, dan komt de PDF gewoon zonder dat blad terug in plaats van te falen.
+  Nagekeken op twee gedownloade rapporten: 16 bladen, juiste positie, geen
+  afgekapte tekst.
 - Bewaarde 2MINSCAN-afnames voor het teamwiel. Wie het eigen rapport ziet, kan
   het met één knop in de teamlijst zetten (`Bewaar voor teamrapport` op de
   printbalk van `client/src/pages/twominscan-rapport.tsx`). De teamwielpagina

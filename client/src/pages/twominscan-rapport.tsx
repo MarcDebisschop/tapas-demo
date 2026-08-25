@@ -6,10 +6,14 @@ import { ontleedEGCode } from "@/twominscan/egcode";
 import { KLEUR, KLEUR_HEX } from "@/twominscan/theme";
 import { maakT, type Vertaler, type Taal } from "@/twominscan/i18n";
 import { normaliseerTaal } from "@shared/talen";
-import { Temperamentenwiel, initialenVan, positieByWielpositie, sectorLabel } from "@/temperamentenwiel";
+import { Temperamentenwiel, initialenVan, positieByWielpositie, sectorLabel, wielAlsPng } from "@/temperamentenwiel";
 
 // 2MINSCAN rapport — T4P Business Kompas-stijl, Energetic Flow-inhoud.
 // 14 hoofdstukken. Web-weergave + print (PDF via venster-print).
+
+// Anker rond het wiel op de wielpagina. De printbalk zoekt daarmee de getekende
+// SVG op om ze als beeld mee te sturen naar de gedownloade PDF.
+const WIELPAGINA_ID = "tw-rapportwiel";
 
 // ?d= staat in location.search (gezet via window.location.href = "?d=...#/pad")
 function parseData() {
@@ -65,7 +69,7 @@ export default function TwominscanRapport() {
 
   return (
     <div className="twominscan-pagina rapport-achtergrond" style={{ background: "#e8e6df", minHeight: "100vh", paddingBottom: 60 }}>
-      <PrintBalk tr={tr} egCode={data.egCode} volgorde={volgorde} xStand={xStand} naam={data.naam} datum={data.datum} taal={taal} wielpositie={data.wielpositie} organisatie={organisatie} />
+      <PrintBalk tr={tr} egCode={data.egCode} volgorde={volgorde} xStand={xStand} naam={data.naam} datum={data.datum} taal={taal} wielpositie={data.wielpositie} organisatie={organisatie} kleurvolgordeLabel={data.kleurvolgordeLabel} />
       <div className="rapport-doc" style={docStyle}>
         <Cover data={data} ieLabel={ieLabel} organisatie={organisatie} foto={foto} tr={tr} />
         <Inhoud tr={tr} />
@@ -98,8 +102,34 @@ const docStyle: React.CSSProperties = {
   fontFamily: "Georgia, 'Times New Roman', serif",
 };
 
-function PrintBalk({ tr, egCode, volgorde, xStand, naam, datum, taal, wielpositie, organisatie }: { tr: Vertaler; egCode: string; volgorde?: string[]; xStand?: string; naam?: string; datum?: string; taal: Taal; wielpositie?: string; organisatie?: string }) {
+function PrintBalk({ tr, egCode, volgorde, xStand, naam, datum, taal, wielpositie, organisatie, kleurvolgordeLabel }: { tr: Vertaler; egCode: string; volgorde?: string[]; xStand?: string; naam?: string; datum?: string; taal: Taal; wielpositie?: string; organisatie?: string; kleurvolgordeLabel?: string }) {
   const [bezig, setBezig] = useState(false);
+
+  // De wielpagina die op het scherm staat mee laten reizen naar de PDF. Het
+  // beeld komt letterlijk uit de weergave, zodat de kleurvolgorde per positie
+  // maar op één plaats getekend blijft (client/src/temperamentenwiel).
+  async function bouwWielbijlage() {
+    const positie = wielpositie ? positieByWielpositie(wielpositie) : null;
+    if (!positie || !wielpositie) return undefined;
+    const svg = document.querySelector<SVGSVGElement>(`#${WIELPAGINA_ID} svg`);
+    if (!svg) return undefined;
+    const png = await wielAlsPng(svg);
+    if (!png) return undefined;
+    return {
+      png,
+      wielpositie,
+      kop: tr("ui.h11wiel.kop", "JOUW PLAATS OP HET TEMPERAMENTENWIEL"),
+      titel: tr("ui.h11wiel.titel", "Waar jouw energie op het wiel staat"),
+      lead: tr(
+        "ui.h11wiel.lead",
+        "Het temperamentenwiel is een energetische gedragsvisualisatie. Elke positie op het wiel heeft haar eigen volgorde van vier energiekleuren: de eerste kleur in de buitenste band, daarna de tweede en de derde, en in de kern de kleur die energie kost. Jouw markering staat op de positie die bij jouw kleurvolgorde hoort.",
+      ),
+      positieLabel: tr("ui.h11.wielpositie", "Wielpositie"),
+      kleurvolgorde: kleurvolgordeLabel || wielpositie,
+      sectorTitel: tr("ui.h11wiel.sector.titel", "Sector op het wiel"),
+      sectorLabel: sectorLabel(positie),
+    };
+  }
 
   // Download het OFFICIËLE, vooraf ontwikkelde energetische rapport-PDF
   // (24 profielen × 5 talen, eigen layout) met naam + datum geïnjecteerd op
@@ -120,6 +150,9 @@ function PrintBalk({ tr, egCode, volgorde, xStand, naam, datum, taal, wielpositi
           naam: naam || undefined,
           taal,
           datum: datum || undefined,
+          // Ontbreekt de wielpagina op het scherm, dan gaat het rapport gewoon
+          // zonder bijlage mee: de download mag daar niet op stranden.
+          wielbijlage: await bouwWielbijlage(),
         }),
       });
       if (!resp.ok) throw new Error(`status ${resp.status}`);
@@ -804,7 +837,7 @@ function H11Wiel({ data, tr }: { data: any; tr: Vertaler }) {
       </p>
 
       <div style={{ display: "flex", justifyContent: "center" }}>
-        <div style={{ width: 395, maxWidth: "100%" }}>
+        <div id={WIELPAGINA_ID} style={{ width: 395, maxWidth: "100%" }}>
           <Temperamentenwiel
             deelnemers={deelnemers}
             titel={tr("ui.h11wiel.alt", "Temperamentenwiel met jouw positie aangeduid")}

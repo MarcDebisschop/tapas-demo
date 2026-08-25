@@ -97,15 +97,25 @@ describe("Teamwiel — energietaal in de bronteksten", () => {
     "beter dan",
   ];
 
+  // Sleutels die deze woorden mogen bevatten omdat ze uitdrukkelijk zeggen dat
+  // het rapport daar géén uitspraak over doet: de slotalert, de leeswijzer en
+  // het kader "niet gebruiken voor" op de slotpagina.
+  const ontkennend = new Set([
+    "ui.tw.eerlijk_1",
+    "ui.tw.lees_lead",
+    "ui.tw.lees_niet_1",
+    "ui.tw.lees_niet_2",
+    "ui.tw.lees_niet_3",
+    "ui.tw.slot_niet_2",
+    "ui.tw.slot_niet_3",
+  ]);
+
   it("houdt de Nederlandse teksten in energietaal", () => {
     const fout: string[] = [];
     for (const [sleutel, nl] of perSleutel) {
       const laag = nl.toLowerCase();
       for (const woord of verboden) {
-        // De slotalert mag talent en potentieel wél noemen: ze zegt uitdrukkelijk
-        // dat dit rapport daar géén uitspraak over doet, en verwijst voor die
-        // vraag naar het TaPas Kompas.
-        if (sleutel === "ui.tw.eerlijk_1") continue;
+        if (ontkennend.has(sleutel)) continue;
         if (laag.includes(woord)) fout.push(`${sleutel} bevat "${woord}"`);
       }
     }
