@@ -1313,7 +1313,7 @@ function Kleurenpagina({
               <div style={{ fontWeight: 700, fontSize: 12.5, color: KLEUR.inkt }}>
                 {tr(`wiel.kleur.${kleur}.titel`, KLEURWOORD[kleur].titel)}
                 <span style={{ fontWeight: 400, color: "#6b6b6b" }}>
-                  {" — "}
+                  {" · "}
                   {tr(`wiel.kleur.${kleur}.kern`, KLEURWOORD[kleur].kern)} ·{" "}
                   {vulIn(tr("ui.tw.kleur_aantal", "{n} van {totaal} als eerste kleur"), {
                     n: analyse.dominant[kleur],

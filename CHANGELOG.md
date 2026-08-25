@@ -56,6 +56,18 @@ beschreven omdat weten beter is dan vermoeden.
 
 ### Herstel
 
+- Op het blad "in energie blijven, kleur per kleur" van het energetisch
+  teamprofiel scheidde een em-streepje de kleurnaam van haar kernwoorden
+  ("Rood — richten en doorzetten"). Datzelfde blad gebruikt verder overal een
+  middenpunt als scheiding, dus staat er nu ook hier een middenpunt. In de
+  leeswijzer en in de inleiding van blad 06 van het individuele webrapport is
+  het em-streepje vervangen door een komma; die twee teksten zijn in NL, FR en
+  EN aangepast (`ui.leeswijzer.tekst`, `ui.h6.lead`). Nagekeken op de PDF's:
+  het teamprofiel bevat in NL, FR en EN geen enkel em-streepje meer. De vooraf
+  ontwikkelde profielrapporten onder `client/public/twominscan-rapporten/`
+  bevatten er nog zeven per bestand; die bestanden zijn geen bron in deze
+  repository en zijn niet aangeraakt.
+
 - Het energetisch teamprofiel uit het platform gaf maar 5 bladen, terwijl het
   goedgekeurde rapport er 10 heeft. De platformpagina was los gebouwd van het
   prototype en miste de leeswijzer, de bladen met individuele energie, het blad

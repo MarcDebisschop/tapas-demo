@@ -494,7 +494,7 @@ function Leeswijzer({ tr }: { tr: Vertaler }) {
     <Pagina kicker={kickerVan(tr, "leeswijzer", "LEESWIJZER")}>
       <div style={{ fontFamily: "Arial, sans-serif", fontSize: 11.5, fontWeight: 800, letterSpacing: 1.4, color: KLEUR.teal, marginBottom: 8 }}>{tr("ui.leeswijzer.kop", "HOE JE DIT RAPPORT LEEST")}</div>
       <p style={{ fontSize: 15, lineHeight: 1.7 }}>
-        {tr("ui.leeswijzer.tekst", "Dit is geen typologisch eindpunt. Het is een praktische energieroute die helpt zien wat jou in professionele interactie voedt, belast en opnieuw in balans brengt. De EG-code wordt nergens als label gelezen, maar steeds als taal voor energie in gedrag. Lees het profiel als een vriendelijke spiegel — niet om jezelf vast te zetten, maar om bewuster met je energie om te gaan in verbinding met anderen.")}
+        {tr("ui.leeswijzer.tekst", "Dit is geen typologisch eindpunt. Het is een praktische energieroute die helpt zien wat jou in professionele interactie voedt, belast en opnieuw in balans brengt. De EG-code wordt nergens als label gelezen, maar steeds als taal voor energie in gedrag. Lees het profiel als een vriendelijke spiegel, niet om jezelf vast te zetten, maar om bewuster met je energie om te gaan in verbinding met anderen.")}
       </p>
     </Pagina>
   );
@@ -669,7 +669,7 @@ function teamZin(data: any, tr: Vertaler): string {
 function H6({ data, tr }: { data: any; tr: Vertaler }) {
   return (
     <Pagina kicker={kickerVan(tr, "flow", "FLOW")}>
-      <HoofdTitel nr="06" titel={tr("ui.h6.titel", "Wat jij in teams op gang brengt")} lead={tr("ui.h6.lead", "Hoe jouw energie effect heeft op anderen — zonder dit als talent of beoordeling te lezen.")} />
+      <HoofdTitel nr="06" titel={tr("ui.h6.titel", "Wat jij in teams op gang brengt")} lead={tr("ui.h6.lead", "Hoe jouw energie effect heeft op anderen, zonder dit als talent of beoordeling te lezen.")} />
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         {data.teamEffecten.map((t: any, i: number) => (
           <Kaart key={i} titel={t.titel} accent={KLEUR.teal}>{t.tekst}</Kaart>
