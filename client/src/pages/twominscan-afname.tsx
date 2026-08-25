@@ -4,6 +4,7 @@ import { ALLE_WOORDEN, IE_STELLINGEN, berekenKleurScores, berekenIE } from "@/tw
 import { matchProfiel } from "@/twominscan/profielen";
 import { KLEUR } from "@/twominscan/theme";
 import { maakT, Vertaler, Taal, STANDAARD_TAAL } from "@/twominscan/i18n";
+import { verkleinAfbeeldingNaarDataUrl } from "@/lib/afbeelding";
 
 // 2MINSCAN afname — Energetisch Gedragsprofiel.
 // Stap 1: kies 8 van 32 woorden (sterkste herkenning).
@@ -33,6 +34,10 @@ export default function TwominscanAfname() {
   const [stap, setStap] = useState<Stap>("intro");
   const [taal, setTaal] = useState<Taal>(STANDAARD_TAAL);
   const [naam, setNaam] = useState("");
+  const [organisatie, setOrganisatie] = useState("");
+  // Portret dat de deelnemer zelf meegeeft. Blijft in de browser: de foto reist
+  // met het rapport mee en wordt hier niet naar de server gestuurd.
+  const [foto, setFoto] = useState<string | null>(null);
   const tr = useMemo(() => maakT(taal), [taal]);
   const [ronde1, setRonde1] = useState<string[]>([]);
   const [ronde2, setRonde2] = useState<string[]>([]);
@@ -75,6 +80,8 @@ export default function TwominscanAfname() {
     const payload = encodeURIComponent(
       JSON.stringify({
         naam,
+        organisatie,
+        ...(foto ? { foto: { src: foto } } : {}),
         taal,
         datum: new Date().toLocaleDateString("nl-BE"),
         score,
@@ -99,7 +106,17 @@ export default function TwominscanAfname() {
       <TopBalk taal={taal} setTaal={setTaal} tr={tr} />
       <div style={{ maxWidth: 980, margin: "0 auto", padding: "28px 20px 64px" }}>
         {stap === "intro" && (
-          <IntroBlok naam={naam} setNaam={setNaam} start={() => setStap("ronde1")} toonDemo={toonVoorbeeldrapport} tr={tr} />
+          <IntroBlok
+            naam={naam}
+            setNaam={setNaam}
+            organisatie={organisatie}
+            setOrganisatie={setOrganisatie}
+            foto={foto}
+            setFoto={setFoto}
+            start={() => setStap("ronde1")}
+            toonDemo={toonVoorbeeldrapport}
+            tr={tr}
+          />
         )}
 
         {stap === "ronde1" && (
@@ -192,8 +209,32 @@ function TopBalk({ taal, setTaal, tr }: { taal: Taal; setTaal: (t: Taal) => void
 }
 
 function IntroBlok({
-  naam, setNaam, start, toonDemo, tr,
-}: { naam: string; setNaam: (v: string) => void; start: () => void; toonDemo: () => void; tr: Vertaler }) {
+  naam, setNaam, organisatie, setOrganisatie, foto, setFoto, start, toonDemo, tr,
+}: {
+  naam: string;
+  setNaam: (v: string) => void;
+  organisatie: string;
+  setOrganisatie: (v: string) => void;
+  foto: string | null;
+  setFoto: (v: string | null) => void;
+  start: () => void;
+  toonDemo: () => void;
+  tr: Vertaler;
+}) {
+  const [fotoFout, setFotoFout] = useState("");
+
+  async function kiesFoto(bestand: File | undefined) {
+    if (!bestand) return;
+    setFotoFout("");
+    try {
+      // 256 px is ruim voor het portret op de cover en houdt het rapportadres kort.
+      setFoto(await verkleinAfbeeldingNaarDataUrl(bestand, 256));
+    } catch (e: any) {
+      setFoto(null);
+      setFotoFout(e?.message ?? tr("ui.afname.foto.fout", "Kon deze afbeelding niet gebruiken."));
+    }
+  }
+
   return (
     <div style={{ maxWidth: 720, margin: "0 auto" }}>
       <div style={{ color: KLEUR.goud, fontWeight: 800, letterSpacing: 2, fontSize: 12 }}>
@@ -219,12 +260,63 @@ function IntroBlok({
         value={naam}
         onChange={(e) => setNaam(e.target.value)}
         placeholder={tr("ui.afname.naam.placeholder", "bv. Anne-Sofie Bogaerts")}
-        style={{
-          width: "100%", maxWidth: 420, padding: "11px 14px", fontSize: 15,
-          border: `1px solid ${KLEUR.lijn}`, borderRadius: 10, background: "#fff",
-          outline: "none",
-        }}
+        style={veldStijl}
       />
+
+      <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: KLEUR.petrol, margin: "16px 0 6px" }}>
+        {tr("ui.afname.organisatie.label", "Je organisatie (optioneel)")}
+      </label>
+      <input
+        value={organisatie}
+        onChange={(e) => setOrganisatie(e.target.value)}
+        placeholder={tr("ui.afname.organisatie.placeholder", "bv. Newco")}
+        style={veldStijl}
+      />
+
+      <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: KLEUR.petrol, margin: "16px 0 6px" }}>
+        {tr("ui.afname.foto.label", "Je foto (optioneel)")}
+      </label>
+      <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
+        {foto ? (
+          <img
+            src={foto}
+            alt=""
+            style={{ width: 56, height: 70, objectFit: "cover", borderRadius: 6, border: `1px solid ${KLEUR.lijn}` }}
+          />
+        ) : null}
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => kiesFoto(e.target.files?.[0])}
+          style={{ fontSize: 13 }}
+        />
+        {foto ? (
+          <button
+            onClick={() => setFoto(null)}
+            style={{
+              padding: "7px 12px",
+              borderRadius: 8,
+              border: `1px solid ${KLEUR.lijn}`,
+              background: "#fff",
+              color: KLEUR.inkt,
+              fontSize: 13,
+              cursor: "pointer",
+            }}
+          >
+            {tr("ui.afname.foto.wis", "Foto weglaten")}
+          </button>
+        ) : null}
+      </div>
+      <p style={{ fontSize: 12.5, color: "#6b6b6b", maxWidth: 620, margin: "8px 0 0", lineHeight: 1.5 }}>
+        {tr(
+          "ui.afname.foto.uitleg",
+          "Je foto komt enkel op je eigen rapport. Ze wordt in je browser verkleind en niet op de server bewaard. Laat je dit veld leeg, dan blijft je rapport gewoon zonder foto.",
+        )}
+      </p>
+      {fotoFout ? (
+        <p style={{ fontSize: 12.5, color: "#a4462e", margin: "6px 0 0" }}>{fotoFout}</p>
+      ) : null}
+
       <div style={{ marginTop: 26, display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
         <PrimaireKnop onClick={start}>{tr("ui.afname.start", "Start de 2MINSCAN →")}</PrimaireKnop>
         <button
@@ -247,6 +339,17 @@ function IntroBlok({
     </div>
   );
 }
+
+const veldStijl: React.CSSProperties = {
+  width: "100%",
+  maxWidth: 420,
+  padding: "11px 14px",
+  fontSize: 15,
+  border: `1px solid ${KLEUR.lijn}`,
+  borderRadius: 10,
+  background: "#fff",
+  outline: "none",
+};
 
 function StapKaart({ nr, titel, tekst }: { nr: string; titel: string; tekst: string }) {
   return (

@@ -24,6 +24,7 @@ import {
   genereer2msRapportOpVolgorde,
   TALEN,
 } from "./rapport-selectie";
+import { registerOrganisatiefotoRoutes } from "./organisatiefotos";
 
 const KLEUR = z.enum(["rood", "geel", "groen", "blauw"]);
 
@@ -51,6 +52,10 @@ function veiligeBestandsnaam(naam: string | undefined, egCode: string): string {
 }
 
 export function registerTwominscanRoutes(app: Express): void {
+  // Portretfoto's van één pagina die de organisatie zelf publiceerde, per
+  // persoon te bevestigen door de coach. Zie organisatiefotos.ts voor de grenzen.
+  registerOrganisatiefotoRoutes(app);
+
   app.post("/api/twominscan/rapport.pdf", async (req: Request, res: Response) => {
     const parsed = rapportSchema.safeParse(req.body);
     if (!parsed.success) {

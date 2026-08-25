@@ -106,6 +106,42 @@ beschreven omdat weten beter is dan vermoeden.
   teamwiel. Twee zaken zijn bewust nog niet gedaan en horen bij een volgende stap:
   het profieldocument achter "Download als PDF" komt van de server en bevat de
   wielpagina nog niet, en het teamwiel is nog niet in het platform aangesloten.
+- Het teamwiel is aangesloten op het platform, als derde stap van vier. De nieuwe
+  pagina `client/src/pages/twominscan-teamwiel.tsx` op route `/2minscan/teamwiel`
+  heeft twee standen. In de samenstelstand vult de coach per deelnemer de naam,
+  de rol en de wielpositie in zoals die uit de 2MINSCAN kwam; de wielpositie komt
+  uit een keuzelijst met de 24 posities van de speelmat, zodat er geen positie kan
+  worden ingetypt die niet bestaat. In de rapportstand volgen vijf pagina's: een
+  cover met de organisatie, het volledige wiel met ieders initialen op zijn eigen
+  positie, een deelnemerspagina met wielpositie, sector en de kleurvolgorde van
+  die positie in bolletjes, de teamdynamiek uit `dynamiek.ts` met kerncijfers en
+  inzichten, en een slotpagina met werkafspraken, de Jung-nuance en het
+  TaPasCity-contact. Het wiel zelf is niet gewijzigd: elke positie houdt haar
+  eigen gemeten kleurvolgorde.
+- De initialenregel staat nu op één plaats, in `client/src/temperamentenwiel/`
+  `initialen.ts`. Zowel het individuele rapport als het teamwiel gebruikt die
+  regel, zodat dezelfde naam nooit twee verschillende initialen kan opleveren.
+  Tussenvoegsels tellen niet mee: "Naima El Amrani" wordt NA en "Bram De Cock"
+  wordt BC. Dat lost het punt op dat in het eerste Newco-verslag nog openstond.
+- De organisatienaam staat nu in de 2MINSCAN. De afname vraagt ze als los,
+  optioneel veld, ze reist mee in de rapportlink en ze staat op de cover van het
+  individuele rapport en van het teamrapport. Is ze niet ingevuld, dan verschijnt
+  er niets: geen leeg veld en geen streepje.
+- Een portret kan bij een profiel horen, langs twee wegen en beide met de hand
+  bevestigd. De deelnemer kan bij de afname zelf een foto kiezen; de browser
+  verkleint die tot 256 pixels (`client/src/lib/afbeelding.ts`) en er staat bij
+  waarvoor ze dient. Voor een team kan de coach één pagina opgeven die de
+  organisatie zelf publiceerde, bijvoorbeeld de directiepagina, en per beeld
+  aanwijzen wie het is. Nieuw `server/twominscan/organisatiefotos.ts` leest enkel
+  die ene pagina: alleen https, geen tweede pagina erbij, zoekmachines, sociale
+  netwerken en fotobanken worden geweigerd, robots.txt wordt gerespecteerd, ten
+  hoogste twaalf beelden van elk ten hoogste 2 MB, en er wordt niets op de server
+  bewaard. De bron blijft als host bij de foto in het rapport staan. Automatisch
+  het web afzoeken naar een foto van iemand is bewust niet gebouwd: je kunt dan
+  niet met zekerheid zeggen dat het de juiste persoon is en het beeld is meestal
+  niet vrij van rechten. Ontbreekt een foto, dan is daar in de PDF niets van te
+  zien: geen kader, geen icoon en geen melding. Heeft niemand in de groep een
+  foto, dan verdwijnt de fotokolom volledig.
 - Uitnodigen kan nu zelf een bericht versturen. Het uitnodigingsvenster heeft een
   adresveld en twee knoppen: "Alleen link aanmaken", de weg die er altijd was en
   volwaardig blijft, en "Aanmaken en versturen". Nieuw bestand

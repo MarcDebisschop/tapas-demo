@@ -41,6 +41,7 @@ import DriverScanAfname from "@/pages/driverscan-afname";
 import HddHome from "@/pages/hdd-home";
 import HddRapport from "@/pages/hdd-rapport";
 import TwominscanRapport from "@/pages/twominscan-rapport";
+import TwominscanTeamwiel from "@/pages/twominscan-teamwiel";
 import ImpactHome from "@/pages/impact-home";
 import Lounge from "@/pages/lounge";
 import AdminVraagbeheer from "@/pages/admin-vraagbeheer";
@@ -207,6 +208,7 @@ function AppRouter() {
       <Route path="/hdd">{() => <CoachLoginGate><HddHome /></CoachLoginGate>}</Route>
       <Route path="/hdd/rapport">{() => <CoachLoginGate><HddRapport /></CoachLoginGate>}</Route>
       <Route path="/2minscan/rapport" component={TwominscanRapport} />
+      <Route path="/2minscan/teamwiel" component={TwominscanTeamwiel} />
       <Route path="/t4sports" component={T4SportsVragenlijst} />
       <Route path="/t4sports/dashboard/:token" component={T4SportsDashboard} />
       <Route path="/t4sports/modules/:afnameId" component={T4SportsModules} />

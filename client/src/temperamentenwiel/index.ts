@@ -17,6 +17,8 @@ export {
   type Sector,
 } from "./posities";
 
+export { initialenVan } from "./initialen";
+
 export { bouwWiel, tekenDeelnemers, type WielDeelnemer, type WielOpties } from "./wiel";
 
 export {

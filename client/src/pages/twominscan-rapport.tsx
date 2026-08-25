@@ -6,7 +6,7 @@ import { ontleedEGCode } from "@/twominscan/egcode";
 import { KLEUR, KLEUR_HEX } from "@/twominscan/theme";
 import { maakT, type Vertaler, type Taal } from "@/twominscan/i18n";
 import { normaliseerTaal } from "@shared/talen";
-import { Temperamentenwiel, positieByWielpositie, sectorLabel } from "@/temperamentenwiel";
+import { Temperamentenwiel, initialenVan, positieByWielpositie, sectorLabel } from "@/temperamentenwiel";
 
 // 2MINSCAN rapport — T4P Business Kompas-stijl, Energetic Flow-inhoud.
 // 14 hoofdstukken. Web-weergave + print (PDF via venster-print).
@@ -51,6 +51,11 @@ export default function TwominscanRapport() {
 
   const ontleed = ontleedEGCode(data.egCode, taal);
   const ieLabel = payload?.ie?.label ?? "";
+  // Organisatie is optioneel: alleen tonen wanneer ze bij de afname is ingevuld.
+  const organisatie: string = (payload?.organisatie ?? "").trim();
+  // Portretfoto is altijd optioneel. Ontbreekt ze, dan toont het rapport niets:
+  // geen leeg kader en geen melding dat er iets mist.
+  const foto: Portret | null = leesPortret(payload?.foto);
 
   // AANBEVOLEN selectie-sleutel voor de officiële PDF: de volledige gemeten
   // kleurvolgorde + de apart gemeten X-stand. Samen wijzen die naar precies
@@ -62,7 +67,7 @@ export default function TwominscanRapport() {
     <div className="twominscan-pagina rapport-achtergrond" style={{ background: "#e8e6df", minHeight: "100vh", paddingBottom: 60 }}>
       <PrintBalk tr={tr} egCode={data.egCode} volgorde={volgorde} xStand={xStand} naam={data.naam} datum={data.datum} taal={taal} />
       <div className="rapport-doc" style={docStyle}>
-        <Cover data={data} ieLabel={ieLabel} tr={tr} />
+        <Cover data={data} ieLabel={ieLabel} organisatie={organisatie} foto={foto} tr={tr} />
         <Inhoud tr={tr} />
         <Leeswijzer tr={tr} />
         <H1 data={data} ontleed={ontleed} ieLabel={ieLabel} score={payload?.score} tr={tr} />
@@ -220,7 +225,70 @@ function Kaart({ titel, children, accent }: { titel?: string; children: React.Re
 }
 
 // ---- COVER ----
-function Cover({ data, ieLabel, tr }: { data: any; ieLabel: string; tr: Vertaler }) {
+/**
+ * Een portret dat de deelnemer zelf meegaf, of dat de coach bevestigde vanaf een
+ * pagina die de organisatie zelf publiceerde. `bron` is dan die pagina.
+ */
+export interface Portret {
+  src: string;
+  bron?: string;
+}
+
+/** Aanvaardt alleen een data-URL of een https-adres van een afbeelding. */
+export function leesPortret(ruw: any): Portret | null {
+  const src = typeof ruw === "string" ? ruw : typeof ruw?.src === "string" ? ruw.src : "";
+  const veilig = /^data:image\/(png|jpeg|jpg|webp|gif);base64,/i.test(src) || /^https:\/\//i.test(src);
+  if (!veilig) return null;
+  const bron = typeof ruw?.bron === "string" && ruw.bron.trim() ? ruw.bron.trim() : undefined;
+  return { src, bron };
+}
+
+/** Leesbare herkomst onder een portret: de website, niet het volledige adres. */
+export function bronLabel(bron?: string): string | null {
+  if (!bron) return null;
+  try {
+    return new URL(bron).host.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
+function Portretbeeld({
+  foto,
+  naam,
+  breedte,
+  tr,
+}: {
+  foto: Portret;
+  naam: string;
+  breedte: number;
+  tr: Vertaler;
+}) {
+  const host = bronLabel(foto.bron);
+  return (
+    <figure style={{ margin: 0, width: breedte, flexShrink: 0 }}>
+      <img
+        src={foto.src}
+        alt={naam || ""}
+        style={{
+          width: breedte,
+          height: Math.round(breedte * 1.25),
+          objectFit: "cover",
+          borderRadius: 3,
+          border: `1px solid ${KLEUR.lijn}`,
+          display: "block",
+        }}
+      />
+      {host ? (
+        <figcaption style={{ fontFamily: "Arial, sans-serif", fontSize: 8.5, color: "#9a9a9a", marginTop: 5, lineHeight: 1.3 }}>
+          {tr("ui.foto.bron", "Foto")}: {host}
+        </figcaption>
+      ) : null}
+    </figure>
+  );
+}
+
+function Cover({ data, ieLabel, organisatie, foto, tr }: { data: any; ieLabel: string; organisatie?: string; foto?: Portret | null; tr: Vertaler }) {
   return (
     <section className="pagina cover" style={{ padding: "60px 54px 50px", minHeight: 560, display: "flex", flexDirection: "column" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -241,15 +309,19 @@ function Cover({ data, ieLabel, tr }: { data: any; ieLabel: string; tr: Vertaler
         </p>
       </div>
 
-      <div style={{ marginTop: "auto", paddingTop: 40 }}>
+      <div style={{ marginTop: "auto", paddingTop: 40, display: "flex", gap: 26, alignItems: "flex-end" }}>
+        {foto ? <Portretbeeld foto={foto} naam={data.naam || ""} breedte={104} tr={tr} /> : null}
+        <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ height: 1, background: KLEUR.lijn, marginBottom: 18 }} />
         <Veld label={tr("ui.cover.naam", "NAAM")} waarde={data.naam || "—"} />
+        {organisatie ? <Veld label={tr("ui.cover.organisatie", "ORGANISATIE")} waarde={organisatie} /> : null}
         <Veld label={tr("ui.cover.datum", "DATUM")} waarde={data.datum} />
         <Veld label={tr("ui.cover.egcode", "EG-CODE")} waarde={data.egCode} mono />
         <Veld label={tr("ui.cover.energiestand", "ENERGIESTAND")} waarde={ieLabel ? cap(ieLabel) : "—"} />
         <div style={{ height: 1, background: KLEUR.lijn, margin: "18px 0 10px" }} />
         <div style={{ fontFamily: "Arial, sans-serif", letterSpacing: 2, fontSize: 11.5, color: KLEUR.teal, fontWeight: 700 }}>
           {tr("ui.cover.vertrouwelijk", "VERTROUWELIJK PROFIELRAPPORT")}
+        </div>
         </div>
       </div>
     </section>
@@ -611,16 +683,10 @@ function H11({ data, ieLabel, tr }: { data: any; ieLabel: string; tr: Vertaler }
 // blijft ongewijzigd. De wielpositie zelf komt uit hetzelfde profiel dat de
 // Insights-kaart hierboven toont.
 function H11Wiel({ data, tr }: { data: any; tr: Vertaler }) {
-  const deelnemers = useMemo(() => {
-    const initialen =
-      (data.naam || "")
-        .split(/\s+/)
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((deel: string) => deel.charAt(0).toUpperCase())
-        .join("") || "IK";
-    return [{ naam: data.naam || "", initialen, wielpositie: data.wielpositie }];
-  }, [data.naam, data.wielpositie]);
+  const deelnemers = useMemo(
+    () => [{ naam: data.naam || "", initialen: initialenVan(data.naam || ""), wielpositie: data.wielpositie }],
+    [data.naam, data.wielpositie],
+  );
 
   // Onbekende wielpositie: pagina stil weglaten in plaats van een leeg wiel tonen.
   const positie = positieByWielpositie(data.wielpositie);
