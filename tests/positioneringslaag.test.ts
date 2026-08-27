@@ -89,9 +89,9 @@ describe("A. Eén bron van waarheid", () => {
     expect(OUTPUTSTAPEL).toHaveLength(4);
     expect(OUTPUTSTAPEL.map((o) => o.naam)).toEqual([
       "Individueel inzicht",
-      "Begeleidersblad",
+      "Begeleidersrapport",
       "Managementsamenvatting",
-      "Bestuursblad",
+      "Bestuursrapport",
     ]);
     for (const o of OUTPUTSTAPEL) {
       expect(o.lezer.length).toBeGreaterThan(3);

@@ -163,11 +163,11 @@ export const OUTPUTSTAPEL: OutputLaag[] = [
     lezer: "de deelnemer zelf",
     inhoud:
       "Het persoonlijke profiel in gewone taal: talentfoci, versnellers, drivers en energie, met wat dat betekent in het dagelijkse werk.",
-    vorm: "PDF, van één blad tot een volledig kompas, naargelang het instrument.",
+    vorm: "PDF, van enkele pagina's tot een volledig kompas, naargelang het instrument.",
   },
   {
     nummer: 2,
-    naam: "Begeleidersblad",
+    naam: "Begeleidersrapport",
     lezer: "de coach of facilitator",
     inhoud:
       "De gespreksleidraad: combinaties om na te gaan, aandachtspunten, vragen om te stellen en grenzen om te respecteren.",
@@ -179,15 +179,15 @@ export const OUTPUTSTAPEL: OutputLaag[] = [
     lezer: "de leidinggevende of HR",
     inhoud:
       "Het patroon op ploeg- en organisatieniveau: waar de energie zit, waar ze wegloopt en wat dat betekent voor inzet en samenwerking.",
-    vorm: "PDF van enkele bladen, zonder individuele scores.",
+    vorm: "PDF van enkele pagina's, zonder individuele scores.",
   },
   {
     nummer: 4,
-    naam: "Bestuursblad",
+    naam: "Bestuursrapport",
     lezer: "de raad van bestuur of de investeerder",
     inhoud:
-      "Eén blad met de kern, de risico's, de aannames en de aanbeveling die de beslissing ondersteunt.",
-    vorm: "PDF van één blad, klaar voor de agenda van een bestuursvergadering.",
+      "Eén pagina met de kern, de risico's, de aannames en de aanbeveling die de beslissing ondersteunt.",
+    vorm: "PDF van één pagina, klaar voor de agenda van een bestuursvergadering.",
   },
 ];
 
@@ -198,7 +198,7 @@ export const MARKERINGEN: Markering[] = [
   {
     label: "Versie",
     waarde: "2.7",
-    uitleg: "De rapportversie waarmee dit blad is opgemaakt.",
+    uitleg: "De rapportversie waarmee dit rapport is opgemaakt.",
   },
   {
     label: "Taal",
@@ -213,7 +213,7 @@ export const MARKERINGEN: Markering[] = [
   {
     label: "Vertrouwelijkheid",
     waarde: "Enkel voor de genoemde lezer",
-    uitleg: "Elke laag noemt wie het blad mag lezen en wie niet.",
+    uitleg: "Elke laag noemt wie het rapport mag lezen en wie niet.",
   },
 ];
 
@@ -254,7 +254,7 @@ export const HDD_STAPPEN: Stap[] = [
     nummer: 5,
     naam: "Bestuursklare oplevering",
     inhoud:
-      "Het bestuursblad, de managementsamenvatting en de begeleidersbladen worden overhandigd en mondeling toegelicht aan wie de beslissing neemt.",
+      "Het bestuursrapport, de managementsamenvatting en de begeleidersrapporten worden overhandigd en mondeling toegelicht aan wie de beslissing neemt.",
     duur: "Eén zitting van negentig minuten",
   },
 ];
@@ -337,10 +337,10 @@ export const DEMO_JOURNEYS: DemoJourney[] = [
       "Uitnodiging van de ploeg voor teamscan en energiescan",
       "Business Kompas voor de vijf sleutelfiguren",
       "Synthese naast de dossiervraag",
-      "Bestuursblad en mondelinge toelichting",
+      "Bestuursrapport en mondelinge toelichting",
     ],
     outputs: [
-      "Bestuursblad van één blad",
+      "Bestuursrapport van één pagina",
       "Managementsamenvatting voor de dossierverantwoordelijke",
       "Individuele profielen voor de vijf leden",
     ],
@@ -362,7 +362,7 @@ export const DEMO_JOURNEYS: DemoJourney[] = [
     ],
     outputs: [
       "Managementsamenvatting van de afdeling",
-      "Begeleidersblad voor de facilitator",
+      "Begeleidersrapport voor de facilitator",
       "Individueel inzicht voor elke deelnemer",
     ],
     vervolgactie:
@@ -383,7 +383,7 @@ export const DEMO_JOURNEYS: DemoJourney[] = [
     ],
     outputs: [
       "Individueel inzicht per deelnemer",
-      "Begeleidersblad per coachgesprek",
+      "Begeleidersrapport per coachgesprek",
       "Managementsamenvatting voor HR",
     ],
     vervolgactie:
@@ -433,7 +433,7 @@ export const DEMO_CASES: DemoCase[] = [
       "Draagt de nieuwe leiding het plan, en welke afhankelijkheden blijven na de overdracht bestaan?",
     journey: "Human Due Diligence",
     uitkomst:
-      "Een bestuursblad met de risico's rond sleutelfiguren en een gespreksbasis voor de eerste honderd dagen na de overname.",
+      "Een bestuursrapport met de risico's rond sleutelfiguren en een gespreksbasis voor de eerste honderd dagen na de overname.",
   },
 ];
 
@@ -454,7 +454,7 @@ export const LICENTIES: LicentieBeeld[] = [
     bevat: [
       "Eigen omgeving om deelnemers uit te nodigen en de afname op te volgen",
       "Alle instrumenten van de zakelijke lijn, met afname per deelnemer afgerekend",
-      "Begeleidersbladen bij elk profiel, met de duidingslaag",
+      "Begeleidersrapporten bij elk profiel, met de duidingslaag",
       "Certificering en bijscholing binnen het bekwaamheidskader",
       "Rapporten in de eigen taalkeuze van de deelnemer",
     ],
@@ -467,7 +467,7 @@ export const LICENTIES: LicentieBeeld[] = [
     bevat: [
       "Organisatieomgeving met meerdere beheerders en interne begeleiders",
       "Ploeg- en afdelingsbeelden bovenop de individuele profielen",
-      "Managementsamenvattingen en bestuursbladen",
+      "Managementsamenvattingen en bestuursrapporten",
       "Bewaartermijnen, toestemming en anonimisering volgens de eigen afspraken",
       "Staffels op afnamevolume vanaf vijfentwintig deelnemers",
     ],

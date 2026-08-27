@@ -224,7 +224,7 @@ export default function Onthaal() {
               <p className="toon">
                 Wie investeert, herstructureert of een ploeg samenstelt, beslist over mensen. Tapas
                 CORE brengt talent, drivers en energie in beeld op het niveau waarop die beslissing
-                valt, en levert bladen die op een bestuurstafel kunnen liggen.
+                valt, en levert rapporten die op een bestuurstafel kunnen liggen.
               </p>
               <div className="hero-acties">
                 <button className="knop knop-1" type="button" onClick={() => naarSectie("contact")}>
@@ -297,10 +297,10 @@ export default function Onthaal() {
         <div className="wrap">
           <div className="sec-kop">
             <p className="eyebrow">Wat u krijgt</p>
-            <h2>Vier bladen, elk met één lezer</h2>
+            <h2>Vier rapporten, elk met één lezer</h2>
             <p>
               Een rapport zonder lezer helpt niemand vooruit. Daarom levert het platform vier lagen,
-              van het profiel van de deelnemer tot één blad voor wie de beslissing neemt.
+              van het profiel van de deelnemer tot één rapport voor wie de beslissing neemt.
             </p>
           </div>
           <div className="stapelband">
@@ -314,7 +314,7 @@ export default function Onthaal() {
             ))}
           </div>
           <p className="bandnoot">
-            Elk blad draagt zijn versie, taal, datum en de vermelding wie het mag lezen.{" "}
+            Elk rapport draagt zijn versie, taal, datum en de vermelding wie het mag lezen.{" "}
             <Link href="/outputs">Bekijk de volledige opbouw van de outputs</Link>.
           </p>
         </div>

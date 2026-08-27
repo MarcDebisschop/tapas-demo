@@ -51,7 +51,7 @@ export default function Demo() {
           <h1>Een traject tonen, niet een vragenlijst</h1>
           <p className="lead">
             Kies een journey en, als u wil, een casecontext. U ziet dan hoe het traject verloopt: wie
-            deelneemt, welke stappen er zijn, welke bladen eruit komen en welke beslissing erop
+            deelneemt, welke stappen er zijn, welke rapporten eruit komen en welke beslissing erop
             volgt. De cijfers en de namen zijn fictief, de opbouw is die van een echt dossier.
           </p>
         </div>
@@ -140,7 +140,7 @@ export default function Demo() {
                 </ul>
                 <h4 style={{ marginTop: "24px" }}>Bewaking</h4>
                 <p style={{ fontSize: "15px", color: "var(--fg-2)" }}>
-                  Elk blad draagt zijn versie, taal, datum en de vermelding wie het mag lezen.
+                  Elk rapport draagt zijn versie, taal, datum en de vermelding wie het mag lezen.
                   Individuele scores blijven bij de deelnemer en zijn begeleider.
                 </p>
               </div>

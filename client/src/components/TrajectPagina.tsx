@@ -110,7 +110,7 @@ export default function TrajectPagina({ inhoud }: { inhoud: TrajectInhoud }) {
             <p className="eyebrow">Wat u krijgt</p>
             <h2>De output, benoemd naar de lezer</h2>
             <p>
-              Elk blad heeft één lezer en één doel. Zo weet iedereen wat hij in handen heeft en wat
+              Elk rapport heeft één lezer en één doel. Zo weet iedereen wat hij in handen heeft en wat
               hij er niet uit mag lezen.
             </p>
           </div>

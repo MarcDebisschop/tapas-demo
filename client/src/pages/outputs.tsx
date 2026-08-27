@@ -1,10 +1,10 @@
 // ===========================================================================
 // outputs.tsx: de outputstapel van Tapas CORE.
 //
-// Wat het platform oplevert, is geen stapel PDF's maar een reeks bladen met
+// Wat het platform oplevert, is geen stapel PDF's maar een reeks rapporten met
 // elk één lezer. Deze pagina legt die logica vast: individueel inzicht,
-// begeleidersblad, managementsamenvatting, bestuursblad. Daarbij horen de
-// markeringen die op elk blad staan: versie, taal, datum en de vermelding wie
+// begeleidersrapport, managementsamenvatting, bestuursrapport. Daarbij horen de
+// markeringen die op elk rapport staan: versie, taal, datum en de vermelding wie
 // het mag lezen.
 // ===========================================================================
 
@@ -23,10 +23,10 @@ export default function Outputs() {
       <div className="kop-blok">
         <div className="wrap">
           <p className="eyebrow">Outputs</p>
-          <h1>Bladen die een beslissing dragen</h1>
+          <h1>Rapporten die een beslissing dragen</h1>
           <p className="lead">
-            Een profiel dat niemand kan gebruiken, is geen resultaat. Daarom levert Tapas CORE geen
-            enkel rapport zonder lezer: elk blad zegt voor wie het bedoeld is, wat erin staat en wat
+            Een profiel dat niemand kan gebruiken, is geen resultaat. Daarom heeft elk rapport van
+            Tapas CORE een benoemde lezer: het zegt voor wie het bedoeld is, wat erin staat en wat
             er niet uit gelezen mag worden. Dezelfde vier lagen komen terug bij elk instrument en
             bij elk traject.
           </p>
@@ -73,7 +73,7 @@ export default function Outputs() {
         <div className="wrap">
           <div className="sec-kop">
             <p className="eyebrow">Kwaliteit en beheer</p>
-            <h2>Wat op elk blad staat</h2>
+            <h2>Wat op elk rapport staat</h2>
             <p>
               Vier markeringen maken een rapport navolgbaar, ook maanden later en ook voor iemand
               die er niet bij was toen het gemaakt werd.
@@ -91,9 +91,9 @@ export default function Outputs() {
           <div className="prijs">
             <p className="pk">Beslisklaar</p>
             <p>
-              De bladen worden opgeleverd in de taal van de deelnemer, met de datum van afname en de
-              rapportversie erbij. Wie de beslissing neemt, leest het bestuursblad. Wie het gesprek
-              voert, leest het begeleidersblad. De deelnemer leest altijd eerst zijn eigen profiel.
+              De rapporten worden opgeleverd in de taal van de deelnemer, met de datum van afname en de
+              rapportversie erbij. Wie de beslissing neemt, leest het bestuursrapport. Wie het gesprek
+              voert, leest het begeleidersrapport. De deelnemer leest altijd eerst zijn eigen profiel.
             </p>
           </div>
         </div>
@@ -103,7 +103,7 @@ export default function Outputs() {
         <div className="wrap">
           <div className="sec-kop">
             <p className="eyebrow">Grenzen</p>
-            <h2>Waarvoor deze bladen niet dienen</h2>
+            <h2>Waarvoor deze rapporten niet dienen</h2>
             <p>
               Ze onderbouwen een gesprek en een beslissing. Ze stellen geen diagnose, nemen geen
               selectiebeslissing en bepalen geen potentieel.
@@ -118,7 +118,7 @@ export default function Outputs() {
               className="knop knop-2"
               onClick={() => onthoudBlok("contact")}
             >
-              Vraag een voorbeeldblad
+              Vraag een voorbeeldrapport
             </Link>
           </div>
         </div>
