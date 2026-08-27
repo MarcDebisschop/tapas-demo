@@ -22,11 +22,13 @@
 // naarSectie(), die het blok in beeld schuift.
 // ===========================================================================
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import { useTheme } from "@/components/ThemeProvider";
 import "./onthaal.css";
 import { vraagOpnieuwAanmeldenNu } from "@/lib/opnieuw-aanmelden";
+import { CLUSTERS, HOOFDNAVIGATIE, OUTPUTSTAPEL } from "@/data/oplossingen";
+import { neemBlokOp } from "@/lib/naar-blok";
 
 /** De keuzelijst in het formulier. Waarde en tekst blijven gelijk. */
 const ROLLEN = [
@@ -85,6 +87,17 @@ function Kompasroos() {
 
 export default function Onthaal() {
   const { theme, toggle } = useTheme();
+
+  // Een bezoeker die op een oplossingpagina op "Plan een kennismaking" klikt,
+  // komt hier binnen met de wens om bij een bepaald blok uit te komen. De wens
+  // staat kort in sessionStorage en wordt hier gelezen en meteen gewist.
+  useEffect(() => {
+    const blok = neemBlokOp();
+    if (!blok) return;
+    const t = window.setTimeout(() => naarSectie(blok), 80);
+    return () => window.clearTimeout(t);
+  }, []);
+
   const [naam, setNaam] = useState("");
   const [organisatie, setOrganisatie] = useState("");
   const [email, setEmail] = useState("");
@@ -154,9 +167,27 @@ export default function Onthaal() {
             <Kompasmerk maat={34} />
             <span>
               <span className="naam">Tapas CORE</span>
-              <span className="onder">een platform van TaPasCity</span>
+              <span className="onder">de beslislaag voor talentbeslissingen</span>
             </span>
           </a>
+          <nav className="hoofdnav" aria-label="Hoofdnavigatie">
+            {HOOFDNAVIGATIE.map((item) =>
+              item.sectie ? (
+                <button
+                  key={item.label}
+                  type="button"
+                  className="navknop"
+                  onClick={() => naarSectie(item.sectie as string)}
+                >
+                  {item.label}
+                </button>
+              ) : (
+                <Link key={item.label} href={item.pad} className="navknop">
+                  {item.label}
+                </Link>
+              ),
+            )}
+          </nav>
           <button
             className="knop knop-l"
             type="button"
@@ -167,13 +198,6 @@ export default function Onthaal() {
             data-testid="onthaal-thema"
           >
             {theme === "dark" ? "Licht" : "Donker"}
-          </button>
-          <button
-            className="knop knop-2"
-            type="button"
-            onClick={() => naarSectie("aanmelden")}
-          >
-            Aanmelden
           </button>
           <button
             className="knop knop-1"
@@ -191,38 +215,225 @@ export default function Onthaal() {
         <div className="wrap">
           <div className="hero-grid">
             <div>
-              <p className="eyebrow">Het TaPas-platform</p>
+              <p className="eyebrow">De beslislaag voor talentbeslissingen</p>
               <h1>
-                Zie mensen
+                Tapas CORE helpt organisaties
                 <br />
-                zoals ze <em>werkelijk</em> zijn.
-                <br />
-                En breng ze in beweging.
+                <em>betere talentbeslissingen</em> nemen.
               </h1>
-              <p className="zin">
-                <b>Wat het is, in één zin.</b>{" "}
-                <span>
-                  Dit is het Tapas platform waarmee een organisatie, een school of een coach een
-                  talentinstrument uitstuurt, de afname opvolgt en er een rapport uit genereert dat
-                  een verdiepend gesprek voedt.
-                </span>
-              </p>
               <p className="toon">
-                Eén platform en één doordachte gedachtegang, voor het werk én voor de studie. Met
-                aandacht, zonder oordeel, en met respect voor wat ieder mens uniek maakt.
+                Wie investeert, herstructureert of een ploeg samenstelt, beslist over mensen. Tapas
+                CORE brengt talent, drivers en energie in beeld op het niveau waarop die beslissing
+                valt, en levert bladen die op een bestuurstafel kunnen liggen.
               </p>
               <div className="hero-acties">
                 <button className="knop knop-1" type="button" onClick={() => naarSectie("contact")}>
                   Plan een kennismaking
                 </button>
+                <Link className="knop knop-2" href="/oplossingen">
+                  Bekijk de oplossingen
+                </Link>
                 <button className="knop knop-2" type="button" onClick={() => naarSectie("werking")}>
                   Bekijk eerst hoe het werkt
                 </button>
+              </div>
+              <div className="wedge">
+                <p className="wk">Waar wij het scherpst staan</p>
+                <div className="wlijst">
+                  {CLUSTERS.filter((c) => c.wedge).map((c) => (
+                    <Link key={c.sleutel} href={c.pad as string} className="wkaart">
+                      <span className="wn">{c.naam}</span>
+                      <span className="wo">{c.ondertitel}</span>
+                    </Link>
+                  ))}
+                </div>
               </div>
             </div>
             <div>
               <Kompasroos />
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. DRIE ZAKELIJKE INGANGEN */}
+      <section id="ingangen">
+        <div className="wrap">
+          <div className="sec-kop">
+            <p className="eyebrow">Zakelijke ingangen</p>
+            <h2>Welke beslissing ligt bij u op tafel?</h2>
+            <p>
+              Tapas CORE vertrekt van de beslissing en niet van een vragenlijst. Drie ingangen
+              dekken het grootste deel van de vragen die organisaties ons stellen.
+            </p>
+          </div>
+          <div className="ingangen">
+            {["hdd", "leiderschap", "ontwikkeling"].map((sleutel) => {
+              const c = CLUSTERS.find((x) => x.sleutel === sleutel);
+              if (!c) return null;
+              return (
+                <Link
+                  key={c.sleutel}
+                  href={c.pad ?? "/oplossingen"}
+                  className="ing"
+                  data-testid={`ingang-${c.sleutel}`}
+                >
+                  <p className="vraag">{c.beslissing}</p>
+                  <h3>{c.naam}</h3>
+                  <p className="wat">{c.ondertitel}</p>
+                  <p className="wie">{c.doelgroep}</p>
+                  <span className="verder">
+                    {c.pad ? "Bekijk het traject" : "Bekijk de oplossingen"}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* 3. DE OUTPUTSTAPEL */}
+      <section className="grijs">
+        <div className="wrap">
+          <div className="sec-kop">
+            <p className="eyebrow">Wat u krijgt</p>
+            <h2>Vier bladen, elk met één lezer</h2>
+            <p>
+              Een rapport zonder lezer helpt niemand vooruit. Daarom levert het platform vier lagen,
+              van het profiel van de deelnemer tot één blad voor wie de beslissing neemt.
+            </p>
+          </div>
+          <div className="stapelband">
+            {OUTPUTSTAPEL.map((o) => (
+              <div className="sb" key={o.nummer}>
+                <p className="nr">{o.nummer}</p>
+                <h3>{o.naam}</h3>
+                <p className="lezer">Voor {o.lezer}</p>
+                <p className="wat">{o.inhoud}</p>
+              </div>
+            ))}
+          </div>
+          <p className="bandnoot">
+            Elk blad draagt zijn versie, taal, datum en de vermelding wie het mag lezen.{" "}
+            <Link href="/outputs">Bekijk de volledige opbouw van de outputs</Link>.
+          </p>
+        </div>
+      </section>
+
+      {/* 4. HOE HET WERKT */}
+      <section className="grijs" id="werking">
+        <div className="wrap">
+          <div className="sec-kop">
+            <p className="eyebrow">Hoe het werkt</p>
+            <h2>Van uitnodiging tot verdieping, in vier stappen</h2>
+          </div>
+
+          <p className="zin zin-werking">
+            <b>Wat het is, in één zin.</b>{" "}
+            <span>
+              Dit is het Tapas platform waarmee een organisatie, een school of een coach een
+              talentinstrument uitstuurt, de afname opvolgt en er een rapport uit genereert dat
+              een verdiepend gesprek voedt.
+            </span>
+          </p>
+
+          {/* De film staat vóór de vier stappen, want de knop "Bekijk eerst hoe
+              het werkt" rolt naar deze sectie. Wie klikt, komt bij de film uit.
+              Bewust geen automatisch spelen: de film heeft gesproken tekst, en
+              geluid hoort een keuze van de bezoeker te zijn. De vier stappen
+              eronder vertellen hetzelfde verhaal in tekst, en het
+              ondertitelspoor staat klaar voor wie geen geluid kan gebruiken. */}
+          <figure className="film">
+            <video
+              controls
+              playsInline
+              preload="none"
+              poster="/film/tapas-core-nl-beeld.jpg"
+              data-testid="onthaal-film"
+            >
+              <source src="/film/tapas-core-nl.mp4" type="video/mp4" />
+              <track
+                kind="subtitles"
+                srcLang="nl"
+                label="Nederlands"
+                src="/film/tapas-core-nl.vtt"
+              />
+              Uw browser kan deze film niet spelen. De vier stappen hieronder beschrijven
+              dezelfde weg in tekst.
+            </video>
+            <figcaption>
+              Tachtig seconden door het platform, van uitnodiging tot rapport, met gesproken
+              uitleg. Ondertitels zijn in de speler aan te zetten. Wie liever leest: de vier
+              stappen hieronder vertellen dezelfde weg.
+            </figcaption>
+          </figure>
+
+          <div className="stappen">
+            <div className="stap">
+              <p className="nr">STAP 01</p>
+              <h3>Uitnodiging</h3>
+              <p>U kiest een instrument en stuurt een uitnodiging naar de deelnemer.</p>
+            </div>
+            <div className="stap">
+              <p className="nr">STAP 02</p>
+              <h3>Afname</h3>
+              <p>De deelnemer vult de vragenlijst in, in zijn eigen taal, op eigen tempo.</p>
+            </div>
+            <div className="stap">
+              <p className="nr">STAP 03</p>
+              <h3>Rapport</h3>
+              <p>Het rapport komt automatisch klaar, als PDF en als online dashboard.</p>
+            </div>
+            <div className="stap">
+              <p className="nr">STAP 04</p>
+              <h3>Verdieping</h3>
+              <p>
+                Het rapport op uw dashboard geeft u de grote lijn: waar uw talent zit en wat u in
+                beweging brengt. Wilt u werkelijk de diepte in, dan hebt u een geaccrediteerde coach
+                met licentie nodig.
+              </p>
+            </div>
+          </div>
+
+          <div className="diepte">
+            <div>
+              <p className="nr" style={{ color: "var(--primary)" }}>
+                Zonder coach
+              </p>
+              <h3>Wat u zelf kunt</h3>
+              <p>
+                U schaft een vragenlijst aan, vult ze in en krijgt op uw dashboard een eerste
+                rapport op hoofdlijnen. Dat rapport is van u, u hebt niemand nodig om het te openen
+                of te lezen.
+              </p>
+            </div>
+            <div>
+              <p className="nr" style={{ color: "var(--accent)" }}>
+                Met coach
+              </p>
+              <h3>Waar de verdieping begint</h3>
+              <p>
+                Wilt u van hoofdlijn naar betekenis, wat uw profiel zegt over een keuze die voor u
+                ligt en hoe uw drivers zich in uw eigen situatie gedragen, dan reikt u uit naar een
+                coach die geaccrediteerd is en over een licentie beschikt. Die stap is bewust geen
+                knop op deze pagina: hij vraagt een mens.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. BREEDTE ALS BEWIJS */}
+      <section className="breedte">
+        <div className="wrap">
+          <div className="sec-kop">
+            <p className="eyebrow">Breedte als bewijs</p>
+            <h2>Eén motor, zestien instrumenten, vijf talen</h2>
+            <p>
+              De trajecten hierboven rusten op een instrumentarium dat al jaren in organisaties,
+              scholen en sportclubs loopt. Die breedte is geen catalogus om uit te kiezen, ze is het
+              bewijs dat de motor het aankan.
+            </p>
           </div>
           <div className="feiten">
             <div className="feit">
@@ -243,9 +454,9 @@ export default function Onthaal() {
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* 2. DE DRIE NAMEN */}
+      {/* 5a. DE DRIE NAMEN */}
       <section>
         <div className="wrap">
           <div className="sec-kop">
@@ -289,7 +500,7 @@ export default function Onthaal() {
         </div>
       </section>
 
-      {/* 3. VOOR WIE */}
+      {/* 5b. VOOR WIE */}
       <section className="grijs">
         <div className="wrap">
           <div className="sec-kop">
@@ -400,7 +611,7 @@ export default function Onthaal() {
         </div>
       </section>
 
-      {/* 4. WAT HET OPLEVERT */}
+      {/* 5c. WAT HET OPLEVERT */}
       <section>
         <div className="wrap">
           <div className="sec-kop">
@@ -449,16 +660,66 @@ export default function Onthaal() {
         </div>
       </section>
 
-      {/* 4b. NAAR HET PLATFORM */}
+      {/* 6. ONDERBOUWING EN GRENZEN */}
+      <section>
+        <div className="wrap">
+          <div className="sec-kop">
+            <p className="eyebrow">Onderbouwing en grenzen</p>
+            <h2>Wat wij wél kunnen aantonen, en waar het ophoudt</h2>
+            <p>
+              Beide horen op deze pagina. Een instrument dat zijn eigen grenzen niet benoemt, is
+              niet te vertrouwen.
+            </p>
+          </div>
+          <div className="bewijs">
+            <div className="bw">
+              <div className="cijfer">{"96,9\u2009%"}</div>
+              <h3>van 64 wetenschappelijke verwijzingen correct</h3>
+              <p>
+                Een systematische scan van het onderliggende kader identificeerde 64
+                wetenschappelijke auteurs en theorieën. Daarvan bleek {"96,9\u2009%"} feitelijk en
+                inhoudelijk correct weergegeven. Geen enkele verwijzing was onjuist; één (GRIT) werd
+                genuanceerd wegens recente meta-analyses.
+              </p>
+              <div className="beperking">
+                <b>En dit hoort er eerlijk bij.</b> Die review werd AI-ondersteund uitgevoerd, niet
+                als peer review. Het rapport noemt het kader zelf “theoretisch goed onderbouwd en
+                psychometrisch veelbelovend, waarvoor verdere peer-reviewed validatie wenselijk is”.
+                Er bestaat samenwerking met academische partners, maar niet alle resultaten zijn al
+                gepubliceerd.
+              </div>
+            </div>
+            <div className="bw">
+              <div className="grens">!</div>
+              <h3 style={{ marginTop: 18 }}>Wat TaPas niet is</h3>
+              <p>
+                TaPas is een reflectie- en ontwikkelinstrument. Wat het oplevert is een
+                gespreksbasis, geen oordeel over iemands toekomst.
+              </p>
+              <ul className="geen">
+                <li>Geen diagnose</li>
+                <li>Geen selectiebeslissing</li>
+                <li>Geen potentieelbepaling</li>
+              </ul>
+              <p style={{ marginTop: 22, fontSize: "14.5px", color: "var(--muted)" }}>
+                Diezelfde grens staat onderaan elke pagina van het platform en in de voettekst van
+                elk rapport. Ze is geen kleine letter, ze is de afspraak.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 7. VOOR WIE HET PLATFORM AL GEBRUIKT */}
       <section id="aanmelden">
         <div className="wrap">
           <div className="sec-kop">
-            <p className="eyebrow">Naar het platform</p>
+            <p className="eyebrow">Voor wie het platform al gebruikt</p>
             <h2>Vijf deuren, één platform</h2>
             <p>
-              Deze pagina is de voorkant. Wie al een plaats in het platform heeft, hoort niet eerst
-              een formulier te moeten invullen: die gaat rechtstreeks naar de eigen deur. Wie nog
-              geen plaats heeft, komt bij het contactformulier uit.
+              Wie al een plaats in het platform heeft, hoort geen formulier te moeten invullen: die
+              gaat rechtstreeks naar de eigen deur. Wie nog geen plaats heeft, komt bij het
+              contactformulier uit.
             </p>
           </div>
           <div className="deuren">
@@ -612,151 +873,7 @@ export default function Onthaal() {
         </div>
       </section>
 
-      {/* 5. HOE HET WERKT */}
-      <section className="grijs" id="werking">
-        <div className="wrap">
-          <div className="sec-kop">
-            <p className="eyebrow">Hoe het werkt</p>
-            <h2>Van uitnodiging tot verdieping, in vier stappen</h2>
-          </div>
-
-          {/* De film staat vóór de vier stappen, want de knop "Bekijk eerst hoe
-              het werkt" rolt naar deze sectie. Wie klikt, komt bij de film uit.
-              Bewust geen automatisch spelen: de film heeft gesproken tekst, en
-              geluid hoort een keuze van de bezoeker te zijn. De vier stappen
-              eronder vertellen hetzelfde verhaal in tekst, en het
-              ondertitelspoor staat klaar voor wie geen geluid kan gebruiken. */}
-          <figure className="film">
-            <video
-              controls
-              playsInline
-              preload="none"
-              poster="/film/tapas-core-nl-beeld.jpg"
-              data-testid="onthaal-film"
-            >
-              <source src="/film/tapas-core-nl.mp4" type="video/mp4" />
-              <track
-                kind="subtitles"
-                srcLang="nl"
-                label="Nederlands"
-                src="/film/tapas-core-nl.vtt"
-              />
-              Uw browser kan deze film niet spelen. De vier stappen hieronder beschrijven
-              dezelfde weg in tekst.
-            </video>
-            <figcaption>
-              Tachtig seconden door het platform, van uitnodiging tot rapport, met gesproken
-              uitleg. Ondertitels zijn in de speler aan te zetten. Wie liever leest: de vier
-              stappen hieronder vertellen dezelfde weg.
-            </figcaption>
-          </figure>
-
-          <div className="stappen">
-            <div className="stap">
-              <p className="nr">STAP 01</p>
-              <h3>Uitnodiging</h3>
-              <p>U kiest een instrument en stuurt een uitnodiging naar de deelnemer.</p>
-            </div>
-            <div className="stap">
-              <p className="nr">STAP 02</p>
-              <h3>Afname</h3>
-              <p>De deelnemer vult de vragenlijst in, in zijn eigen taal, op eigen tempo.</p>
-            </div>
-            <div className="stap">
-              <p className="nr">STAP 03</p>
-              <h3>Rapport</h3>
-              <p>Het rapport komt automatisch klaar, als PDF en als online dashboard.</p>
-            </div>
-            <div className="stap">
-              <p className="nr">STAP 04</p>
-              <h3>Verdieping</h3>
-              <p>
-                Het rapport op uw dashboard geeft u de grote lijn: waar uw talent zit en wat u in
-                beweging brengt. Wilt u werkelijk de diepte in, dan hebt u een geaccrediteerde coach
-                met licentie nodig.
-              </p>
-            </div>
-          </div>
-
-          <div className="diepte">
-            <div>
-              <p className="nr" style={{ color: "var(--primary)" }}>
-                Zonder coach
-              </p>
-              <h3>Wat u zelf kunt</h3>
-              <p>
-                U schaft een vragenlijst aan, vult ze in en krijgt op uw dashboard een eerste
-                rapport op hoofdlijnen. Dat rapport is van u, u hebt niemand nodig om het te openen
-                of te lezen.
-              </p>
-            </div>
-            <div>
-              <p className="nr" style={{ color: "var(--accent)" }}>
-                Met coach
-              </p>
-              <h3>Waar de verdieping begint</h3>
-              <p>
-                Wilt u van hoofdlijn naar betekenis, wat uw profiel zegt over een keuze die voor u
-                ligt en hoe uw drivers zich in uw eigen situatie gedragen, dan reikt u uit naar een
-                coach die geaccrediteerd is en over een licentie beschikt. Die stap is bewust geen
-                knop op deze pagina: hij vraagt een mens.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 6. ONDERBOUWING EN GRENZEN */}
-      <section>
-        <div className="wrap">
-          <div className="sec-kop">
-            <p className="eyebrow">Onderbouwing en grenzen</p>
-            <h2>Wat wij wél kunnen aantonen, en waar het ophoudt</h2>
-            <p>
-              Beide horen op deze pagina. Een instrument dat zijn eigen grenzen niet benoemt, is
-              niet te vertrouwen.
-            </p>
-          </div>
-          <div className="bewijs">
-            <div className="bw">
-              <div className="cijfer">{"96,9\u2009%"}</div>
-              <h3>van 64 wetenschappelijke verwijzingen correct</h3>
-              <p>
-                Een systematische scan van het onderliggende kader identificeerde 64
-                wetenschappelijke auteurs en theorieën. Daarvan bleek {"96,9\u2009%"} feitelijk en
-                inhoudelijk correct weergegeven. Geen enkele verwijzing was onjuist; één (GRIT) werd
-                genuanceerd wegens recente meta-analyses.
-              </p>
-              <div className="beperking">
-                <b>En dit hoort er eerlijk bij.</b> Die review werd AI-ondersteund uitgevoerd, niet
-                als peer review. Het rapport noemt het kader zelf “theoretisch goed onderbouwd en
-                psychometrisch veelbelovend, waarvoor verdere peer-reviewed validatie wenselijk is”.
-                Er bestaat samenwerking met academische partners, maar niet alle resultaten zijn al
-                gepubliceerd.
-              </div>
-            </div>
-            <div className="bw">
-              <div className="grens">!</div>
-              <h3 style={{ marginTop: 18 }}>Wat TaPas niet is</h3>
-              <p>
-                TaPas is een reflectie- en ontwikkelinstrument. Wat het oplevert is een
-                gespreksbasis, geen oordeel over iemands toekomst.
-              </p>
-              <ul className="geen">
-                <li>Geen diagnose</li>
-                <li>Geen selectiebeslissing</li>
-                <li>Geen potentieelbepaling</li>
-              </ul>
-              <p style={{ marginTop: 22, fontSize: "14.5px", color: "var(--muted)" }}>
-                Diezelfde grens staat onderaan elke pagina van het platform en in de voettekst van
-                elk rapport. Ze is geen kleine letter, ze is de afspraak.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 7. CONTACT */}
+      {/* 8. CONTACT */}
       <section className="contact" id="contact">
         <div className="wrap">
           <div className="c-grid">

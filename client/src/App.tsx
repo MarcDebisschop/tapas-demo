@@ -48,6 +48,13 @@ import AdminVraagbeheer from "@/pages/admin-vraagbeheer";
 import AdminDuidingbeheer from "@/pages/admin-duidingbeheer";
 import AdminBeschikbaarheid from "@/pages/admin-beschikbaarheid";
 import Instrumenten from "@/pages/instrumenten";
+import Oplossingen from "@/pages/oplossingen";
+import JourneyHdd from "@/pages/journey-hdd";
+import JourneyLeiderschap from "@/pages/journey-leiderschap";
+import Outputs from "@/pages/outputs";
+import Partners from "@/pages/partners";
+import Demo from "@/pages/demo";
+import AanmeldenPagina from "@/pages/aanmelden";
 import Brochure from "@/pages/brochure";
 import AdminInstrumentengids from "@/pages/admin-instrumentengids";
 import { AdminLoginGate } from "@/components/AdminLoginGate";
@@ -221,6 +228,19 @@ function AppRouter() {
       <Route path="/studie/leerlingen" component={StudieLeerlingenPagina} />
       <Route path="/studie/instrumenten" component={StudieInstrumentenPagina} />
       <Route path="/studie" component={Studie} />
+      {/* De publieke positioneringslaag. Ze vertrekt van de beslissing en niet
+          van het instrument: een overzicht van de journeyclusters, de twee
+          trajecten van de eerste internationale fase, de outputstapel, de
+          partnerpagina, de demo-omgeving en de tweede deur voor wie het
+          platform al gebruikt. Alle bestaande routes blijven ongewijzigd
+          bestaan; deze laag wijst ze aan in plaats van ze te vervangen. */}
+      <Route path="/oplossingen/human-due-diligence" component={JourneyHdd} />
+      <Route path="/oplossingen/leadership-team-energy" component={JourneyLeiderschap} />
+      <Route path="/oplossingen" component={Oplossingen} />
+      <Route path="/outputs" component={Outputs} />
+      <Route path="/partners" component={Partners} />
+      <Route path="/demo" component={Demo} />
+      <Route path="/aanmelden" component={AanmeldenPagina} />
       {/* De Instrumentengids — brochure vóór de indexpagina (specificiteit) */}
       <Route path="/instrumenten/brochure" component={Brochure} />
       <Route path="/instrumenten" component={Instrumenten} />

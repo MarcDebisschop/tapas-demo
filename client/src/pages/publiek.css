@@ -1,0 +1,181 @@
+/* ===========================================================================
+ * publiek.css: de opmaak van de publieke positioneringslaag van Tapas CORE.
+ *
+ * Elke regel staat binnen .publiek. Buiten die pagina's verandert er niets:
+ * geen enkel bestaand scherm wordt geraakt. De kleuren, de letters en de maten
+ * zijn dezelfde als op de onthaalpagina, zodat de nieuwe pagina's aanvoelen
+ * als hetzelfde platform en niet als een tweede site.
+ *
+ * De donkere stand hangt aan html.dark, precies de klasse die
+ * ThemeProvider.tsx zet.
+ * =========================================================================== */
+
+.publiek{--primary:#16374B; --primary-dp:#0E2532;
+  --accent:#3F7D6E; --accent-dk:#356A5D;
+  --gold:#967336; --werk:#23768B; --studie:#B47522;
+  --fg:#171717; --fg-2:#3C3C3C; --muted:#666666;
+  --line:#E8E8E8; --card:#FAFAFA; --bg:#FFFFFF;
+  --tint:rgba(23,23,23,.02); --tint-2:rgba(23,23,23,.025);
+  --rand:#8A959D; --label:#4A4A4A; --plaats:#6E6E6E;
+  --f-cr:#585858;
+  --nota-bg:#FBF7EF; --nota-fg:#4A4238;
+  --op-kleur:#FFFFFF;
+  --accent-zacht:rgba(63,125,110,.14); --accent-mid:rgba(63,125,110,.42);
+  --serif:"Source Serif 4",Georgia,serif; --sans:"DM Sans",system-ui,sans-serif;
+  --wrap:1140px;}
+html.dark .publiek{--primary:#5EAEBA; --primary-dp:#8ACAD3;
+  --accent:#4D9986; --accent-dk:#62B39E;
+  --gold:#D4B77D; --werk:#64C0CE; --studie:#E5B561;
+  --fg:#FAFAFA; --fg-2:#E2E2E2; --muted:#A6A6A6;
+  --line:#292929; --card:#171717; --bg:#121212;
+  --tint:rgba(255,255,255,.04); --tint-2:rgba(255,255,255,.05);
+  --rand:#6A6A6A; --label:#C9C9C9; --plaats:#8F8F8F;
+  --f-cr:#9A9A9A;
+  --nota-bg:rgba(212,183,125,.08); --nota-fg:#E6D8BA;
+  --op-kleur:#171717;
+  --accent-zacht:rgba(77,153,134,.16); --accent-mid:rgba(77,153,134,.5);
+  color-scheme:dark;}
+.publiek *{box-sizing:border-box}
+.publiek{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:17px;line-height:1.62;font-weight:400;-webkit-font-smoothing:antialiased}
+.publiek section,.publiek .kop-blok,.publiek footer{position:relative;z-index:1;background:transparent}
+.publiek h1,.publiek h2,.publiek h3{font-family:var(--serif);font-weight:600;line-height:1.18;letter-spacing:-.012em;margin:0}
+.publiek p{margin:0}
+.publiek a{color:inherit}
+.publiek .wrap{max-width:var(--wrap);margin:0 auto;padding:0 32px}
+.publiek .eyebrow{font-size:12.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+
+/* --- Kopbalk met de journeynavigatie ------------------------------------- */
+.publiek header.bar{background:var(--card);color:var(--primary);position:relative;z-index:50;border-bottom:1px solid var(--line)}
+.publiek .bar .wrap{display:flex;align-items:center;gap:18px 24px;min-height:76px;padding-top:14px;padding-bottom:14px;flex-wrap:wrap}
+.publiek .merk{display:flex;align-items:center;gap:13px;text-decoration:none}
+.publiek .merk .naam,.publiek .merk .onder{display:block}
+.publiek .merk .naam{font-family:var(--serif);font-size:20px;font-weight:600;letter-spacing:.005em;line-height:1.1}
+.publiek .merk .onder{font-size:11.5px;color:var(--muted);letter-spacing:.03em;line-height:1.1;margin-top:3px}
+.publiek nav.hoofdnav{display:flex;align-items:center;gap:6px 20px;flex-wrap:wrap;margin-right:auto}
+.publiek nav.hoofdnav a{font-size:14.5px;color:var(--fg-2);text-decoration:none;padding:6px 0;border-bottom:2px solid transparent;white-space:nowrap}
+.publiek nav.hoofdnav a:hover{color:var(--primary);border-bottom-color:var(--accent-mid)}
+.publiek nav.hoofdnav a.nu{color:var(--primary);border-bottom-color:var(--accent)}
+.publiek .knop{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:var(--sans);font-size:15px;font-weight:500;padding:12px 22px;border-radius:6px;text-decoration:none;border:1px solid transparent;cursor:pointer;transition:background .18s,border-color .18s,color .18s;white-space:nowrap}
+.publiek .knop-1{background:var(--accent);color:var(--op-kleur)}
+.publiek .knop-1:hover{background:var(--accent-dk)}
+.publiek .knop-2{background:transparent;color:var(--primary);border-color:var(--rand)}
+.publiek .knop-2:hover{border-color:var(--primary);background:var(--card)}
+.publiek .knop-3{background:var(--primary);color:var(--op-kleur)}
+.publiek .knop-3:hover{background:var(--primary-dp)}
+
+/* --- Kopblok van een pagina ---------------------------------------------- */
+.publiek .kop-blok{padding:72px 0 0}
+.publiek .kop-blok h1{font-size:clamp(34px,4.2vw,52px);margin:18px 0 0;letter-spacing:-.02em;max-width:24ch}
+.publiek .kop-blok .lead{margin-top:24px;max-width:66ch;color:var(--fg-2);font-size:18px}
+.publiek .kop-blok .acties{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px}
+.publiek .kruimel{margin-top:26px;font-size:14px;color:var(--muted)}
+.publiek .kruimel a{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--accent-mid)}
+
+.publiek section{padding:76px 0}
+.publiek .grijs{background:var(--tint);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.publiek .sec-kop{max-width:680px;margin-bottom:42px}
+.publiek .sec-kop h2{font-size:clamp(25px,2.8vw,33px);margin-top:14px}
+.publiek .sec-kop p{color:var(--muted);margin-top:14px;font-size:16.5px}
+
+/* --- Kaartroosters ------------------------------------------------------- */
+.publiek .rooster-2{display:grid;grid-template-columns:repeat(2,1fr);gap:22px}
+.publiek .rooster-3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.publiek .rooster-4{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+.publiek .kaart{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:28px 26px 26px;display:flex;flex-direction:column;text-decoration:none;color:inherit;transition:border-color .18s,transform .18s}
+.publiek a.kaart:hover{border-color:var(--primary);transform:translateY(-2px)}
+.publiek .kaart .tag{font-size:11px;font-weight:500;letter-spacing:.13em;text-transform:uppercase;color:var(--primary);margin-bottom:12px}
+.publiek .kaart .tag.wedge{color:var(--gold)}
+.publiek .kaart h3{font-size:21px;line-height:1.25;margin:0 0 10px}
+.publiek .kaart p{font-size:15px;line-height:1.6;color:var(--fg-2)}
+.publiek .kaart .beslissing{margin-top:16px;padding-left:16px;border-left:2px solid var(--accent);font-family:var(--serif);font-style:italic;font-size:16px;color:var(--fg)}
+.publiek .kaart .meta{margin-top:auto;padding-top:18px;border-top:1px solid var(--line);font-size:13px;color:var(--muted);line-height:1.6}
+.publiek .kaart .meta b{display:block;color:var(--fg-2);font-size:11.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+.publiek .kaart .verder{margin-top:18px;font-size:14px;color:var(--accent);font-weight:500}
+
+/* --- Het traject in stappen --------------------------------------------- */
+.publiek .traject{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border-top:2px solid var(--primary)}
+.publiek .tstap{padding:26px 22px 24px 0;position:relative}
+.publiek .tstap::before{content:"";position:absolute;top:-7px;left:0;width:12px;height:12px;border-radius:50%;background:var(--bg);border:2px solid var(--primary)}
+.publiek .tstap .nr{font-family:var(--sans);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--accent);margin-top:6px}
+.publiek .tstap h3{font-size:18px;margin-top:10px}
+.publiek .tstap p{margin-top:10px;font-size:14.5px;color:var(--fg-2)}
+.publiek .tstap .duur{margin-top:12px;font-size:12.5px;color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+
+/* --- Lijsten met uitkomsten --------------------------------------------- */
+.publiek .uitkomst{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,1fr);gap:12px 28px}
+.publiek .uitkomst li{position:relative;padding-left:20px;font-size:15.5px;line-height:1.6;color:var(--fg-2)}
+.publiek .uitkomst li::before{content:"";position:absolute;left:0;top:9px;width:7px;height:7px;border-radius:50%;background:var(--accent)}
+
+/* --- Prijssignaal ------------------------------------------------------- */
+.publiek .prijs{margin-top:34px;background:var(--nota-bg);border-left:3px solid var(--gold);padding:22px 24px;max-width:70ch}
+.publiek .prijs .pk{font-size:11px;font-weight:500;letter-spacing:.13em;text-transform:uppercase;color:var(--gold)}
+.publiek .prijs p{margin-top:9px;font-size:15.5px;color:var(--nota-fg)}
+
+/* --- Outputstapel ------------------------------------------------------- */
+.publiek .stapel{display:grid;grid-template-columns:1fr;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--bg)}
+.publiek .laag{display:grid;grid-template-columns:64px 1fr 1fr;gap:24px;padding:26px 28px;align-items:start}
+.publiek .laag+.laag{border-top:1px solid var(--line)}
+.publiek .laag:nth-child(even){background:var(--tint)}
+.publiek .laag .nr{font-family:var(--serif);font-size:34px;font-weight:600;line-height:1;color:var(--primary)}
+.publiek .laag h3{font-size:19px}
+.publiek .laag .lezer{margin-top:8px;font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--accent)}
+.publiek .laag .inhoud{font-size:15px;color:var(--fg-2)}
+.publiek .laag .vorm{margin-top:10px;font-size:13.5px;color:var(--muted)}
+
+/* --- Rapportkaart met markeringen --------------------------------------- */
+.publiek .markeringen{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:26px}
+.publiek .mk{background:var(--card);padding:20px 20px 22px}
+.publiek .mk .l{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.publiek .mk .w{margin-top:8px;font-family:var(--serif);font-size:18px;font-weight:600;color:var(--fg);line-height:1.25}
+.publiek .mk .u{margin-top:8px;font-size:13.5px;color:var(--fg-2)}
+
+/* --- Keuzeknoppen in de demo-omgeving ---------------------------------- */
+.publiek .keuzerij{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:30px}
+.publiek .keuze{font-family:var(--sans);font-size:14.5px;font-weight:500;padding:11px 18px;border-radius:6px;border:1px solid var(--rand);background:transparent;color:var(--fg-2);cursor:pointer;transition:background .18s,border-color .18s,color .18s}
+.publiek .keuze:hover{border-color:var(--primary);color:var(--primary)}
+.publiek .keuze[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:var(--op-kleur)}
+.publiek .verhaal{border:1px solid var(--line);border-radius:12px;background:var(--bg);overflow:hidden}
+.publiek .verhaal .vk{padding:28px 30px;border-bottom:1px solid var(--line);background:var(--tint)}
+.publiek .verhaal .vk h3{font-size:23px}
+.publiek .verhaal .vk p{margin-top:12px;font-size:16px;color:var(--fg-2);max-width:74ch}
+.publiek .verhaal .vlijf{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.publiek .verhaal .vblok{padding:26px 30px}
+.publiek .verhaal .vblok+.vblok{border-left:1px solid var(--line)}
+.publiek .verhaal .vblok h4{font-family:var(--sans);font-size:11.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+.publiek .verhaal ol,.publiek .verhaal ul{margin:0;padding-left:20px;font-size:15px;color:var(--fg-2);line-height:1.7}
+.publiek .verhaal .slot{padding:24px 30px;border-top:1px solid var(--line);background:var(--tint);font-size:15.5px;color:var(--fg-2)}
+.publiek .verhaal .slot b{color:var(--fg);font-weight:600}
+
+/* --- Voettekst ---------------------------------------------------------- */
+.publiek footer{background:transparent;color:var(--muted);padding:48px 0 40px;font-size:14.5px}
+.publiek .f-top{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start;padding-bottom:24px;border-bottom:1px solid var(--line)}
+.publiek .f-lijst{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:14px}
+.publiek .f-lijst a{text-decoration:none;color:var(--fg-2)}
+.publiek .f-lijst a:hover{color:var(--primary)}
+.publiek .f-note{margin-top:22px;max-width:660px;color:var(--muted)}
+.publiek .f-cr{margin-top:20px;font-size:13.5px;color:var(--f-cr)}
+
+@media(max-width:1000px){
+  .publiek .rooster-3,.publiek .rooster-4{grid-template-columns:repeat(2,1fr)}
+  .publiek .traject{grid-template-columns:repeat(2,1fr)}
+  .publiek .laag{grid-template-columns:44px 1fr;gap:18px}
+  .publiek .markeringen{grid-template-columns:repeat(2,1fr)}
+  .publiek .verhaal .vlijf{grid-template-columns:1fr}
+  .publiek .verhaal .vblok+.vblok{border-left:0;border-top:1px solid var(--line)}
+}
+@media(max-width:660px){
+  .publiek{font-size:16px}
+  .publiek .wrap{padding:0 24px}
+  .publiek section{padding:56px 0}
+  .publiek .kop-blok{padding-top:52px}
+  .publiek .rooster-2,.publiek .rooster-3,.publiek .rooster-4{grid-template-columns:1fr}
+  /* Op een smal scherm staan de stappen onder elkaar. De tijdlijn hoort dan
+     verticaal te lopen, met de stip van elke stap op die lijn. */
+  .publiek .traject{grid-template-columns:1fr;border-top:0;position:relative;padding-left:28px}
+  .publiek .traject::before{content:"";position:absolute;left:7px;top:8px;bottom:8px;width:2px;background:var(--primary)}
+  .publiek .tstap{padding:20px 0}
+  .publiek .tstap::before{left:-28px;top:24px}
+  .publiek .uitkomst{grid-template-columns:1fr}
+  .publiek .markeringen{grid-template-columns:1fr}
+  .publiek .kop-blok .acties .knop{width:100%}
+}

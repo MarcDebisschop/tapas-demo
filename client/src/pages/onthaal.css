@@ -274,3 +274,62 @@ html.dark .onthaal{--primary:#5EAEBA; --primary-dp:#8ACAD3;      /* 188 40% 55% 
 .onthaal .merk .onder {
   display: block;
 }
+
+/* ---------------------------------------------------------------------------
+   De positioneringslaag: journeynavigatie, wedge, zakelijke ingangen en de
+   outputband. Alle keuzemerkers beginnen met .onthaal, zodat deze opmaak
+   nergens buiten de onthaalpagina kan lekken.
+   --------------------------------------------------------------------------- */
+.onthaal .merk{margin-right:0}
+.onthaal nav.hoofdnav{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-right:auto}
+.onthaal .navknop{font-family:var(--sans);font-size:14.5px;font-weight:500;color:var(--primary);
+  background:transparent;border:0;padding:9px 12px;border-radius:6px;cursor:pointer;
+  text-decoration:none;white-space:nowrap;transition:background .18s,color .18s}
+.onthaal .navknop:hover{background:var(--tint);color:var(--accent)}
+.onthaal .wedge{margin-top:38px;padding-top:26px;border-top:1px solid var(--line)}
+.onthaal .wedge .wk{font-family:var(--sans);font-size:11.5px;font-weight:500;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--muted);margin:0 0 14px}
+.onthaal .wlijst{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.onthaal .wkaart{display:flex;flex-direction:column;gap:5px;padding:16px 18px;border:1px solid var(--line);
+  border-left:3px solid var(--accent);border-radius:8px;background:var(--card);text-decoration:none;
+  transition:border-color .18s,background .18s}
+.onthaal .wkaart:hover{border-color:var(--accent);background:var(--tint)}
+.onthaal .wkaart .wn{font-family:var(--serif);font-size:17.5px;font-weight:600;color:var(--fg);line-height:1.2}
+.onthaal .wkaart .wo{font-size:13.5px;color:var(--muted);line-height:1.5}
+.onthaal .ingangen{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
+.onthaal .ing{display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--line);
+  border-radius:9px;padding:30px 28px 26px;text-decoration:none;transition:border-color .18s,box-shadow .18s}
+.onthaal .ing:hover{border-color:var(--accent);box-shadow:0 1px 0 var(--accent)}
+.onthaal .ing .vraag{font-family:var(--serif);font-style:italic;font-size:17px;line-height:1.45;
+  color:var(--primary);margin:0 0 16px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.onthaal .ing h3{font-size:20px;margin:0}
+.onthaal .ing .wat{margin-top:11px;font-size:15px;color:var(--fg-2);line-height:1.6}
+.onthaal .ing .wie{margin-top:12px;font-size:13.5px;color:var(--muted);line-height:1.55}
+.onthaal .ing .verder{margin-top:auto;padding-top:22px;font-family:var(--sans);font-size:13.5px;
+  font-weight:500;color:var(--accent)}
+.onthaal .stapelband{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.onthaal .sb{background:var(--bg);padding:26px 22px 24px}
+.onthaal .sb .nr{font-family:var(--serif);font-size:26px;font-weight:600;line-height:1;color:var(--accent);margin:0}
+.onthaal .sb h3{font-size:17px;margin:12px 0 0;line-height:1.3}
+.onthaal .sb .lezer{margin:8px 0 0;font-family:var(--sans);font-size:11.5px;font-weight:500;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.onthaal .sb .wat{margin:12px 0 0;font-size:14px;color:var(--fg-2);line-height:1.6}
+.onthaal .bandnoot{margin:24px 0 0;font-size:14.5px;color:var(--muted);line-height:1.65;max-width:74ch}
+.onthaal .bandnoot a{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--rand)}
+.onthaal .bandnoot a:hover{border-bottom-color:var(--accent)}
+.onthaal .zin-werking{margin-top:0;margin-bottom:34px}
+.onthaal .breedte .feiten{margin-top:0}
+@media(max-width:1080px){
+  .onthaal nav.hoofdnav{gap:2px}
+  .onthaal .navknop{font-size:13.5px;padding:8px 9px}
+}
+@media(max-width:980px){
+  .onthaal .ingangen{grid-template-columns:1fr}
+  .onthaal .stapelband{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:620px){
+  .onthaal .wlijst{grid-template-columns:1fr}
+  .onthaal .stapelband{grid-template-columns:1fr}
+  .onthaal nav.hoofdnav{order:3;width:100%;margin-right:0}
+}
