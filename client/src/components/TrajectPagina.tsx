@@ -22,6 +22,10 @@ export type TrajectInhoud = {
   /** De openingsalinea, zakelijk en zonder overdrijving. */
   lead: string;
   stappen: Stap[];
+  /** De kop boven de stappen. Elk traject heeft zijn eigen ritme. */
+  trajectkop?: string;
+  /** De alinea onder die kop. */
+  trajectuitleg?: string;
   outputs: OutputLaag[];
   uitkomst: string[];
   /** Wat het traject uitdrukkelijk niet is. */
@@ -85,10 +89,10 @@ export default function TrajectPagina({ inhoud }: { inhoud: TrajectInhoud }) {
         <div className="wrap">
           <div className="sec-kop">
             <p className="eyebrow">Het traject</p>
-            <h2>Vijf stappen, met een vaste doorlooptijd</h2>
+            <h2>{inhoud.trajectkop ?? "Vijf stappen, met een vaste doorlooptijd"}</h2>
             <p>
-              Het traject is één geheel. Elke stap levert materiaal voor de volgende, en de laatste
-              stap is een oplevering aan wie beslist.
+              {inhoud.trajectuitleg ??
+                "Het traject is één geheel. Elke stap levert materiaal voor de volgende, en de laatste stap is een oplevering aan wie beslist."}
             </p>
           </div>
           <div className="traject">

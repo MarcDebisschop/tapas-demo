@@ -25,6 +25,7 @@ import {
   DEMO_CASES,
   DEMO_JOURNEYS,
   DEUREN,
+  HDD_OUTPUTS,
   HDD_STAPPEN,
   HOOFDNAVIGATIE,
   LTE_STAPPEN,
@@ -106,13 +107,47 @@ describe("A. Eén bron van waarheid", () => {
     }
   });
 
-  it("de twee trajecten hebben elk vijf stappen, van intake tot bestuursklare oplevering", () => {
+  it("het HDD-traject volgt de module: twee fasen met een Go of No-Go ertussen", () => {
     expect(HDD_STAPPEN).toHaveLength(5);
-    expect(LTE_STAPPEN).toHaveLength(5);
     const hdd = HDD_STAPPEN.map((s) => `${s.naam} ${s.inhoud}`.toLowerCase()).join(" ");
-    for (const woord of ["intake", "teamscan", "energiescan", "synthese", "bestuur"]) {
+    for (const woord of [
+      "intake",
+      "fase één",
+      "teamscan",
+      "energiescan",
+      "go of no-go",
+      "fase twee",
+      "business kompas",
+      "oplevering",
+    ]) {
       expect(hdd).toContain(woord);
     }
+    // De publieke pagina mag geen bestuursrapport van één pagina beloven: de
+    // module levert twee gescheiden rapporten, één per lezer.
+    expect(hdd).not.toMatch(/bestuursrapport/i);
+  });
+
+  it("de outputs van HDD dragen het advies en de twee gescheiden rapporten", () => {
+    expect(HDD_OUTPUTS).toHaveLength(4);
+    const namen = HDD_OUTPUTS.map((o) => o.naam);
+    expect(namen).toContain("Go of No-Go-advies");
+    expect(namen).toContain("Team Insight Report");
+    expect(namen).toContain("Investor Report");
+    const investor = HDD_OUTPUTS.find((o) => o.naam === "Investor Report")!;
+    const team = HDD_OUTPUTS.find((o) => o.naam === "Team Insight Report")!;
+    // De rapportmotor in server/hdd/rapport.ts levert in het Engels en houdt de
+    // twee lezers strikt gescheiden. De publieke pagina zegt dat ook.
+    expect(investor.vorm.toLowerCase()).toContain("engels");
+    expect(team.vorm.toLowerCase()).toContain("engels");
+    expect(investor.vorm.toLowerCase()).toContain("vertrouwelijk");
+    for (const o of HDD_OUTPUTS) {
+      expect(o.lezer.length).toBeGreaterThan(3);
+      expect(o.inhoud.length).toBeGreaterThan(20);
+    }
+  });
+
+  it("het traject van Leadership & Team Energy houdt vijf stappen", () => {
+    expect(LTE_STAPPEN).toHaveLength(5);
     const lte = LTE_STAPPEN.map((s) => `${s.naam} ${s.inhoud}`.toLowerCase()).join(" ");
     for (const woord of ["vraagstelling", "energiescan", "kompas", "ploeg", "opvolging"]) {
       expect(lte).toContain(woord);

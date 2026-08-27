@@ -70,7 +70,7 @@ export const CLUSTERS: Cluster[] = [
       "Investeerders, raden van bestuur, directies en hun adviseurs bij een overname, een kapitaalronde of een herstructurering.",
     moment:
       "In de weken voor een beslissing, wanneer de cijfers gekend zijn en de vraag over de mensen open blijft.",
-    instrumenten: ["T4P Business Kompas", "TaPas Teamscan", "2MINSCAN", "DriverScan"],
+    instrumenten: ["TaPas Teamscan", "2MINSCAN", "T4P Business Kompas"],
     pad: "/oplossingen/human-due-diligence",
     wedge: true,
     prijssignaal:
@@ -220,42 +220,88 @@ export const MARKERINGEN: Markering[] = [
 /** Een vaste stap in een traject. */
 export type Stap = { nummer: number; naam: string; inhoud: string; duur: string };
 
-/** Het traject van Human Due Diligence, in vijf vaste stappen. */
+/**
+ * Het traject van Human Due Diligence, zoals de module het werkelijk uitvoert:
+ * twee fasen met een Go of No-Go-scharnier ertussen. De inhoud volgt
+ * server/hdd/schema.ts, gate.ts, aggregatie.ts en rapport.ts. De vermelde
+ * doorlooptijden zijn dienstafspraken, geen regels in de module.
+ */
 export const HDD_STAPPEN: Stap[] = [
   {
     nummer: 1,
     naam: "Intake",
     inhoud:
-      "De beslissing wordt scherp gesteld: welk dossier, welke vraag, welke ploeg, welke termijn. Hier wordt ook afgesproken wie welke laag te lezen krijgt.",
+      "De beslissing wordt scherp gesteld: welk dossier, welke vraag, welke ploeg, welke termijn. Bij een overname wordt ook het niveau bepaald dat de groeiambitie vraagt. Hier wordt afgesproken wie welk rapport te lezen krijgt.",
     duur: "Eén gesprek van twee uur",
   },
   {
     nummer: 2,
-    naam: "Teamscan en energiescan",
+    naam: "Fase één, verkenning",
     inhoud:
-      "De ploeg vult de teamscan en de korte energiescan in. Dat levert het beeld op ploegniveau: samenstelling, energiebalans en de plaatsen waar de last ongelijk valt.",
+      "Elk lid van de ploeg doorloopt de teamscan en de korte energiescan. Dat levert het beeld op ploegniveau: samenwerking volgens de vijf pijlers, energiebalans en de spreiding tussen de leden.",
     duur: "Vijf werkdagen doorlooptijd",
   },
   {
     nummer: 3,
-    naam: "Individuele profielen",
+    naam: "Go of No-Go",
     inhoud:
-      "De sleutelfiguren doorlopen het Business Kompas. Elk profiel benoemt talentfoci, versnellers en drivers, met de eigen grenzen erbij vermeld.",
-    duur: "Vijf tot tien werkdagen, afhankelijk van het aantal deelnemers",
+      "Het platform weegt de signalen uit fase één en adviseert of er dieper gekeken moet worden. Eén ernstig signaal, of twee signalen van gemiddelde ernst, geeft een Go naar de diepteanalyse. Zijn er geen signalen, dan stopt het traject hier. De consultant houdt de eindregie en kan het advies gemotiveerd volgen of naast zich leggen.",
+    duur: "Eén zitting van één uur",
   },
   {
     nummer: 4,
-    naam: "Synthese",
+    naam: "Fase twee, diepteanalyse",
     inhoud:
-      "Ploegbeeld en individuele profielen worden naast de dossiervraag gelegd. Wat versterkt de zaak, wat verzwakt ze, en welke aannames blijven open.",
-    duur: "Eén werkweek",
+      "De sleutelfiguren doorlopen het Business Kompas. Dat geeft per persoon de talentfoci, de versnellers en de drivers, en op ploegniveau de dekking van talent, een indicatie van cognitieve draagkracht en een geïntegreerde sterkte-zwakteanalyse.",
+    duur: "Vijf tot tien werkdagen, afhankelijk van het aantal deelnemers",
   },
   {
     nummer: 5,
-    naam: "Bestuursklare oplevering",
+    naam: "Oplevering",
     inhoud:
-      "Het bestuursrapport, de managementsamenvatting en de begeleidersrapporten worden overhandigd en mondeling toegelicht aan wie de beslissing neemt.",
+      "De twee rapporten worden opgeleverd en mondeling toegelicht: één voor wie beslist, één voor de ploeg zelf. Ze worden nooit tot één document samengevoegd, en het rapport voor wie beslist gaat niet naar de beoordeelde ploeg.",
     duur: "Eén zitting van negentig minuten",
+  },
+];
+
+/**
+ * De outputreeks van Human Due Diligence. Ze wijkt af van de algemene
+ * outputstapel van het platform, want dit traject levert na fase één een advies
+ * en na fase twee twee gescheiden rapporten. De rapporten van dit traject zijn
+ * in het Engels opgesteld, omdat de lezer doorgaans internationaal is.
+ */
+export const HDD_OUTPUTS: OutputLaag[] = [
+  {
+    nummer: 1,
+    naam: "Individueel profiel",
+    lezer: "de deelnemer zelf",
+    inhoud:
+      "Het persoonlijke profiel uit het Business Kompas: talentfoci, versnellers en drivers, met wat dat betekent in het dagelijkse werk. Elke deelnemer krijgt zijn eigen profiel terug.",
+    vorm: "PDF per deelnemer, in de taal van de afname.",
+  },
+  {
+    nummer: 2,
+    naam: "Go of No-Go-advies",
+    lezer: "de opdrachtgever en de consultant",
+    inhoud:
+      "Het besluit van fase één: de gewogen signalen uit samenwerking, energiebalans en spreiding, met per signaal de ernst en de reden. Het advies zegt of de diepteanalyse nodig is.",
+    vorm: "Overzicht in de werkomgeving, mondeling toegelicht.",
+  },
+  {
+    nummer: 3,
+    naam: "Team Insight Report",
+    lezer: "de beoordeelde ploeg",
+    inhoud:
+      "Hoe deze ploeg samenwerkt, haar energie volhoudt en haar talent combineert, met ontwikkelingsadvies. Het materiaal dat enkel voor wie beslist bedoeld is, staat er niet in, en het eindoordeel staat er in ontwikkelingstaal.",
+    vorm: "Apart rapport als PDF, in het Engels, mag met de ploeg gedeeld worden.",
+  },
+  {
+    nummer: 4,
+    naam: "Investor Report",
+    lezer: "de investeerder of de raad van bestuur",
+    inhoud:
+      "Het volledige dossierstuk: het eindoordeel vooraan, de samenwerking en de energiehuishouding, de individuele scorekaarten, de talentdekking, de indicatie van cognitieve draagkracht, de sterkte-zwakteanalyse, een risicoregister en de vragen die nog verificatie vragen.",
+    vorm: "Apart rapport als PDF, in het Engels, strikt vertrouwelijk en niet voor de beoordeelde ploeg.",
   },
 ];
 
@@ -300,10 +346,11 @@ export const LTE_STAPPEN: Stap[] = [
 
 /** Wat een traject oplevert, in zakelijke termen. */
 export const HDD_UITKOMST: string[] = [
-  "Een onderbouwd oordeel over het leidend vermogen van de ploeg in het dossier.",
-  "Benoemde risico's in samenstelling, energiebalans en afhankelijkheid van sleutelfiguren.",
-  "Een gespreksbasis voor de honderd dagen na de beslissing.",
-  "Een dossierstuk dat de menselijke kant van de beslissing traceerbaar maakt.",
+  "Een onderbouwd oordeel over het leidend vermogen van de ploeg in dit dossier, met de ernst van elk signaal erbij.",
+  "Een beslissing na fase één of de diepteanalyse nodig is, zodat een dossier zonder signalen niet verder onderzocht wordt.",
+  "Benoemde risico's in samenwerking, energiebalans en afhankelijkheid van sleutelfiguren, met de vragen die nog verificatie vragen.",
+  "Een gespreksbasis voor de honderd dagen na de beslissing, en een rapport voor de ploeg zelf dat zonder herwerking gedeeld kan worden.",
+  "Een dossierstuk dat de menselijke kant van de beslissing traceerbaar maakt, met de bronnen en de methode erin vermeld.",
 ];
 
 export const LTE_UITKOMST: string[] = [
@@ -334,14 +381,15 @@ export const DEMO_JOURNEYS: DemoJourney[] = [
       "Vijf leden van het directiecomité, plus achttien medewerkers voor het ploegbeeld.",
     flow: [
       "Intake met de investeerder en de dossierverantwoordelijke",
-      "Uitnodiging van de ploeg voor teamscan en energiescan",
-      "Business Kompas voor de vijf sleutelfiguren",
-      "Synthese naast de dossiervraag",
-      "Bestuursrapport en mondelinge toelichting",
+      "Fase één: teamscan en energiescan voor de hele ploeg",
+      "Go of No-Go op de signalen uit fase één",
+      "Fase twee: Business Kompas voor de vijf sleutelfiguren",
+      "Oplevering van de twee rapporten met mondelinge toelichting",
     ],
     outputs: [
-      "Bestuursrapport van één pagina",
-      "Managementsamenvatting voor de dossierverantwoordelijke",
+      "Go of No-Go-advies na fase één",
+      "Investor Report voor de investeerder, strikt vertrouwelijk",
+      "Team Insight Report voor de ploeg zelf",
       "Individuele profielen voor de vijf leden",
     ],
     vervolgactie:
