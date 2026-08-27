@@ -77,8 +77,8 @@ describe("B. De bestanden staan er echt", () => {
       expect(van).toBeGreaterThanOrEqual(vorigEinde);
       vorigEinde = tot;
     }
-    // De film duurt 72,4 seconden. Geen enkele regel mag daarbuiten vallen.
-    expect(vorigEinde).toBeLessThanOrEqual(72.4);
+    // De film duurt 73,8 seconden. Geen enkele regel mag daarbuiten vallen.
+    expect(vorigEinde).toBeLessThanOrEqual(73.8);
   });
 
   it("de eerste en de laatste regel zijn de gesproken tekst", () => {
