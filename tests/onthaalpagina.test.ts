@@ -22,6 +22,8 @@ import { resolve } from "node:path";
 const pagina = readFileSync(resolve(__dirname, "../client/src/pages/onthaal.tsx"), "utf8");
 const opmaak = readFileSync(resolve(__dirname, "../client/src/pages/onthaal.css"), "utf8");
 const app = readFileSync(resolve(__dirname, "../client/src/App.tsx"), "utf8");
+const demo = readFileSync(resolve(__dirname, "../client/src/pages/demo.tsx"), "utf8");
+const demoOpmaak = readFileSync(resolve(__dirname, "../client/src/pages/publiek.css"), "utf8");
 const home = readFileSync(resolve(__dirname, "../client/src/pages/home.tsx"), "utf8");
 
 /** De bron zonder commentaarregels, voor toetsen die iets moeten uitsluiten. */
@@ -115,11 +117,15 @@ describe("C. Geen tweede merkteken", () => {
 });
 
 describe("D. Wat er op de pagina staat", () => {
-  it("de kernzin staat er woordelijk", () => {
+  it("de kernzin staat er woordelijk, op het niveau van de beslissing", () => {
     expect(pagina).toContain(
-      "Dit is het Tapas platform waarmee een organisatie, een school of een coach een",
+      "Tapas CORE brengt het menselijke deel van een beslissing in beeld: welk talent er",
     );
-    expect(pagina).toContain("talentinstrument uitstuurt, de afname opvolgt en er een rapport uit genereert dat");
+    expect(pagina).toContain(
+      "een rapport waarop een leidinggevende, een bestuur of een investeerder kan handelen.",
+    );
+    // De oude zin beschreef het gereedschap in plaats van de beslissing.
+    expect(pagina).not.toContain("talentinstrument uitstuurt, de afname opvolgt");
   });
 
   it("de grens van het instrument staat er, in de voettekst en in het hoofddeel", () => {
@@ -248,28 +254,42 @@ describe("F. De onopvallende beheerdersdeur in de voettekst", () => {
 });
 
 // ---------------------------------------------------------------------------
-// F. De film in de sectie "Hoe het werkt"
+// F. De film staat in de demo-omgeving
 //
-//   De film staat waar de knop "Bekijk eerst hoe het werkt" naartoe rolt, en
-//   speelt niet uit zichzelf: er is gesproken tekst, dus geluid blijft een
-//   keuze van de bezoeker. Het ondertitelspoor staat klaar maar niet aan, want
-//   dit is de versie zonder ingebrande ondertitels.
+//   De film vertelt het verhaal van het gereedschap. Dat is één niveau onder de
+//   beslissing die de onthaalpagina ter sprake brengt, dus de speler staat op de
+//   demopagina en de onthaalpagina wijst er enkel naartoe. De film speelt niet
+//   uit zichzelf: er is gesproken tekst, dus geluid blijft een keuze van de
+//   bezoeker. Het ondertitelspoor staat klaar maar niet aan, want dit is de
+//   versie zonder ingebrande ondertitels.
 // ---------------------------------------------------------------------------
 
 describe("F. De film", () => {
-  const sectie = pagina.slice(pagina.indexOf('id="werking"'), pagina.indexOf('className="stappen"'));
+  const sectie = demo.slice(demo.indexOf('data-testid="demo-film"') - 400, demo.indexOf('className="acties"'));
 
-  it("staat in de sectie waar de kopknop naartoe rolt, vóór de vier stappen", () => {
-    expect(pagina).toContain('naarSectie("werking")');
-    expect(sectie).toContain('data-testid="onthaal-film"');
+  it("staat op de demopagina en niet op de onthaalpagina", () => {
+    expect(demo).toContain('data-testid="demo-film"');
     expect(sectie).toContain("/film/tapas-core-nl.mp4");
+    expect(paginaCode).not.toContain("<video");
+    expect(paginaCode).not.toContain("/film/tapas-core-nl.mp4");
+  });
+
+  it("de onthaalpagina wijst wel naar de film in de demo-omgeving", () => {
+    expect(pagina).toContain('data-testid="onthaal-filmwijzer"');
+    const wijzer = pagina.slice(
+      pagina.indexOf('data-testid="onthaal-filmwijzer"'),
+      pagina.indexOf('className="stappen"'),
+    );
+    expect(wijzer).toContain('href="/demo"');
+    expect(opmaak).toContain(".onthaal .filmwijzer");
   });
 
   it("speelt niet uit zichzelf en houdt de knoppen bij de bezoeker", () => {
-    expect(sectie).toContain("controls");
-    expect(sectie).toContain('preload="none"');
-    expect(sectie).not.toContain("autoPlay");
-    expect(sectie).not.toContain("loop");
+    const speler = demo.slice(demo.indexOf("<video"), demo.indexOf("</video>"));
+    expect(speler).toContain("controls");
+    expect(speler).toContain('preload="none"');
+    expect(speler).not.toContain("autoPlay");
+    expect(speler).not.toMatch(/\bloop\b/);
   });
 
   it("draagt een stilstaand beeld en een ondertitelspoor dat niet vooraf aan staat", () => {
@@ -286,8 +306,8 @@ describe("F. De film", () => {
   });
 
   it("houdt de verhouding vast in de opmaak, zodat de pagina niet verschuift", () => {
-    expect(opmaak).toContain(".onthaal .film video");
-    expect(opmaak).toContain("aspect-ratio:16/9");
+    expect(demoOpmaak).toContain(".publiek .film video");
+    expect(demoOpmaak).toContain("aspect-ratio:16/9");
   });
 
   it("de drie bestanden staan klaar in de openbare map", () => {

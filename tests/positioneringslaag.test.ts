@@ -287,7 +287,7 @@ describe("D. De onthaalpagina is beslisgericht", () => {
   });
 
   it("de bestaande bouwstenen blijven staan", () => {
-    expect(onthaal).toContain('data-testid="onthaal-film"');
+    expect(onthaal).toContain('data-testid="onthaal-filmwijzer"');
     expect(onthaal).toContain('data-testid="onthaal-formulier"');
     expect(onthaal).toContain('id="werking"');
     expect(onthaal).toContain('id="aanmelden"');

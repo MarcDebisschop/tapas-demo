@@ -328,45 +328,27 @@ export default function Onthaal() {
             <h2>Van uitnodiging tot verdieping, in vier stappen</h2>
           </div>
 
+          {/* De kernzin staat op beslisniveau. Ze zegt niet wat het platform
+              verstuurt, maar wat een organisatie ermee beslist. De vier stappen
+              eronder tonen daarna hoe die beslissing tot stand komt. */}
           <p className="zin zin-werking">
             <b>Wat het is, in één zin.</b>{" "}
             <span>
-              Dit is het Tapas platform waarmee een organisatie, een school of een coach een
-              talentinstrument uitstuurt, de afname opvolgt en er een rapport uit genereert dat
-              een verdiepend gesprek voedt.
+              Tapas CORE brengt het menselijke deel van een beslissing in beeld: welk talent er
+              zit, wat mensen in beweging brengt en waar de energie wegloopt. Dat komt op tafel als
+              een rapport waarop een leidinggevende, een bestuur of een investeerder kan handelen.
             </span>
           </p>
 
-          {/* De film staat vóór de vier stappen, want de knop "Bekijk eerst hoe
-              het werkt" rolt naar deze sectie. Wie klikt, komt bij de film uit.
-              Bewust geen automatisch spelen: de film heeft gesproken tekst, en
-              geluid hoort een keuze van de bezoeker te zijn. De vier stappen
-              eronder vertellen hetzelfde verhaal in tekst, en het
-              ondertitelspoor staat klaar voor wie geen geluid kan gebruiken. */}
-          <figure className="film">
-            <video
-              controls
-              playsInline
-              preload="none"
-              poster="/film/tapas-core-nl-beeld.jpg"
-              data-testid="onthaal-film"
-            >
-              <source src="/film/tapas-core-nl.mp4" type="video/mp4" />
-              <track
-                kind="subtitles"
-                srcLang="nl"
-                label="Nederlands"
-                src="/film/tapas-core-nl.vtt"
-              />
-              Uw browser kan deze film niet spelen. De vier stappen hieronder beschrijven
-              dezelfde weg in tekst.
-            </video>
-            <figcaption>
-              Tachtig seconden door het platform, van uitnodiging tot rapport, met gesproken
-              uitleg. Ondertitels zijn in de speler aan te zetten. Wie liever leest: de vier
-              stappen hieronder vertellen dezelfde weg.
-            </figcaption>
-          </figure>
+          {/* De film staat niet meer op deze pagina. Ze vertelt het verhaal van
+              het gereedschap, één niveau onder de beslissing die hier ter sprake
+              komt, en hoort daarom in de demo-omgeving waar iemand met de
+              bedoeling komt om het platform te zien werken. */}
+          <p className="filmwijzer" data-testid="onthaal-filmwijzer">
+            Wilt u het platform zien werken? In de{" "}
+            <Link href="/demo">demo-omgeving</Link> staat een film van tachtig seconden, met
+            gesproken uitleg en ondertitels.
+          </p>
 
           <div className="stappen">
             <div className="stap">

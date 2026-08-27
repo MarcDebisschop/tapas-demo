@@ -179,3 +179,12 @@ html.dark .publiek{--primary:#5EAEBA; --primary-dp:#8ACAD3;
   .publiek .markeringen{grid-template-columns:1fr}
   .publiek .kop-blok .acties .knop{width:100%}
 }
+
+/* --- De film in de demo-omgeving --------------------------------------- */
+/* De verhouding staat vast, zodat de pagina niet verschuift terwijl de film
+   laadt. De film speelt niet uit zichzelf: er is gesproken tekst. */
+.publiek .film{margin:0;padding:0}
+.publiek .film video{display:block;width:100%;aspect-ratio:16/9;background:var(--primary-dp);
+  border:1px solid var(--line);border-radius:9px}
+.publiek .film figcaption{margin-top:12px;font-size:14.5px;line-height:1.6;color:var(--muted);
+  max-width:70ch}

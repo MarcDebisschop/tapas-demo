@@ -150,6 +150,42 @@ export default function Demo() {
             </div>
           </div>
 
+          {/* De film van het platform staat hier en niet op de onthaalpagina.
+              Ze toont het gereedschap aan het werk, en dat is precies wat
+              iemand in de demo-omgeving komt zien. Bewust geen automatisch
+              spelen: er is gesproken tekst, dus geluid blijft een keuze. Het
+              ondertitelspoor staat klaar maar niet aan. */}
+          <div className="sec-kop" style={{ marginTop: "56px" }}>
+            <p className="eyebrow">Het platform aan het werk</p>
+            <h2>Tachtig seconden door de omgeving</h2>
+            <p>
+              Van de uitnodiging tot het rapport, opgenomen in de echte omgeving. Wie liever leest:
+              de trajecten en de outputs staan volledig uitgeschreven op hun eigen pagina.
+            </p>
+          </div>
+          <figure className="film">
+            <video
+              controls
+              playsInline
+              preload="none"
+              poster="/film/tapas-core-nl-beeld.jpg"
+              data-testid="demo-film"
+            >
+              <source src="/film/tapas-core-nl.mp4" type="video/mp4" />
+              <track
+                kind="subtitles"
+                srcLang="nl"
+                label="Nederlands"
+                src="/film/tapas-core-nl.vtt"
+              />
+              Uw browser kan deze film niet spelen. Het verloop van elk traject staat hierboven in
+              tekst.
+            </video>
+            <figcaption>
+              Gesproken uitleg in het Nederlands. Ondertitels zijn in de speler aan te zetten.
+            </figcaption>
+          </figure>
+
           <div className="acties" style={{ marginTop: "34px" }}>
             <Link
               href="/"

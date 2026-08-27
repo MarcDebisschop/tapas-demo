@@ -201,14 +201,12 @@ html.dark .onthaal{--primary:#5EAEBA; --primary-dp:#8ACAD3;      /* 188 40% 55% 
 .onthaal textarea{min-height:112px;resize:vertical}
 .onthaal .veld{margin-top:18px}
 .onthaal .na{margin-top:16px;font-size:14px;color:var(--muted)}
-/* De film in de sectie "Hoe het werkt". De verhouding staat vast, zodat de
-   pagina niet verschuift terwijl de film laadt. */
-.onthaal .film{margin:0 0 44px;padding:0}
-.onthaal .film video{display:block;width:100%;aspect-ratio:16/9;background:var(--primary-dp);
-  border:1px solid var(--line);border-radius:9px}
-.onthaal .film figcaption{margin-top:12px;font-size:14.5px;line-height:1.6;color:var(--muted);
-  max-width:70ch}
-@media (max-width:720px){.onthaal .film{margin-bottom:34px}}
+/* De verwijzing naar de film. De film zelf staat in de demo-omgeving, want daar
+   komt iemand met de bedoeling het platform te zien werken. */
+.onthaal .filmwijzer{margin:0 0 40px;font-size:15px;line-height:1.65;color:var(--muted)}
+.onthaal .filmwijzer a{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--rand)}
+.onthaal .filmwijzer a:hover{border-bottom-color:var(--accent)}
+@media (max-width:720px){.onthaal .filmwijzer{margin-bottom:32px}}
 
 .onthaal .diepte{margin-top:52px;display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:9px;overflow:hidden}
 .onthaal .diepte>div{padding:30px 30px 28px}
