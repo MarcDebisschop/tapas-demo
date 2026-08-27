@@ -32,6 +32,20 @@ const inhoud: TrajectInhoud = {
   ],
   prijsuitleg:
     "Het tarief bevat de intake, de afname van alle deelnemers, het Go of No-Go-moment, de synthese, de oplevering van de twee rapporten en de mondelinge toelichting. De omvang van de ploeg bepaalt in welke schijf een dossier valt. De rapporten van dit traject zijn in het Engels opgesteld.",
+  // De film hoort op deze pagina en niet op de onthaalpagina: ze legt precies
+  // dit traject uit, in de stem van het platform, met ondertitels als spoor.
+  film: {
+    bovenschrift: "Het traject in beeld",
+    kop: "Ruim een minuut over Human Due Diligence",
+    uitleg:
+      "Van de aanleiding tot de twee rapporten, met het beslismoment tussen de twee fasen. Wie liever leest: alles wat de film zegt staat hieronder ook uitgeschreven.",
+    bron: "/film/hdd-nl.mp4",
+    poster: "/film/hdd-nl-beeld.jpg",
+    ondertitels: "/film/hdd-nl.vtt",
+    onderschrift:
+      "Gesproken uitleg in het Nederlands. Ondertitels zijn in de speler aan te zetten.",
+    testid: "hdd-film",
+  },
   testid: "journey-hdd",
 };
 

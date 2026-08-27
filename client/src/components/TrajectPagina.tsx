@@ -15,6 +15,22 @@ import { onthoudBlok } from "@/lib/naar-blok";
 import type { Cluster, OutputLaag, Stap } from "@/data/oplossingen";
 import "@/pages/publiek.css";
 
+/** De film die het traject in beeld brengt. Optioneel: niet elk traject heeft er een. */
+export type TrajectFilm = {
+  /** Het opschrift boven de kop. */
+  bovenschrift: string;
+  kop: string;
+  /** De alinea onder de kop, met een uitweg voor wie liever leest. */
+  uitleg: string;
+  /** Het beeldbestand, het posterbeeld en het ondertitelspoor. */
+  bron: string;
+  poster: string;
+  ondertitels: string;
+  /** De regel onder de speler. */
+  onderschrift: string;
+  testid: string;
+};
+
 export type TrajectInhoud = {
   cluster: Cluster;
   /** Het opschrift boven de titel. */
@@ -32,6 +48,8 @@ export type TrajectInhoud = {
   grenzen: string[];
   /** De vermelding onder het prijssignaal, over wat de prijs bevat. */
   prijsuitleg: string;
+  /** De film over het traject. Staat er geen, dan blijft het blok weg. */
+  film?: TrajectFilm;
   testid: string;
 };
 
@@ -63,6 +81,42 @@ export default function TrajectPagina({ inhoud }: { inhoud: TrajectInhoud }) {
           </div>
         </div>
       </div>
+
+      {/* De film staat vooraan, meteen na de opening: wie het traject nog niet
+          kent, ziet in ruim een minuut hoe het loopt. Bewust geen automatisch
+          spelen, want er is gesproken tekst. Het ondertitelspoor staat klaar
+          maar niet aan. Wie liever leest, vindt alles hieronder in tekst. */}
+      {inhoud.film && (
+        <section className="grijs">
+          <div className="wrap">
+            <div className="sec-kop">
+              <p className="eyebrow">{inhoud.film.bovenschrift}</p>
+              <h2>{inhoud.film.kop}</h2>
+              <p>{inhoud.film.uitleg}</p>
+            </div>
+            <figure className="film">
+              <video
+                controls
+                playsInline
+                preload="none"
+                poster={inhoud.film.poster}
+                data-testid={inhoud.film.testid}
+              >
+                <source src={inhoud.film.bron} type="video/mp4" />
+                <track
+                  kind="subtitles"
+                  srcLang="nl"
+                  label="Nederlands"
+                  src={inhoud.film.ondertitels}
+                />
+                Uw browser kan deze film niet spelen. Het verloop van het traject staat hieronder in
+                tekst.
+              </video>
+              <figcaption>{inhoud.film.onderschrift}</figcaption>
+            </figure>
+          </div>
+        </section>
+      )}
 
       <section>
         <div className="wrap">
