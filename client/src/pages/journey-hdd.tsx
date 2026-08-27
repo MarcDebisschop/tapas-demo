@@ -16,11 +16,11 @@ const inhoud: TrajectInhoud = {
   cluster,
   bovenschrift: "Traject voor investeerders en besturen",
   lead:
-    "Bij een overname, een kapitaalronde of een herstructurering staan de cijfers meestal vast en blijft de vraag over de mensen open. Human Due Diligence brengt die vraag naar hetzelfde niveau als de rest van het dossier: wie draagt het plan, waar zitten de afhankelijkheden, en wat betekent dat voor de eerste honderd dagen na de beslissing. Het traject werkt in twee fasen, met een Go of No-Go ertussen: eerst een verkenning van de ploeg, en enkel bij een ernstig signaal een diepteanalyse van de sleutelfiguren.",
+    "Bij een overname, een kapitaalronde of een herstructurering staan de cijfers meestal vast en blijft de vraag over de mensen open. Human Due Diligence brengt die vraag naar hetzelfde niveau als de rest van het dossier: wie draagt het plan, waar zitten de afhankelijkheden, en wat betekent dat voor de eerste honderd dagen na de beslissing. Het traject werkt in twee fasen, met een hard beslismoment ertussen: eerst een verkenning van de ploeg, en enkel wanneer die geen dysfunctionele signalen laat zien een diepteanalyse van de sleutelfiguren.",
   stappen: HDD_STAPPEN,
-  trajectkop: "Twee fasen, met een Go of No-Go ertussen",
+  trajectkop: "Twee fasen, met een hard beslismoment ertussen",
   trajectuitleg:
-    "Fase één kijkt naar de ploeg als geheel. Wat daar aan het licht komt, bepaalt of fase twee nodig is. Een dossier zonder signalen stopt na fase één.",
+    "Fase één kijkt naar de ploeg als geheel. Zijn er dysfunctionele signalen, dan stopt het traject daar. Blijven die uit, dan start fase twee, met als centrale vraag of deze ploeg de ambitie kan waarmaken.",
   outputs: HDD_OUTPUTS,
   uitkomst: HDD_UITKOMST,
   grenzen: [

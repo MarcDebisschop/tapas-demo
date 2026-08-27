@@ -80,13 +80,16 @@ export type HddBoardLid = typeof hddBoardLeden.$inferSelect;
 // Eén risico-signaal uit de Fase 1-evaluatie.
 export interface RodeVlag {
   indicator: string;        // bv. "waardenfit", "vertrouwens-gap"
-  ernst: "hoog" | "midden"; // weegt mee in de Go/No-Go-beslissing
+  ernst: "hoog" | "midden"; // weegt mee in de Go/No-Go-beslissing (signaal = stoppen)
   toelichting: string;      // mensleesbare onderbouwing
 }
 
 // Resultaat van het Go/No-Go-scharnier "onder de motorkap".
 export interface GateResultaat {
-  advies: "go" | "no-go";   // platform-advies (consultant houdt eindregie)
+  // "go" = Fase 2 start, want de verkenning toont geen dysfunctionele signalen.
+  // "no-go" = het traject stopt na Fase 1. Het platform adviseert, de consultant
+  // houdt de eindregie.
+  advies: "go" | "no-go";
   signalen: RodeVlag[];
   samenvatting: string;
   // Consultant-overschrijving (optioneel): de mens beslist uiteindelijk.

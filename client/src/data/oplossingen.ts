@@ -245,7 +245,7 @@ export const HDD_STAPPEN: Stap[] = [
     nummer: 3,
     naam: "Go of No-Go",
     inhoud:
-      "Het platform weegt de signalen uit fase één en adviseert of er dieper gekeken moet worden. Eén ernstig signaal, of twee signalen van gemiddelde ernst, geeft een Go naar de diepteanalyse. Zijn er geen signalen, dan stopt het traject hier. De consultant houdt de eindregie en kan het advies gemotiveerd volgen of naast zich leggen.",
+      "Het platform weegt de signalen uit fase één. Eén ernstig signaal, of twee van gemiddelde ernst, wijst op dysfunctioneel gedrag: dan stopt het traject hier, want een ploeg die op dit niveau niet functioneert draagt het plan niet. Blijven die signalen uit, dan start de diepteanalyse, met als centrale vraag of deze ploeg de ambitie kan waarmaken. De consultant houdt de eindregie.",
     duur: "Eén zitting van één uur",
   },
   {
@@ -284,7 +284,7 @@ export const HDD_OUTPUTS: OutputLaag[] = [
     naam: "Go of No-Go-advies",
     lezer: "de opdrachtgever en de consultant",
     inhoud:
-      "Het besluit van fase één: de gewogen signalen uit samenwerking, energiebalans en spreiding, met per signaal de ernst en de reden. Het advies zegt of de diepteanalyse nodig is.",
+      "Het besluit van fase één: de gewogen signalen uit samenwerking, energiebalans en spreiding, met per signaal de ernst en de reden. Het advies zegt of het traject stopt of dat de diepteanalyse start.",
     vorm: "Overzicht in de werkomgeving, mondeling toegelicht.",
   },
   {
@@ -347,7 +347,7 @@ export const LTE_STAPPEN: Stap[] = [
 /** Wat een traject oplevert, in zakelijke termen. */
 export const HDD_UITKOMST: string[] = [
   "Een onderbouwd oordeel over het leidend vermogen van de ploeg in dit dossier, met de ernst van elk signaal erbij.",
-  "Een beslissing na fase één of de diepteanalyse nodig is, zodat een dossier zonder signalen niet verder onderzocht wordt.",
+  "Een beslissing na fase één of het traject verdergaat, zodat een dossier met dysfunctionele signalen niet verder onderzocht wordt.",
   "Benoemde risico's in samenwerking, energiebalans en afhankelijkheid van sleutelfiguren, met de vragen die nog verificatie vragen.",
   "Een gespreksbasis voor de honderd dagen na de beslissing, en een rapport voor de ploeg zelf dat zonder herwerking gedeeld kan worden.",
   "Een dossierstuk dat de menselijke kant van de beslissing traceerbaar maakt, met de bronnen en de methode erin vermeld.",

@@ -5,10 +5,16 @@ import type { GateResultaat, RodeVlag } from "./schema";
  * "hdd-onder-de-motorkap").
  * ------------------------------------------------------------------
  * Zodra alle board members Fase 1 (Teamscan + 2MINSCAN) hebben afgerond,
- * evalueert het platform of er DIEPER gekeken moet worden (Fase 2). De logica
- * is risicogestuurd: één HOOG signaal, of twee of meer MIDDEN-signalen, geeft
- * een "Go naar Fase 2". Het platform ADVISEERT; de consultant houdt de
- * eindregie en kan het advies gemotiveerd bevestigen of overrulen.
+ * evalueert het platform of het traject verdergaat. De logica is
+ * risicogestuurd: één HOOG signaal, of twee of meer MIDDEN-signalen, wijst op
+ * dysfunctioneel teamgedrag en geeft een "No-Go". Het traject stopt dan na
+ * Fase 1: een ploeg die op dit niveau niet functioneert, draagt het plan niet,
+ * en een diepteanalyse van de individuele profielen verandert dat niet.
+ *
+ * Blijven die signalen uit, dan volgt een "Go naar Fase 2". De diepteanalyse
+ * heeft dan één centrale vraag: kan deze ploeg de ambitie waarmaken? Het
+ * platform ADVISEERT; de consultant houdt de eindregie en kan het advies
+ * gemotiveerd bevestigen of overrulen.
  *
  * Deze prototype-versie werkt op een neutraal Fase 1-aggregaat-contract. De
  * concrete drempels worden samen met Marc gekalibreerd op echte data; ze staan
@@ -53,7 +59,7 @@ export function verzamelRodeVlaggen(a: Fase1Aggregaat): RodeVlag[] {
       indicator: "vertrouwen",
       ernst: "hoog",
       toelichting:
-        "Kwetsbaarheidsvertrouwen scoort onder de drempel — het draagvlak voor " +
+        "Kwetsbaarheidsvertrouwen scoort onder de drempel: het draagvlak voor " +
         "open samenwerking staat onder druk.",
     });
   }
@@ -76,7 +82,7 @@ export function verzamelRodeVlaggen(a: Fase1Aggregaat): RodeVlag[] {
       indicator: "conflict-betrokkenheid",
       ernst: "midden",
       toelichting:
-        "Productief conflict en/of betrokkenheid scoren zwak — besluiten dreigen " +
+        "Productief conflict en/of betrokkenheid scoren zwak: besluiten dreigen " +
         "oppervlakkig draagvlak te krijgen.",
     });
   }
@@ -86,7 +92,7 @@ export function verzamelRodeVlaggen(a: Fase1Aggregaat): RodeVlag[] {
       indicator: "energiebalans",
       ernst: "midden",
       toelichting:
-        "De energiebalans van het team is negatief — een vroege voorspeller van " +
+        "De energiebalans van het team is negatief, een vroege voorspeller van " +
         "spanning en uitputtingsrisico.",
     });
   }
@@ -96,7 +102,7 @@ export function verzamelRodeVlaggen(a: Fase1Aggregaat): RodeVlag[] {
       indicator: "spreiding",
       ernst: "midden",
       toelichting:
-        "De onderlinge spreiding tussen board members is hoog — leden ervaren het " +
+        "De onderlinge spreiding tussen board members is hoog: leden ervaren het " +
         "team verschillend, wat op onderhuidse breuklijnen kan wijzen.",
     });
   }
@@ -109,14 +115,18 @@ export function evalueerGate(a: Fase1Aggregaat): GateResultaat {
   const hoog = signalen.filter((s) => s.ernst === "hoog").length;
   const midden = signalen.filter((s) => s.ernst === "midden").length;
 
-  const advies: "go" | "no-go" = hoog >= 1 || midden >= 2 ? "go" : "no-go";
+  // Signalen stoppen het traject; hun afwezigheid opent Fase 2.
+  const advies: "go" | "no-go" = hoog >= 1 || midden >= 2 ? "no-go" : "go";
 
   const samenvatting =
-    advies === "go"
-      ? "Advies: kijk onder de motorkap (Fase 2). De Fase 1-signalen wijzen op " +
-        "patronen die alleen met talent-, driver- en cognitieve data zijn te duiden."
-      : "Advies: geen Fase 2 nodig. Het board doorstaat de verkenning zonder " +
-        "kritische risicosignalen. De consultant kan alsnog gemotiveerd verdiepen.";
+    advies === "no-go"
+      ? "Advies: het traject stopt hier. De Fase 1-signalen wijzen op " +
+        "dysfunctioneel teamgedrag. Zolang dat niet is opgelost, draagt deze ploeg " +
+        "het plan niet, en een diepteanalyse verandert daar niets aan. De " +
+        "consultant houdt de eindregie en kan gemotiveerd toch verdiepen."
+      : "Advies: start Fase 2. De verkenning laat geen dysfunctionele signalen " +
+        "zien, dus de diepteanalyse is zinvol. Haar centrale vraag: kan deze ploeg " +
+        "de ambitie waarmaken?";
 
   return { advies, signalen, samenvatting };
 }
