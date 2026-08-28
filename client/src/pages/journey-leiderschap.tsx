@@ -29,6 +29,18 @@ const inhoud: TrajectInhoud = {
   ],
   prijsuitleg:
     "De afname per deelnemer, het ploegbeeld, de begeleide sessie en de herhaalmeting worden samen begroot. Organisaties die meerdere ploegen per jaar doorlopen, werken doorgaans met een jaarlicentie.",
+  film: {
+    bovenschrift: "Het traject in beeld",
+    kop: "Ruim een minuut over Leadership & Team Energy",
+    uitleg:
+      "Van de aanleiding tot het ploegbeeld en de herhaalmeting, in de stem van het platform. Wie liever leest: alles wat de film zegt staat in de ondertitels.",
+    bron: "/film/lte-nl.mp4",
+    poster: "/film/lte-nl-beeld.jpg",
+    ondertitels: "/film/lte-nl.vtt",
+    onderschrift:
+      "Gesproken uitleg in het Nederlands. Ondertitels zijn in de speler aan te zetten.",
+    testid: "lte-film",
+  },
   testid: "journey-leiderschap",
 };
 

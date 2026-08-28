@@ -10,7 +10,8 @@
 //      dat gelijk loopt met de gesproken tekst.
 //   B2. De bezoeker kan tussen de Nederlandse en de Engelse film kiezen.
 //   C. Het geraamte van de trajectpagina laat de film weg wanneer een traject
-//      er geen heeft. Leadership & Team Energy blijft dus onaangeroerd.
+//      er geen heeft: het blok staat achter een voorwaarde en het veld is
+//      optioneel.
 //   D. De film van het platform zelf blijft staan waar ze stond, in de demo.
 //   E. Geen enkel liggend streepje van het lange soort in wat de bezoeker leest.
 // ---------------------------------------------------------------------------
@@ -21,7 +22,6 @@ import { resolve } from "node:path";
 
 const pad = (p: string) => resolve(__dirname, "..", p);
 const paginaHdd = readFileSync(pad("client/src/pages/journey-hdd.tsx"), "utf8");
-const paginaLeiderschap = readFileSync(pad("client/src/pages/journey-leiderschap.tsx"), "utf8");
 const geraamte = readFileSync(pad("client/src/components/TrajectPagina.tsx"), "utf8");
 const demo = readFileSync(pad("client/src/pages/demo.tsx"), "utf8");
 const vtt = readFileSync(pad("client/public/film/hdd-nl.vtt"), "utf8");
@@ -150,9 +150,9 @@ describe("C. Een traject zonder film houdt zijn pagina", () => {
     expect(geraamte).toMatch(/film\?: TrajectFilm;/);
   });
 
-  it("Leadership & Team Energy draagt geen film aan", () => {
-    expect(paginaLeiderschap).not.toContain("film:");
-    expect(paginaLeiderschap).not.toContain(".mp4");
+  it("zonder film blijft de lijst met versies leeg en valt het blok weg", () => {
+    expect(geraamte).toMatch(/film\?: TrajectFilm;/);
+    expect(geraamte).toContain(": [];");
   });
 });
 

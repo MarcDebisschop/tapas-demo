@@ -51,6 +51,7 @@ import Instrumenten from "@/pages/instrumenten";
 import Oplossingen from "@/pages/oplossingen";
 import JourneyHdd from "@/pages/journey-hdd";
 import JourneyLeiderschap from "@/pages/journey-leiderschap";
+import JourneyRecruitment from "@/pages/journey-recruitment";
 import Outputs from "@/pages/outputs";
 import Partners from "@/pages/partners";
 import Demo from "@/pages/demo";
@@ -236,6 +237,7 @@ function AppRouter() {
           bestaan; deze laag wijst ze aan in plaats van ze te vervangen. */}
       <Route path="/oplossingen/human-due-diligence" component={JourneyHdd} />
       <Route path="/oplossingen/leadership-team-energy" component={JourneyLeiderschap} />
+      <Route path="/oplossingen/recruitment-role-fit" component={JourneyRecruitment} />
       <Route path="/oplossingen" component={Oplossingen} />
       <Route path="/outputs" component={Outputs} />
       <Route path="/partners" component={Partners} />

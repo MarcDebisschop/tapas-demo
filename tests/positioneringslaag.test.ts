@@ -67,7 +67,7 @@ describe("A. Eén bron van waarheid", () => {
     expect(namen).toContain("Human Due Diligence");
     expect(namen).toContain("Leadership & Team Energy");
     expect(namen).toContain("Development & Mobility");
-    expect(namen).toContain("Recruitment");
+    expect(namen).toContain("Recruitment & Role Fit");
     expect(namen).toContain("Education & Youth");
     for (const c of CLUSTERS) {
       expect(c.beslissing.length).toBeGreaterThan(20);

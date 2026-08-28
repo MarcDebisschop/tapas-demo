@@ -111,14 +111,16 @@ export const CLUSTERS: Cluster[] = [
   },
   {
     sleutel: "recruitment",
-    naam: "Recruitment",
-    ondertitel: "Rolprofielen en kandidaatgesprekken scherper voeren.",
+    naam: "Recruitment & Role Fit",
+    ondertitel:
+      "Aanwervingsbeslissingen onderbouwen met talent, drivers, energie en context-fit.",
     beslissing:
-      "Welke vragen stellen wij deze kandidaat, en waar kijken wij bewust nog naar?",
-    doelgroep: "Recruiters, hiring managers en selectiebureaus.",
+      "Welke kandidaat past werkelijk bij deze rol, dit team en deze context?",
+    doelgroep:
+      "HR-verantwoordelijken, recruiters en leidinggevenden die sterker en eerlijker willen aanwerven.",
     moment: "Bij het openzetten van een rol en in de gespreksronde erna.",
     instrumenten: ["T4Recruitment", "T4P Business Kompas"],
-    pad: null,
+    pad: "/oplossingen/recruitment-role-fit",
     wedge: false,
     prijssignaal:
       "225 euro per kandidaat. Bundel van vijf 995 euro, bundel van tien 1.850 euro.",
@@ -358,6 +360,61 @@ export const LTE_UITKOMST: string[] = [
   "Afspraken over rollen en overleg die op talent en drivers gebouwd zijn.",
   "Een leidinggevende die weet waar aandacht rendeert en waar ze verspild wordt.",
   "Een meting na drie maanden die aantoont of er werkelijk iets verschoven is.",
+];
+
+/**
+ * Het traject van Recruitment & Role Fit, in vijf vaste stappen. De inhoud
+ * volgt de module zelf: server/t4r/schema.ts (de stakeholderkring met haar
+ * gelaagde minimumdrempels en het sluiten van de kring), server/t4r/match.ts
+ * (het virtuele rolprofiel in alignment, met need, nice en not-needed) en
+ * server/t4r/uit-afname.ts (het kandidaatprofiel dat rechtstreeks uit een
+ * afname van dit platform komt). De vermelde doorlooptijden zijn
+ * dienstafspraken, geen regels in de module.
+ */
+export const RR_STAPPEN: Stap[] = [
+  {
+    nummer: 1,
+    naam: "Rol en context scherpstellen",
+    inhoud:
+      "Met de opdrachtgever wordt bepaald welke rol openstaat, in welk team en in welke fase van de organisatie, en welke opdracht de eerste maanden werkelijk vraagt.",
+    duur: "Eén gesprek van negentig minuten",
+  },
+  {
+    nummer: 2,
+    naam: "Rolprofiel via de kring",
+    inhoud:
+      "De betrokkenen rond de rol duiden elk apart aan wat de functie nodig heeft, wat welkom is en wat niet vereist is. De kring wordt gesloten zodra de deelname de drempels haalt, en de verschillen worden in alignment uitgesproken tot er één gedragen rolprofiel staat.",
+    duur: "Vijf werkdagen doorlooptijd",
+  },
+  {
+    nummer: 3,
+    naam: "Kandidaatprofiel",
+    inhoud:
+      "Elke kandidaat doorloopt het Business Kompas. Het profiel komt rechtstreeks uit die afname, met de toestemming en de bewaartermijn die eraan hangen, zodat de cijfers in de vergelijking herleidbaar blijven.",
+    duur: "Drie werkdagen per kandidaat",
+  },
+  {
+    nummer: 4,
+    naam: "Vergelijkende studie",
+    inhoud:
+      "Het rolprofiel en het kandidaatprofiel worden naast elkaar gelegd per talentfocus, versneller, driver en energielijn. Zichtbaar wordt waar de match sterk staat, waar ze aandacht vraagt en waar ze kwetsbaar blijft.",
+    duur: "Twee werkdagen",
+  },
+  {
+    nummer: 5,
+    naam: "Gesprek en besluit",
+    inhoud:
+      "Het fit-rapport voedt de gespreksronde met gerichte vragen per kandidaat, en levert na de keuze de aandachtspunten voor de eerste maanden. De beslissing blijft bij de organisatie.",
+    duur: "Eén gesprek van twee uur",
+  },
+];
+
+export const RR_UITKOMST: string[] = [
+  "Een rolprofiel dat gedragen is door de betrokkenen rond de functie, en niet door één mening alleen.",
+  "Een vergelijking per kandidaat op talent, drivers en energie, in dezelfde taal als de rest van het platform.",
+  "Benoemde aandachtspunten voor het gesprek, met de vragen die nog open blijven.",
+  "Zicht op waar de match duurzaam is en waar ze kwetsbaar blijft in deze rol en deze context.",
+  "Een onderbouwing die na de beslissing bruikbaar blijft voor de eerste maanden van de nieuwe medewerker.",
 ];
 
 /** Een journey in de demo-omgeving, met een vast verhaal. */

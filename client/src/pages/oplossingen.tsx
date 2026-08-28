@@ -76,18 +76,32 @@ export default function Oplossingen() {
             </p>
           </div>
           <div className="rooster-3">
-            {rest.map((c) => (
-              <div key={c.sleutel} className="kaart">
-                <p className="tag">Cluster</p>
-                <h3>{c.naam}</h3>
-                <p>{c.ondertitel}</p>
-                <p className="beslissing">{c.beslissing}</p>
-                <div className="meta">
-                  <b>Instrumenten</b>
-                  {c.instrumenten.join(", ")}
+            {rest.map((c) => {
+              // Een cluster met een eigen trajectpagina wordt een kaart waarop
+              // geklikt kan worden. De andere blijven staan zoals ze stonden.
+              const kern = (
+                <>
+                  <p className="tag">Cluster</p>
+                  <h3>{c.naam}</h3>
+                  <p>{c.ondertitel}</p>
+                  <p className="beslissing">{c.beslissing}</p>
+                  <div className="meta">
+                    <b>Instrumenten</b>
+                    {c.instrumenten.join(", ")}
+                  </div>
+                  {c.pad ? <p className="verder">Bekijk het traject</p> : null}
+                </>
+              );
+              return c.pad ? (
+                <Link key={c.sleutel} href={c.pad} className="kaart">
+                  {kern}
+                </Link>
+              ) : (
+                <div key={c.sleutel} className="kaart">
+                  {kern}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
