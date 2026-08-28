@@ -42,8 +42,26 @@ const inhoud: TrajectInhoud = {
     bron: "/film/hdd-nl.mp4",
     poster: "/film/hdd-nl-beeld.jpg",
     ondertitels: "/film/hdd-nl.vtt",
+    // Twee taalversies: het dossier van dit traject is internationaal, dus de
+    // film staat er ook in het Engels, met een eigen ondertitelspoor.
+    versies: [
+      {
+        taal: "nl",
+        label: "Nederlands",
+        bron: "/film/hdd-nl.mp4",
+        poster: "/film/hdd-nl-beeld.jpg",
+        ondertitels: "/film/hdd-nl.vtt",
+      },
+      {
+        taal: "en",
+        label: "English",
+        bron: "/film/hdd-en.mp4",
+        poster: "/film/hdd-en-beeld.jpg",
+        ondertitels: "/film/hdd-en.vtt",
+      },
+    ],
     onderschrift:
-      "Gesproken uitleg in het Nederlands. Ondertitels zijn in de speler aan te zetten.",
+      "Gesproken uitleg in het Nederlands of in het Engels. Ondertitels zijn in de speler aan te zetten.",
     testid: "hdd-film",
   },
   testid: "journey-hdd",

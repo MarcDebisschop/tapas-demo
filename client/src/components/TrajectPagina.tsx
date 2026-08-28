@@ -8,12 +8,24 @@
 // de twee pagina's niet uit elkaar kunnen groeien.
 // ===========================================================================
 
+import { useState } from "react";
 import { Link } from "wouter";
 import PubliekeKop from "@/components/PubliekeKop";
 import PubliekeVoet from "@/components/PubliekeVoet";
 import { onthoudBlok } from "@/lib/naar-blok";
 import type { Cluster, OutputLaag, Stap } from "@/data/oplossingen";
 import "@/pages/publiek.css";
+
+/** Een taalversie van de film, met eigen beeldbestand en ondertitelspoor. */
+export type FilmVersie = {
+  /** De taalcode, zoals "nl" of "en". */
+  taal: string;
+  /** Wat op de keuzeknop staat. */
+  label: string;
+  bron: string;
+  poster: string;
+  ondertitels: string;
+};
 
 /** De film die het traject in beeld brengt. Optioneel: niet elk traject heeft er een. */
 export type TrajectFilm = {
@@ -28,6 +40,11 @@ export type TrajectFilm = {
   ondertitels: string;
   /** De regel onder de speler. */
   onderschrift: string;
+  /**
+   * De taalversies. Staat er meer dan één, dan komt er een keuze boven de
+   * speler. Blijft dit leeg, dan spelen bron, poster en ondertitels hierboven.
+   */
+  versies?: FilmVersie[];
   testid: string;
 };
 
@@ -55,6 +72,22 @@ export type TrajectInhoud = {
 
 export default function TrajectPagina({ inhoud }: { inhoud: TrajectInhoud }) {
   const { cluster } = inhoud;
+  // Welke taalversie van de film speelt. De eerste versie is de standaard.
+  const [versie, zetVersie] = useState(0);
+  const versies: FilmVersie[] = inhoud.film
+    ? inhoud.film.versies && inhoud.film.versies.length > 0
+      ? inhoud.film.versies
+      : [
+          {
+            taal: "nl",
+            label: "Nederlands",
+            bron: inhoud.film.bron,
+            poster: inhoud.film.poster,
+            ondertitels: inhoud.film.ondertitels,
+          },
+        ]
+    : [];
+  const nu = versies[Math.min(versie, Math.max(0, versies.length - 1))];
   return (
     <div className="publiek" data-testid={inhoud.testid}>
       <PubliekeKop nu="Oplossingen" />
@@ -94,20 +127,38 @@ export default function TrajectPagina({ inhoud }: { inhoud: TrajectInhoud }) {
               <h2>{inhoud.film.kop}</h2>
               <p>{inhoud.film.uitleg}</p>
             </div>
+            {versies.length > 1 && (
+              <div className="film-talen" role="group" aria-label="Taal van de film">
+                {versies.map((v, i) => (
+                  <button
+                    key={v.taal}
+                    type="button"
+                    className={i === versie ? "film-taal aan" : "film-taal"}
+                    aria-pressed={i === versie}
+                    data-testid={`film-taal-${v.taal}`}
+                    onClick={() => zetVersie(i)}
+                  >
+                    {v.label}
+                  </button>
+                ))}
+              </div>
+            )}
             <figure className="film">
+              {/* De sleutel laat de speler opnieuw laden bij een andere taal. */}
               <video
+                key={nu.bron}
                 controls
                 playsInline
                 preload="none"
-                poster={inhoud.film.poster}
+                poster={nu.poster}
                 data-testid={inhoud.film.testid}
               >
-                <source src={inhoud.film.bron} type="video/mp4" />
+                <source src={nu.bron} type="video/mp4" />
                 <track
                   kind="subtitles"
-                  srcLang="nl"
-                  label="Nederlands"
-                  src={inhoud.film.ondertitels}
+                  srcLang={nu.taal}
+                  label={nu.label}
+                  src={nu.ondertitels}
                 />
                 Uw browser kan deze film niet spelen. Het verloop van het traject staat hieronder in
                 tekst.
