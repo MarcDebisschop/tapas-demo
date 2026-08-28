@@ -9,7 +9,13 @@
 // ===========================================================================
 
 import TrajectPagina, { type TrajectInhoud } from "@/components/TrajectPagina";
-import { CLUSTERS, LTE_STAPPEN, LTE_UITKOMST, OUTPUTSTAPEL } from "@/data/oplossingen";
+import {
+  AANSLUITING_RECRUITMENT,
+  CLUSTERS,
+  LTE_STAPPEN,
+  LTE_UITKOMST,
+  OUTPUTSTAPEL,
+} from "@/data/oplossingen";
 
 const cluster = CLUSTERS.find((c) => c.sleutel === "leiderschap")!;
 
@@ -29,6 +35,14 @@ const inhoud: TrajectInhoud = {
   ],
   prijsuitleg:
     "De afname per deelnemer, het ploegbeeld, de begeleide sessie en de herhaalmeting worden samen begroot. Organisaties die meerdere ploegen per jaar doorlopen, werken doorgaans met een jaarlicentie.",
+  // Soms volstaat begeleiding of een andere rolverdeling niet en vraagt de ploeg
+  // een bewuste instroombeslissing. Eerst begrijpen hoe deze ploeg werkt, daarna
+  // bepalen welk type persoon haar versterkt.
+  aansluiting: {
+    tekst: AANSLUITING_RECRUITMENT.leiderschap,
+    pad: "/oplossingen/recruitment-role-fit",
+    linktekst: "Bekijk Recruitment & Role Fit",
+  },
   film: {
     bovenschrift: "Het traject in beeld",
     kop: "Ruim een minuut over Leadership & Team Energy",

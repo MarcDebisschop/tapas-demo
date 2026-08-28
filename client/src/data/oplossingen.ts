@@ -145,6 +145,65 @@ export const CLUSTERS: Cluster[] = [
 /** De twee journeys van de internationale eerste fase. */
 export const WEDGE_CLUSTERS: Cluster[] = CLUSTERS.filter((c) => c.wedge);
 
+/**
+ * Recruitment is de vierde publieke journey, maar het is geen losse hoek van het
+ * platform. Het is een beslismoment in dezelfde talentcyclus, en dat moet in de
+ * begeleidende tekst van de andere journeys te zien zijn zonder dat die hun
+ * eigen kern verliezen. Deze regels zijn woordelijk de aanbevolen formules uit
+ * het integratiedossier, één per journey.
+ */
+export const AANSLUITING_RECRUITMENT: Record<string, string> = {
+  hdd:
+    "Als het huidige team onvoldoende draagkracht of complementariteit toont, ondersteunt Tapas CORE ook de gerichte zoektocht naar externe versterking vanuit hetzelfde mensbeeld.",
+  leiderschap:
+    "Wanneer een ploeg versterking vraagt, maakt Tapas CORE niet alleen zichtbaar waar leiderschapsaandacht nodig is, maar ook welk type instroom het team waarschijnlijk sterker maakt.",
+  ontwikkeling:
+    "Tapas CORE ondersteunt niet alleen de keuze voor interne ontwikkeling of mobiliteit, maar scherpt ook het onderscheid aan tussen wat best intern groeit en wat best extern wordt aangetrokken.",
+};
+
+/** Eén beslismoment in de talentcyclus, met zijn verhouding tot instroom. */
+export type Beslismoment = {
+  sleutel: string;
+  naam: string;
+  /** De centrale vraag van deze journey. */
+  vraag: string;
+  /** Hoe deze journey zich verhoudt tot de instroombeslissing. */
+  relatie: string;
+  pad: string | null;
+};
+
+/**
+ * De vier journeys als verschillende beslismomenten op één motor, en niet als
+ * losse instrumenten. De vraag komt uit het cluster zelf, zodat er nergens twee
+ * formuleringen van dezelfde beslissing kunnen ontstaan.
+ */
+export const BESLISMOMENTEN: Beslismoment[] = [
+  {
+    sleutel: "hdd",
+    relatie:
+      "Kan het team de ambitie niet dragen, dan helpt instroom bepalen welke externe versterking werkelijk ontbreekt.",
+  },
+  {
+    sleutel: "leiderschap",
+    relatie:
+      "Instroom helpt bepalen welk profiel of welk leiderschapsaccent de ploeg versterkt.",
+  },
+  {
+    sleutel: "ontwikkeling",
+    relatie:
+      "Instroom scherpt de grens aan tussen wat best intern groeit en wat best extern wordt aangetrokken.",
+  },
+  {
+    sleutel: "recruitment",
+    relatie:
+      "Deze journey maakt de instroombeslissing zelf sterker, vanuit dezelfde motor als de andere drie.",
+  },
+].map((r) => {
+  const c = CLUSTERS.find((x) => x.sleutel === r.sleutel);
+  if (!c) throw new Error(`Onbekend cluster in BESLISMOMENTEN: ${r.sleutel}`);
+  return { ...r, naam: c.naam, vraag: c.beslissing, pad: c.pad };
+});
+
 /** Eén laag uit de outputstapel, benoemd naar de lezer. */
 export type OutputLaag = {
   nummer: number;

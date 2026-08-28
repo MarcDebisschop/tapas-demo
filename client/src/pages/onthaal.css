@@ -295,6 +295,16 @@ html.dark .onthaal{--primary:#5EAEBA; --primary-dp:#8ACAD3;      /* 188 40% 55% 
 .onthaal .wkaart .wn{font-family:var(--serif);font-size:17.5px;font-weight:600;color:var(--fg);line-height:1.2}
 .onthaal .wkaart .wo{font-size:13.5px;color:var(--muted);line-height:1.5}
 .onthaal .ingangen{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
+/* Vier ingangen naast elkaar: iets minder ruimte binnen de kaart, zodat de
+   tekst per kaart evenveel plaats houdt als bij drie. Onder 1180 pixels valt de
+   rij op twee kaarten terug, en onder 980 op één. */
+.onthaal .ingangen.vier{grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+.onthaal .ingangen.vier .ing{padding:26px 22px 24px}
+.onthaal .ingangen.vier .ing .vraag{font-size:16px;margin-bottom:14px;padding-bottom:14px}
+.onthaal .ingangen.vier .ing h3{font-size:18.5px}
+@media(max-width:1180px){
+  .onthaal .ingangen.vier{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
 .onthaal .ing{display:flex;flex-direction:column;background:var(--bg);border:1px solid var(--line);
   border-radius:9px;padding:30px 28px 26px;text-decoration:none;transition:border-color .18s,box-shadow .18s}
 .onthaal .ing:hover{border-color:var(--accent);box-shadow:0 1px 0 var(--accent)}
@@ -331,7 +341,7 @@ html.dark .onthaal{--primary:#5EAEBA; --primary-dp:#8ACAD3;      /* 188 40% 55% 
   .onthaal .navknop{font-size:13.5px;padding:8px 9px}
 }
 @media(max-width:980px){
-  .onthaal .ingangen{grid-template-columns:1fr}
+  .onthaal .ingangen,.onthaal .ingangen.vier{grid-template-columns:1fr}
   .onthaal .stapelband{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(max-width:620px){

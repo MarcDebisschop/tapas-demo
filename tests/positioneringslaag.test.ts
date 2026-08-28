@@ -303,8 +303,8 @@ describe("D. De onthaalpagina is beslisgericht", () => {
     expect(iBreedte).toBeLessThan(iNamen);
   });
 
-  it("de drie zakelijke ingangen staan boven de breedte", () => {
-    for (const sleutel of ["hdd", "leiderschap", "ontwikkeling"]) {
+  it("de vier zakelijke ingangen staan boven de breedte", () => {
+    for (const sleutel of ["hdd", "leiderschap", "recruitment", "ontwikkeling"]) {
       expect(onthaal).toContain(sleutel);
     }
     expect(onthaal).toContain("Welke beslissing ligt bij u op tafel?");

@@ -256,19 +256,22 @@ export default function Onthaal() {
         </div>
       </div>
 
-      {/* 2. DRIE ZAKELIJKE INGANGEN */}
+      {/* 2. VIER ZAKELIJKE INGANGEN */}
+      {/* Aanwerven hoort hier bij. Het is het beslismoment dat organisaties het
+          vaakst nemen, en de vierde journey draait op dezelfde motor. */}
       <section id="ingangen">
         <div className="wrap">
           <div className="sec-kop">
             <p className="eyebrow">Zakelijke ingangen</p>
             <h2>Welke beslissing ligt bij u op tafel?</h2>
             <p>
-              Tapas CORE vertrekt van de beslissing en niet van een vragenlijst. Drie ingangen
-              dekken het grootste deel van de vragen die organisaties ons stellen.
+              Tapas CORE vertrekt van de beslissing en niet van een vragenlijst. Vier ingangen
+              dekken het grootste deel van de vragen die organisaties ons stellen. Het zijn geen
+              losse instrumenten maar vier beslismomenten op dezelfde motor.
             </p>
           </div>
-          <div className="ingangen">
-            {["hdd", "leiderschap", "ontwikkeling"].map((sleutel) => {
+          <div className="ingangen vier">
+            {["hdd", "leiderschap", "recruitment", "ontwikkeling"].map((sleutel) => {
               const c = CLUSTERS.find((x) => x.sleutel === sleutel);
               if (!c) return null;
               return (

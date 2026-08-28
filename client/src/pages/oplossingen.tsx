@@ -3,8 +3,12 @@
 //
 // Deze pagina ordent het bestaande aanbod in vijf clusters, geordend naar de
 // beslissing die ze ondersteunen. De twee clusters van de eerste
-// internationale fase staan vooraan en hebben een eigen pagina. De andere drie
-// blijven hier staan en verwijzen naar de bestaande schermen.
+// internationale fase staan vooraan en hebben een eigen pagina.
+//
+// Recruitment & Role Fit is de vierde publieke journey en staat daarom in een
+// eigen band, meteen onder de eerste lijn, met de vier beslismomenten erbij. Het
+// hoort niet tussen de clusters zonder eigen pagina: daar was het niet te
+// vinden. De wedge blijft wel zichtbaar de eerste lijn.
 //
 // De instrumentenlijst zelf blijft bestaan op /instrumenten. Ze is de tweede
 // laag: eerst de beslissing, dan het instrument.
@@ -13,12 +17,14 @@
 import { Link } from "wouter";
 import PubliekeKop from "@/components/PubliekeKop";
 import PubliekeVoet from "@/components/PubliekeVoet";
-import { CLUSTERS } from "@/data/oplossingen";
+import { AANSLUITING_RECRUITMENT, BESLISMOMENTEN, CLUSTERS } from "@/data/oplossingen";
 import "./publiek.css";
 
 export default function Oplossingen() {
   const wedge = CLUSTERS.filter((c) => c.wedge);
-  const rest = CLUSTERS.filter((c) => !c.wedge);
+  const vierde = CLUSTERS.find((c) => c.sleutel === "recruitment");
+  // De clusters zonder eigen trajectpagina. Recruitment staat hierboven.
+  const rest = CLUSTERS.filter((c) => !c.wedge && c.sleutel !== "recruitment");
 
   return (
     <div className="publiek" data-testid="oplossingenpagina">
@@ -65,7 +71,63 @@ export default function Oplossingen() {
         </div>
       </section>
 
-      <section className="grijs">
+      {vierde && (
+        <section className="grijs">
+          <div className="wrap">
+            <div className="sec-kop">
+              <p className="eyebrow">Vierde journey</p>
+              <h2>De instroombeslissing, op dezelfde motor</h2>
+              <p>
+                Aanwerven is het beslismoment dat organisaties het vaakst nemen. Het loopt hier op
+                dezelfde onderbouwing als de trajecten hierboven, met een eigen doorlooptijd en een
+                eigen prijs per kandidaat.
+              </p>
+            </div>
+            <div className="rooster-2">
+              <Link href={vierde.pad as string} className="kaart" data-testid="kaart-vierde-journey">
+                <p className="tag wedge">Traject</p>
+                <h3>{vierde.naam}</h3>
+                <p>{vierde.ondertitel}</p>
+                <p className="beslissing">{vierde.beslissing}</p>
+                <div className="meta">
+                  <b>Voor wie</b>
+                  {vierde.doelgroep}
+                </div>
+                <p className="verder">Bekijk het traject</p>
+              </Link>
+              <div className="kaart">
+                <p className="tag">Onder de journey</p>
+                <h3>T4Recruitment</h3>
+                <p>
+                  De journey draait op T4Recruitment, samen met het T4P Business Kompas. Eerst wordt
+                  de rol scherpgesteld met de mensen rond de functie, daarna wordt het
+                  kandidaatprofiel daartegen gelegd.
+                </p>
+                <div className="meta">
+                  <b>Prijsindicatie</b>
+                  {vierde.prijssignaal}
+                </div>
+                <p className="verder">Ruim een minuut film op de trajectpagina</p>
+              </div>
+            </div>
+
+            {/* De vier journeys als beslismomenten op één motor, en niet als
+                losse instrumenten. Elke regel benoemt ook hoe die journey zich
+                tot de instroombeslissing verhoudt. */}
+            <div className="markeringen" data-testid="beslismomenten">
+              {BESLISMOMENTEN.map((b) => (
+                <div className="mk" key={b.sleutel}>
+                  <p className="l">{b.naam}</p>
+                  <p className="w">{b.vraag}</p>
+                  <p className="u">{b.relatie}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      <section>
         <div className="wrap">
           <div className="sec-kop">
             <p className="eyebrow">Verdere clusters</p>
@@ -75,7 +137,7 @@ export default function Oplossingen() {
               organisaties en bij coaches, met de instrumenten die daarvoor gebouwd zijn.
             </p>
           </div>
-          <div className="rooster-3">
+          <div className="rooster-2">
             {rest.map((c) => {
               // Een cluster met een eigen trajectpagina wordt een kaart waarop
               // geklikt kan worden. De andere blijven staan zoals ze stonden.
@@ -90,6 +152,13 @@ export default function Oplossingen() {
                     {c.instrumenten.join(", ")}
                   </div>
                   {c.pad ? <p className="verder">Bekijk het traject</p> : null}
+                  {/* Development & Mobility heeft geen eigen trajectpagina. De
+                      brug naar de instroombeslissing hoort dus hier. */}
+                  {AANSLUITING_RECRUITMENT[c.sleutel] ? (
+                    <p className="aansluiting" data-testid={`aansluiting-${c.sleutel}`}>
+                      {AANSLUITING_RECRUITMENT[c.sleutel]}
+                    </p>
+                  ) : null}
                 </>
               );
               return c.pad ? (
@@ -106,7 +175,7 @@ export default function Oplossingen() {
         </div>
       </section>
 
-      <section>
+      <section className="grijs">
         <div className="wrap">
           <div className="sec-kop">
             <p className="eyebrow">Tweede laag</p>

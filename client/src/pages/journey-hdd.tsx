@@ -8,7 +8,13 @@
 // ===========================================================================
 
 import TrajectPagina, { type TrajectInhoud } from "@/components/TrajectPagina";
-import { CLUSTERS, HDD_OUTPUTS, HDD_STAPPEN, HDD_UITKOMST } from "@/data/oplossingen";
+import {
+  AANSLUITING_RECRUITMENT,
+  CLUSTERS,
+  HDD_OUTPUTS,
+  HDD_STAPPEN,
+  HDD_UITKOMST,
+} from "@/data/oplossingen";
 
 const cluster = CLUSTERS.find((c) => c.sleutel === "hdd")!;
 
@@ -32,6 +38,14 @@ const inhoud: TrajectInhoud = {
   ],
   prijsuitleg:
     "Het tarief bevat de intake, de afname van alle deelnemers, het Go of No-Go-moment, de synthese, de oplevering van de twee rapporten en de mondelinge toelichting. De omvang van de ploeg bepaalt in welke schijf een dossier valt. De rapporten van dit traject zijn in het Engels opgesteld.",
+  // Human Due Diligence maakt zichtbaar of het huidige team de ambitie kan
+  // waarmaken. Blijkt dat niet zo, dan volgt de vraag naar externe instroom.
+  // Die brug hoort erbij, maar mag het traject niet overnemen.
+  aansluiting: {
+    tekst: AANSLUITING_RECRUITMENT.hdd,
+    pad: "/oplossingen/recruitment-role-fit",
+    linktekst: "Bekijk Recruitment & Role Fit",
+  },
   // De film hoort op deze pagina en niet op de onthaalpagina: ze legt precies
   // dit traject uit, in de stem van het platform, met ondertitels als spoor.
   film: {

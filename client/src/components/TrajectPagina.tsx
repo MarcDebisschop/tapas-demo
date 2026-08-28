@@ -67,6 +67,11 @@ export type TrajectInhoud = {
   prijsuitleg: string;
   /** De film over het traject. Staat er geen, dan blijft het blok weg. */
   film?: TrajectFilm;
+  /**
+   * De brug naar een aangrenzend beslismoment: één zin plus een verwijzing.
+   * Blijft dit leeg, dan komt er geen brugregel op de pagina.
+   */
+  aansluiting?: { tekst: string; pad: string; linktekst: string };
   testid: string;
 };
 
@@ -255,6 +260,15 @@ export default function TrajectPagina({ inhoud }: { inhoud: TrajectInhoud }) {
               <li key={u}>{u}</li>
             ))}
           </ul>
+          {/* De brug naar het aangrenzende beslismoment. Bewust één zin en
+              bewust hier: het traject is dan al helemaal uitgelegd, dus de
+              eigen kern van de pagina blijft overeind. */}
+          {inhoud.aansluiting && (
+            <p className="aansluiting" data-testid="aansluiting">
+              {inhoud.aansluiting.tekst}{" "}
+              <Link href={inhoud.aansluiting.pad}>{inhoud.aansluiting.linktekst}</Link>
+            </p>
+          )}
           <div className="prijs">
             <p className="pk">Prijsindicatie</p>
             <p>{cluster.prijssignaal}</p>
