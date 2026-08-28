@@ -5,14 +5,24 @@
 // Oplossingen, Outputs, Voor partners, Aanmelden. De rolgebonden ingangen
 // blijven bestaan achter "Aanmelden", als operationele laag.
 //
-// De onthaalpagina houdt haar eigen kopbalk, met dezelfde opschriften uit
-// HOOFDNAVIGATIE. Zo blijft die pagina op zichzelf staan en blijft de
+// TWEETALIG
+// De kopbalk staat in de taal van de publieke laag, met Engels als standaard.
+// De opschriften komen uit hoofdnavigatie(taal), de eigen teksten uit
+// publiek/teksten-paginas.ts, en de schakelaar staat rechts, naast de
+// thema-knop. Omdat het label met de taal wisselt, wordt de actieve stand op
+// het pad vergeleken en niet op het label: pagina's geven daarom hun pad door
+// in "nu".
+//
+// De onthaalpagina houdt haar eigen kopbalk, met dezelfde opschriften uit de
+// hoofdnavigatie. Zo blijft die pagina op zichzelf staan en blijft de
 // navigatie toch op één plaats vastgelegd.
 // ===========================================================================
 
 import { Link } from "wouter";
 import { useTheme } from "@/components/ThemeProvider";
-import { HOOFDNAVIGATIE } from "@/data/oplossingen";
+import { hoofdnavigatie } from "@/publiek/inhoud";
+import { kies, TaalKeuze, usePubliekeTaal } from "@/publiek/taal";
+import { T } from "@/publiek/teksten-paginas";
 import { onthoudBlok } from "@/lib/naar-blok";
 
 /** Het kompasteken naast de merknaam, gelijk aan dat op de onthaalpagina. */
@@ -29,8 +39,10 @@ export function Kompasteken({ maat = 30 }: { maat?: number }) {
   );
 }
 
+/** De kopbalk. In "nu" staat het pad van de pagina waarop de bezoeker staat. */
 export default function PubliekeKop({ nu }: { nu?: string }) {
   const { theme, toggle } = useTheme();
+  const { taal } = usePubliekeTaal();
   return (
     <header className="bar" data-testid="publieke-kop">
       <div className="wrap">
@@ -38,15 +50,15 @@ export default function PubliekeKop({ nu }: { nu?: string }) {
           <Kompasteken maat={30} />
           <span>
             <span className="naam">Tapas CORE</span>
-            <span className="onder">de beslislaag voor talentbeslissingen</span>
+            <span className="onder">{kies(T.kop.merkonder, taal)}</span>
           </span>
         </Link>
         <nav className="hoofdnav" aria-label="Hoofdnavigatie">
-          {HOOFDNAVIGATIE.map((item) => (
+          {hoofdnavigatie(taal).map((item) => (
             <Link
-              key={item.label}
+              key={item.pad}
               href={item.pad}
-              className={nu === item.label ? "nu" : undefined}
+              className={nu === item.pad ? "nu" : undefined}
               onClick={() => {
                 if (item.pad === "/" && item.sectie) onthoudBlok(item.sectie);
               }}
@@ -55,16 +67,19 @@ export default function PubliekeKop({ nu }: { nu?: string }) {
             </Link>
           ))}
         </nav>
+        <TaalKeuze />
         <button
           type="button"
           className="knop knop-2"
           onClick={toggle}
           data-testid="publiek-thema"
           aria-label={
-            theme === "dark" ? "Wissel naar de lichte weergave" : "Wissel naar de donkere weergave"
+            theme === "dark"
+              ? kies(T.kop.naarLicht, taal)
+              : kies(T.kop.naarDonker, taal)
           }
         >
-          {theme === "dark" ? "Licht" : "Donker"}
+          {theme === "dark" ? kies(T.kop.licht, taal) : kies(T.kop.donker, taal)}
         </button>
         <Link
           href="/"
@@ -72,7 +87,7 @@ export default function PubliekeKop({ nu }: { nu?: string }) {
           data-testid="publiek-kennismaking"
           onClick={() => onthoudBlok("contact")}
         >
-          Plan een kennismaking
+          {kies(T.kop.kennismaking, taal)}
         </Link>
       </div>
     </header>

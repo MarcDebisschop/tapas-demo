@@ -12,59 +12,66 @@
 //
 // De instrumentenlijst zelf blijft bestaan op /instrumenten. Ze is de tweede
 // laag: eerst de beslissing, dan het instrument.
+//
+// TWEETALIG
+// De pagina is tweetalig, met Engels als standaard. De clusters, de
+// beslismomenten en de brugregels komen per taal uit publiek/inhoud.ts; de
+// eigen koppen en opschriften uit publiek/teksten-paginas.ts. De sleutels en
+// de paden zijn machinewaarden en blijven in beide talen gelijk.
 // ===========================================================================
 
 import { Link } from "wouter";
 import PubliekeKop from "@/components/PubliekeKop";
 import PubliekeVoet from "@/components/PubliekeVoet";
-import { AANSLUITING_RECRUITMENT, BESLISMOMENTEN, CLUSTERS } from "@/data/oplossingen";
+import {
+  aansluitingRecruitment,
+  beslismomenten,
+  clusters,
+} from "@/publiek/inhoud";
+import { kies, usePubliekeTaal } from "@/publiek/taal";
+import { T } from "@/publiek/teksten-paginas";
 import "./publiek.css";
 
 export default function Oplossingen() {
-  const wedge = CLUSTERS.filter((c) => c.wedge);
-  const vierde = CLUSTERS.find((c) => c.sleutel === "recruitment");
+  const { taal } = usePubliekeTaal();
+  const alle = clusters(taal);
+  const aansluiting = aansluitingRecruitment(taal);
+  const wedge = alle.filter((c) => c.wedge);
+  const vierde = alle.find((c) => c.sleutel === "recruitment");
   // De clusters zonder eigen trajectpagina. Recruitment staat hierboven.
-  const rest = CLUSTERS.filter((c) => !c.wedge && c.sleutel !== "recruitment");
+  const rest = alle.filter((c) => !c.wedge && c.sleutel !== "recruitment");
 
   return (
-    <div className="publiek" data-testid="oplossingenpagina">
-      <PubliekeKop nu="Oplossingen" />
+    <div className="publiek" lang={taal} data-testid="oplossingenpagina">
+      <PubliekeKop nu="/oplossingen" />
 
       <div className="kop-blok">
         <div className="wrap">
-          <p className="eyebrow">Oplossingen</p>
-          <h1>Vijf beslissingen, vijf trajecten</h1>
-          <p className="lead">
-            Tapas CORE begint niet bij een instrument maar bij een beslissing. Elk cluster hieronder
-            bundelt de stappen, de begeleiding en de rapporten die bij één type beslissing horen. De
-            instrumenten blijven wat ze zijn, de ordening maakt duidelijk waarvoor u ze inzet.
-          </p>
+          <p className="eyebrow">{kies(T.oplossingen.eyebrow, taal)}</p>
+          <h1>{kies(T.oplossingen.titel, taal)}</h1>
+          <p className="lead">{kies(T.oplossingen.lead, taal)}</p>
         </div>
       </div>
 
       <section>
         <div className="wrap">
           <div className="sec-kop">
-            <p className="eyebrow">Eerste lijn</p>
-            <h2>De twee trajecten waarmee wij internationaal starten</h2>
-            <p>
-              Beide raken een beslissing met gevolgen: een dossier dat op tafel ligt en een ploeg
-              die moet leveren. Ze zijn opgebouwd als traject, met een vaste reeks stappen en een
-              bestuursklare oplevering.
-            </p>
+            <p className="eyebrow">{kies(T.oplossingen.eersteEyebrow, taal)}</p>
+            <h2>{kies(T.oplossingen.eersteKop, taal)}</h2>
+            <p>{kies(T.oplossingen.eersteUitleg, taal)}</p>
           </div>
           <div className="rooster-2">
             {wedge.map((c) => (
               <Link key={c.sleutel} href={c.pad as string} className="kaart">
-                <p className="tag wedge">Traject</p>
+                <p className="tag wedge">{kies(T.oplossingen.tagTraject, taal)}</p>
                 <h3>{c.naam}</h3>
                 <p>{c.ondertitel}</p>
                 <p className="beslissing">{c.beslissing}</p>
                 <div className="meta">
-                  <b>Voor wie</b>
+                  <b>{kies(T.oplossingen.metaVoorWie, taal)}</b>
                   {c.doelgroep}
                 </div>
-                <p className="verder">Bekijk het traject</p>
+                <p className="verder">{kies(T.oplossingen.verder, taal)}</p>
               </Link>
             ))}
           </div>
@@ -75,39 +82,31 @@ export default function Oplossingen() {
         <section className="grijs">
           <div className="wrap">
             <div className="sec-kop">
-              <p className="eyebrow">Vierde journey</p>
-              <h2>De instroombeslissing, op dezelfde motor</h2>
-              <p>
-                Aanwerven is het beslismoment dat organisaties het vaakst nemen. Het loopt hier op
-                dezelfde onderbouwing als de trajecten hierboven, met een eigen doorlooptijd en een
-                eigen prijs per kandidaat.
-              </p>
+              <p className="eyebrow">{kies(T.oplossingen.vierdeEyebrow, taal)}</p>
+              <h2>{kies(T.oplossingen.vierdeKop, taal)}</h2>
+              <p>{kies(T.oplossingen.vierdeUitleg, taal)}</p>
             </div>
             <div className="rooster-2">
               <Link href={vierde.pad as string} className="kaart" data-testid="kaart-vierde-journey">
-                <p className="tag wedge">Traject</p>
+                <p className="tag wedge">{kies(T.oplossingen.tagTraject, taal)}</p>
                 <h3>{vierde.naam}</h3>
                 <p>{vierde.ondertitel}</p>
                 <p className="beslissing">{vierde.beslissing}</p>
                 <div className="meta">
-                  <b>Voor wie</b>
+                  <b>{kies(T.oplossingen.metaVoorWie, taal)}</b>
                   {vierde.doelgroep}
                 </div>
-                <p className="verder">Bekijk het traject</p>
+                <p className="verder">{kies(T.oplossingen.verder, taal)}</p>
               </Link>
               <div className="kaart">
-                <p className="tag">Onder de journey</p>
+                <p className="tag">{kies(T.oplossingen.onderJourney, taal)}</p>
                 <h3>T4Recruitment</h3>
-                <p>
-                  De journey draait op T4Recruitment, samen met het T4P Business Kompas. Eerst wordt
-                  de rol scherpgesteld met de mensen rond de functie, daarna wordt het
-                  kandidaatprofiel daartegen gelegd.
-                </p>
+                <p>{kies(T.oplossingen.onderJourneyTekst, taal)}</p>
                 <div className="meta">
-                  <b>Prijsindicatie</b>
+                  <b>{kies(T.oplossingen.metaPrijs, taal)}</b>
                   {vierde.prijssignaal}
                 </div>
-                <p className="verder">Ruim een minuut film op de trajectpagina</p>
+                <p className="verder">{kies(T.oplossingen.filmVerder, taal)}</p>
               </div>
             </div>
 
@@ -115,7 +114,7 @@ export default function Oplossingen() {
                 losse instrumenten. Elke regel benoemt ook hoe die journey zich
                 tot de instroombeslissing verhoudt. */}
             <div className="markeringen" data-testid="beslismomenten">
-              {BESLISMOMENTEN.map((b) => (
+              {beslismomenten(taal).map((b) => (
                 <div className="mk" key={b.sleutel}>
                   <p className="l">{b.naam}</p>
                   <p className="w">{b.vraag}</p>
@@ -130,12 +129,9 @@ export default function Oplossingen() {
       <section>
         <div className="wrap">
           <div className="sec-kop">
-            <p className="eyebrow">Verdere clusters</p>
-            <h2>Wat het platform verder ondersteunt</h2>
-            <p>
-              Dezelfde motor, andere beslissing. Deze clusters lopen vandaag al in scholen,
-              organisaties en bij coaches, met de instrumenten die daarvoor gebouwd zijn.
-            </p>
+            <p className="eyebrow">{kies(T.oplossingen.restEyebrow, taal)}</p>
+            <h2>{kies(T.oplossingen.restKop, taal)}</h2>
+            <p>{kies(T.oplossingen.restUitleg, taal)}</p>
           </div>
           <div className="rooster-2">
             {rest.map((c) => {
@@ -143,20 +139,22 @@ export default function Oplossingen() {
               // geklikt kan worden. De andere blijven staan zoals ze stonden.
               const kern = (
                 <>
-                  <p className="tag">Cluster</p>
+                  <p className="tag">{kies(T.oplossingen.tagCluster, taal)}</p>
                   <h3>{c.naam}</h3>
                   <p>{c.ondertitel}</p>
                   <p className="beslissing">{c.beslissing}</p>
                   <div className="meta">
-                    <b>Instrumenten</b>
+                    <b>{kies(T.oplossingen.metaInstrumenten, taal)}</b>
                     {c.instrumenten.join(", ")}
                   </div>
-                  {c.pad ? <p className="verder">Bekijk het traject</p> : null}
+                  {c.pad ? (
+                    <p className="verder">{kies(T.oplossingen.verder, taal)}</p>
+                  ) : null}
                   {/* Development & Mobility heeft geen eigen trajectpagina. De
                       brug naar de instroombeslissing hoort dus hier. */}
-                  {AANSLUITING_RECRUITMENT[c.sleutel] ? (
+                  {aansluiting[c.sleutel] ? (
                     <p className="aansluiting" data-testid={`aansluiting-${c.sleutel}`}>
-                      {AANSLUITING_RECRUITMENT[c.sleutel]}
+                      {aansluiting[c.sleutel]}
                     </p>
                   ) : null}
                 </>
@@ -178,24 +176,20 @@ export default function Oplossingen() {
       <section className="grijs">
         <div className="wrap">
           <div className="sec-kop">
-            <p className="eyebrow">Tweede laag</p>
-            <h2>De instrumenten zelf</h2>
-            <p>
-              Zestien instrumenten, vijf talen, van een korte energiescan tot een volledig kompas.
-              Wie liever vertrekt van het instrument, vindt de volledige lijst met bereik,
-              doorlooptijd en rapportvorm.
-            </p>
+            <p className="eyebrow">{kies(T.oplossingen.tweedeEyebrow, taal)}</p>
+            <h2>{kies(T.oplossingen.tweedeKop, taal)}</h2>
+            <p>{kies(T.oplossingen.tweedeUitleg, taal)}</p>
           </div>
           <div className="kop-blok" style={{ padding: 0 }}>
             <div className="acties" style={{ marginTop: 0 }}>
               <Link href="/instrumenten" className="knop knop-3">
-                Naar het instrumentenoverzicht
+                {kies(T.oplossingen.naarInstrumenten, taal)}
               </Link>
               <Link href="/outputs" className="knop knop-2">
-                Bekijk wat u krijgt
+                {kies(T.oplossingen.naarOutputs, taal)}
               </Link>
               <Link href="/demo" className="knop knop-2">
-                Bekijk de demo-omgeving
+                {kies(T.oplossingen.naarDemo, taal)}
               </Link>
             </div>
           </div>

@@ -148,8 +148,10 @@ describe("D. De journey Recruitment & Role Fit staat volledig in het platform", 
   });
 
   it("de pagina belooft geen selectiebeslissing en geen voorspelling", () => {
-    expect(paginaRecruitment).toContain("Geen automatische selectie");
-    expect(paginaRecruitment).toContain("geen voorspelling van toekomstige prestaties");
+    // De grens staat in de tweetalige catalogus, de pagina haalt ze per taal op.
+    const tekstenPaginas = readFileSync(pad("client/src/publiek/teksten-paginas.ts"), "utf8");
+    expect(tekstenPaginas).toContain("Geen automatische selectie");
+    expect(tekstenPaginas).toContain("geen voorspelling van toekomstige prestaties");
     expect(paginaRecruitment).not.toContain("de juiste persoon meteen");
   });
 });

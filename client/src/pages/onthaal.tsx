@@ -5,6 +5,20 @@
 // platform nog niet kent. Ze legt uit wat het is, waar het ophoudt, wat het
 // kost en welke deur bij welke bezoeker hoort.
 //
+// TWEETALIG, MET ENGELS ALS STANDAARD
+// De pagina is de voordeur van een internationaal aanbod. Wie hier voor het
+// eerst binnenkomt, leest daarom Engels; Nederlands blijft volwaardig en staat
+// één knop ver, via de TaalKeuze in de kopbalk (publiek/taal.tsx). De pagina
+// draagt zelf geen zichtbare tekst meer: de koppels staan in
+// publiek/teksten-onthaal.ts en de gedeelde lijsten komen per taal uit
+// publiek/inhoud.ts. Zo staat elke tekst één keer, in beide talen.
+//
+// DE CATEGORIECLAIM
+// Bovenaan de kop staat de categorieclaim uit het strategisch dossier. Ze is
+// het grootste element van de pagina en blijft in BEIDE talen in het Engels:
+// het is een merkregel, geen lopende tekst. De bestaande belofte staat eronder
+// als leesregel en wisselt wél met de taal.
+//
 // WAT DIT BESTAND NIET DOET
 // Het raakt de bestaande startpagina (pages/home.tsx) niet aan. Die blijft de
 // voordeur van het volledige belevingsplatform, met de rondleiding, de tegels
@@ -22,23 +36,57 @@
 // naarSectie(), die het blok in beeld schuift.
 // ===========================================================================
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "wouter";
 import { useTheme } from "@/components/ThemeProvider";
 import "./onthaal.css";
 import { vraagOpnieuwAanmeldenNu } from "@/lib/opnieuw-aanmelden";
-import { CLUSTERS, HOOFDNAVIGATIE, OUTPUTSTAPEL } from "@/data/oplossingen";
+import { clusters, hoofdnavigatie, outputstapel } from "@/publiek/inhoud";
+import { kies, TaalKeuze, usePubliekeTaal } from "@/publiek/taal";
+import {
+  CATEGORIECLAIM,
+  CATEGORIECLAIM_ZAKELIJK,
+  T,
+} from "@/publiek/teksten-onthaal";
 import { neemBlokOp } from "@/lib/naar-blok";
 
-/** De keuzelijst in het formulier. Waarde en tekst blijven gelijk. */
+/**
+ * De keuzelijst in het formulier. Het opschrift wisselt met de taal, de WAARDE
+ * die naar de server gaat is altijd het Nederlandse lid: die blijft dus
+ * ongewijzigd, in welke taal de bezoeker de pagina ook leest.
+ */
 const ROLLEN = [
-  "Een particulier, voor mezelf",
-  "Een organisatie",
-  "Een school of onderwijsinstelling",
-  "Een sportclub of mental coach",
-  "Een coach of practitioner",
-  "Een deelnemer met een vraag",
+  T.rollen.particulier,
+  T.rollen.organisatie,
+  T.rollen.school,
+  T.rollen.sport,
+  T.rollen.coach,
+  T.rollen.deelnemer,
 ];
+
+/**
+ * Houdt woorden met een koppelteken op één regel.
+ *
+ * In een grote kop breekt een browser "passion-driven" bij het koppelteken af,
+ * en dan staat "passion-" alleen op het einde van een regel. Dat leest slecht,
+ * juist in de zin die het eerste is wat een bezoeker ziet. Deze functie geeft
+ * elk woord met een koppelteken mee als een stukje dat niet mag breken, zodat
+ * de regel ervoor afbreekt in plaats van middenin het woord. De tekst zelf
+ * blijft ongewijzigd: er komt geen ander teken in de plaats.
+ */
+function houdSamengesteldeWoordenSamen(tekst: string): ReactNode[] {
+  return tekst.split(" ").flatMap((woord, i) => {
+    const ruimte = i === 0 ? [] : [" "];
+    const stuk = woord.includes("-") ? (
+      <span key={`w${i}`} className="bijeen">
+        {woord}
+      </span>
+    ) : (
+      woord
+    );
+    return [...ruimte, stuk];
+  });
+}
 
 /** Schuift een blok van de pagina in beeld zonder de route te wijzigen. */
 function naarSectie(id: string): void {
@@ -61,9 +109,9 @@ function Kompasmerk({ maat }: { maat: number }) {
   );
 }
 
-function Kompasroos() {
+function Kompasroos({ label }: { label: string }) {
   return (
-    <svg className="kompas" viewBox="0 0 300 300" fill="none" aria-label="Kompasroos" role="img">
+    <svg className="kompas" viewBox="0 0 300 300" fill="none" aria-label={label} role="img">
       <circle cx="150" cy="150" r="140" stroke="var(--accent)" strokeWidth="1" opacity=".30" />
       <circle cx="150" cy="150" r="112" stroke="var(--accent)" strokeWidth="1" opacity=".22" />
       <circle cx="150" cy="150" r="74" stroke="var(--accent)" strokeWidth="1" opacity=".17" />
@@ -87,6 +135,7 @@ function Kompasroos() {
 
 export default function Onthaal() {
   const { theme, toggle } = useTheme();
+  const { taal } = usePubliekeTaal();
 
   // Een bezoeker die op een oplossingpagina op "Plan een kennismaking" klikt,
   // komt hier binnen met de wens om bij een bepaald blok uit te komen. De wens
@@ -101,7 +150,7 @@ export default function Onthaal() {
   const [naam, setNaam] = useState("");
   const [organisatie, setOrganisatie] = useState("");
   const [email, setEmail] = useState("");
-  const [rol, setRol] = useState(ROLLEN[0]);
+  const [rol, setRol] = useState(ROLLEN[0].nl);
   const [vraag, setVraag] = useState("");
   const [stand, setStand] = useState<Verzendstand>("rust");
   const [melding, setMelding] = useState("");
@@ -111,7 +160,7 @@ export default function Onthaal() {
     if (stand === "bezig") return;
     if (!naam.trim() || !email.trim()) {
       setStand("fout");
-      setMelding("Vul uw naam en uw e-mailadres in, dan kunnen wij antwoorden.");
+      setMelding(kies(T.contact.foutLeeg, taal));
       return;
     }
     setStand("bezig");
@@ -131,29 +180,24 @@ export default function Onthaal() {
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
       if (res.ok && data.ok) {
         setStand("gelukt");
-        setMelding("Uw vraag is aangekomen. U krijgt binnen twee werkdagen antwoord van een Tapas-medewerker.");
+        setMelding(kies(T.contact.gelukt, taal));
         setNaam("");
         setOrganisatie("");
         setEmail("");
         setVraag("");
-        setRol(ROLLEN[0]);
+        setRol(ROLLEN[0].nl);
         return;
       }
       setStand("fout");
-      setMelding(
-        data.error ??
-          "Het versturen lukte niet. Stuur uw vraag naar info@tapascity.com, dan komt ze zeker aan.",
-      );
+      setMelding(data.error ?? kies(T.contact.foutVersturen, taal));
     } catch {
       setStand("fout");
-      setMelding(
-        "Het versturen lukte niet. Stuur uw vraag naar info@tapascity.com, dan komt ze zeker aan.",
-      );
+      setMelding(kies(T.contact.foutVersturen, taal));
     }
   }
 
   return (
-    <div className="onthaal" data-testid="onthaalpagina">
+    <div className="onthaal" lang={taal} data-testid="onthaalpagina">
       <header className="bar">
         <div className="wrap">
           <a
@@ -167,14 +211,16 @@ export default function Onthaal() {
             <Kompasmerk maat={34} />
             <span>
               <span className="naam">Tapas CORE</span>
-              <span className="onder">de beslislaag voor talentbeslissingen</span>
+              <span className="onder">{kies(T.kop.merkOnder, taal)}</span>
             </span>
           </a>
-          <nav className="hoofdnav" aria-label="Hoofdnavigatie">
-            {HOOFDNAVIGATIE.map((item) =>
+          <nav className="hoofdnav" aria-label={kies(T.kop.navLabel, taal)}>
+            {/* Het label wisselt met de taal, dus de sleutel en elke vergelijking
+                van de actieve stand lopen over item.pad, een machinewaarde. */}
+            {hoofdnavigatie(taal).map((item) =>
               item.sectie ? (
                 <button
-                  key={item.label}
+                  key={item.pad}
                   type="button"
                   className="navknop"
                   onClick={() => naarSectie(item.sectie as string)}
@@ -182,22 +228,23 @@ export default function Onthaal() {
                   {item.label}
                 </button>
               ) : (
-                <Link key={item.label} href={item.pad} className="navknop">
+                <Link key={item.pad} href={item.pad} className="navknop">
                   {item.label}
                 </Link>
               ),
             )}
           </nav>
+          <TaalKeuze />
           <button
             className="knop knop-l"
             type="button"
             onClick={toggle}
             aria-label={
-              theme === "dark" ? "Wissel naar de lichte weergave" : "Wissel naar de donkere weergave"
+              theme === "dark" ? kies(T.kop.naarLicht, taal) : kies(T.kop.naarDonker, taal)
             }
             data-testid="onthaal-thema"
           >
-            {theme === "dark" ? "Licht" : "Donker"}
+            {theme === "dark" ? kies(T.kop.licht, taal) : kies(T.kop.donker, taal)}
           </button>
           <button
             className="knop knop-1"
@@ -205,7 +252,7 @@ export default function Onthaal() {
             onClick={() => naarSectie("contact")}
             data-testid="onthaal-kennismaking-kop"
           >
-            Plan een kennismaking
+            {kies(T.kop.kennismaking, taal)}
           </button>
         </div>
       </header>
@@ -215,42 +262,49 @@ export default function Onthaal() {
         <div className="wrap">
           <div className="hero-grid">
             <div>
-              <p className="eyebrow">De beslislaag voor talentbeslissingen</p>
-              <h1>
-                Tapas CORE helpt organisaties
+              {/* De categorieclaim: de positionering, bovenaan en het grootst.
+                  Ze blijft in beide talen Engels; de belofte eronder wisselt. */}
+              <div className="claimblok" data-testid="categorieclaim">
+                <p className="eyebrow">{kies(T.hero.eyebrow, taal)}</p>
+                <h1 className="claim">{houdSamengesteldeWoordenSamen(CATEGORIECLAIM)}</h1>
+                <p className="claim-zakelijk" data-testid="categorieclaim-zakelijk">
+                  {CATEGORIECLAIM_ZAKELIJK}
+                </p>
+              </div>
+              <p className="belofte">
+                {kies(T.hero.belofteKop, taal)}
                 <br />
-                <em>betere talentbeslissingen</em> nemen.
-              </h1>
-              <p className="toon">
-                Wie investeert, herstructureert of een ploeg samenstelt, beslist over mensen. Tapas
-                CORE brengt talent, drivers en energie in beeld op het niveau waarop die beslissing
-                valt, en levert rapporten die op een bestuurstafel kunnen liggen.
+                <em>{kies(T.hero.belofteKern, taal)}</em>
+                {kies(T.hero.belofteStaart, taal)}
               </p>
+              <p className="toon">{kies(T.hero.toon, taal)}</p>
               <div className="hero-acties">
                 <button className="knop knop-1" type="button" onClick={() => naarSectie("contact")}>
-                  Plan een kennismaking
+                  {kies(T.kop.kennismaking, taal)}
                 </button>
                 <Link className="knop knop-2" href="/oplossingen">
-                  Bekijk de oplossingen
+                  {kies(T.hero.naarOplossingen, taal)}
                 </Link>
                 <button className="knop knop-2" type="button" onClick={() => naarSectie("werking")}>
-                  Bekijk eerst hoe het werkt
+                  {kies(T.hero.naarWerking, taal)}
                 </button>
               </div>
               <div className="wedge">
-                <p className="wk">Waar wij het scherpst staan</p>
+                <p className="wk">{kies(T.hero.wedgeKop, taal)}</p>
                 <div className="wlijst">
-                  {CLUSTERS.filter((c) => c.wedge).map((c) => (
-                    <Link key={c.sleutel} href={c.pad as string} className="wkaart">
-                      <span className="wn">{c.naam}</span>
-                      <span className="wo">{c.ondertitel}</span>
-                    </Link>
-                  ))}
+                  {clusters(taal)
+                    .filter((c) => c.wedge)
+                    .map((c) => (
+                      <Link key={c.sleutel} href={c.pad as string} className="wkaart">
+                        <span className="wn">{c.naam}</span>
+                        <span className="wo">{c.ondertitel}</span>
+                      </Link>
+                    ))}
                 </div>
               </div>
             </div>
             <div>
-              <Kompasroos />
+              <Kompasroos label={kies(T.beeld.kompasroos, taal)} />
             </div>
           </div>
         </div>
@@ -262,17 +316,13 @@ export default function Onthaal() {
       <section id="ingangen">
         <div className="wrap">
           <div className="sec-kop">
-            <p className="eyebrow">Zakelijke ingangen</p>
-            <h2>Welke beslissing ligt bij u op tafel?</h2>
-            <p>
-              Tapas CORE vertrekt van de beslissing en niet van een vragenlijst. Vier ingangen
-              dekken het grootste deel van de vragen die organisaties ons stellen. Het zijn geen
-              losse instrumenten maar vier beslismomenten op dezelfde motor.
-            </p>
+            <p className="eyebrow">{kies(T.ingangen.eyebrow, taal)}</p>
+            <h2>{kies(T.ingangen.titel, taal)}</h2>
+            <p>{kies(T.ingangen.tekst, taal)}</p>
           </div>
           <div className="ingangen vier">
             {["hdd", "leiderschap", "recruitment", "ontwikkeling"].map((sleutel) => {
-              const c = CLUSTERS.find((x) => x.sleutel === sleutel);
+              const c = clusters(taal).find((x) => x.sleutel === sleutel);
               if (!c) return null;
               return (
                 <Link
@@ -286,7 +336,9 @@ export default function Onthaal() {
                   <p className="wat">{c.ondertitel}</p>
                   <p className="wie">{c.doelgroep}</p>
                   <span className="verder">
-                    {c.pad ? "Bekijk het traject" : "Bekijk de oplossingen"}
+                    {c.pad
+                      ? kies(T.ingangen.verderTraject, taal)
+                      : kies(T.ingangen.verderOplossingen, taal)}
                   </span>
                 </Link>
               );
@@ -299,26 +351,26 @@ export default function Onthaal() {
       <section className="grijs">
         <div className="wrap">
           <div className="sec-kop">
-            <p className="eyebrow">Wat u krijgt</p>
-            <h2>Vier rapporten, elk met één lezer</h2>
-            <p>
-              Een rapport zonder lezer helpt niemand vooruit. Daarom levert het platform vier lagen,
-              van het profiel van de deelnemer tot één rapport voor wie de beslissing neemt.
-            </p>
+            <p className="eyebrow">{kies(T.outputs.eyebrow, taal)}</p>
+            <h2>{kies(T.outputs.titel, taal)}</h2>
+            <p>{kies(T.outputs.tekst, taal)}</p>
           </div>
           <div className="stapelband">
-            {OUTPUTSTAPEL.map((o) => (
+            {outputstapel(taal).map((o) => (
               <div className="sb" key={o.nummer}>
                 <p className="nr">{o.nummer}</p>
                 <h3>{o.naam}</h3>
-                <p className="lezer">Voor {o.lezer}</p>
+                <p className="lezer">
+                  {kies(T.outputs.voor, taal)}
+                  {o.lezer}
+                </p>
                 <p className="wat">{o.inhoud}</p>
               </div>
             ))}
           </div>
           <p className="bandnoot">
-            Elk rapport draagt zijn versie, taal, datum en de vermelding wie het mag lezen.{" "}
-            <Link href="/outputs">Bekijk de volledige opbouw van de outputs</Link>.
+            {kies(T.outputs.noot, taal)}{" "}
+            <Link href="/outputs">{kies(T.outputs.nootLink, taal)}</Link>.
           </p>
         </div>
       </section>
@@ -327,20 +379,16 @@ export default function Onthaal() {
       <section className="grijs" id="werking">
         <div className="wrap">
           <div className="sec-kop">
-            <p className="eyebrow">Hoe het werkt</p>
-            <h2>Van uitnodiging tot verdieping, in vier stappen</h2>
+            <p className="eyebrow">{kies(T.werking.eyebrow, taal)}</p>
+            <h2>{kies(T.werking.titel, taal)}</h2>
           </div>
 
           {/* De kernzin staat op beslisniveau. Ze zegt niet wat het platform
               verstuurt, maar wat een organisatie ermee beslist. De vier stappen
               eronder tonen daarna hoe die beslissing tot stand komt. */}
           <p className="zin zin-werking">
-            <b>Wat het is, in één zin.</b>{" "}
-            <span>
-              Tapas CORE brengt het menselijke deel van een beslissing in beeld: welk talent er
-              zit, wat mensen in beweging brengt en waar de energie wegloopt. Dat komt op tafel als
-              een rapport waarop een leidinggevende, een bestuur of een investeerder kan handelen.
-            </span>
+            <b>{kies(T.werking.zinKop, taal)}</b>{" "}
+            <span>{kies(T.werking.zinTekst, taal)}</span>
           </p>
 
           {/* De film staat niet meer op deze pagina. Ze vertelt het verhaal van
@@ -348,61 +396,48 @@ export default function Onthaal() {
               komt, en hoort daarom in de demo-omgeving waar iemand met de
               bedoeling komt om het platform te zien werken. */}
           <p className="filmwijzer" data-testid="onthaal-filmwijzer">
-            Wilt u het platform zien werken? In de{" "}
-            <Link href="/demo">demo-omgeving</Link> staat een film van tachtig seconden, met
-            gesproken uitleg en ondertitels.
+            {kies(T.werking.filmVoor, taal)}{" "}
+            <Link href="/demo">{kies(T.werking.filmLink, taal)}</Link>
+            {kies(T.werking.filmNa, taal)}
           </p>
 
           <div className="stappen">
             <div className="stap">
-              <p className="nr">STAP 01</p>
-              <h3>Uitnodiging</h3>
-              <p>U kiest een instrument en stuurt een uitnodiging naar de deelnemer.</p>
+              <p className="nr">{kies(T.werking.stap1nr, taal)}</p>
+              <h3>{kies(T.werking.stap1titel, taal)}</h3>
+              <p>{kies(T.werking.stap1tekst, taal)}</p>
             </div>
             <div className="stap">
-              <p className="nr">STAP 02</p>
-              <h3>Afname</h3>
-              <p>De deelnemer vult de vragenlijst in, in zijn eigen taal, op eigen tempo.</p>
+              <p className="nr">{kies(T.werking.stap2nr, taal)}</p>
+              <h3>{kies(T.werking.stap2titel, taal)}</h3>
+              <p>{kies(T.werking.stap2tekst, taal)}</p>
             </div>
             <div className="stap">
-              <p className="nr">STAP 03</p>
-              <h3>Rapport</h3>
-              <p>Het rapport komt automatisch klaar, als PDF en als online dashboard.</p>
+              <p className="nr">{kies(T.werking.stap3nr, taal)}</p>
+              <h3>{kies(T.werking.stap3titel, taal)}</h3>
+              <p>{kies(T.werking.stap3tekst, taal)}</p>
             </div>
             <div className="stap">
-              <p className="nr">STAP 04</p>
-              <h3>Verdieping</h3>
-              <p>
-                Het rapport op uw dashboard geeft u de grote lijn: waar uw talent zit en wat u in
-                beweging brengt. Wilt u werkelijk de diepte in, dan hebt u een geaccrediteerde coach
-                met licentie nodig.
-              </p>
+              <p className="nr">{kies(T.werking.stap4nr, taal)}</p>
+              <h3>{kies(T.werking.stap4titel, taal)}</h3>
+              <p>{kies(T.werking.stap4tekst, taal)}</p>
             </div>
           </div>
 
           <div className="diepte">
             <div>
               <p className="nr" style={{ color: "var(--primary)" }}>
-                Zonder coach
+                {kies(T.werking.zonderCoach, taal)}
               </p>
-              <h3>Wat u zelf kunt</h3>
-              <p>
-                U schaft een vragenlijst aan, vult ze in en krijgt op uw dashboard een eerste
-                rapport op hoofdlijnen. Dat rapport is van u, u hebt niemand nodig om het te openen
-                of te lezen.
-              </p>
+              <h3>{kies(T.werking.zonderCoachTitel, taal)}</h3>
+              <p>{kies(T.werking.zonderCoachTekst, taal)}</p>
             </div>
             <div>
               <p className="nr" style={{ color: "var(--accent)" }}>
-                Met coach
+                {kies(T.werking.metCoach, taal)}
               </p>
-              <h3>Waar de verdieping begint</h3>
-              <p>
-                Wilt u van hoofdlijn naar betekenis, wat uw profiel zegt over een keuze die voor u
-                ligt en hoe uw drivers zich in uw eigen situatie gedragen, dan reikt u uit naar een
-                coach die geaccrediteerd is en over een licentie beschikt. Die stap is bewust geen
-                knop op deze pagina: hij vraagt een mens.
-              </p>
+              <h3>{kies(T.werking.metCoachTitel, taal)}</h3>
+              <p>{kies(T.werking.metCoachTekst, taal)}</p>
             </div>
           </div>
         </div>
@@ -412,30 +447,26 @@ export default function Onthaal() {
       <section className="breedte">
         <div className="wrap">
           <div className="sec-kop">
-            <p className="eyebrow">Breedte als bewijs</p>
-            <h2>Eén motor, zestien instrumenten, vijf talen</h2>
-            <p>
-              De trajecten hierboven rusten op een instrumentarium dat al jaren in organisaties,
-              scholen en sportclubs loopt. Die breedte is geen catalogus om uit te kiezen, ze is het
-              bewijs dat de motor het aankan.
-            </p>
+            <p className="eyebrow">{kies(T.breedte.eyebrow, taal)}</p>
+            <h2>{kies(T.breedte.titel, taal)}</h2>
+            <p>{kies(T.breedte.tekst, taal)}</p>
           </div>
           <div className="feiten">
             <div className="feit">
               <div className="n">16</div>
-              <div className="l">instrumenten en modules in het register</div>
+              <div className="l">{kies(T.breedte.feit1, taal)}</div>
             </div>
             <div className="feit">
               <div className="n">10+</div>
-              <div className="l">vanaf 10 jaar</div>
+              <div className="l">{kies(T.breedte.feit2, taal)}</div>
             </div>
             <div className="feit">
               <div className="n">5</div>
-              <div className="l">talen voor de vragenlijst en het rapport</div>
+              <div className="l">{kies(T.breedte.feit3, taal)}</div>
             </div>
             <div className="feit">
               <div className="n">2×</div>
-              <div className="l">rapport: PDF én online</div>
+              <div className="l">{kies(T.breedte.feit4, taal)}</div>
             </div>
           </div>
         </div>
@@ -445,41 +476,37 @@ export default function Onthaal() {
       <section>
         <div className="wrap">
           <div className="sec-kop">
-            <p className="eyebrow">Drie namen</p>
-            <h2>TaPas, TaPasCity en Tapas CORE</h2>
-            <p>Ze horen bij elkaar, maar elk met een eigen focus. In één oogopslag:</p>
+            <p className="eyebrow">{kies(T.namen.eyebrow, taal)}</p>
+            <h2>{kies(T.namen.titel, taal)}</h2>
+            <p>{kies(T.namen.tekst, taal)}</p>
           </div>
           <div className="namen">
             <div className="naam-k">
               <div className="streep" style={{ background: "var(--accent)" }} />
               <h3>
-                TaPas <i>het gedachtegoed</i>
+                TaPas <i>{kies(T.namen.rolGedachtegoed, taal)}</i>
               </h3>
               <p>
-                TAPAS is de samentrekking van <b>TA</b>lent en <b>PAS</b>sie. Talent is het unieke
-                vermogen om dingen sneller, beter en met minder inspanning te doen dan anderen.
-                Passie is de energiebron die je talent in beweging houdt.
+                {kies(T.namen.tapasVoor, taal)}
+                <b>TA</b>
+                {kies(T.namen.tapasMidden, taal)}
+                <b>PAS</b>
+                {kies(T.namen.tapasNa, taal)}
               </p>
             </div>
             <div className="naam-k">
               <div className="streep" style={{ background: "var(--gold)" }} />
               <h3>
-                TaPasCity <i>de organisatie</i>
+                TaPasCity <i>{kies(T.namen.rolOrganisatie, taal)}</i>
               </h3>
-              <p>
-                De organisatie achter het gedachtegoed, en een gemeenschap van zelfstandige coaches,
-                de crewmembers, die met het instrumentarium werken. Gevestigd in Wijnegem.
-              </p>
+              <p>{kies(T.namen.stadTekst, taal)}</p>
             </div>
             <div className="naam-k">
               <div className="streep" style={{ background: "var(--werk)" }} />
               <h3>
-                Tapas CORE <i>dit platform</i>
+                Tapas CORE <i>{kies(T.namen.rolPlatform, taal)}</i>
               </h3>
-              <p>
-                De zakelijke kern: instrumenten uitsturen, de afname opvolgen van uitnodiging tot
-                PDF, facturatie via credits, en het dashboard van de deelnemer.
-              </p>
+              <p>{kies(T.namen.coreTekst, taal)}</p>
             </div>
           </div>
         </div>
@@ -489,107 +516,83 @@ export default function Onthaal() {
       <section className="grijs">
         <div className="wrap">
           <div className="sec-kop">
-            <p className="eyebrow">Voor wie</p>
-            <h2>Waarvoor bent u hier?</h2>
-            <p>
-              Vijf soorten bezoekers, vijf verschillende vragen. Kies de uwe, dan weet u meteen wat
-              u hier kunt halen.
-            </p>
+            <p className="eyebrow">{kies(T.voorwie.eyebrow, taal)}</p>
+            <h2>{kies(T.voorwie.titel, taal)}</h2>
+            <p>{kies(T.voorwie.tekst, taal)}</p>
           </div>
           <div className="paden">
             <div className="pad p2">
               <span className="tag" style={{ background: "var(--primary)" }}>
-                Uzelf
+                {kies(T.voorwie.zelfTag, taal)}
               </span>
-              <h3>Weten waar uw eigen talent zit</h3>
-              <p className="wil">
-                “Welke talenten brengen me in een energie-flow? […] Welke context sluit het best aan
-                bij mijn potentieel en bij wie ik ben?”
-              </p>
+              <h3>{kies(T.voorwie.zelfTitel, taal)}</h3>
+              <p className="wil">{kies(T.voorwie.zelfWil, taal)}</p>
               <div className="lijst">
-                <b>Wat er voor u in zit</b>
-                Een eigen profiel als PDF én online dashboard. Voor de professional het T4P Business
-                Kompas, voor de student T4Students, voor de leerling T4Teens, en 2MinScan als korte
-                eerste kennismaking. Deze vier schaft u zelf aan, zonder tussenkomst van een
-                organisatie of een coach.
+                <b>{kies(T.voorwie.lijstKop, taal)}</b>
+                {kies(T.voorwie.zelfLijst, taal)}
               </div>
               <Link className="knop knop-3" href="/instrumenten">
-                Bekijk de instrumenten
+                {kies(T.voorwie.zelfKnop, taal)}
               </Link>
             </div>
 
             <div className="pad p2">
               <span className="tag" style={{ background: "var(--werk)" }}>
-                Organisatie
+                {kies(T.voorwie.orgTag, taal)}
               </span>
-              <h3>Zicht op talent en energie in uw organisatie</h3>
-              <p className="wil">
-                “Je wil zicht krijgen op de talenten en passie van je organisatie, los van de
-                individuele talenten van de medewerkers.”
-              </p>
+              <h3>{kies(T.voorwie.orgTitel, taal)}</h3>
+              <p className="wil">{kies(T.voorwie.orgWil, taal)}</p>
               <div className="lijst">
-                <b>Wat er voor u in zit</b>
-                T4P Business Kompas · T4Organizations · TaPas Teamscan · Impact-roos · T4Recruitment
-                · Human Due Diligence · 2MinScan
+                <b>{kies(T.voorwie.lijstKop, taal)}</b>
+                {kies(T.voorwie.orgLijst, taal)}
               </div>
               <button className="knop knop-3" type="button" onClick={() => naarSectie("contact")}>
-                Plan een kennismaking
+                {kies(T.kop.kennismaking, taal)}
               </button>
             </div>
 
             <div className="pad p2">
               <span className="tag" style={{ background: "var(--studie-dk)" }}>
-                Onderwijs
+                {kies(T.voorwie.onderwijsTag, taal)}
               </span>
-              <h3>Vertrekken van wat een jongere wél kan</h3>
-              <p className="wil">
-                “We willen talenten en passie van kinderen, jongeren en jongvolwassenen in kaart
-                brengen om te kunnen vertrekken van wat ze wel kunnen.”
-              </p>
+              <h3>{kies(T.voorwie.onderwijsTitel, taal)}</h3>
+              <p className="wil">{kies(T.voorwie.onderwijsWil, taal)}</p>
               <div className="lijst">
-                <b>Wat er voor u in zit</b>
-                T4Teens · T4Students · T4Kids
+                <b>{kies(T.voorwie.lijstKop, taal)}</b>
+                {kies(T.voorwie.onderwijsLijst, taal)}
               </div>
               <button className="knop knop-3" type="button" onClick={() => naarSectie("contact")}>
-                Vraag het schoolaanbod
+                {kies(T.voorwie.onderwijsKnop, taal)}
               </button>
             </div>
 
             <div className="pad p3">
               <span className="tag" style={{ background: "var(--accent)" }}>
-                Sport
+                {kies(T.voorwie.sportTag, taal)}
               </span>
-              <h3>Mentaal talent onder prestatiedruk</h3>
-              <p className="wil">
-                “Waar ligt mijn mentaal talent als atleet? Welke drivers werken onder prestatiedruk?
-                Hoe versterk ik veerkracht, flow en atletische identiteit?”
-              </p>
+              <h3>{kies(T.voorwie.sportTitel, taal)}</h3>
+              <p className="wil">{kies(T.voorwie.sportWil, taal)}</p>
               <div className="lijst">
-                <b>Wat er voor u in zit</b>
-                T4Sports geeft een volledig Mental Talent Profiel (deel 1 en 2), met de modules
-                Resilience, Flow-State en Atletische Identiteit. Voor topsporters, mental coaches en
-                sportpsychologen.
+                <b>{kies(T.voorwie.lijstKop, taal)}</b>
+                {kies(T.voorwie.sportLijst, taal)}
               </div>
               <button className="knop knop-3" type="button" onClick={() => naarSectie("contact")}>
-                Vraag het sportaanbod
+                {kies(T.voorwie.sportKnop, taal)}
               </button>
             </div>
 
             <div className="pad p3">
               <span className="tag" style={{ background: "var(--lounge)" }}>
-                Coach &amp; practitioner
+                {kies(T.voorwie.coachTag, taal)}
               </span>
-              <h3>Zelf met het instrumentarium werken</h3>
-              <p className="wil">
-                “Wie zelf als Tapas practitioner, coach of facilitator aan de slag wil.”
-              </p>
+              <h3>{kies(T.voorwie.coachTitel, taal)}</h3>
+              <p className="wil">{kies(T.voorwie.coachWil, taal)}</p>
               <div className="lijst">
-                <b>Wat er voor u in zit</b>
-                Toegang tot het volledige instrumentarium na accreditatie, plus de Self-Training
-                Module, het zelfstudieplatform dat bij het accreditatietraject hoort.
+                <b>{kies(T.voorwie.lijstKop, taal)}</b>
+                {kies(T.voorwie.coachLijst, taal)}
               </div>
               <button className="knop knop-3" type="button" onClick={() => naarSectie("contact")}>
-                Vraag toegang aan
+                {kies(T.voorwie.coachKnop, taal)}
               </button>
             </div>
           </div>
@@ -600,45 +603,30 @@ export default function Onthaal() {
       <section>
         <div className="wrap">
           <div className="sec-kop">
-            <p className="eyebrow">Wat het oplevert</p>
-            <h2>Een instrument is zo goed als de vragen die het beantwoordt</h2>
-            <p>
-              Daarom staan hier geen beloftes, maar de vragen waarop een deelnemer na de afname een
-              antwoord heeft, en wat er precies uit komt.
-            </p>
+            <p className="eyebrow">{kies(T.oplevert.eyebrow, taal)}</p>
+            <h2>{kies(T.oplevert.titel, taal)}</h2>
+            <p>{kies(T.oplevert.tekst, taal)}</p>
           </div>
           <div className="opbr">
             <div className="op">
               <p className="inst">T4P Business Kompas</p>
-              <blockquote>
-                “Welke talenten brengen me in een energie-flow? Welke drivers zijn ondersteunend of
-                remmend? Welke context sluit het best aan bij mijn potentieel en bij wie ik ben?”
-              </blockquote>
+              <blockquote>{kies(T.oplevert.kompasVraag, taal)}</blockquote>
               <p className="uit">
-                <b>U krijgt:</b> een rijk TaPas Kompas-rapport met talent-foci, versnellers,
-                drivers, energieprofiel én TaPas Jester-classificatie, als PDF én online dashboard.
+                <b>{kies(T.oplevert.ukrijgt, taal)}</b> {kies(T.oplevert.kompasUit, taal)}
               </p>
             </div>
             <div className="op">
               <p className="inst">TaPas Teamscan</p>
-              <blockquote>
-                “Hoe werkt ons team echt samen? Waar zit vertrouwen, en waar wringt het? Welke
-                disfuncties spelen, en hoe adresseren we ze concreet?”
-              </blockquote>
+              <blockquote>{kies(T.oplevert.teamVraag, taal)}</blockquote>
               <p className="uit">
-                <b>U krijgt:</b> een collectief teamrapport met sterktes, spanningsvelden en
-                concrete actiepunten, plus een facilitatiegids voor de teamcoach.
+                <b>{kies(T.oplevert.ukrijgt, taal)}</b> {kies(T.oplevert.teamUit, taal)}
               </p>
             </div>
             <div className="op">
               <p className="inst">T4Teens</p>
-              <blockquote>
-                “Waar liggen mijn talenten als jongere? Welke studierichting past bij wie ik ben?
-                Wat geeft mij energie op school en daarbuiten?”
-              </blockquote>
+              <blockquote>{kies(T.oplevert.teensVraag, taal)}</blockquote>
               <p className="uit">
-                <b>U krijgt:</b> een T4Teens talentkaart in jongerentaal, met
-                studierichtingssuggesties op basis van de talent-foci.
+                <b>{kies(T.oplevert.ukrijgt, taal)}</b> {kies(T.oplevert.teensUit, taal)}
               </p>
             </div>
           </div>
@@ -649,46 +637,31 @@ export default function Onthaal() {
       <section>
         <div className="wrap">
           <div className="sec-kop">
-            <p className="eyebrow">Onderbouwing en grenzen</p>
-            <h2>Wat wij wél kunnen aantonen, en waar het ophoudt</h2>
-            <p>
-              Beide horen op deze pagina. Een instrument dat zijn eigen grenzen niet benoemt, is
-              niet te vertrouwen.
-            </p>
+            <p className="eyebrow">{kies(T.grenzen.eyebrow, taal)}</p>
+            <h2>{kies(T.grenzen.titel, taal)}</h2>
+            <p>{kies(T.grenzen.tekst, taal)}</p>
           </div>
           <div className="bewijs">
             <div className="bw">
-              <div className="cijfer">{"96,9\u2009%"}</div>
-              <h3>van 64 wetenschappelijke verwijzingen correct</h3>
-              <p>
-                Een systematische scan van het onderliggende kader identificeerde 64
-                wetenschappelijke auteurs en theorieën. Daarvan bleek {"96,9\u2009%"} feitelijk en
-                inhoudelijk correct weergegeven. Geen enkele verwijzing was onjuist; één (GRIT) werd
-                genuanceerd wegens recente meta-analyses.
-              </p>
+              <div className="cijfer">{kies(T.grenzen.cijfer, taal)}</div>
+              <h3>{kies(T.grenzen.cijferTitel, taal)}</h3>
+              <p>{kies(T.grenzen.cijferTekst, taal)}</p>
               <div className="beperking">
-                <b>En dit hoort er eerlijk bij.</b> Die review werd AI-ondersteund uitgevoerd, niet
-                als peer review. Het rapport noemt het kader zelf “theoretisch goed onderbouwd en
-                psychometrisch veelbelovend, waarvoor verdere peer-reviewed validatie wenselijk is”.
-                Er bestaat samenwerking met academische partners, maar niet alle resultaten zijn al
-                gepubliceerd.
+                <b>{kies(T.grenzen.beperkingKop, taal)}</b>{" "}
+                {kies(T.grenzen.beperkingTekst, taal)}
               </div>
             </div>
             <div className="bw">
               <div className="grens">!</div>
-              <h3 style={{ marginTop: 18 }}>Wat TaPas niet is</h3>
-              <p>
-                TaPas is een reflectie- en ontwikkelinstrument. Wat het oplevert is een
-                gespreksbasis, geen oordeel over iemands toekomst.
-              </p>
+              <h3 style={{ marginTop: 18 }}>{kies(T.grenzen.nietTitel, taal)}</h3>
+              <p>{kies(T.grenzen.nietTekst, taal)}</p>
               <ul className="geen">
-                <li>Geen diagnose</li>
-                <li>Geen selectiebeslissing</li>
-                <li>Geen potentieelbepaling</li>
+                <li>{kies(T.grenzen.geenDiagnose, taal)}</li>
+                <li>{kies(T.grenzen.geenSelectie, taal)}</li>
+                <li>{kies(T.grenzen.geenPotentieel, taal)}</li>
               </ul>
               <p style={{ marginTop: 22, fontSize: "14.5px", color: "var(--muted)" }}>
-                Diezelfde grens staat onderaan elke pagina van het platform en in de voettekst van
-                elk rapport. Ze is geen kleine letter, ze is de afspraak.
+                {kies(T.grenzen.grensNoot, taal)}
               </p>
             </div>
           </div>
@@ -699,81 +672,64 @@ export default function Onthaal() {
       <section id="aanmelden">
         <div className="wrap">
           <div className="sec-kop">
-            <p className="eyebrow">Voor wie het platform al gebruikt</p>
-            <h2>Vijf deuren, één platform</h2>
-            <p>
-              Wie al een plaats in het platform heeft, hoort geen formulier te moeten invullen: die
-              gaat rechtstreeks naar de eigen deur. Wie nog geen plaats heeft, komt bij het
-              contactformulier uit.
-            </p>
+            <p className="eyebrow">{kies(T.deuren.eyebrow, taal)}</p>
+            <h2>{kies(T.deuren.titel, taal)}</h2>
+            <p>{kies(T.deuren.tekst, taal)}</p>
           </div>
           <div className="deuren">
             <Link className="deur" href="/mijn" data-testid="deur-deelnemer">
-              <p className="dr">Deelnemer</p>
-              <h3>Ik kreeg een uitnodiging</h3>
-              <p>
-                Uw eigen ruimte: de vragenlijsten die voor u klaarstaan, uw afgewerkte afnames en uw
-                rapporten, in PDF en online.
-              </p>
+              <p className="dr">{kies(T.deuren.deelnemerDr, taal)}</p>
+              <h3>{kies(T.deuren.deelnemerTitel, taal)}</h3>
+              <p>{kies(T.deuren.deelnemerTekst, taal)}</p>
               <ol className="deurstap">
-                <li>U vult het e-mailadres in waarop u de uitnodiging kreeg.</li>
-                <li>Wij sturen een aanmeldlink naar dat adres.</li>
-                <li>U klikt de link aan en staat in uw eigen dashboard.</li>
+                <li>{kies(T.deuren.deelnemerStap1, taal)}</li>
+                <li>{kies(T.deuren.deelnemerStap2, taal)}</li>
+                <li>{kies(T.deuren.deelnemerStap3, taal)}</li>
               </ol>
               <p className="nodig">
-                <b>Nodig:</b> uw e-mailadres. Geen wachtwoord.
+                <b>{kies(T.deuren.nodigKop, taal)}</b> {kies(T.deuren.deelnemerNodig, taal)}
               </p>
               <span className="pad-uit">/mijn</span>
             </Link>
             <Link className="deur" href="/coach">
-              <p className="dr">Coach &amp; practitioner</p>
-              <h3>Ik werk met het instrumentarium</h3>
-              <p>
-                Uw praktijk: deelnemers uitnodigen, afnames opvolgen, rapporten opmaken en
-                gesprekken voorbereiden.
-              </p>
+              <p className="dr">{kies(T.deuren.coachDr, taal)}</p>
+              <h3>{kies(T.deuren.coachTitel, taal)}</h3>
+              <p>{kies(T.deuren.coachTekst, taal)}</p>
               <ol className="deurstap">
-                <li>U meldt zich aan met uw coach-account.</li>
-                <li>U ziet uw deelnemers en hun afnames.</li>
-                <li>Tijdens het accreditatietraject staat de Self-Training Module erbij.</li>
+                <li>{kies(T.deuren.coachStap1, taal)}</li>
+                <li>{kies(T.deuren.coachStap2, taal)}</li>
+                <li>{kies(T.deuren.coachStap3, taal)}</li>
               </ol>
               <p className="nodig">
-                <b>Nodig:</b> een coach-account. Nog geen account? Vraag toegang via het formulier
-                onderaan deze pagina.
+                <b>{kies(T.deuren.nodigKop, taal)}</b> {kies(T.deuren.coachNodig, taal)}
               </p>
               <span className="pad-uit">/coach</span>
             </Link>
             <Link className="deur" href="/organisatie">
-              <p className="dr">Organisatie of school</p>
-              <h3>Ik beheer een groep</h3>
-              <p>
-                Uw overzicht: wie is uitgenodigd, wie is klaar, welke rapporten liggen er, en
-                hoeveel credits staan er nog.
-              </p>
+              <p className="dr">{kies(T.deuren.orgDr, taal)}</p>
+              <h3>{kies(T.deuren.orgTitel, taal)}</h3>
+              <p>{kies(T.deuren.orgTekst, taal)}</p>
               <ol className="deurstap">
-                <li>U meldt zich aan met het organisatie-account.</li>
-                <li>U nodigt medewerkers of leerlingen uit.</li>
-                <li>U volgt de voortgang en haalt de rapporten op.</li>
+                <li>{kies(T.deuren.orgStap1, taal)}</li>
+                <li>{kies(T.deuren.orgStap2, taal)}</li>
+                <li>{kies(T.deuren.orgStap3, taal)}</li>
               </ol>
               <p className="nodig">
-                <b>Nodig:</b> een organisatie-account, aangemaakt bij de opstart.
+                <b>{kies(T.deuren.nodigKop, taal)}</b> {kies(T.deuren.orgNodig, taal)}
               </p>
               <span className="pad-uit">/organisatie</span>
             </Link>
             <Link className="deur" href="/instrumenten">
-              <p className="dr">Eerst rondkijken</p>
-              <h3>Ik wil het aanbod zien</h3>
-              <p>
-                De publieke gids: per instrument welke vraag het beantwoordt, voor wie het bedoeld
-                is, hoe lang het duurt en wat er uit komt.
-              </p>
+              <p className="dr">{kies(T.deuren.kijkDr, taal)}</p>
+              <h3>{kies(T.deuren.kijkTitel, taal)}</h3>
+              <p>{kies(T.deuren.kijkTekst, taal)}</p>
               <ol className="deurstap">
-                <li>U kiest een doelgroep of een vraag.</li>
-                <li>U leest de fiche van het instrument.</li>
-                <li>Wilt u meer weten, dan brengt de gids u bij het formulier.</li>
+                <li>{kies(T.deuren.kijkStap1, taal)}</li>
+                <li>{kies(T.deuren.kijkStap2, taal)}</li>
+                <li>{kies(T.deuren.kijkStap3, taal)}</li>
               </ol>
               <p className="nodig">
-                <b>Nodig:</b> niets. Geen aanmelding, geen account.
+                <b>{kies(T.deuren.nodigKop, taal)}</b> {kies(T.deuren.kijkNodig, taal)}
               </p>
               <span className="pad-uit">/instrumenten</span>
             </Link>
@@ -785,74 +741,51 @@ export default function Onthaal() {
                 naarSectie("contact");
               }}
             >
-              <p className="dr">Nog geen plaats</p>
-              <h3>Ik wil kennismaken</h3>
-              <p>
-                Geen account, geen uitnodiging? Dan is het formulier hieronder de juiste weg. U
-                krijgt antwoord van een Tapas-medewerker, geen automatisch traject.
-              </p>
+              <p className="dr">{kies(T.deuren.nieuwDr, taal)}</p>
+              <h3>{kies(T.deuren.nieuwTitel, taal)}</h3>
+              <p>{kies(T.deuren.nieuwTekst, taal)}</p>
               <ol className="deurstap">
-                <li>U vertelt kort wie u bent en wat u zoekt.</li>
-                <li>Wij lezen dat na en antwoorden persoonlijk.</li>
-                <li>Past het, dan volgt een gesprek van een halfuur.</li>
+                <li>{kies(T.deuren.nieuwStap1, taal)}</li>
+                <li>{kies(T.deuren.nieuwStap2, taal)}</li>
+                <li>{kies(T.deuren.nieuwStap3, taal)}</li>
               </ol>
               <p className="nodig">
-                <b>Nodig:</b> uw naam en een e-mailadres.
+                <b>{kies(T.deuren.nodigKop, taal)}</b> {kies(T.deuren.nieuwNodig, taal)}
               </p>
-              <span className="pad-uit">het formulier hieronder</span>
+              <span className="pad-uit">{kies(T.deuren.nieuwPad, taal)}</span>
             </a>
           </div>
           <div className="veilig">
-            <p className="vk">De deelnemersdeur, stap voor stap</p>
-            <h3>Een aanmeldlink in plaats van een wachtwoord</h3>
-            <p>
-              Deelnemers hebben geen wachtwoord. Dat is een bewuste keuze: een wachtwoord dat je één
-              keer per jaar nodig hebt, wordt opgeschreven of vergeten. In de plaats komt een link
-              die naar de eigen mailbox gaat. Wie die mailbox niet kan openen, komt niet binnen.
-            </p>
+            <p className="vk">{kies(T.veilig.vk, taal)}</p>
+            <h3>{kies(T.veilig.titel, taal)}</h3>
+            <p>{kies(T.veilig.tekst, taal)}</p>
             <div className="vstap">
               <div>
-                <p className="nr">Stap 1</p>
-                <p className="t">U vult uw e-mailadres in</p>
-                <p className="b">
-                  Hetzelfde adres waarop u de uitnodiging kreeg. Verder niets.
-                </p>
+                <p className="nr">{kies(T.veilig.stap1nr, taal)}</p>
+                <p className="t">{kies(T.veilig.stap1t, taal)}</p>
+                <p className="b">{kies(T.veilig.stap1b, taal)}</p>
               </div>
               <div>
-                <p className="nr">Stap 2</p>
-                <p className="t">Wij sturen een link</p>
-                <p className="b">
-                  Alleen naar dat adres. Kent het platform het adres niet, dan wordt er niets
-                  verstuurd, en ziet u toch dezelfde boodschap.
-                </p>
+                <p className="nr">{kies(T.veilig.stap2nr, taal)}</p>
+                <p className="t">{kies(T.veilig.stap2t, taal)}</p>
+                <p className="b">{kies(T.veilig.stap2b, taal)}</p>
               </div>
               <div>
-                <p className="nr">Stap 3</p>
-                <p className="t">U klikt de link aan</p>
-                <p className="b">Binnen een kwartier. De link werkt één keer en vervalt daarna.</p>
+                <p className="nr">{kies(T.veilig.stap3nr, taal)}</p>
+                <p className="t">{kies(T.veilig.stap3t, taal)}</p>
+                <p className="b">{kies(T.veilig.stap3b, taal)}</p>
               </div>
               <div>
-                <p className="nr">Stap 4</p>
-                <p className="t">U staat in uw dashboard</p>
-                <p className="b">
-                  Uw afnames, uw rapporten, uw gesproken uitleg. Niemand anders ziet die.
-                </p>
+                <p className="nr">{kies(T.veilig.stap4nr, taal)}</p>
+                <p className="t">{kies(T.veilig.stap4t, taal)}</p>
+                <p className="b">{kies(T.veilig.stap4b, taal)}</p>
               </div>
             </div>
             <ul className="waarborg">
-              <li>De link is 15 minuten geldig en werkt precies één keer.</li>
-              <li>
-                Het adres invullen maakt géén account aan: alleen wie al een plaats heeft, krijgt
-                een link.
-              </li>
-              <li>
-                De pagina geeft altijd dezelfde boodschap, ook bij een onbekend adres, zodat niemand
-                kan aftasten wie er in het platform staat.
-              </li>
-              <li>
-                De link zelf staat nooit in het antwoord van de pagina: hij gaat uitsluitend naar de
-                mailbox.
-              </li>
+              <li>{kies(T.veilig.waarborg1, taal)}</li>
+              <li>{kies(T.veilig.waarborg2, taal)}</li>
+              <li>{kies(T.veilig.waarborg3, taal)}</li>
+              <li>{kies(T.veilig.waarborg4, taal)}</li>
             </ul>
           </div>
         </div>
@@ -863,66 +796,72 @@ export default function Onthaal() {
         <div className="wrap">
           <div className="c-grid">
             <div>
-              <p className="eyebrow">Contact</p>
-              <h2>Eén gesprek is genoeg om te weten of dit iets voor u is</h2>
-              <p className="lead">
-                Laat weten wie u bent en wat u zoekt. Geen verkooppraatje, geen automatisch traject.
-              </p>
+              <p className="eyebrow">{kies(T.contact.eyebrow, taal)}</p>
+              <h2>{kies(T.contact.titel, taal)}</h2>
+              <p className="lead">{kies(T.contact.lead, taal)}</p>
               <form onSubmit={verstuur} data-testid="onthaal-formulier">
                 <div className="veldrij" style={{ marginTop: 30 }}>
                   <div>
-                    <label htmlFor="onthaal-naam">Naam</label>
+                    <label htmlFor="onthaal-naam">{kies(T.contact.labelNaam, taal)}</label>
                     <input
                       id="onthaal-naam"
                       value={naam}
                       onChange={(e) => setNaam(e.target.value)}
-                      placeholder="Voor- en achternaam"
+                      placeholder={kies(T.contact.plaatsNaam, taal)}
                       autoComplete="name"
                     />
                   </div>
                   <div>
-                    <label htmlFor="onthaal-org">Organisatie of school</label>
+                    <label htmlFor="onthaal-org">{kies(T.contact.labelOrg, taal)}</label>
                     <input
                       id="onthaal-org"
                       value={organisatie}
                       onChange={(e) => setOrganisatie(e.target.value)}
-                      placeholder="Naam van uw organisatie"
+                      placeholder={kies(T.contact.plaatsOrg, taal)}
                       autoComplete="organization"
                     />
                   </div>
                 </div>
                 <div className="veld">
-                  <label htmlFor="onthaal-email">E-mail</label>
+                  <label htmlFor="onthaal-email">{kies(T.contact.labelEmail, taal)}</label>
                   <input
                     id="onthaal-email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="u@voorbeeld.be"
+                    placeholder={kies(T.contact.plaatsEmail, taal)}
                     autoComplete="email"
                   />
                 </div>
                 <div className="veld">
-                  <label htmlFor="onthaal-rol">Ik ben</label>
+                  <label htmlFor="onthaal-rol">{kies(T.contact.labelRol, taal)}</label>
                   <select
                     id="onthaal-rol"
                     value={rol}
-                    onChange={(e) => setRol(e.target.value)}
+                    onChange={(e) => {
+                      // De keuzelijst toont het opschrift in de taal van de
+                      // bezoeker, maar de waarde die verder gaat blijft het
+                      // Nederlandse lid uit de reeks hierboven. We zoeken die
+                      // op in plaats van de ruwe waarde door te geven, zodat
+                      // de server precies dezelfde rollen blijft zien.
+                      const gekozen = ROLLEN.find((r) => r.nl === e.target.value);
+                      if (gekozen) setRol(gekozen.nl);
+                    }}
                   >
                     {ROLLEN.map((r) => (
-                      <option key={r} value={r}>
-                        {r}
+                      <option key={r.nl} value={r.nl}>
+                        {kies(r, taal)}
                       </option>
                     ))}
                   </select>
                 </div>
                 <div className="veld">
-                  <label htmlFor="onthaal-vraag">Uw vraag</label>
+                  <label htmlFor="onthaal-vraag">{kies(T.contact.labelVraag, taal)}</label>
                   <textarea
                     id="onthaal-vraag"
                     value={vraag}
                     onChange={(e) => setVraag(e.target.value)}
-                    placeholder="Wat wilt u bereiken, en voor hoeveel mensen?"
+                    placeholder={kies(T.contact.plaatsVraag, taal)}
                   />
                 </div>
                 <div
@@ -940,48 +879,44 @@ export default function Onthaal() {
                     disabled={stand === "bezig"}
                     data-testid="onthaal-verstuur"
                   >
-                    {stand === "bezig" ? "Bezig met versturen" : "Verstuur mijn vraag"}
+                    {stand === "bezig"
+                      ? kies(T.contact.verstuurBezig, taal)
+                      : kies(T.contact.verstuur, taal)}
                   </button>
                   <span className="na" role="status" aria-live="polite">
-                    {melding ||
-                      "U krijgt binnen twee werkdagen antwoord van een Tapas-medewerker."}
+                    {melding || kies(T.contact.naDefault, taal)}
                   </span>
                 </div>
               </form>
             </div>
             <div>
               <div className="c-blok">
-                <h3>Rechtstreeks</h3>
+                <h3>{kies(T.contact.blokDirect, taal)}</h3>
                 <p>
                   <a href="mailto:info@tapascity.com">info@tapascity.com</a>
                   <br />
                   Zandstraat 85, 2110 Wijnegem
                   <br />
-                  <a href="https://nl.linkedin.com/company/tapascity">TaPasCity op LinkedIn</a>
+                  <a href="https://nl.linkedin.com/company/tapascity">
+                    {kies(T.contact.linkedin, taal)}
+                  </a>
                 </p>
               </div>
               <div className="c-blok">
-                <h3>Wat het kost</h3>
+                <h3>{kies(T.contact.blokKost, taal)}</h3>
                 <p>
-                  <b>Voor uzelf.</b> De instrumenten die u zelf kunt aanschaffen, staan in het
-                  instrumentenoverzicht. U kiest er een, u ziet het bedrag voor u betaalt, en u
-                  start. Geen gesprek nodig.
+                  <b>{kies(T.contact.kostZelfKop, taal)}</b> {kies(T.contact.kostZelf, taal)}
                 </p>
                 <p style={{ marginTop: 14 }}>
-                  <b>Voor een organisatie of een school.</b> Daar werkt het platform met credits per
-                  afname. De prijs hangt af van het volume en van het instrument, en u krijgt een
-                  concreet voorstel na het gesprek.
+                  <b>{kies(T.contact.kostOrgKop, taal)}</b> {kies(T.contact.kostOrg, taal)}
                 </p>
               </div>
               <div className="c-blok">
-                <h3>Al een uitnodiging gekregen?</h3>
-                <p>
-                  Dan hoeft u hier niets te vragen. Meld u aan met het e-mailadres waarop u de
-                  uitnodiging kreeg, u krijgt dan een aanmeldlink die 15 minuten geldig blijft.
-                </p>
+                <h3>{kies(T.contact.blokUitnodiging, taal)}</h3>
+                <p>{kies(T.contact.uitnodigingTekst, taal)}</p>
                 <p style={{ marginTop: 16 }}>
                   <Link className="knop knop-2" href="/mijn">
-                    Aanmelden op het platform
+                    {kies(T.contact.aanmeldKnop, taal)}
                   </Link>
                 </p>
               </div>
@@ -1024,20 +959,17 @@ export default function Onthaal() {
             </div>
             <div className="f-drie">
               <span>
-                <b>TaPas</b>: het gedachtegoed
+                <b>TaPas</b>: {kies(T.namen.rolGedachtegoed, taal)}
               </span>
               <span>
-                <b>TaPasCity</b>: de organisatie
+                <b>TaPasCity</b>: {kies(T.namen.rolOrganisatie, taal)}
               </span>
               <span>
-                <b>Tapas CORE</b>: dit platform
+                <b>Tapas CORE</b>: {kies(T.namen.rolPlatform, taal)}
               </span>
             </div>
           </div>
-          <p className="f-note">
-            TaPas is een reflectie- en ontwikkelinstrument. Geen diagnose, selectie of
-            potentieelbepaling.
-          </p>
+          <p className="f-note">{kies(T.voet.note, taal)}</p>
           <p className="f-cr">
             © 2BQ Consult · TaPasCity · info@tapascity.com · Zandstraat 85, 2110 Wijnegem ·{" "}
             <Link
@@ -1046,7 +978,7 @@ export default function Onthaal() {
               onClick={() => vraagOpnieuwAanmeldenNu()}
               style={{ textDecoration: "underline dotted", textUnderlineOffset: "3px" }}
             >
-              Beheer
+              {kies(T.voet.beheer, taal)}
             </Link>
           </p>
         </div>

@@ -6,58 +6,78 @@
 // leiderschap, vertrouwen, energie en uitvoeringskracht in een bestaande ploeg,
 // en levert meer dan een ploegrapport alleen: een begeleide sessie en een
 // tweede meting horen erbij.
+//
+// TWEETALIG
+// De pagina is tweetalig, met Engels als standaard. De gedeelde inhoud komt
+// per taal uit publiek/inhoud.ts, de eigen teksten uit
+// publiek/teksten-paginas.ts, en de film staat in beide talen klaar. Daarom
+// wordt de inhoud bij elke weergave voor de gekozen taal gebouwd.
 // ===========================================================================
 
 import TrajectPagina, { type TrajectInhoud } from "@/components/TrajectPagina";
 import {
-  AANSLUITING_RECRUITMENT,
-  CLUSTERS,
-  LTE_STAPPEN,
-  LTE_UITKOMST,
-  OUTPUTSTAPEL,
-} from "@/data/oplossingen";
+  aansluitingRecruitment,
+  cluster as clusterOp,
+  lteStappen,
+  lteUitkomst,
+  outputstapel,
+} from "@/publiek/inhoud";
+import { kies, usePubliekeTaal, type PubliekeTaal } from "@/publiek/taal";
+import { T } from "@/publiek/teksten-paginas";
 
-const cluster = CLUSTERS.find((c) => c.sleutel === "leiderschap")!;
-
-const inhoud: TrajectInhoud = {
-  cluster,
-  bovenschrift: "Traject voor directies en teamleiders",
-  lead:
-    "Een ploeg die niet levert, heeft zelden een gebrek aan goede mensen. Meestal zit de rem in de samenstelling, in de verdeling van de last of in afspraken die nooit uitgesproken werden. Leadership & Team Energy maakt dat zichtbaar, brengt het in één begeleide sessie op tafel en meet na drie maanden of er werkelijk iets verschoven is.",
-  stappen: LTE_STAPPEN,
-  outputs: OUTPUTSTAPEL.filter((o) => o.nummer <= 3),
-  uitkomst: LTE_UITKOMST,
-  grenzen: [
-    "Geen beoordeling van medewerkers en geen invoer voor een evaluatiegesprek.",
-    "Geen diagnose van welzijn of van gezondheid, ook niet wanneer de energie laag staat.",
-    "Geen rangschikking van teamleden onderling.",
-    "Geen ploegbeeld zonder dat elke deelnemer zijn eigen profiel eerst zelf leest.",
-  ],
-  prijsuitleg:
-    "De afname per deelnemer, het ploegbeeld, de begeleide sessie en de herhaalmeting worden samen begroot. Organisaties die meerdere ploegen per jaar doorlopen, werken doorgaans met een jaarlicentie.",
-  // Soms volstaat begeleiding of een andere rolverdeling niet en vraagt de ploeg
-  // een bewuste instroombeslissing. Eerst begrijpen hoe deze ploeg werkt, daarna
-  // bepalen welk type persoon haar versterkt.
-  aansluiting: {
-    tekst: AANSLUITING_RECRUITMENT.leiderschap,
-    pad: "/oplossingen/recruitment-role-fit",
-    linktekst: "Bekijk Recruitment & Role Fit",
-  },
-  film: {
-    bovenschrift: "Het traject in beeld",
-    kop: "Ruim een minuut over Leadership & Team Energy",
-    uitleg:
-      "Van de aanleiding tot het ploegbeeld en de herhaalmeting, in de stem van het platform. Wie liever leest: alles wat de film zegt staat in de ondertitels.",
-    bron: "/film/lte-nl.mp4",
-    poster: "/film/lte-nl-beeld.jpg",
-    ondertitels: "/film/lte-nl.vtt",
-    onderschrift:
-      "Gesproken uitleg in het Nederlands. Ondertitels zijn in de speler aan te zetten.",
-    testid: "lte-film",
-  },
-  testid: "journey-leiderschap",
-};
+function maakInhoud(taal: PubliekeTaal): TrajectInhoud {
+  const cluster = clusterOp("leiderschap", taal)!;
+  return {
+    cluster,
+    bovenschrift: kies(T.lte.bovenschrift, taal),
+    lead: kies(T.lte.lead, taal),
+    stappen: lteStappen(taal),
+    outputs: outputstapel(taal).filter((o) => o.nummer <= 3),
+    uitkomst: lteUitkomst(taal),
+    grenzen: kies<readonly string[]>(T.lte.grenzen, taal),
+    prijsuitleg: kies(T.lte.prijsuitleg, taal),
+    // Soms volstaat begeleiding of een andere rolverdeling niet en vraagt de ploeg
+    // een bewuste instroombeslissing. Eerst begrijpen hoe deze ploeg werkt, daarna
+    // bepalen welk type persoon haar versterkt.
+    aansluiting: {
+      tekst: aansluitingRecruitment(taal).leiderschap,
+      pad: "/oplossingen/recruitment-role-fit",
+      linktekst: kies(T.lte.linktekst, taal),
+    },
+    // Twee taalversies van de film, zoals bij Human Due Diligence. Welke versie
+    // begint te spelen, volgt de taal van de pagina; de knoppen boven de speler
+    // houden de andere taal binnen bereik.
+    film: {
+      bovenschrift: kies(T.lte.filmBovenschrift, taal),
+      kop: kies(T.lte.filmKop, taal),
+      uitleg: kies(T.lte.filmUitleg, taal),
+      bron: "/film/lte-nl.mp4",
+      poster: "/film/lte-nl-beeld.jpg",
+      ondertitels: "/film/lte-nl.vtt",
+      versies: [
+        {
+          taal: "nl",
+          label: "Nederlands",
+          bron: "/film/lte-nl.mp4",
+          poster: "/film/lte-nl-beeld.jpg",
+          ondertitels: "/film/lte-nl.vtt",
+        },
+        {
+          taal: "en",
+          label: "English",
+          bron: "/film/lte-en.mp4",
+          poster: "/film/lte-en-beeld.jpg",
+          ondertitels: "/film/lte-en.vtt",
+        },
+      ],
+      onderschrift: kies(T.lte.filmOnderschrift, taal),
+      testid: "lte-film",
+    },
+    testid: "journey-leiderschap",
+  };
+}
 
 export default function JourneyLeiderschap() {
-  return <TrajectPagina inhoud={inhoud} />;
+  const { taal } = usePubliekeTaal();
+  return <TrajectPagina inhoud={maakInhoud(taal)} />;
 }

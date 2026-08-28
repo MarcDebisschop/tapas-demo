@@ -25,6 +25,17 @@ const app = readFileSync(resolve(__dirname, "../client/src/App.tsx"), "utf8");
 const demo = readFileSync(resolve(__dirname, "../client/src/pages/demo.tsx"), "utf8");
 const demoOpmaak = readFileSync(resolve(__dirname, "../client/src/pages/publiek.css"), "utf8");
 const home = readFileSync(resolve(__dirname, "../client/src/pages/home.tsx"), "utf8");
+// De publieke laag is tweetalig: de teksten staan in de catalogi en de pagina's
+// halen ze per taal op. Beweringen over woordkeuze horen dus bij de catalogus,
+// beweringen over opbouw en gedrag bij de pagina zelf.
+const teksten = readFileSync(
+  resolve(__dirname, "../client/src/publiek/teksten-onthaal.ts"),
+  "utf8",
+);
+const tekstenPaginas = readFileSync(
+  resolve(__dirname, "../client/src/publiek/teksten-paginas.ts"),
+  "utf8",
+);
 
 /** De bron zonder commentaarregels, voor toetsen die iets moeten uitsluiten. */
 const paginaCode = pagina
@@ -118,28 +129,36 @@ describe("C. Geen tweede merkteken", () => {
 
 describe("D. Wat er op de pagina staat", () => {
   it("de kernzin staat er woordelijk, op het niveau van de beslissing", () => {
-    expect(pagina).toContain(
+    expect(teksten).toContain(
       "Tapas CORE brengt het menselijke deel van een beslissing in beeld: welk talent er",
     );
-    expect(pagina).toContain(
+    expect(teksten).toContain(
       "een rapport waarop een leidinggevende, een bestuur of een investeerder kan handelen.",
     );
     // De oude zin beschreef het gereedschap in plaats van de beslissing.
+    expect(teksten).not.toContain("talentinstrument uitstuurt, de afname opvolgt");
     expect(pagina).not.toContain("talentinstrument uitstuurt, de afname opvolgt");
   });
 
   it("de grens van het instrument staat er, in de voettekst en in het hoofddeel", () => {
-    expect(pagina).toContain("Geen diagnose, selectie of");
-    expect(pagina).toContain("Geen diagnose");
-    expect(pagina).toContain("Geen selectiebeslissing");
-    expect(pagina).toContain("Geen potentieelbepaling");
+    expect(teksten).toContain("Geen diagnose, selectie of");
+    expect(teksten).toContain("Geen diagnose");
+    expect(teksten).toContain("Geen selectiebeslissing");
+    expect(teksten).toContain("Geen potentieelbepaling");
+    // De grens staat ook in het Engels op de pagina.
+    expect(teksten).toContain("No diagnosis");
   });
 
   it("de belofte over het antwoord noemt een mens", () => {
-    expect(pagina).toContain("antwoord van een Tapas-medewerker");
+    expect(teksten).toContain("antwoord van een Tapas-medewerker");
+    expect(teksten).toContain("an answer from a Tapas staff member");
   });
 
-  it("er staat geen taalkiezer op", () => {
+  it("de taalknop is de ene schakelaar van de publieke laag", () => {
+    // De publieke laag start in het Engels en schakelt met een knop naar het
+    // Nederlands. Die knop staat op één plaats, in publiek/taal.tsx, en de
+    // pagina zet ze neer zonder een eigen tweede kiezer te bouwen.
+    expect(pagina).toContain("<TaalKeuze");
     expect(paginaCode).not.toMatch(/className="talen"/);
     expect(paginaCode).not.toMatch(/>\s*NL\s*</);
   });
@@ -174,8 +193,11 @@ describe("D. Wat er op de pagina staat", () => {
       "Een coach of practitioner",
       "Een deelnemer met een vraag",
     ]) {
-      expect(pagina).toContain(rol);
+      expect(teksten).toContain(rol);
     }
+    // De waarde die naar de server gaat blijft de Nederlandse string, ook op
+    // de Engelse pagina, zodat de bestaande verwerking niet verschuift.
+    expect(pagina).toContain("ROLLEN");
   });
 });
 
@@ -183,9 +205,13 @@ describe("D2. De themaknop", () => {
   it("noemt de weergave waarnaar je wisselt, niet de huidige stand", () => {
     // Een knop die de huidige stand toont, laat de bezoeker gissen. Deze knop
     // noemt de weergave die je krijgt wanneer je klikt.
-    expect(pagina).toContain('{theme === "dark" ? "Licht" : "Donker"}');
-    expect(pagina).toContain("Wissel naar de lichte weergave");
-    expect(pagina).toContain("Wissel naar de donkere weergave");
+    expect(pagina).toContain(
+      '{theme === "dark" ? kies(T.kop.licht, taal) : kies(T.kop.donker, taal)}',
+    );
+    expect(teksten).toContain('licht: { nl: "Licht", en: "Light" }');
+    expect(teksten).toContain('donker: { nl: "Donker", en: "Dark" }');
+    expect(teksten).toContain("Wissel naar de lichte weergave");
+    expect(teksten).toContain("Wissel naar de donkere weergave");
   });
 
   it("gebruikt de themaschakelaar van de app zelf", () => {
@@ -240,7 +266,8 @@ describe("F. De onopvallende beheerdersdeur in de voettekst", () => {
 
   it("draagt het woord Beheer en geen langer opschrift", () => {
     const beheer = pagina.slice(pagina.indexOf('data-testid="onthaal-beheer"'));
-    expect(beheer).toContain(">\n              Beheer\n            </Link>");
+    expect(beheer).toContain("{kies(T.voet.beheer, taal)}");
+    expect(teksten).toContain('beheer: { nl: "Beheer", en: "Administration" }');
   });
 
   it("staat op de regel met de vermelding van de onderneming", () => {
@@ -302,7 +329,8 @@ describe("F. De film", () => {
 
   it("heeft een tekstalternatief voor wie geen geluid kan gebruiken", () => {
     expect(sectie).toContain("<figcaption>");
-    expect(sectie).toContain("Uw browser kan deze film niet spelen");
+    expect(sectie).toContain("kies(T.demo.geenFilm, taal)");
+    expect(tekstenPaginas).toContain("Uw browser kan deze film niet spelen");
   });
 
   it("houdt de verhouding vast in de opmaak, zodat de pagina niet verschuift", () => {

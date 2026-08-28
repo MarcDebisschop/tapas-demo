@@ -4,34 +4,34 @@
 // Ze herhaalt de grenzen van het instrument, verwijst naar de bestaande
 // pagina's en houdt de ondernemingsgegevens bij de hand. De onopvallende
 // beheerdersdeur blijft waar ze staat, in de voettekst van de onthaalpagina.
+//
+// TWEETALIG
+// De opschriften en de twee alinea's komen uit publiek/teksten-paginas.ts en
+// volgen de taal van de publieke laag. De paden blijven in beide talen gelijk.
 // ===========================================================================
 
 import { Link } from "wouter";
+import { kies, usePubliekeTaal } from "@/publiek/taal";
+import { T } from "@/publiek/teksten-paginas";
 
 export default function PubliekeVoet() {
+  const { taal } = usePubliekeTaal();
   return (
     <footer data-testid="publieke-voet">
       <div className="wrap">
         <div className="f-top">
           <div className="f-lijst">
-            <Link href="/oplossingen">Oplossingen</Link>
-            <Link href="/outputs">Outputs</Link>
-            <Link href="/partners">Voor partners</Link>
-            <Link href="/demo">Demo-omgeving</Link>
-            <Link href="/instrumenten">Instrumentenoverzicht</Link>
-            <Link href="/onderbouwing">Onderbouwing</Link>
-            <Link href="/aanmelden">Aanmelden</Link>
+            <Link href="/oplossingen">{kies(T.voet.oplossingen, taal)}</Link>
+            <Link href="/outputs">{kies(T.voet.outputs, taal)}</Link>
+            <Link href="/partners">{kies(T.voet.partners, taal)}</Link>
+            <Link href="/demo">{kies(T.voet.demo, taal)}</Link>
+            <Link href="/instrumenten">{kies(T.voet.instrumenten, taal)}</Link>
+            <Link href="/onderbouwing">{kies(T.voet.onderbouwing, taal)}</Link>
+            <Link href="/aanmelden">{kies(T.voet.aanmelden, taal)}</Link>
           </div>
         </div>
-        <p className="f-note">
-          Tapas CORE levert onderbouwde inzichten die een beslissing helpen voorbereiden. Het
-          platform stelt geen diagnose, neemt geen selectiebeslissing en bepaalt geen potentieel.
-          Wie beslist, blijft de organisatie.
-        </p>
-        <p className="f-cr">
-          Tapas CORE is een platform van TaPasCity, 2BQ Consult, Zandstraat 85, 2960 Sint Job in
-          't Goor, België.
-        </p>
+        <p className="f-note">{kies(T.voet.grens, taal)}</p>
+        <p className="f-cr">{kies(T.voet.gegevens, taal)}</p>
       </div>
     </footer>
   );

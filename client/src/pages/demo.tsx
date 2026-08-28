@@ -9,6 +9,14 @@
 //
 // De demo verzint geen cijfers en opent geen echte afname. Wie het platform
 // zelf wil zien werken, gaat langs de bestaande omgevingen.
+//
+// TWEETALIG
+// De pagina is tweetalig, met Engels als standaard. De journeys en de cases
+// komen per taal uit publiek/inhoud.ts, de eigen teksten uit
+// publiek/teksten-paginas.ts. De sleutels zijn machinewaarden en blijven in
+// beide talen gelijk, zodat een keuze een taalwissel overleeft. De film van het
+// platform bestaat vandaag enkel in het Nederlands; het onderschrift zegt dat
+// ook in de Engelse weergave.
 // ===========================================================================
 
 import { useState } from "react";
@@ -16,16 +24,20 @@ import { Link } from "wouter";
 import PubliekeKop from "@/components/PubliekeKop";
 import PubliekeVoet from "@/components/PubliekeVoet";
 import { onthoudBlok } from "@/lib/naar-blok";
-import { DEMO_CASES, DEMO_JOURNEYS } from "@/data/oplossingen";
+import { demoCases, demoJourneys } from "@/publiek/inhoud";
+import { kies, usePubliekeTaal } from "@/publiek/taal";
+import { T } from "@/publiek/teksten-paginas";
 import "./publiek.css";
 
 export default function Demo() {
-  const [journeySleutel, setJourneySleutel] = useState(DEMO_JOURNEYS[0].sleutel);
+  const { taal } = usePubliekeTaal();
+  const journeys = demoJourneys(taal);
+  const cases = demoCases(taal);
+  const [journeySleutel, setJourneySleutel] = useState(journeys[0].sleutel);
   const [caseSleutel, setCaseSleutel] = useState<string | null>(null);
 
-  const journey =
-    DEMO_JOURNEYS.find((j) => j.sleutel === journeySleutel) ?? DEMO_JOURNEYS[0];
-  const gekozenCase = DEMO_CASES.find((c) => c.sleutel === caseSleutel) ?? null;
+  const journey = journeys.find((j) => j.sleutel === journeySleutel) ?? journeys[0];
+  const gekozenCase = cases.find((c) => c.sleutel === caseSleutel) ?? null;
 
   /** Een case kiest zelf de journey die bij de context past. */
   function kiesCase(sleutel: string): void {
@@ -33,38 +45,34 @@ export default function Demo() {
       setCaseSleutel(null);
       return;
     }
-    const c = DEMO_CASES.find((x) => x.sleutel === sleutel);
+    const c = cases.find((x) => x.sleutel === sleutel);
     setCaseSleutel(sleutel);
     if (c) {
-      const bij = DEMO_JOURNEYS.find((j) => c.journey.startsWith(j.naam));
+      const bij = journeys.find((j) => c.journey.startsWith(j.naam));
       if (bij) setJourneySleutel(bij.sleutel);
     }
   }
 
   return (
-    <div className="publiek" data-testid="demopagina">
+    <div className="publiek" lang={taal} data-testid="demopagina">
       <PubliekeKop />
 
       <div className="kop-blok">
         <div className="wrap">
-          <p className="eyebrow">Demo-omgeving</p>
-          <h1>Een traject tonen, niet een vragenlijst</h1>
-          <p className="lead">
-            Kies een journey en, als u wil, een casecontext. U ziet dan hoe het traject verloopt: wie
-            deelneemt, welke stappen er zijn, welke rapporten eruit komen en welke beslissing erop
-            volgt. De cijfers en de namen zijn fictief, de opbouw is die van een echt dossier.
-          </p>
+          <p className="eyebrow">{kies(T.demo.eyebrow, taal)}</p>
+          <h1>{kies(T.demo.titel, taal)}</h1>
+          <p className="lead">{kies(T.demo.lead, taal)}</p>
         </div>
       </div>
 
       <section>
         <div className="wrap">
           <div className="sec-kop">
-            <p className="eyebrow">Kies een journey</p>
-            <h2>Drie trajecten</h2>
+            <p className="eyebrow">{kies(T.demo.journeyEyebrow, taal)}</p>
+            <h2>{kies(T.demo.journeyKop, taal)}</h2>
           </div>
-          <div className="keuzerij" role="group" aria-label="Kies een journey">
-            {DEMO_JOURNEYS.map((j) => (
+          <div className="keuzerij" role="group" aria-label={kies(T.demo.journeyGroep, taal)}>
+            {journeys.map((j) => (
               <button
                 key={j.sleutel}
                 type="button"
@@ -79,15 +87,12 @@ export default function Demo() {
           </div>
 
           <div className="sec-kop" style={{ marginBottom: "18px" }}>
-            <p className="eyebrow">Casemodus</p>
-            <h2>Drie contexten</h2>
-            <p>
-              Een case zet het traject in een herkenbare situatie en kiest zelf de journey die
-              daarbij hoort. Klik de case opnieuw aan om de context weer weg te nemen.
-            </p>
+            <p className="eyebrow">{kies(T.demo.caseEyebrow, taal)}</p>
+            <h2>{kies(T.demo.caseKop, taal)}</h2>
+            <p>{kies(T.demo.caseUitleg, taal)}</p>
           </div>
-          <div className="keuzerij" role="group" aria-label="Kies een casecontext">
-            {DEMO_CASES.map((c) => (
+          <div className="keuzerij" role="group" aria-label={kies(T.demo.caseGroep, taal)}>
+            {cases.map((c) => (
               <button
                 key={c.sleutel}
                 type="button"
@@ -103,28 +108,28 @@ export default function Demo() {
 
           {gekozenCase && (
             <div className="prijs" data-testid="demo-casecontext" style={{ marginTop: 0 }}>
-              <p className="pk">Casecontext</p>
+              <p className="pk">{kies(T.demo.caseContextKop, taal)}</p>
               <p>{gekozenCase.context}</p>
               <p style={{ marginTop: "10px" }}>
-                <b>De vraag op tafel:</b> {gekozenCase.vraag}
+                <b>{kies(T.demo.vraagOpTafel, taal)}</b> {gekozenCase.vraag}
               </p>
               <p style={{ marginTop: "10px" }}>
-                <b>Wat het oplevert:</b> {gekozenCase.uitkomst}
+                <b>{kies(T.demo.watHetOplevert, taal)}</b> {gekozenCase.uitkomst}
               </p>
             </div>
           )}
 
           <div className="verhaal" data-testid="demo-verhaal" style={{ marginTop: "34px" }}>
             <div className="vk">
-              <p className="eyebrow">Journey</p>
+              <p className="eyebrow">{kies(T.demo.journeyLabel, taal)}</p>
               <h3>{journey.naam}</h3>
               <p>{journey.probleem}</p>
             </div>
             <div className="vlijf">
               <div className="vblok">
-                <h4>Deelnemers</h4>
+                <h4>{kies(T.demo.deelnemers, taal)}</h4>
                 <p style={{ fontSize: "15px", color: "var(--fg-2)" }}>{journey.deelnemers}</p>
-                <h4 style={{ marginTop: "24px" }}>Verloop</h4>
+                <h4 style={{ marginTop: "24px" }}>{kies(T.demo.verloop, taal)}</h4>
                 <ol>
                   {journey.flow.map((f) => (
                     <li key={f}>{f}</li>
@@ -132,21 +137,20 @@ export default function Demo() {
                 </ol>
               </div>
               <div className="vblok">
-                <h4>Outputs</h4>
+                <h4>{kies(T.demo.outputs, taal)}</h4>
                 <ul>
                   {journey.outputs.map((o) => (
                     <li key={o}>{o}</li>
                   ))}
                 </ul>
-                <h4 style={{ marginTop: "24px" }}>Bewaking</h4>
+                <h4 style={{ marginTop: "24px" }}>{kies(T.demo.bewaking, taal)}</h4>
                 <p style={{ fontSize: "15px", color: "var(--fg-2)" }}>
-                  Elk rapport draagt zijn versie, taal, datum en de vermelding wie het mag lezen.
-                  Individuele scores blijven bij de deelnemer en zijn begeleider.
+                  {kies(T.demo.bewakingTekst, taal)}
                 </p>
               </div>
             </div>
             <div className="slot">
-              <b>Vervolgactie:</b> {journey.vervolgactie}
+              <b>{kies(T.demo.vervolgactie, taal)}</b> {journey.vervolgactie}
             </div>
           </div>
 
@@ -156,12 +160,9 @@ export default function Demo() {
               spelen: er is gesproken tekst, dus geluid blijft een keuze. Het
               ondertitelspoor staat klaar maar niet aan. */}
           <div className="sec-kop" style={{ marginTop: "56px" }}>
-            <p className="eyebrow">Het platform aan het werk</p>
-            <h2>Tachtig seconden door de omgeving</h2>
-            <p>
-              Van de uitnodiging tot het rapport, opgenomen in de echte omgeving. Wie liever leest:
-              de trajecten en de outputs staan volledig uitgeschreven op hun eigen pagina.
-            </p>
+            <p className="eyebrow">{kies(T.demo.filmEyebrow, taal)}</p>
+            <h2>{kies(T.demo.filmKop, taal)}</h2>
+            <p>{kies(T.demo.filmUitleg, taal)}</p>
           </div>
           <figure className="film">
             <video
@@ -178,12 +179,9 @@ export default function Demo() {
                 label="Nederlands"
                 src="/film/tapas-core-nl.vtt"
               />
-              Uw browser kan deze film niet spelen. Het verloop van elk traject staat hierboven in
-              tekst.
+              {kies(T.demo.geenFilm, taal)}
             </video>
-            <figcaption>
-              Gesproken uitleg in het Nederlands. Ondertitels zijn in de speler aan te zetten.
-            </figcaption>
+            <figcaption>{kies(T.demo.onderschrift, taal)}</figcaption>
           </figure>
 
           <div className="acties" style={{ marginTop: "34px" }}>
@@ -192,13 +190,13 @@ export default function Demo() {
               className="knop knop-1"
               onClick={() => onthoudBlok("contact")}
             >
-              Vraag een begeleide demo
+              {kies(T.demo.begeleideDemo, taal)}
             </Link>
             <Link href="/oplossingen" className="knop knop-2">
-              Bekijk de trajecten
+              {kies(T.demo.naarTrajecten, taal)}
             </Link>
             <Link href="/outputs" className="knop knop-2">
-              Bekijk de outputs
+              {kies(T.demo.naarOutputs, taal)}
             </Link>
           </div>
         </div>

@@ -31,6 +31,12 @@ import {
   CLUSTERS,
 } from "../client/src/data/oplossingen";
 
+// De publieke laag is tweetalig. De pagina's lezen hun inhoud niet meer
+// rechtstreeks uit data/oplossingen maar via de getters uit publiek/inhoud.ts,
+// die per taal de Nederlandse of de Engelse reeks teruggeven. De Nederlandse
+// reeks blijft data/oplossingen, dus de beweringen over de inhoud zelf blijven
+// op die bron staan; de beweringen over de pagina volgen de getters.
+
 function lees(pad: string): string {
   return readFileSync(resolve(__dirname, "..", pad), "utf8");
 }
@@ -47,6 +53,7 @@ const geraakt = [
 ];
 
 const oplossingen = lees("client/src/pages/oplossingen.tsx");
+const onthaalTeksten = lees("client/src/publiek/teksten-onthaal.ts");
 const onthaal = lees("client/src/pages/onthaal.tsx");
 const onthaalCss = lees("client/src/pages/onthaal.css");
 const publiekCss = lees("client/src/pages/publiek.css");
@@ -58,13 +65,15 @@ describe("A. De vierde journey heeft een eigen band", () => {
   it("Recruitment staat niet meer in de rij van de clusters zonder pagina", () => {
     // De rij eronder is uitdrukkelijk gefilterd op alles behalve recruitment.
     expect(oplossingen).toContain('c.sleutel !== "recruitment"');
-    expect(oplossingen).toContain('CLUSTERS.find((c) => c.sleutel === "recruitment")');
+    expect(oplossingen).toContain('alle.find((c) => c.sleutel === "recruitment")');
+    // De rij komt uit de tweetalige getter, niet uit een vaste taal.
+    expect(oplossingen).toContain("clusters(taal)");
   });
 
   it("de band draagt een aanklikbare kaart naar de trajectpagina", () => {
     expect(oplossingen).toContain('data-testid="kaart-vierde-journey"');
     const iKaart = oplossingen.indexOf('data-testid="kaart-vierde-journey"');
-    const iRest = oplossingen.indexOf("Verdere clusters");
+    const iRest = oplossingen.indexOf("T.oplossingen.restEyebrow");
     // De band staat boven de verdere clusters, niet eronder.
     expect(iKaart).toBeGreaterThan(0);
     expect(iKaart).toBeLessThan(iRest);
@@ -121,14 +130,18 @@ describe("B. Vier beslismomenten op een motor", () => {
 
   it("het blok staat op de pagina", () => {
     expect(oplossingen).toContain('data-testid="beslismomenten"');
-    expect(oplossingen).toContain("BESLISMOMENTEN.map");
+    expect(oplossingen).toContain("beslismomenten(taal).map");
   });
 });
 
 describe("C. Vier ingangen op de onthaalpagina", () => {
   it("de rij ingangen bevat Recruitment", () => {
     expect(onthaal).toContain('["hdd", "leiderschap", "recruitment", "ontwikkeling"]');
-    expect(onthaal).toContain("Vier ingangen");
+    // Het opschrift van de band staat in de tweetalige catalogus. In beide
+    // talen benoemt de tekst vier ingangen en nergens nog drie.
+    expect(onthaalTeksten).toContain("Vier ingangen");
+    expect(onthaalTeksten).toContain("Four entry points");
+    expect(onthaalTeksten).not.toContain("Drie ingangen");
     expect(onthaal).not.toContain("Drie ingangen");
   });
 
@@ -146,7 +159,8 @@ describe("C. Vier ingangen op de onthaalpagina", () => {
 
   it("de wedge in de kop blijft de twee trajecten van de eerste lijn", () => {
     // Vier ingangen mogen de internationale eerste lijn niet verwateren.
-    expect(onthaal).toContain("CLUSTERS.filter((c) => c.wedge)");
+    expect(onthaal).toContain(".filter((c) => c.wedge)");
+    expect(onthaal).toContain("clusters(taal)");
     expect(CLUSTERS.filter((c) => c.wedge).map((c) => c.sleutel)).toEqual(["hdd", "leiderschap"]);
   });
 });
@@ -182,12 +196,12 @@ describe("D. De brugregels uit het dossier staan er woordelijk", () => {
   });
 
   it("Human Due Diligence draagt de brug naar de trajectpagina", () => {
-    expect(hdd).toContain("AANSLUITING_RECRUITMENT.hdd");
+    expect(hdd).toContain("aansluitingRecruitment(taal).hdd");
     expect(hdd).toContain('pad: "/oplossingen/recruitment-role-fit"');
   });
 
   it("Leadership & Team Energy draagt de brug naar de trajectpagina", () => {
-    expect(lte).toContain("AANSLUITING_RECRUITMENT.leiderschap");
+    expect(lte).toContain("aansluitingRecruitment(taal).leiderschap");
     expect(lte).toContain('pad: "/oplossingen/recruitment-role-fit"');
   });
 
@@ -195,7 +209,8 @@ describe("D. De brugregels uit het dossier staan er woordelijk", () => {
     // Dit cluster heeft geen eigen trajectpagina, dus de begeleidende tekst
     // staat op de kaart zelf.
     expect(CLUSTERS.find((c) => c.sleutel === "ontwikkeling")!.pad).toBeNull();
-    expect(oplossingen).toContain("AANSLUITING_RECRUITMENT[c.sleutel]");
+    expect(oplossingen).toContain("aansluiting[c.sleutel]");
+    expect(oplossingen).toContain("aansluitingRecruitment(taal)");
     expect(oplossingen).toContain("data-testid={`aansluiting-${c.sleutel}`}");
   });
 

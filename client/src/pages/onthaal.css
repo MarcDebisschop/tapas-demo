@@ -349,3 +349,78 @@ html.dark .onthaal{--primary:#5EAEBA; --primary-dp:#8ACAD3;      /* 188 40% 55% 
   .onthaal .stapelband{grid-template-columns:1fr}
   .onthaal nav.hoofdnav{order:3;width:100%;margin-right:0}
 }
+
+/* ---------------------------------------------------------------------------
+   De taalkeuze in de kopbalk van de onthaalpagina. Dezelfde vorm als op de
+   overige publieke pagina's, zodat de bezoeker ze op elke pagina herkent.
+   --------------------------------------------------------------------------- */
+.onthaal .taalkeuze{display:inline-flex;align-items:stretch;border:1px solid var(--line);
+  border-radius:8px;overflow:hidden;background:var(--card)}
+.onthaal .taalkeuze .taal{font-family:var(--sans);font-size:12.5px;font-weight:600;
+  letter-spacing:.06em;color:var(--muted);background:transparent;border:0;cursor:pointer;
+  padding:9px 11px;line-height:1;transition:background .15s,color .15s}
+.onthaal .taalkeuze .taal + .taal{border-left:1px solid var(--line)}
+.onthaal .taalkeuze .taal:hover{background:var(--tint);color:var(--accent)}
+.onthaal .taalkeuze .taal.aan{background:var(--primary);color:var(--card)}
+@media(max-width:620px){
+  .onthaal .taalkeuze .taal{padding:8px 9px;font-size:12px}
+}
+
+/* ---------------------------------------------------------------------------
+   De categorieclaim bovenaan de kop.
+
+   De claim is de positionering en daarom het grootste element van de pagina:
+   ze staat boven de belofte, in de serif-koptypografie van het huis, met de
+   bestaande eyebrow erboven. Ze blijft in beide talen Engels, dus de maat is
+   op die ene regel afgestemd. De belofte eronder is de leesregel en wisselt
+   wel met de taal; ze staat daarom een trap kleiner dan de claim.
+
+   De claim mag op geen enkele breedte buiten het venster vallen en geen woord
+   afbreken: vandaar hyphens:manual, een woordafbreking enkel waar de tekst
+   zelf al een koppelteken draagt, en een maat die met het venster meekrimpt.
+   --------------------------------------------------------------------------- */
+.onthaal .claimblok{margin:0 0 30px}
+.onthaal .hero h1.claim{margin:16px 0 0;font-size:clamp(32px,4.5vw,56px);line-height:1.08;
+  letter-spacing:-.022em;max-width:26ch;text-wrap:balance;hyphens:manual;overflow-wrap:break-word}
+/* Een woord met een koppelteken blijft heel: de regel breekt ervoor, niet erin. */
+.onthaal .hero h1.claim .bijeen{white-space:nowrap}
+.onthaal .hero .claim-zakelijk{margin-top:18px;max-width:58ch;font-size:clamp(15px,1.3vw,18px);
+  line-height:1.55;color:var(--fg-2)}
+.onthaal .hero .belofte{margin-top:34px;padding-top:26px;border-top:1px solid var(--line);
+  max-width:37ch;font-family:var(--serif);font-weight:600;font-size:clamp(23px,2.4vw,31px);
+  line-height:1.2;letter-spacing:-.014em;color:var(--fg)}
+.onthaal .hero .belofte em{font-style:italic;color:var(--accent);font-weight:400}
+@media(max-width:1000px){
+  .onthaal .hero h1.claim{max-width:100%}
+  .onthaal .hero .belofte{max-width:40ch}
+}
+@media(max-width:620px){
+  .onthaal .claimblok{margin-bottom:24px}
+  .onthaal .hero .belofte{max-width:100%;margin-top:28px;padding-top:22px}
+}
+
+/* De taalkeuze staat rechts in de kopbalk, naast de thema-knop. Om de balk op
+   één regel te houden verdwijnt de kennismakingsknop nu al onder 1080 pixels:
+   dezelfde knop staat een paar centimeter lager in de kop, en de taalkeuze
+   heeft de plaats nodig. Onder 620 pixels blijft de rij merk, taalkeuze en
+   thema samen, met de navigatie op een eigen regel eronder. */
+.onthaal .bar .taalkeuze{flex:0 0 auto}
+@media(max-width:1080px){
+  .onthaal .bar .knop-1{display:none}
+}
+@media(max-width:620px){
+  .onthaal .bar .wrap{gap:12px}
+  .onthaal .bar .knop-l{padding:10px 14px;font-size:14px}
+}
+
+/* De taalkeuze neemt ruimte in de balk in, dus alles eromheen gaat een paar
+   pixels krapper staan: de tussenruimten, de navigatieknoppen, de ondertitel
+   bij het merk en de twee knoppen rechts. Zo blijven merk, navigatie,
+   taalkeuze, thema en kennismaking op een breed scherm samen op één regel, in
+   beide talen, in plaats van dat de laatste knop naar een tweede regel valt.
+   De Nederlandse navigatie is de langste van de twee en bepaalt de maat. */
+.onthaal .bar .wrap{gap:14px 12px}
+.onthaal nav.hoofdnav{gap:2px}
+.onthaal .navknop{font-size:13.5px;padding:8px 7px}
+.onthaal .bar .knop{padding:11px 15px;font-size:14px}
+.onthaal .merk .onder{font-size:11px;letter-spacing:.02em}

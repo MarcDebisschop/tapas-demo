@@ -57,7 +57,12 @@ describe("A. De film staat op de trajectpagina", () => {
   });
 
   it("er staat een uitweg voor wie de film niet kan spelen", () => {
-    expect(geraamte).toContain("Uw browser kan deze film niet spelen");
+    // Het tekstalternatief staat in de tweetalige catalogus; het geraamte
+    // haalt het per taal op.
+    expect(geraamte).toContain("kies(T.traject.geenFilm, taal)");
+    const teksten = readFileSync(pad("client/src/publiek/teksten-paginas.ts"), "utf8");
+    expect(teksten).toContain("Uw browser kan deze film niet spelen");
+    expect(teksten).toContain("Your browser cannot play this film");
   });
 });
 

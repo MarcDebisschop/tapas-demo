@@ -5,39 +5,42 @@
 // wat een licentie bevat en hoe een samenwerking begint. De bestaande
 // aanvraagweg (/coach-aanvraag) en het bestaande coachoverzicht (/coaches)
 // blijven ongewijzigd bestaan en worden hier gewoon aangewezen.
+//
+// TWEETALIG
+// De pagina is tweetalig, met Engels als standaard. De licentievormen komen per
+// taal uit publiek/inhoud.ts, de eigen teksten uit publiek/teksten-paginas.ts.
 // ===========================================================================
 
 import { Link } from "wouter";
 import PubliekeKop from "@/components/PubliekeKop";
 import PubliekeVoet from "@/components/PubliekeVoet";
 import { onthoudBlok } from "@/lib/naar-blok";
-import { LICENTIES } from "@/data/oplossingen";
+import { licenties } from "@/publiek/inhoud";
+import { kies, usePubliekeTaal } from "@/publiek/taal";
+import { T } from "@/publiek/teksten-paginas";
 import "./publiek.css";
 
 export default function Partners() {
+  const { taal } = usePubliekeTaal();
   return (
-    <div className="publiek" data-testid="partnerspagina">
-      <PubliekeKop nu="Voor partners" />
+    <div className="publiek" lang={taal} data-testid="partnerspagina">
+      <PubliekeKop nu="/partners" />
 
       <div className="kop-blok">
         <div className="wrap">
-          <p className="eyebrow">Voor partners</p>
-          <h1>Werken met Tapas CORE onder eigen naam</h1>
-          <p className="lead">
-            Coaches, adviesbureaus en investeringspartners brengen de trajecten van Tapas CORE bij
-            hun eigen klanten. Zij houden de relatie, wij leveren de instrumenten, de rapporten en
-            de opleiding. Hieronder staat wat elke vorm van samenwerking bevat en wat ze kost.
-          </p>
+          <p className="eyebrow">{kies(T.partners.eyebrow, taal)}</p>
+          <h1>{kies(T.partners.titel, taal)}</h1>
+          <p className="lead">{kies(T.partners.lead, taal)}</p>
           <div className="acties">
             <Link href="/coach-aanvraag" className="knop knop-1">
-              Vraag een licentie aan
+              {kies(T.partners.licentieKnop, taal)}
             </Link>
             <Link
               href="/"
               className="knop knop-2"
               onClick={() => onthoudBlok("contact")}
             >
-              Plan een kennismaking
+              {kies(T.partners.kennismaking, taal)}
             </Link>
           </div>
         </div>
@@ -46,21 +49,18 @@ export default function Partners() {
       <section>
         <div className="wrap">
           <div className="sec-kop">
-            <p className="eyebrow">Drie vormen</p>
-            <h2>Wat een licentie bevat</h2>
-            <p>
-              De vormen verschillen in wie de klant houdt en wie het traject brengt. De
-              instrumenten, de rapporten en de grenzen zijn in alle drie dezelfde.
-            </p>
+            <p className="eyebrow">{kies(T.partners.vormenEyebrow, taal)}</p>
+            <h2>{kies(T.partners.vormenKop, taal)}</h2>
+            <p>{kies(T.partners.vormenUitleg, taal)}</p>
           </div>
           <div className="rooster-3">
-            {LICENTIES.map((l) => (
+            {licenties(taal).map((l) => (
               <div className="kaart" key={l.naam}>
                 <p className="tag">{l.naam}</p>
                 <h3>{l.voorWie}</h3>
                 <p className="beslissing">{l.signaal}</p>
                 <div className="meta">
-                  <b>Inbegrepen</b>
+                  <b>{kies(T.partners.metaInbegrepen, taal)}</b>
                   <ul style={{ margin: "6px 0 0", paddingLeft: "18px" }}>
                     {l.bevat.map((b) => (
                       <li key={b}>{b}</li>
@@ -76,42 +76,29 @@ export default function Partners() {
       <section className="grijs">
         <div className="wrap">
           <div className="sec-kop">
-            <p className="eyebrow">Bekwaamheid</p>
-            <h2>Niemand werkt met deze instrumenten zonder opleiding</h2>
-            <p>
-              Elke begeleider doorloopt het bekwaamheidskader: kennis van de constructen, van de
-              grenzen en van de gespreksvoering. Wie niet bekwaam verklaard is, krijgt de
-              begeleiderslaag van een rapport niet te zien. Dat beschermt de deelnemer en het merk.
-            </p>
+            <p className="eyebrow">{kies(T.partners.bekwaamEyebrow, taal)}</p>
+            <h2>{kies(T.partners.bekwaamKop, taal)}</h2>
+            <p>{kies(T.partners.bekwaamUitleg, taal)}</p>
           </div>
           <div className="rooster-3">
             <div className="kaart">
-              <p className="tag">Stap 1</p>
-              <h3>Kennismaking en dossier</h3>
-              <p>
-                Wij bekijken samen met welke klanten u werkt, welk cluster daarbij past en welk
-                eerste dossier zinvol is om samen op te bouwen.
-              </p>
+              <p className="tag">{kies(T.partners.stap1, taal)}</p>
+              <h3>{kies(T.partners.stap1Kop, taal)}</h3>
+              <p>{kies(T.partners.stap1Tekst, taal)}</p>
             </div>
             <div className="kaart">
-              <p className="tag">Stap 2</p>
-              <h3>Opleiding en certificering</h3>
-              <p>
-                Opleiding per instrument, met een kennistoets en een oefendossier. Daarna volgt de
-                bekwaamheidsverklaring die de begeleiderslaag opent.
-              </p>
+              <p className="tag">{kies(T.partners.stap2, taal)}</p>
+              <h3>{kies(T.partners.stap2Kop, taal)}</h3>
+              <p>{kies(T.partners.stap2Tekst, taal)}</p>
             </div>
             <div className="kaart">
-              <p className="tag">Stap 3</p>
-              <h3>Eerste dossiers samen</h3>
-              <p>
-                De eerste trajecten lopen met een vaste aanspreekpersoon mee, tot de oplevering
-                zonder ondersteuning vlot verloopt.
-              </p>
+              <p className="tag">{kies(T.partners.stap3, taal)}</p>
+              <h3>{kies(T.partners.stap3Kop, taal)}</h3>
+              <p>{kies(T.partners.stap3Tekst, taal)}</p>
             </div>
           </div>
           <p className="kruimel">
-            <Link href="/coaches">Bekijk het bestaande coachoverzicht</Link>
+            <Link href="/coaches">{kies(T.partners.coachesLink, taal)}</Link>
           </p>
         </div>
       </section>

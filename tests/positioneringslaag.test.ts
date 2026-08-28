@@ -41,6 +41,10 @@ function lees(pad: string): string {
 const app = lees("client/src/App.tsx");
 const onthaal = lees("client/src/pages/onthaal.tsx");
 const onthaalCss = lees("client/src/pages/onthaal.css");
+// De onthaalpagina is tweetalig: de teksten staan in de catalogus, de pagina
+// haalt ze per taal op. Beweringen over woordkeuze horen dus bij de catalogus,
+// beweringen over opbouw en volgorde bij de pagina.
+const onthaalTeksten = lees("client/src/publiek/teksten-onthaal.ts");
 const data = lees("client/src/data/oplossingen.ts");
 
 const nieuweBestanden = [
@@ -275,8 +279,12 @@ describe("C. De navigatie komt uit de journeys", () => {
   });
 
   it("de onthaalpagina gebruikt die ene navigatie", () => {
-    expect(onthaal).toContain("HOOFDNAVIGATIE.map");
-    expect(onthaal).toContain('aria-label="Hoofdnavigatie"');
+    // De navigatie komt per taal uit hoofdnavigatie(taal); de Nederlandse
+    // reeks blijft HOOFDNAVIGATIE uit data/oplossingen.
+    expect(onthaal).toContain("hoofdnavigatie(taal).map");
+    // Het toegankelijkheidslabel van de balk komt per taal uit de catalogus.
+    expect(onthaal).toContain("aria-label={kies(T.kop.navLabel, taal)}");
+    expect(onthaalTeksten).toContain('nl: "Hoofdnavigatie", en: "Main navigation"');
     expect(onthaalCss).toContain(".onthaal nav.hoofdnav{");
   });
 
@@ -290,14 +298,30 @@ describe("C. De navigatie komt uit de journeys", () => {
 
 describe("D. De onthaalpagina is beslisgericht", () => {
   it("de belofte staat in de kop", () => {
-    expect(onthaal).toContain("Tapas CORE helpt organisaties");
-    expect(onthaal).toContain("betere talentbeslissingen");
+    // De belofte zelf staat in de tweetalige catalogus, de kop haalt ze op.
+    expect(onthaalTeksten).toContain("Tapas CORE helpt organisaties");
+    expect(onthaalTeksten).toContain("betere talentbeslissingen");
+    expect(onthaal).toContain("T.hero.belofteKop");
+    expect(onthaal).toContain("T.hero.belofteKern");
+  });
+
+  it("de categorieclaim staat bovenaan de kop, in beide talen Engels", () => {
+    expect(onthaalTeksten).toContain(
+      "Tapas CORE is the talent operating system for passion-driven performance.",
+    );
+    expect(onthaal).toContain('data-testid="categorieclaim"');
+    expect(onthaal).toContain('data-testid="categorieclaim-zakelijk"');
+    // De claim staat boven de belofte en boven de zakelijke ingangen.
+    const iClaim = onthaal.indexOf('data-testid="categorieclaim"');
+    expect(iClaim).toBeGreaterThan(0);
+    expect(iClaim).toBeLessThan(onthaal.indexOf("T.hero.belofteKop"));
+    expect(iClaim).toBeLessThan(onthaal.indexOf('id="ingangen"'));
   });
 
   it("de wedge staat in de kop, boven alle breedte", () => {
     const iWedge = onthaal.indexOf('className="wedge"');
-    const iBreedte = onthaal.indexOf("BREEDTE ALS BEWIJS");
-    const iNamen = onthaal.indexOf("Drie namen");
+    const iBreedte = onthaal.indexOf('className="breedte"');
+    const iNamen = onthaal.indexOf("T.namen.eyebrow");
     expect(iWedge).toBeGreaterThan(0);
     expect(iWedge).toBeLessThan(iBreedte);
     expect(iBreedte).toBeLessThan(iNamen);
@@ -307,18 +331,22 @@ describe("D. De onthaalpagina is beslisgericht", () => {
     for (const sleutel of ["hdd", "leiderschap", "recruitment", "ontwikkeling"]) {
       expect(onthaal).toContain(sleutel);
     }
-    expect(onthaal).toContain("Welke beslissing ligt bij u op tafel?");
-    expect(onthaal.indexOf('id="ingangen"')).toBeLessThan(onthaal.indexOf("BREEDTE ALS BEWIJS"));
+    expect(onthaalTeksten).toContain("Welke beslissing ligt bij u op tafel?");
+    expect(onthaal).toContain("T.ingangen.titel");
+    expect(onthaal.indexOf('id="ingangen"')).toBeLessThan(
+      onthaal.indexOf('className="breedte"'),
+    );
   });
 
   it("de outputstapel staat op de onthaalpagina met een verwijzing naar de volle opbouw", () => {
-    expect(onthaal).toContain("OUTPUTSTAPEL.map");
+    expect(onthaal).toContain("outputstapel(taal).map");
     expect(onthaal).toContain('href="/outputs"');
   });
 
   it("de breedte staat er als bewijs, niet als catalogus", () => {
-    expect(onthaal).toContain("Breedte als bewijs");
-    expect(onthaal).toContain("bewijs dat de motor het aankan");
+    expect(onthaalTeksten).toContain("Breedte als bewijs");
+    expect(onthaalTeksten).toContain("bewijs dat de motor het aankan");
+    expect(onthaal).toContain("T.breedte.eyebrow");
   });
 
   it("de bestaande bouwstenen blijven staan", () => {
@@ -327,7 +355,8 @@ describe("D. De onthaalpagina is beslisgericht", () => {
     expect(onthaal).toContain('id="werking"');
     expect(onthaal).toContain('id="aanmelden"');
     expect(onthaal).toContain('id="contact"');
-    expect(onthaal).toContain("Geen diagnose");
+    expect(onthaalTeksten).toContain("Geen diagnose");
+    expect(onthaal).toContain("T.grenzen.geenDiagnose");
   });
 });
 

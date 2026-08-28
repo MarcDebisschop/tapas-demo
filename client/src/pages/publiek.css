@@ -206,3 +206,39 @@ html.dark .publiek{--primary:#5EAEBA; --primary-dp:#8ACAD3;
   border:1px solid var(--line);border-radius:9px}
 .publiek .film figcaption{margin-top:12px;font-size:14.5px;line-height:1.6;color:var(--muted);
   max-width:70ch}
+
+/* ---------------------------------------------------------------------------
+   De taalkeuze van de publieke laag. Twee korte opschriften naast elkaar, de
+   actieve stand gevuld. Bewust klein en rustig: ze moet vindbaar zijn zonder
+   de aandacht van de positionering weg te nemen.
+   --------------------------------------------------------------------------- */
+.publiek .taalkeuze{display:inline-flex;align-items:stretch;border:1px solid var(--line);
+  border-radius:8px;overflow:hidden;background:var(--card)}
+.publiek .taalkeuze .taal{font-family:var(--sans);font-size:12.5px;font-weight:600;
+  letter-spacing:.06em;color:var(--muted);background:transparent;border:0;cursor:pointer;
+  padding:9px 11px;line-height:1;transition:background .15s,color .15s}
+.publiek .taalkeuze .taal + .taal{border-left:1px solid var(--line)}
+.publiek .taalkeuze .taal:hover{background:var(--tint);color:var(--accent)}
+.publiek .taalkeuze .taal.aan{background:var(--primary);color:var(--card)}
+
+/* ---------------------------------------------------------------------------
+   De kopbalk met de taalkeuze erin. De schakelaar neemt plaats in, dus alles
+   in de balk gaat een paar pixels krapper: kleinere tussenruimte, een nauwere
+   navigatie en iets smallere knoppen. Zo blijven merk, navigatie, taalkeuze,
+   thema en kennismaking op een breed scherm samen op één regel. Onder 1080
+   pixels wijkt de kennismakingsknop; die staat op elke pagina ook onderaan.
+   --------------------------------------------------------------------------- */
+.publiek .bar .wrap{gap:14px 14px}
+.publiek nav.hoofdnav{gap:4px 14px}
+.publiek .bar .knop{padding:11px 15px;font-size:14px}
+.publiek .bar .taalkeuze{flex:0 0 auto}
+.publiek .merk .onder{font-size:11px;letter-spacing:.02em}
+@media(max-width:1080px){
+  .publiek .bar .knop-1{display:none}
+}
+@media(max-width:660px){
+  .publiek .bar .wrap{gap:12px}
+  .publiek .bar .knop{padding:10px 14px;font-size:14px}
+  .publiek .merk .onder{display:none}
+  .publiek .taalkeuze .taal{padding:8px 9px;font-size:12px}
+}
