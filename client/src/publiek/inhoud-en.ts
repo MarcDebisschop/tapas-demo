@@ -265,7 +265,7 @@ export const HDD_STAPPEN_EN: Stap[] = [
     nummer: 3,
     naam: "Go or No-Go",
     inhoud:
-      "The platform weighs the signals from phase one. One serious signal, or two of moderate severity, points to dysfunctional behaviour: the programme then stops here, because a team that does not function at this level will not carry the plan. If those signals are absent, the in-depth analysis starts, with as its central question whether this team can deliver on the ambition. The consultant keeps final control.",
+      "The platform weighs the signals from phase one. One serious signal, or two of moderate severity, points to dysfunctional behaviour: the programme then stops here, because a team that does not function at this level will not carry the plan. If those signals are absent, the in-depth analysis starts, with as its central question whether this team can deliver on the ambition. The investing organisation keeps final control.",
     duur: "One session of one hour",
   },
   {
@@ -301,7 +301,7 @@ export const HDD_OUTPUTS_EN: OutputLaag[] = [
   {
     nummer: 2,
     naam: "Go or No-Go advice",
-    lezer: "the client and the consultant",
+    lezer: "the investing organisation",
     inhoud:
       "The conclusion of phase one: the weighted signals from collaboration, energy balance and dispersion, with the severity and the reason for each signal. The advice states whether the programme stops or the in-depth analysis starts.",
     vorm: "Overview in the working environment, explained in person.",

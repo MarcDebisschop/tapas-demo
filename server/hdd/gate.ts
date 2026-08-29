@@ -13,7 +13,7 @@ import type { GateResultaat, RodeVlag } from "./schema";
  *
  * Blijven die signalen uit, dan volgt een "Go naar Fase 2". De diepteanalyse
  * heeft dan één centrale vraag: kan deze ploeg de ambitie waarmaken? Het
- * platform ADVISEERT; de consultant houdt de eindregie en kan het advies
+ * platform ADVISEERT; de investerende organisatie houdt de eindregie en kan het advies
  * gemotiveerd bevestigen of overrulen.
  *
  * Deze prototype-versie werkt op een neutraal Fase 1-aggregaat-contract. De
@@ -21,9 +21,9 @@ import type { GateResultaat, RodeVlag } from "./schema";
  * hier expliciet als constanten zodat ze één plek hebben.
  */
 
-// Kalibreerbare drempels (voorstel — samen te ijken op echte afnames).
+// Kalibreerbare drempels (voorstel, samen te ijken op echte afnames).
 export const GATE_DREMPELS = {
-  waardenfitLaag: 3.0,        // gemiddelde fundamentlaag (1–5) hieronder = risico
+  waardenfitLaag: 3.0,        // gemiddelde fundamentlaag (1 tot 5) hieronder = risico
   vertrouwensGap: 1.5,        // belang-vs-prestatie gap per element
   minGapElementen: 2,         // aantal elementen boven gap-drempel
   energieBalansNegatief: 0,   // team-energiebalans hieronder = spanning
@@ -33,10 +33,10 @@ export const GATE_DREMPELS = {
 // Neutraal Fase 1-aggregaat dat de gate verwacht. De aggregatie-module vult
 // dit uit de Teamscan- en 2MINSCAN-bronnen; ontbrekende velden tellen niet mee.
 export interface Fase1Aggregaat {
-  waardenfitGemiddelde?: number;       // fundamentlaag (1–5)
+  waardenfitGemiddelde?: number;       // fundamentlaag (1 tot 5)
   vertrouwenOnderDrempel?: boolean;    // Lencioni-laag 2 onder drempel
   vertrouwensGaps?: number[];          // gap per anatomie-element
-  conflictZwak?: boolean;              // lagen 3–4 onder drempel
+  conflictZwak?: boolean;              // lagen 3 en 4 onder drempel
   energieBalans?: number;              // team-energiebalans (negatief = spanning)
   spreiding?: number;                  // onderlinge variantie tussen leden
 }
@@ -123,7 +123,8 @@ export function evalueerGate(a: Fase1Aggregaat): GateResultaat {
       ? "Advies: het traject stopt hier. De Fase 1-signalen wijzen op " +
         "dysfunctioneel teamgedrag. Zolang dat niet is opgelost, draagt deze ploeg " +
         "het plan niet, en een diepteanalyse verandert daar niets aan. De " +
-        "consultant houdt de eindregie en kan gemotiveerd toch verdiepen."
+        "investerende organisatie houdt de eindregie en kan gemotiveerd toch " +
+        "verdiepen."
       : "Advies: start Fase 2. De verkenning laat geen dysfunctionele signalen " +
         "zien, dus de diepteanalyse is zinvol. Haar centrale vraag: kan deze ploeg " +
         "de ambitie waarmaken?";

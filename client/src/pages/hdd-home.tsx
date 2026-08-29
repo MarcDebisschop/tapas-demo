@@ -17,9 +17,9 @@ import { ArrowRight, Compass, Layers, GitBranch } from "lucide-react";
 import { useUiTaal } from "@/contexts/TaalContext";
 
 /**
- * Human Due Diligence — facilitatorscherm (vlaggenschip-traject).
+ * Human Due Diligence: facilitatorscherm (vlaggenschip-traject).
  * ------------------------------------------------------------------
- * Een consultant maakt een board-traject aan, ziet de twee fasen en het
+ * Een gebruiker maakt een board-traject aan, ziet de twee fasen en het
  * Go/No-Go-scharnier, en beheert lopende trajecten. Dit is de eerste
  * prototype-aanzet (stap A uit het bouwplan): traject-CRUD + visueel
  * fasen-dashboard. De live link-generatie/uitsturing en de geaggregeerde

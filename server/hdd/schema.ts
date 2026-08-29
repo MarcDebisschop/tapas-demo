@@ -3,7 +3,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 /**
- * Human Due Diligence (HDD) — datamodel (journey / orkestrator-instrument).
+ * Human Due Diligence (HDD): datamodel (journey / orkestrator-instrument).
  * ------------------------------------------------------------------
  * HDD is GEEN meetinstrument maar een gefaseerd traject dat bestaande
  * instrumenten orkestreert voor één board:
@@ -17,7 +17,7 @@ import { z } from "zod";
  *
  * Crux: een HDD-traject BEZIT geen antwoorden. Per board member bewaren we de
  * deelnemer-/afnametokens van de onderliggende instrumenten (JSON-contract).
- * De aggregatie/rapportage leest op generatiemoment uit die bronnen — één
+ * De aggregatie/rapportage leest op generatiemoment uit die bronnen, één
  * bron van waarheid per instrument, geen datadubbeling. Tabellen krijgen het
  * prefix hdd_ en botsen niet met de platform-, t4r- of teamscan-tabellen.
  */
@@ -29,7 +29,7 @@ export const hddTrajecten = sqliteTable("hdd_trajecten", {
   orgLabel: text("org_label").notNull().default(""),
   // Context als VARIABELE (géén aparte modus): "ma" | "self-screening".
   context: text("context").notNull().default("self-screening"),
-  // Bij M&A: het vereiste cognitieve niveau (Jaques-stratum I–VII, 1..7) dat de
+  // Bij M&A: het vereiste cognitieve niveau (Jaques-stratum I tot VII, 1..7) dat de
   // groei-/integratieambitie vraagt. Voedt de cognitieve gap-analyse in fase 2.
   vereistStratum: integer("vereist_stratum"), // optioneel
   // Trajectstatus: fase1_open → fase1_klaar → gate → fase2_open → afgerond.
@@ -62,7 +62,7 @@ export const hddBoardLeden = sqliteTable("hdd_board_leden", {
   //   { "tapas-teamscan": "<token>", "twominscan": "<token>",
   //     "t4p-business-kompas": "<token>" }
   // Tokens verwijzen naar de bestaande deelnemer-/uitnodigingstabellen van elk
-  // onderliggend instrument — HDD dupliceert geen meetlogica.
+  // onderliggend instrument: HDD dupliceert geen meetlogica.
   instrumentTokens: text("instrument_tokens").notNull().default("{}"),
   createdAt: integer("created_at").notNull(),
 });
@@ -87,12 +87,13 @@ export interface RodeVlag {
 // Resultaat van het Go/No-Go-scharnier "onder de motorkap".
 export interface GateResultaat {
   // "go" = Fase 2 start, want de verkenning toont geen dysfunctionele signalen.
-  // "no-go" = het traject stopt na Fase 1. Het platform adviseert, de consultant
-  // houdt de eindregie.
+  // "no-go" = het traject stopt na Fase 1. Het platform adviseert, de
+  // investerende organisatie houdt de eindregie.
   advies: "go" | "no-go";
   signalen: RodeVlag[];
   samenvatting: string;
-  // Consultant-overschrijving (optioneel): de mens beslist uiteindelijk.
+  // Overschrijving door de investerende organisatie (optioneel): de mens
+  // beslist uiteindelijk. Het veld heet historisch consultantBesluit.
   consultantBesluit?: "go" | "no-go";
   consultantMotivatie?: string;
 }

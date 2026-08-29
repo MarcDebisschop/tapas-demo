@@ -1,5 +1,5 @@
 /**
- * Human Due Diligence — flagship report engine (ALWAYS English).
+ * Human Due Diligence: flagship report engine (ALWAYS English).
  * ------------------------------------------------------------------
  * One engine, two audiences:
  *   audience = "investor" → full flagship Investor Report
@@ -10,7 +10,7 @@
  * The report is always rendered in English regardless of questionnaire language.
  *
  * Output is a structured JSON model (sections) that the client renders and that
- * can be exported. Keeping it as a model — not a hard-coded HTML string — lets
+ * can be exported. Keeping it as a model, not a hard-coded HTML string, lets
  * the same content drive screen, PDF and DOCX without divergence.
  */
 
@@ -78,7 +78,7 @@ function verdictLabel(verdict: Fase2Aggregaat["verdict"], audience: Audience): s
     case "conditional":
       return "Proceed with conditions";
     case "hold-conditional":
-      return "Hold — conditional";
+      return "Hold (conditional)";
     case "hold":
       return "Hold";
   }
@@ -114,12 +114,12 @@ function indexBasisZin(agg: Fase2Aggregaat): string[] {
 function memberCards(leden: BoardMemberInput[]): Array<{ title: string; lines: string[] }> {
   return leden.map((l, i) => {
     const name = l.naam?.trim() || `Board member ${i + 1}`;
-    const foci = (l.talent?.talentFoci ?? []).join(" → ") || "—";
-    const acc = (l.talent?.versnellers ?? []).join(" / ") || "—";
-    const drivers = (l.talent?.drivers ?? []).join(" / ") || "—"; // DRIVER(S) untranslated
+    const foci = (l.talent?.talentFoci ?? []).join(" → ") || "-";
+    const acc = (l.talent?.versnellers ?? []).join(" / ") || "-";
+    const drivers = (l.talent?.drivers ?? []).join(" / ") || "-"; // DRIVER(S) untranslated
     const stratum = l.talent?.stratumIndicatie
-      ? `Stratum ${l.talent.stratumIndicatie} (${STRATUM_TIMESPAN[l.talent.stratumIndicatie] ?? "—"}), indicative`
-      : "—";
+      ? `Stratum ${l.talent.stratumIndicatie} (${STRATUM_TIMESPAN[l.talent.stratumIndicatie] ?? "-"}), indicative`
+      : "-";
     // Alleen energie tonen die van een instrument komt dat er echt naar vraagt.
     const gemetenEnergie = ledenEnergie(l);
     const energy =
@@ -132,7 +132,7 @@ function memberCards(leden: BoardMemberInput[]): Array<{ title: string; lines: s
         : l.talent.driverRisico === "matig"
           ? "moderate burnout-sensitivity"
           : "low burnout-sensitivity"
-      : "—";
+      : "-";
     return {
       title: name,
       lines: [
@@ -152,7 +152,7 @@ function memberCards(leden: BoardMemberInput[]): Array<{ title: string; lines: s
 export interface BouwRapportOpts {
   audience: Audience;
   boardLabel: string;
-  investorLabel?: string; // VARIABLE — default generic
+  investorLabel?: string; // VARIABLE, default generic
   context: "ma" | "self-screening";
   agg: Fase2Aggregaat;
   leden: BoardMemberInput[];
@@ -217,8 +217,8 @@ export function bouwRapport(opts: BouwRapportOpts): RapportModel {
       callout: {
         label: "Recommendation",
         text:
-          `${vLabel} — index ${agg.index}/100. This is a decision aid, not an automatic verdict; ` +
-          `the assessing consultant retains final authority and may override with motivation.`,
+          `${vLabel}, index ${agg.index}/100. This is a decision aid, not an automatic verdict; ` +
+          `the investing organisation retains final authority and may override with motivation.`,
       },
     });
   } else {
@@ -245,7 +245,7 @@ export function bouwRapport(opts: BouwRapportOpts): RapportModel {
       "This assessment combines three validated TaPas instruments through one orchestrated " +
         "journey. The report is always produced in English.",
       "Scoring is multidimensional: each dimension keeps its native scientific band, and a " +
-        "deliberately weighted composite — the HDD Human Capital Index — summarises them. This " +
+        "deliberately weighted composite, the HDD Human Capital Index, summarises them. This " +
         "is the psychometrically recommended approach; a well-weighted composite is more reliable " +
         "and valid than its subscores, while the separate bands preserve dimensional information " +
         "that a naive average would hide.",
@@ -267,7 +267,7 @@ export function bouwRapport(opts: BouwRapportOpts): RapportModel {
       `Composite weighting: Team Health ${INDEX_WEIGHTS.d1 * 100}%, Energy ${INDEX_WEIGHTS.d2 * 100}%, ` +
         `Talent ${INDEX_WEIGHTS.d3 * 100}%, Cognitive ${INDEX_WEIGHTS.d4 * 100}% (open and adjustable per engagement).`,
       "Cognitive capacity (Jaques stratum) is INDICATIVE, derived from the T4P profile, and is " +
-        "never used to rank people — consistent with Requisite Organization ethics.",
+        "never used to rank people, consistent with Requisite Organization ethics.",
     ],
   });
 
@@ -275,7 +275,7 @@ export function bouwRapport(opts: BouwRapportOpts): RapportModel {
   const th = agg.d1TeamHealth.detail as { overall: number; perPillar: Record<string, { avg: number; band: string }> };
   secties.push({
     id: "team-health",
-    title: "Team Health — Lencioni Pillars",
+    title: "Team Health: Lencioni Pillars",
     audience: ["investor", "team"],
     body: [
       `Overall team-health average: ${th.overall}/5 (${agg.d1TeamHealth.band}). ` +
@@ -355,7 +355,7 @@ export function bouwRapport(opts: BouwRapportOpts): RapportModel {
     },
     bullets: [
       tl.thinFamilies.length
-        ? `Thin coverage to watch: ${tl.thinFamilies.join(", ")} — the strategic talent least present for the ambition.`
+        ? `Thin coverage to watch: ${tl.thinFamilies.join(", ")}. The strategic talent least present for the ambition.`
         : "All four talent families are covered across the team.",
       `Aggregated DRIVER(S): ${Object.entries(tl.driverFreq)
         .sort((a, b) => b[1] - a[1])
@@ -515,7 +515,7 @@ export function bouwRapport(opts: BouwRapportOpts): RapportModel {
     language: "en",
     audience,
     meta: {
-      title: isInvestor ? "Human Due Diligence — Assessment" : "Team Insight Report",
+      title: isInvestor ? "Human Due Diligence: Assessment" : "Team Insight Report",
       subtitle: isInvestor
         ? `Human-capital due diligence for ${investorLabel}`
         : "How this team collaborates, sustains energy and combines talent",
@@ -524,8 +524,8 @@ export function bouwRapport(opts: BouwRapportOpts): RapportModel {
       contextLabel: agg.contextLabel,
       date,
       confidentiality: isInvestor
-        ? "Strictly Confidential — Investor Report · for the investing party only · NOT to be shared with the assessed team"
-        : "Confidential — Team Report · may be shared with the assessed team",
+        ? "Strictly Confidential: Investor Report · for the investing party only · NOT to be shared with the assessed team"
+        : "Confidential: Team Report · may be shared with the assessed team",
       basis: "TaPas Teamscan (Lencioni) · 2MINSCAN · T4P Business",
     },
     index: {

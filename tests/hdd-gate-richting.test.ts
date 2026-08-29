@@ -8,7 +8,7 @@
 //      afwezigheid van die signalen opent de diepteanalyse.
 //   B. De drempel blijft één signaal van hoge ernst, of twee van gemiddelde
 //      ernst.
-//   C. Het platform adviseert en de consultant beslist: het consultantbesluit
+//   C. Het platform adviseert en de investerende organisatie beslist: het besluitveld
 //      blijft naast het advies bestaan.
 //   D. De publieke trajectteksten zeggen exact hetzelfde als de module, en
 //      dragen nergens nog de omgekeerde belofte.
@@ -75,7 +75,7 @@ describe("HDD: de publieke teksten volgen de module", () => {
     expect(t).toContain("stopt het traject hier");
     expect(t).toContain("diepteanalyse");
     expect(t).toContain("ambitie");
-    // De consultant houdt de eindregie, net als in evalueerGate.
+    // De investerende organisatie houdt de eindregie, net als in evalueerGate.
     expect(t).toContain("eindregie");
   });
 

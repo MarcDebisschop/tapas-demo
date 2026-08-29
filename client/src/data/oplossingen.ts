@@ -306,7 +306,7 @@ export const HDD_STAPPEN: Stap[] = [
     nummer: 3,
     naam: "Go of No-Go",
     inhoud:
-      "Het platform weegt de signalen uit fase één. Eén ernstig signaal, of twee van gemiddelde ernst, wijst op dysfunctioneel gedrag: dan stopt het traject hier, want een ploeg die op dit niveau niet functioneert draagt het plan niet. Blijven die signalen uit, dan start de diepteanalyse, met als centrale vraag of deze ploeg de ambitie kan waarmaken. De consultant houdt de eindregie.",
+      "Het platform weegt de signalen uit fase één. Eén ernstig signaal, of twee van gemiddelde ernst, wijst op dysfunctioneel gedrag: dan stopt het traject hier, want een ploeg die op dit niveau niet functioneert draagt het plan niet. Blijven die signalen uit, dan start de diepteanalyse, met als centrale vraag of deze ploeg de ambitie kan waarmaken. De investerende organisatie houdt de eindregie.",
     duur: "Eén zitting van één uur",
   },
   {
@@ -343,7 +343,7 @@ export const HDD_OUTPUTS: OutputLaag[] = [
   {
     nummer: 2,
     naam: "Go of No-Go-advies",
-    lezer: "de opdrachtgever en de consultant",
+    lezer: "de investerende organisatie",
     inhoud:
       "Het besluit van fase één: de gewogen signalen uit samenwerking, energiebalans en spreiding, met per signaal de ernst en de reden. Het advies zegt of het traject stopt of dat de diepteanalyse start.",
     vorm: "Overzicht in de werkomgeving, mondeling toegelicht.",
