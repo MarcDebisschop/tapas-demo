@@ -10,6 +10,11 @@
 // hoort niet tussen de clusters zonder eigen pagina: daar was het niet te
 // vinden. De wedge blijft wel zichtbaar de eerste lijn.
 //
+// Development & Mobility heeft geen eigen trajectpagina, maar wel een film. Dat
+// cluster staat daarom ook in een eigen band, met de kaart en de film er meteen
+// onder. Het stond eerst tussen de clusters met de film ver daaronder: dan moet
+// een bezoeker naar de film zoeken.
+//
 // De instrumentenlijst zelf blijft bestaan op /instrumenten. Ze is de tweede
 // laag: eerst de beslissing, dan het instrument.
 //
@@ -20,6 +25,7 @@
 // de paden zijn machinewaarden en blijven in beide talen gelijk.
 // ===========================================================================
 
+import { useState } from "react";
 import { Link } from "wouter";
 import PubliekeKop from "@/components/PubliekeKop";
 import PubliekeVoet from "@/components/PubliekeVoet";
@@ -32,14 +38,46 @@ import { kies, usePubliekeTaal } from "@/publiek/taal";
 import { T } from "@/publiek/teksten-paginas";
 import "./publiek.css";
 
+// De twee taalversies van de film over Development & Mobility. Dezelfde opbouw
+// als de films op de trajectpagina's.
+const FILM_VERSIES = [
+  {
+    taal: "nl",
+    label: "Nederlands",
+    bron: "/film/dm-nl.mp4",
+    poster: "/film/dm-nl-beeld.jpg",
+    ondertitels: "/film/dm-nl.vtt",
+  },
+  {
+    taal: "en",
+    label: "English",
+    bron: "/film/dm-en.mp4",
+    poster: "/film/dm-en-beeld.jpg",
+    ondertitels: "/film/dm-en.vtt",
+  },
+];
+
 export default function Oplossingen() {
   const { taal } = usePubliekeTaal();
+  // Welke taalversie van de film speelt. Zolang de bezoeker zelf niets kiest,
+  // volgt de speler de taal van de pagina.
+  const [gekozen, zetVersie] = useState<number | null>(null);
+  const bijTaal = FILM_VERSIES.findIndex((v) => v.taal === taal);
+  const versie = gekozen ?? (bijTaal >= 0 ? bijTaal : 0);
+  const nu = FILM_VERSIES[versie];
   const alle = clusters(taal);
   const aansluiting = aansluitingRecruitment(taal);
   const wedge = alle.filter((c) => c.wedge);
   const vierde = alle.find((c) => c.sleutel === "recruitment");
-  // De clusters zonder eigen trajectpagina. Recruitment staat hierboven.
-  const rest = alle.filter((c) => !c.wedge && c.sleutel !== "recruitment");
+  // Development & Mobility heeft geen eigen trajectpagina, maar wel een film.
+  // Het cluster krijgt daarom een eigen band met de film meteen onder de kaart,
+  // zoals de drie andere films onder hun eigen blok staan.
+  const ontw = alle.find((c) => c.sleutel === "ontwikkeling");
+  // De overige clusters zonder eigen trajectpagina of band.
+  const rest = alle.filter(
+    (c) =>
+      !c.wedge && c.sleutel !== "recruitment" && c.sleutel !== "ontwikkeling",
+  );
 
   return (
     <div className="publiek" lang={taal} data-testid="oplossingenpagina">
@@ -126,6 +164,80 @@ export default function Oplossingen() {
         </section>
       )}
 
+      {/* Development & Mobility heeft geen eigen trajectpagina. Het cluster
+          krijgt daarom hier een eigen band: de kaart met de film er meteen
+          onder, net zoals de andere drie films onder hun eigen blok staan. De
+          tekst rond de speler komt letterlijk uit het filmscenario. */}
+      {ontw && (
+        <section data-testid="band-ontwikkeling">
+          <div className="wrap">
+            <div className="sec-kop">
+              <p className="eyebrow">{kies(T.oplossingen.dmFilmEyebrow, taal)}</p>
+              <h2>{kies(T.oplossingen.dmFilmKop, taal)}</h2>
+              <p>{kies(T.oplossingen.dmFilmUitleg, taal)}</p>
+              <p>{kies(T.oplossingen.dmFilmTaal, taal)}</p>
+            </div>
+            <div className="kaart" data-testid="kaart-ontwikkeling">
+              <p className="tag">{kies(T.oplossingen.tagCluster, taal)}</p>
+              <h3>{ontw.naam}</h3>
+              <p>{ontw.ondertitel}</p>
+              <p className="beslissing">{ontw.beslissing}</p>
+              <div className="meta">
+                <b>{kies(T.oplossingen.metaInstrumenten, taal)}</b>
+                {ontw.instrumenten.join(", ")}
+              </div>
+              {aansluiting[ontw.sleutel] ? (
+                <p className="aansluiting" data-testid="aansluiting-ontwikkeling">
+                  {aansluiting[ontw.sleutel]}
+                </p>
+              ) : null}
+            </div>
+            {/* Twee taalversies, zoals bij de films op de trajectpagina's. De
+                speler volgt de taal van de pagina zolang de bezoeker zelf niets
+                kiest. */}
+            <div
+              className="film-talen"
+              role="group"
+              aria-label={kies(T.traject.filmTalen, taal)}
+            >
+              {FILM_VERSIES.map((v, i) => (
+                <button
+                  key={v.taal}
+                  type="button"
+                  className={i === versie ? "film-taal aan" : "film-taal"}
+                  aria-pressed={i === versie}
+                  data-testid={`film-taal-${v.taal}`}
+                  onClick={() => zetVersie(i)}
+                >
+                  {v.label}
+                </button>
+              ))}
+            </div>
+            <figure className="film">
+              {/* De sleutel laat de speler opnieuw laden bij een andere taal. */}
+              <video
+                key={nu.bron}
+                controls
+                playsInline
+                preload="none"
+                poster={nu.poster}
+                data-testid="film-ontwikkeling"
+              >
+                <source src={nu.bron} type="video/mp4" />
+                <track
+                  kind="subtitles"
+                  srcLang={nu.taal}
+                  label={nu.label}
+                  src={nu.ondertitels}
+                />
+                {kies(T.traject.geenFilm, taal)}
+              </video>
+              <figcaption>{kies(T.oplossingen.dmFilmOnder, taal)}</figcaption>
+            </figure>
+          </div>
+        </section>
+      )}
+
       <section>
         <div className="wrap">
           <div className="sec-kop">
@@ -170,40 +282,6 @@ export default function Oplossingen() {
               );
             })}
           </div>
-        </div>
-      </section>
-
-      {/* De film over Development & Mobility. Dat cluster heeft geen eigen
-          trajectpagina, dus staat de film hier, meteen onder het overzicht
-          waarin de kaart staat. De tekst rond de speler komt letterlijk uit het
-          filmscenario en voegt niets toe. */}
-      <section>
-        <div className="wrap">
-          <div className="sec-kop">
-            <p className="eyebrow">{kies(T.oplossingen.dmFilmEyebrow, taal)}</p>
-            <h2>{kies(T.oplossingen.dmFilmKop, taal)}</h2>
-            <p>{kies(T.oplossingen.dmFilmUitleg, taal)}</p>
-            <p>{kies(T.oplossingen.dmFilmTaal, taal)}</p>
-          </div>
-          <figure className="film">
-            <video
-              controls
-              playsInline
-              preload="none"
-              poster="/film/dm-nl-beeld.jpg"
-              data-testid="film-ontwikkeling"
-            >
-              <source src="/film/dm-nl.mp4" type="video/mp4" />
-              <track
-                kind="subtitles"
-                srcLang="nl"
-                label="Nederlands"
-                src="/film/dm-nl.vtt"
-              />
-              {kies(T.traject.geenFilm, taal)}
-            </video>
-            <figcaption>{kies(T.oplossingen.dmFilmOnder, taal)}</figcaption>
-          </figure>
         </div>
       </section>
 

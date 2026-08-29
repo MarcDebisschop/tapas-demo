@@ -208,8 +208,8 @@ export const T = {
       en: "Underpinning development and internal mobility. A development choice, not a loose impression.",
     },
     dmFilmTaal: {
-      nl: "De film is Nederlands gesproken, met Nederlandse ondertitels.",
-      en: "The film is spoken in Dutch, with Dutch subtitles.",
+      nl: "De film staat in het Nederlands en in het Engels, elk met ondertitels in dezelfde taal.",
+      en: "The film is available in Dutch and in English, each with subtitles in the same language.",
     },
     dmFilmOnder: {
       nl: "Geen belofte op succes. Geen automatische doorstroming. De beslissing blijft bij mens en organisatie.",
