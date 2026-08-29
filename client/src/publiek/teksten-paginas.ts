@@ -192,6 +192,29 @@ export const T = {
       en: "The same engine, a different decision. These clusters already run today in schools, in organisations and with coaches, with the instruments built for them.",
     },
     tagCluster: { nl: "Cluster", en: "Cluster" },
+    // De film over Development & Mobility. Dit cluster heeft geen eigen
+    // trajectpagina, dus staat de film hier, in een eigen band onder het
+    // overzicht. De regels komen letterlijk uit het filmscenario.
+    dmFilmEyebrow: {
+      nl: "Traject voor HR, loopbaanbegeleiders en interne coaches",
+      en: "A journey for HR, career guidance and internal coaches",
+    },
+    dmFilmKop: {
+      nl: "Development & Mobility",
+      en: "Development & Mobility",
+    },
+    dmFilmUitleg: {
+      nl: "Ontwikkeling en interne mobiliteit onderbouwen. Een ontwikkelkeuze, geen losse indruk.",
+      en: "Underpinning development and internal mobility. A development choice, not a loose impression.",
+    },
+    dmFilmTaal: {
+      nl: "De film is Nederlands gesproken, met Nederlandse ondertitels.",
+      en: "The film is spoken in Dutch, with Dutch subtitles.",
+    },
+    dmFilmOnder: {
+      nl: "Geen belofte op succes. Geen automatische doorstroming. De beslissing blijft bij mens en organisatie.",
+      en: "No promise of success. No automatic progression. The decision stays with people and the organisation.",
+    },
     metaInstrumenten: { nl: "Instrumenten", en: "Instruments" },
     tweedeEyebrow: { nl: "Tweede laag", en: "Second layer" },
     tweedeKop: { nl: "De instrumenten zelf", en: "The instruments themselves" },

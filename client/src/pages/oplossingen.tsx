@@ -173,6 +173,40 @@ export default function Oplossingen() {
         </div>
       </section>
 
+      {/* De film over Development & Mobility. Dat cluster heeft geen eigen
+          trajectpagina, dus staat de film hier, meteen onder het overzicht
+          waarin de kaart staat. De tekst rond de speler komt letterlijk uit het
+          filmscenario en voegt niets toe. */}
+      <section>
+        <div className="wrap">
+          <div className="sec-kop">
+            <p className="eyebrow">{kies(T.oplossingen.dmFilmEyebrow, taal)}</p>
+            <h2>{kies(T.oplossingen.dmFilmKop, taal)}</h2>
+            <p>{kies(T.oplossingen.dmFilmUitleg, taal)}</p>
+            <p>{kies(T.oplossingen.dmFilmTaal, taal)}</p>
+          </div>
+          <figure className="film">
+            <video
+              controls
+              playsInline
+              preload="none"
+              poster="/film/dm-nl-beeld.jpg"
+              data-testid="film-ontwikkeling"
+            >
+              <source src="/film/dm-nl.mp4" type="video/mp4" />
+              <track
+                kind="subtitles"
+                srcLang="nl"
+                label="Nederlands"
+                src="/film/dm-nl.vtt"
+              />
+              {kies(T.traject.geenFilm, taal)}
+            </video>
+            <figcaption>{kies(T.oplossingen.dmFilmOnder, taal)}</figcaption>
+          </figure>
+        </div>
+      </section>
+
       <section className="grijs">
         <div className="wrap">
           <div className="sec-kop">

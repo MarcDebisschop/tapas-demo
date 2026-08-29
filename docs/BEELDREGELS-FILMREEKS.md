@@ -38,6 +38,25 @@ bestaande film.
   films zijn op 28 augustus 2026 op deze regels gezet: het tweede gefilmde
   fragment is in elke film vervangen door een opname met twee paar handen, met
   een vrouwelijke hand op de voorgrond, zonder das en zonder oudere hand.
+- Development & Mobility wijkt bewust af van regel 1. Het productiedossier van
+  die film vraagt uitdrukkelijk een vrouwelijke professional als hoofdonderdeel
+  van het beeld, actief en beslissend, en geen beeldwereld die uitsluitend
+  mannelijk corporate aanvoelt. Dat kan niet met handen alleen. De film toont
+  daarom gezichten: dezelfde vrouwelijke professional in de drie gefilmde
+  fragmenten, in het tweede fragment in gesprek met een tweede vrouw. De regels
+  2, 3 en 4 gelden wel: geen das, nooit iemand alleen aan de tafel in het
+  gespreksfragment, en het beeld leest vrouwelijk. De personen zijn volledig
+  door beeldgeneratie gemaakt en stellen geen bestaande persoon voor.
+
+## Merktekens van de beeldgenerator
+
+Gegenereerde fragmenten kunnen rechtsonder een klein merkteken van de
+beeldgenerator dragen, dat over de duur van het fragment een beetje verschuift.
+Dat mag niet in een afgewerkte film staan. Het openingsfragment van Development
+& Mobility droeg zo een teken; het is weggesneden met de tabel `SNIJ` in
+`reeks/montage.py`, per fragment, in een rechthoek die elke stand van het teken
+uitsluit en exact 16 op 9 blijft. Wie een nieuw fragment invoegt, keurt dus ook
+de rechteronderhoek over de volle lengte.
 
 ## Praktisch
 
