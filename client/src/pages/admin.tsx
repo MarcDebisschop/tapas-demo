@@ -50,7 +50,7 @@ import {
 import { useUiTaal } from "@/contexts/TaalContext";
 import {
   LEEFTIJDSBANDEN,
-  isMinderjarigInstrument,
+  geldtLeeftijdspoort,
   toegestaneBandenVoor,
   vereistOuderlijkeToestemming,
 } from "@shared/leeftijd";
@@ -324,8 +324,10 @@ export default function Admin() {
   }
 
   // Welk instrument staat er gekozen? Leeg betekent het standaardinstrument, en dat
-  // is nooit een instrument voor minderjarigen; daarom volstaat de gekozen waarde.
-  const vraagtLeeftijdsgroep = isMinderjarigInstrument(invInstrument || null);
+  // valt nooit onder de leeftijdspoort; daarom volstaat de gekozen waarde. De poort
+  // geldt voor T4Kids, T4Teens en T4Students; enkel bij de eerste twee kan er ook
+  // een ouderlijke bevestiging nodig zijn.
+  const vraagtLeeftijdsgroep = geldtLeeftijdspoort(invInstrument || null);
   const bandenVoorInstrument = toegestaneBandenVoor(invInstrument || null) ?? LEEFTIJDSBANDEN;
   // Onder de drempel mag het adres niet van de jongere zelf zijn. Het scherm zegt
   // dat vooraf; de server houdt dezelfde regel aan en is de echte grendel.

@@ -46,16 +46,16 @@ type RapportModel = {
   secties: Sectie[];
 };
 
-// Demo board (Loop-style) so the report renders immediately for preview.
+// Demo board (verzonnen onderneming) so the report renders immediately for preview.
 // De energiewaarden in deze demo-gegevens zijn verzonnen voorbeelddata. Ze
 // dragen nu wel expliciet hun herkomst mee, want zonder herkomst telt een
 // energiewaarde niet meer mee. De 2MINSCAN levert geen getal op deze schaal.
 const DEMO_LEDEN = [
-  { id: 1, naam: "Dimitri O", teamscan: { vertrouwen: 4.2, conflict: 4.0, betrokkenheid: 4.3, verantwoordelijkheid: 4.1, resultaten: 4.4 }, energy: { bron: "t4p-business", fase: 0, energie: 9 }, talent: { talentFoci: ["Strategy", "Operational", "Interrelational"], versnellers: ["Analysis", "Facilitation", "Impact"], drivers: ["Try Hard", "Be Strong", "Hurry Up"], driverRisico: "matig", stratumIndicatie: 4 } },
-  { id: 2, naam: "Maarten Bodewes", teamscan: { vertrouwen: 4.1, conflict: 4.2, betrokkenheid: 4.0, verantwoordelijkheid: 4.2, resultaten: 4.5 }, energy: { bron: "t4p-business", fase: 0, energie: 9 }, talent: { talentFoci: ["Operational", "Innovation", "Strategy"], versnellers: ["Analysis", "Facilitation", "Result-orientation"], drivers: ["Try Hard", "Be Strong", "Hurry Up"], driverRisico: "matig", stratumIndicatie: 4 } },
-  { id: 3, naam: "Marloes Mantel", teamscan: { vertrouwen: 4.0, conflict: 3.8, betrokkenheid: 4.1, verantwoordelijkheid: 3.9, resultaten: 4.2 }, energy: { bron: "t4p-business", fase: 0, energie: 8 }, talent: { talentFoci: ["Operational", "Strategy"], versnellers: ["Analysis", "Facilitation", "Impact"], drivers: ["Hurry Up", "Try Hard", "Be Strong"], driverRisico: "hoog", stratumIndicatie: 3 } },
-  { id: 4, naam: "Cedric Schepers", teamscan: { vertrouwen: 3.9, conflict: 3.7, betrokkenheid: 4.0, verantwoordelijkheid: 3.8, resultaten: 4.1 }, energy: { bron: "t4p-business", fase: 0, energie: 8 }, talent: { talentFoci: ["Interrelational", "Strategy", "Operational"], versnellers: ["Analysis", "Impact"], drivers: ["Hurry Up", "Be Strong", "Please Others"], driverRisico: "matig", stratumIndicatie: 3 } },
-  { id: 5, naam: "Rob Weston", teamscan: { vertrouwen: 4.1, conflict: 4.0, betrokkenheid: 4.2, verantwoordelijkheid: 4.0, resultaten: 4.3 }, energy: { bron: "t4p-business", fase: 0, energie: 8 }, talent: { talentFoci: ["Strategy", "Innovation", "Operational"], versnellers: ["Analysis", "Facilitation", "Impact"], drivers: ["Be Perfect", "Try Hard", "Be Strong"], driverRisico: "hoog", stratumIndicatie: 4 } },
+  { id: 1, naam: "Ilse V", teamscan: { vertrouwen: 4.2, conflict: 4.0, betrokkenheid: 4.3, verantwoordelijkheid: 4.1, resultaten: 4.4 }, energy: { bron: "t4p-business", fase: 0, energie: 9 }, talent: { talentFoci: ["Strategy", "Operational", "Interrelational"], versnellers: ["Analysis", "Facilitation", "Impact"], drivers: ["Try Hard", "Be Strong", "Hurry Up"], driverRisico: "matig", stratumIndicatie: 4 } },
+  { id: 2, naam: "Joris Craeninckx", teamscan: { vertrouwen: 4.1, conflict: 4.2, betrokkenheid: 4.0, verantwoordelijkheid: 4.2, resultaten: 4.5 }, energy: { bron: "t4p-business", fase: 0, energie: 9 }, talent: { talentFoci: ["Operational", "Innovation", "Strategy"], versnellers: ["Analysis", "Facilitation", "Result-orientation"], drivers: ["Try Hard", "Be Strong", "Hurry Up"], driverRisico: "matig", stratumIndicatie: 4 } },
+  { id: 3, naam: "Nadia El Amrani", teamscan: { vertrouwen: 4.0, conflict: 3.8, betrokkenheid: 4.1, verantwoordelijkheid: 3.9, resultaten: 4.2 }, energy: { bron: "t4p-business", fase: 0, energie: 8 }, talent: { talentFoci: ["Operational", "Strategy"], versnellers: ["Analysis", "Facilitation", "Impact"], drivers: ["Hurry Up", "Try Hard", "Be Strong"], driverRisico: "hoog", stratumIndicatie: 3 } },
+  { id: 4, naam: "Bram Segers", teamscan: { vertrouwen: 3.9, conflict: 3.7, betrokkenheid: 4.0, verantwoordelijkheid: 3.8, resultaten: 4.1 }, energy: { bron: "t4p-business", fase: 0, energie: 8 }, talent: { talentFoci: ["Interrelational", "Strategy", "Operational"], versnellers: ["Analysis", "Impact"], drivers: ["Hurry Up", "Be Strong", "Please Others"], driverRisico: "matig", stratumIndicatie: 3 } },
+  { id: 5, naam: "Hanne Loridan", teamscan: { vertrouwen: 4.1, conflict: 4.0, betrokkenheid: 4.2, verantwoordelijkheid: 4.0, resultaten: 4.3 }, energy: { bron: "t4p-business", fase: 0, energie: 8 }, talent: { talentFoci: ["Strategy", "Innovation", "Operational"], versnellers: ["Analysis", "Facilitation", "Impact"], drivers: ["Be Perfect", "Try Hard", "Be Strong"], driverRisico: "hoog", stratumIndicatie: 4 } },
   { id: 6, naam: "Ryan Helps", teamscan: { vertrouwen: 4.0, conflict: 3.9, betrokkenheid: 4.1, verantwoordelijkheid: 3.9, resultaten: 4.2 }, energy: { bron: "t4p-business", fase: 0, energie: 8 }, talent: { talentFoci: ["Operational", "Strategy", "Innovation"], versnellers: ["Facilitation", "Result-orientation", "Analysis"], drivers: ["Be Perfect", "Try Hard", "Be Strong"], driverRisico: "hoog", stratumIndicatie: 3 } },
   { id: 7, naam: "Menno Schreuder", teamscan: { vertrouwen: 4.2, conflict: 4.1, betrokkenheid: 4.0, verantwoordelijkheid: 4.1, resultaten: 4.2 }, energy: { bron: "t4p-business", fase: 0, energie: 8 }, talent: { talentFoci: ["Strategy", "Operational", "Interrelational"], versnellers: ["Analysis", "Facilitation", "Result-orientation"], drivers: ["Be Perfect", "Be Strong", "Try Hard"], driverRisico: "matig", stratumIndicatie: 3 } },
 ];
@@ -309,7 +309,7 @@ export default function HddRapport() {
       const tr = await fetch(`${API_BASE}/api/hdd/trajecten`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ boardNaam: "Loop Founder-Management Team", orgLabel: "Loop", context: "ma", vereistStratum: 5 }),
+        body: JSON.stringify({ boardNaam: "Veldstroom Founder-Management Team", orgLabel: "Veldstroom", context: "ma", vereistStratum: 5 }),
       }).then((r) => r.json());
       if (!tr || typeof tr.id !== "number") {
         throw new Error("Kon geen demo-traject aanmaken.");
@@ -320,7 +320,7 @@ export default function HddRapport() {
         body: JSON.stringify({
           investorLabel,
           leden: DEMO_LEDEN,
-          company: "Loop Earplugs",
+          company: "Veldstroom Audio",
           revenueNow: "\u20ac190M",
           revenueTarget: "\u20ac500M+",
           fteFrom: 300,
@@ -339,7 +339,7 @@ export default function HddRapport() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `hdd-loop-earplugs-${aud}-report.pdf`;
+      a.download = `hdd-veldstroom-audio-${aud}-report.pdf`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -359,7 +359,7 @@ export default function HddRapport() {
       const tr = await fetch(`${API_BASE}/api/hdd/trajecten`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ boardNaam: "Loop Founder-Management Team", orgLabel: "Loop", context: "ma", vereistStratum: 5 }),
+        body: JSON.stringify({ boardNaam: "Veldstroom Founder-Management Team", orgLabel: "Veldstroom", context: "ma", vereistStratum: 5 }),
       }).then((r) => r.json());
       if (!tr || typeof tr.id !== "number") {
         throw new Error("Kon geen demo-traject aanmaken.");
@@ -397,7 +397,7 @@ export default function HddRapport() {
             Het HDD-traject levert <strong>twee volledig afzonderlijke rapporten</strong> op: een Investor Report en een Team Report. Ze worden nooit als één document samengevoegd. Het Investor Report mag nooit in handen komen van het beoordeelde board-team.
           </p>
           <div style={{ color: SUB, fontSize: 12 }}>
-            Demovoorbeeld met een Loop-achtig board (7 leden). De investerende partij is een variabele. De PDF is het goedgekeurde vlaggenschiprapport in vast specimen-format.
+            Demovoorbeeld met een verzonnen board (7 leden). De investerende partij is een variabele. De PDF is het goedgekeurde vlaggenschiprapport in vast specimen-format.
           </div>
         </div>
 

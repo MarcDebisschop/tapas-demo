@@ -15,6 +15,19 @@
 // opslag en in het antwoord van de route. Zo is een stille fout zichtbaar in
 // plaats van onopgemerkt.
 //
+// TOESTEMMING EN BEWAARTERMIJN (bevinding 15 uit het privacydossier)
+// Het formulier vroeg naam, e-mailadres, organisatie, rol en vraag, en bewaarde
+// dat zonder toestemmingsvinkje, zonder informatie aan de bezoeker en zonder
+// bewaartermijn: de aanvragen bleven staan zolang de databank bestond. Drie
+// dingen zijn daaraan veranderd:
+//   1. De bezoeker moet uitdrukkelijk toestemmen. Zonder toestemming weigert de
+//      route met een nette melding; de pagina zet dezelfde grens al vooraf.
+//   2. Het bewijs van die toestemming gaat mee de opslag in: het tijdstip, het
+//      bron-IP en de versie van de privacyverklaring die de bezoeker zag.
+//   3. Elke aanvraag krijgt een bewaartermijn van twaalf maanden. De opruiming
+//      staat in server/onthaal-contact-bewaartermijn.ts en draait mee in de
+//      dagelijkse bewaartermijnronde.
+//
 // WERKREGELS
 // Nieuw bestand. routes.ts krijgt enkel een registratieregel, precies zoals bij
 // registerCoachContactRoutes. Geen bestaand bestand wordt anders dan dat
@@ -22,8 +35,21 @@
 // ---------------------------------------------------------------------------
 
 import type { Express, Request, Response } from "express";
-import { sqlite as sqliteInstance } from "./storage";
+import { sqlite as sqliteInstance, PRIVACY_VERKLARING_VERSIE } from "./storage";
 import { verstuurBericht, isSimulatiemodus } from "./bulk-import/mailer";
+
+/**
+ * Bewaartermijn van een contactaanvraag: twaalf maanden. Ruim genoeg om een
+ * gesprek dat later opnieuw opgepakt wordt terug te vinden, en korter dan de
+ * vierentwintig maanden van de profieldata, want een vraag om informatie vraagt
+ * geen langere doelbinding.
+ */
+export const CONTACT_BEWAARMAANDEN = 12;
+
+/** Het tijdstip waarop een aanvraag van vandaag gewist mag worden. */
+export function bewaartotVoorContact(nu = new Date()): string {
+  return new Date(nu.getTime() + CONTACT_BEWAARMAANDEN * 30 * 24 * 3600 * 1000).toISOString();
+}
 
 /** Vast doeladres. De vragen van de onthaalpagina komen bij TaPasCity zelf. */
 export const ONTHAAL_DOEL_EMAIL = "info@tapascity.com";
@@ -79,6 +105,29 @@ export interface OnthaalVraag {
   vraag: string;
 }
 
+/** Zorgt idempotent voor de kolommen van deze versie. */
+function zorgVoorKolommen(sq: any): void {
+  const bestaand = (sq.prepare(`PRAGMA table_info(onthaal_contactaanvragen)`).all() as Array<{
+    name: string;
+  }>).map((k) => k.name);
+  const nodig: Array<[string, string]> = [
+    ["toestemming", "INTEGER NOT NULL DEFAULT 0"],
+    ["toestemming_op", "TEXT"],
+    ["verklaring_versie", "TEXT"],
+    ["toestemming_ip", "TEXT"],
+    ["bewaartot", "TEXT"],
+    ["geanonimiseerd_op", "TEXT"],
+  ];
+  for (const [naam, soort] of nodig) {
+    if (bestaand.includes(naam)) continue;
+    try {
+      sq.exec(`ALTER TABLE onthaal_contactaanvragen ADD COLUMN ${naam} ${soort}`);
+    } catch (e) {
+      console.error(`[onthaal-contact] Kolom ${naam} toevoegen mislukt:`, e);
+    }
+  }
+}
+
 /**
  * Maakt onderwerp en tekst van het bericht dat naar info@tapascity.com gaat.
  * Apart gehouden zodat de opmaak los te toetsen valt.
@@ -121,6 +170,9 @@ export function registerOnthaalContactRoutes(app: Express): void {
         aangemaakt_op TEXT NOT NULL DEFAULT (datetime('now'))
       )
     `);
+    // Bestaande installaties hebben de tabel al zonder de toestemmingskolommen;
+    // die worden hier bijgezet.
+    zorgVoorKolommen(sq);
     console.log("[tapas] Onthaalpagina: contactroute en tabel geregistreerd.");
   }
 
@@ -157,6 +209,15 @@ export function registerOnthaalContactRoutes(app: Express): void {
     if (!isGeldigEmail(vraagGegevens.email)) {
       return res.status(400).json({ error: "Geef een geldig e-mailadres op." });
     }
+    // Toestemming (AVG art. 6.1.a en art. 7): zonder uitdrukkelijk vinkje wordt
+    // er niets opgeslagen en niets verstuurd.
+    if (b.toestemming !== true) {
+      return res.status(400).json({
+        error:
+          "Zet het vinkje bij de toestemming, dan mogen wij uw vraag behandelen " +
+          "en u antwoorden.",
+      });
+    }
     if (vraagGegevens.naam.length > MAX_NAAM) {
       return res.status(400).json({ error: "Uw naam is te lang." });
     }
@@ -181,8 +242,9 @@ export function registerOnthaalContactRoutes(app: Express): void {
         const uitkomst = sqi
           .prepare(
             `INSERT INTO onthaal_contactaanvragen
-               (naam, organisatie, email, rol, vraag, doel_email, mail_status)
-             VALUES (?, ?, ?, ?, ?, ?, 'bezig')`,
+               (naam, organisatie, email, rol, vraag, doel_email, mail_status,
+                toestemming, toestemming_op, verklaring_versie, toestemming_ip, bewaartot)
+             VALUES (?, ?, ?, ?, ?, ?, 'bezig', 1, ?, ?, ?, ?)`,
           )
           .run(
             vraagGegevens.naam,
@@ -191,6 +253,10 @@ export function registerOnthaalContactRoutes(app: Express): void {
             vraagGegevens.rol,
             vraagGegevens.vraag,
             ONTHAAL_DOEL_EMAIL,
+            new Date().toISOString(),
+            PRIVACY_VERKLARING_VERSIE,
+            ip,
+            bewaartotVoorContact(),
           );
         rijId = Number(uitkomst?.lastInsertRowid ?? 0) || null;
       } catch (e) {

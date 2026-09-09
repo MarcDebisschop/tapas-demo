@@ -120,6 +120,9 @@ const NIEUWE_AFNAME = {
   taal: "nl",
   consentGiven: true,
   instrumentId: "t4students",
+  // T4Students valt sinds bevinding 07 onder de leeftijdspoort. Zonder band
+  // weigert de route met 400, nog voor de bekwaamheidspoort aan bod komt.
+  leeftijdsband: "18+",
 };
 
 describe("weg 1 — POST /api/afnames", () => {

@@ -15,6 +15,21 @@
 //     de jongere zelfstandig toestemmen. De doelgroepgrens zelf staat niet
 //     hier maar in shared/doelgroep-leeftijd.ts, samen met de teksten die
 //     diezelfde grens aan de gebruiker tonen.
+//   - T4Students (doelgroep 17-23) valt sinds auditronde 6 ook onder de poort.
+//     Niet omdat er ouderlijke toestemming nodig is - zestien- en
+//     zeventienjarigen mogen naar Belgisch recht zelf toestemmen - maar omdat
+//     het instrument zonder poort door ELKE leeftijd te starten was, ook door
+//     een twaalfjarige. Er wordt dus een leeftijdsband gevraagd en enkel "16-17"
+//     en "18+" worden aanvaard. Wie jonger is, krijgt een nette weigering met de
+//     verwijzing naar het passende instrument.
+//
+// TWEE REGIMES, BEWUST APART GEHOUDEN
+//   - LEEFTIJDSPOORT_INSTRUMENTEN: hier wordt een leeftijdsband gevraagd en
+//     afgedwongen (T4Kids, T4Teens, T4Students).
+//   - MINDERJARIGE_INSTRUMENTEN: hier kan bovendien ouderlijke toestemming nodig
+//     zijn (T4Kids, T4Teens). T4Students staat hier met opzet NIET in, zodat het
+//     aankooppad geen ouderlijke bevestiging vraagt voor een meerderjarige of
+//     zelfstandig toestemmende student.
 //   - Leeftijd wordt bewaard als grove band (dataminimalisatie), nooit als
 //     geboortedatum.
 //
@@ -29,10 +44,20 @@ import { T4TEENS_BAND_JONGER, T4TEENS_BAND_OUDER } from "./doelgroep-leeftijd";
 export const LEEFTIJDSBANDEN = ["10-12", "13-15", "16-17", "18+"] as const;
 export type Leeftijdsband = (typeof LEEFTIJDSBANDEN)[number];
 
-// Instrumenten die zich (mede) op minderjarigen richten. Enkel voor deze
-// instrumenten geldt de leeftijdspoort; alle andere instrumenten (T4P,
-// T4Sports, T4Students, ...) blijven volledig ongewijzigd werken.
+// Instrumenten waarvoor ouderlijke toestemming aan de orde kan zijn. Enkel deze
+// twee richten zich op kinderen onder de zestien.
 export const MINDERJARIGE_INSTRUMENTEN = ["t4teens", "t4kids"] as const;
+
+// Instrumenten waarvoor een leeftijdsband gevraagd en afgedwongen wordt. Ruimer
+// dan de reeks hierboven: T4Students hoort er wel bij, want ook daar moet een
+// te jonge deelnemer geweigerd worden. Alle andere instrumenten (T4P, T4Sports,
+// ...) blijven volledig ongewijzigd werken.
+export const LEEFTIJDSPOORT_INSTRUMENTEN = ["t4teens", "t4kids", "t4students"] as const;
+
+// De banden die T4Students aanvaardt. Zestien is de ondergrens: daaronder mag de
+// jongere niet zelfstandig toestemmen en is dit instrument ook inhoudelijk niet
+// voor hem gemaakt.
+export const T4STUDENTS_BANDEN = ["16-17", "18+"] as const;
 
 // Banden die onder de 16 vallen en dus een ouderlijke bevestiging vereisen.
 const BANDEN_ONDER_16: readonly Leeftijdsband[] = ["10-12", "13-15"];
@@ -60,13 +85,28 @@ function alsBand(afgeleid: string): Leeftijdsband {
 const TOEGESTANE_BANDEN: Record<string, readonly Leeftijdsband[]> = {
   t4kids: ["10-12", "13-15"],
   t4teens: [alsBand(T4TEENS_BAND_JONGER), alsBand(T4TEENS_BAND_OUDER)],
+  t4students: T4STUDENTS_BANDEN.map((b) => alsBand(b)),
 };
 
-// Geldt de leeftijdspoort voor dit instrument?
+// Kan voor dit instrument ouderlijke toestemming nodig zijn?
 export function isMinderjarigInstrument(instrumentId?: string | null): boolean {
   if (!instrumentId) return false;
   return (MINDERJARIGE_INSTRUMENTEN as readonly string[]).includes(instrumentId);
 }
+
+// Geldt de leeftijdspoort voor dit instrument, dus moet er een band gevraagd en
+// afgedwongen worden?
+export function geldtLeeftijdspoort(instrumentId?: string | null): boolean {
+  if (!instrumentId) return false;
+  return (LEEFTIJDSPOORT_INSTRUMENTEN as readonly string[]).includes(instrumentId);
+}
+
+// De naam waaronder een instrument in een melding aan de deelnemer verschijnt.
+const INSTRUMENTNAAM: Record<string, string> = {
+  t4kids: "T4Kids",
+  t4teens: "T4Teens",
+  t4students: "T4Students",
+};
 
 // De banden die dit instrument aanvaardt. Null wanneer de poort niet geldt.
 export function toegestaneBandenVoor(instrumentId?: string | null): readonly Leeftijdsband[] | null {
@@ -101,11 +141,11 @@ export type LeeftijdspoortResultaat =
 const EMAIL_PATROON = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Centrale validatie, gebruikt door zowel de client-UI als de server-route.
-// Voor niet-minderjarige instrumenten is dit altijd ok zodat bestaande
+// Voor instrumenten buiten de poort is dit altijd ok zodat bestaande
 // instrumenten niet breken.
 export function valideerLeeftijdspoort(invoer: LeeftijdspoortInvoer): LeeftijdspoortResultaat {
   const instrumentId = invoer.instrumentId ?? null;
-  if (!isMinderjarigInstrument(instrumentId)) {
+  if (!geldtLeeftijdspoort(instrumentId)) {
     return { ok: true, band: null, ouderlijkeToestemmingVereist: false };
   }
 
@@ -119,7 +159,7 @@ export function valideerLeeftijdspoort(invoer: LeeftijdspoortInvoer): Leeftijdsp
     return { ok: false, fout: "Die leeftijdsgroep kennen we niet. Kies een van de voorgestelde groepen." };
   }
   if (!toegestaan.includes(band)) {
-    const naam = instrumentId === "t4kids" ? "T4Kids" : "T4Teens";
+    const naam = INSTRUMENTNAAM[instrumentId ?? ""] ?? "deze vragenlijst";
     return {
       ok: false,
       fout: `Deze vragenlijst (${naam}) is niet gemaakt voor jouw leeftijd. Vraag je begeleider naar de juiste vragenlijst.`,

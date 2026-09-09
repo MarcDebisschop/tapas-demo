@@ -646,6 +646,25 @@ export const T = {
       nl: "Wat wilt u bereiken, en voor hoeveel mensen?",
       en: "What would you like to achieve, and for how many people?",
     },
+    // Informatie en toestemming bij het contactformulier (AVG art. 6.1.a, 7, 13).
+    // De bezoeker leest hier wie de gegevens krijgt, waarvoor ze dienen, hoe lang
+    // ze blijven staan en hoe hij ze kan laten wissen, voor hij iets verstuurt.
+    privacyKop: {
+      nl: "Wat er met uw gegevens gebeurt",
+      en: "What happens with your data",
+    },
+    privacyTekst: {
+      nl: "TaPasCity, Zandstraat 85, 2110 Wijnegem, gebruikt uw naam, uw e-mailadres en uw vraag enkel om u te antwoorden. Wij bewaren ze twaalf maanden en wissen ze daarna automatisch. Wij gebruiken ze niet voor nieuwsbrieven en geven ze niet door aan anderen. U mag altijd vragen wat wij van u bijhouden, of vragen om het meteen te wissen, via info@tapascity.com. De volledige privacyverklaring krijgt u op eenvoudige vraag via datzelfde adres.",
+      en: "TaPasCity, Zandstraat 85, 2110 Wijnegem, uses your name, your email address and your question only to answer you. We keep them for twelve months and erase them automatically afterwards. We do not use them for newsletters and we do not pass them on to others. You may always ask what we hold about you, or ask us to erase it straight away, at info@tapascity.com. The full privacy statement is available on request at that same address.",
+    },
+    toestemmingLabel: {
+      nl: "Ik geef TaPasCity toestemming om deze gegevens te gebruiken om mijn vraag te beantwoorden, en ik weet dat ze na twaalf maanden gewist worden.",
+      en: "I give TaPasCity permission to use this data to answer my question, and I know that it is erased after twelve months.",
+    },
+    foutToestemming: {
+      nl: "Zet het vinkje bij de toestemming, dan mogen wij uw vraag behandelen en u antwoorden.",
+      en: "Tick the permission box, so that we may handle your question and answer you.",
+    },
     verstuurBezig: { nl: "Bezig met versturen", en: "Sending" },
     verstuur: { nl: "Verstuur mijn vraag", en: "Send my question" },
     naDefault: {

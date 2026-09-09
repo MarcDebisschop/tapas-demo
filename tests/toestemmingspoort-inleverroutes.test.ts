@@ -143,7 +143,29 @@ describe("bij T4Kids en T4Teens sluit ook de leeftijdspoort op de opgeslagen geg
   });
 
   it("laat een instrument zonder leeftijdspoort volledig ongemoeid", () => {
-    expect(controleerToestemmingVastgelegd(afname({ instrumentId: "t4students" })).ok).toBe(true);
+    // T4Students stond hier eerder als voorbeeld van een instrument zonder poort.
+    // Sinds bevinding 07 valt het er wel onder, dus dient T4P als voorbeeld.
+    expect(controleerToestemmingVastgelegd(afname({ instrumentId: "t4p" })).ok).toBe(true);
+  });
+
+  it("bij T4Students sluit de poort op de band, zonder ouderlijke toestemming", () => {
+    const zonderBand = controleerToestemmingVastgelegd(afname({ instrumentId: "t4students" }));
+    expect(zonderBand.ok).toBe(false);
+    expect(zonderBand.code).toBe("LEEFTIJDSPOORT");
+
+    const teJong = controleerToestemmingVastgelegd(
+      afname({ instrumentId: "t4students", leeftijdsband: "13-15" }),
+    );
+    expect(teJong.ok).toBe(false);
+    expect(teJong.code).toBe("LEEFTIJDSPOORT");
+
+    // Zestien en ouder komt door, en er wordt geen ouderlijke bevestiging gevraagd.
+    for (const band of ["16-17", "18+"]) {
+      const ok = controleerToestemmingVastgelegd(
+        afname({ instrumentId: "t4students", leeftijdsband: band as any }),
+      );
+      expect(ok.ok, `band ${band} hoort door te komen`).toBe(true);
+    }
   });
 });
 

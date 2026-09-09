@@ -180,7 +180,12 @@ beforeEach(() => {
     // staat, hoort een fixture dat dus ook te doen.
     consentGiven: true,
     consentTimestamp: "2026-08-19T10:00:00.000Z",
-    consentTimestamp: null,
+    // Sinds bevinding 07 valt T4Students onder de leeftijdspoort: de startpagina
+    // vraagt de leeftijdsband voor de eerste vraag, en de inleverroutes weigeren
+    // een afname zonder band. Een fixture die een echte afname naspeelt, draagt
+    // die band dus ook. Ouderlijke toestemming is hier niet aan de orde: vanaf
+    // zestien stemt de jongere zelf toe.
+    leeftijdsband: "18+",
     organisatieId: null,
     baselineEnergy: null,
     itemTijden: null,

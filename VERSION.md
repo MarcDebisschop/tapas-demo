@@ -78,13 +78,17 @@ De volledige beschrijving staat in [CHANGELOG.md](CHANGELOG.md) onder 2.7.1.
 - ✅ **TaPas Teamscan** — 2 sessies (Innovatech leadership team, Academie communicatie)
 - ✅ **Impact-roos** — statisch PNG + PDF voorbeeld
 - ✅ **2MINSCAN** — voorbeeldrapport knop (Nathalie Wouters, EG-code RgEEO-a)
-- ✅ **Human Due Diligence** — volledig afgerond M&A-traject (Loop Earplugs, 5 boardleden, Gate=Go)
+- ✅ **Human Due Diligence**: volledig afgerond M&A-traject (Veldstroom Audio, verzonnen onderneming, 5 boardleden, Gate=Go)
 - ✅ **T4Teens / T4Students** — informatieve pagina's
 - ✅ **Vraagbeheer** — statische itembank
 
 ### Admin login (DEMO_MODE)
 - Email: marc@tapascity.com
-- Wachtwoord: Tintinenco01
+- Wachtwoord: staat niet in de broncode en niet in deze documentatie. In de
+  demomodus is er geen wachtwoord nodig. Daarbuiten leest de server het
+  startwachtwoord uit de omgevingsvariabele `TAPAS_START_WACHTWOORD` (minstens
+  twaalf tekens); staat die niet, dan wordt er geen wachtwoord gezet en meldt de
+  aanmeldpagina dat de hoofdbeheerder er eerst een moet instellen.
 
 ### Instrumenten op homepage
 Mijn profiel · Kompas · T4Recruitment · Teamscan · Impact-roos · 2MINSCAN · Human Due Diligence · TaPas Lounge

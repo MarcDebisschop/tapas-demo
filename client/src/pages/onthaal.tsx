@@ -154,6 +154,9 @@ export default function Onthaal() {
   const [vraag, setVraag] = useState("");
   const [stand, setStand] = useState<Verzendstand>("rust");
   const [melding, setMelding] = useState("");
+  // Toestemming voor het contactformulier (bevinding 15 uit het privacydossier).
+  // Het vinkje staat leeg: een voorgevinkt vakje is geen toestemming.
+  const [toestemming, setToestemming] = useState(false);
 
   async function verstuur(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -161,6 +164,13 @@ export default function Onthaal() {
     if (!naam.trim() || !email.trim()) {
       setStand("fout");
       setMelding(kies(T.contact.foutLeeg, taal));
+      return;
+    }
+    // Zonder toestemming gaat er niets weg. De server houdt dezelfde grens aan en
+    // is de echte grendel; dit scherm zegt het alleen eerder en vriendelijker.
+    if (!toestemming) {
+      setStand("fout");
+      setMelding(kies(T.contact.foutToestemming, taal));
       return;
     }
     setStand("bezig");
@@ -175,6 +185,7 @@ export default function Onthaal() {
           email: email.trim(),
           rol,
           vraag: vraag.trim(),
+          toestemming: true,
         }),
       });
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
@@ -186,6 +197,7 @@ export default function Onthaal() {
         setEmail("");
         setVraag("");
         setRol(ROLLEN[0].nl);
+        setToestemming(false);
         return;
       }
       setStand("fout");
@@ -863,6 +875,20 @@ export default function Onthaal() {
                     onChange={(e) => setVraag(e.target.value)}
                     placeholder={kies(T.contact.plaatsVraag, taal)}
                   />
+                </div>
+                <div className="privacyluik" data-testid="onthaal-privacyluik">
+                  <p className="pl-kop">{kies(T.contact.privacyKop, taal)}</p>
+                  <p className="pl-tekst">{kies(T.contact.privacyTekst, taal)}</p>
+                  <label className="pl-vink" htmlFor="onthaal-toestemming">
+                    <input
+                      id="onthaal-toestemming"
+                      type="checkbox"
+                      checked={toestemming}
+                      onChange={(e) => setToestemming(e.target.checked)}
+                      data-testid="onthaal-toestemming"
+                    />
+                    <span>{kies(T.contact.toestemmingLabel, taal)}</span>
+                  </label>
                 </div>
                 <div
                   style={{

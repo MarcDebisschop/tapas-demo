@@ -231,14 +231,14 @@ function chHealth(L: Layout, fi: FlagshipInput) {
     "confirmed as the single strongest predictor of team effectiveness.");
   drawPyramid(L, fi.visuals.pyramid);
   figureCaption(L,
-    "Figure 3.1 - Six-level team-health model. Loop scores in the High band on every Lencioni " +
+    "Figure 3.1 - Six-level team-health model. Veldstroom scores in the High band on every Lencioni " +
     "dimension; the psychological-safety foundation is assessed qualitatively.");
   L.advance(6);
   L.guardMm(72);
   subhead(L, "Reading the first level: what Trust tells us about this team");
   para(L,
     `The base layer carries more information about a team than any layer above it, so we read it ` +
-    `deeply. Loop's Trust score of ${f.trust.toFixed(2)} is not merely \u201chigh\u201d - it is a window into individual ` +
+    `deeply. Veldstroom's Trust score of ${f.trust.toFixed(2)} is not merely \u201chigh\u201d - it is a window into individual ` +
     "psychological maturity. Trust at this level means team members can voice doubt or admit " +
     "incompetence without losing status; mistakes are reported rather than hidden, which accelerates " +
     "organisational learning. It signals emotional regulation (criticism received without " +
@@ -277,7 +277,7 @@ function chIndividual(L: Layout, fi: FlagshipInput) {
     "Talent sequence, accelerators, drivers, indicative stratum and energy per leader.");
   para(L,
     "Leadership capability here is distributed, not concentrated. The two founders bring " +
-    "complementary sequences - Dimitri O leans strategic-operational-relational, Maarten Bodewes " +
+    "complementary sequences - Ilse V leans strategic-operational-relational, Joris Craeninckx " +
     "operational-innovative-strategic - and the five management members extend that coverage rather " +
     "than duplicate it. The cards below summarise each profile; drivers are stated in their original " +
     "Process-Communication terms and are never translated.");

@@ -38,7 +38,7 @@ export interface FlagshipBuildOptions {
   audience: Audience;
   agg: Fase2Aggregaat;
   leden: BoardMemberInput[];
-  /** Company / subject name for the assessment (e.g. "Loop Earplugs"). */
+  /** Company / subject name for the assessment (e.g. "Veldstroom Audio"). */
   company: string;
   /** Variable investor label (NOT always PMV). Used in investor narrative. */
   investorLabel?: string;
@@ -151,23 +151,23 @@ const FIXTURE_CONFLICT: ConflictAlert[] = [
 ];
 
 const FIXTURE_SCORECARD: ScorecardRow[] = [
-  { outcome: "Scale revenue \u20ac190M \u2192 \u20ac500M+", capability: "Strategic + operational leadership at multi-hub scale", who: "Founders + Rob W., Menno S.", rag: "strong" },
-  { outcome: "Hold operating discipline while scaling", capability: "Execution rigour, financial control, process architecture", who: "Maarten B., Ryan H.", rag: "adequate" },
-  { outcome: "Build the organisation 300 \u2192 600+ FTE", capability: "People systems, structured hiring, talent pipelines", who: "Marloes M. (VP People)", rag: "adequate" },
-  { outcome: "Sustain innovation edge in product", capability: "Innovation talent + market sensing", who: "Maarten B., Rob W.", rag: "strong" },
+  { outcome: "Scale revenue \u20ac190M \u2192 \u20ac500M+", capability: "Strategic + operational leadership at multi-hub scale", who: "Founders + Hanne W., Menno S.", rag: "strong" },
+  { outcome: "Hold operating discipline while scaling", capability: "Execution rigour, financial control, process architecture", who: "Joris C., Ryan H.", rag: "adequate" },
+  { outcome: "Build the organisation 300 \u2192 600+ FTE", capability: "People systems, structured hiring, talent pipelines", who: "Nadia E. (VP People)", rag: "adequate" },
+  { outcome: "Sustain innovation edge in product", capability: "Innovation talent + market sensing", who: "Joris C., Hanne W.", rag: "strong" },
   { outcome: "Institutionalise governance for exit", capability: "Stakeholder/governance expertise, board-grade reporting", who: "Thin \u2014 add via board + hire", rag: "gap" },
-  { outcome: "Protect culture & energy under pressure", capability: "Energy management, retention, well-being discipline", who: "Founder philosophy + Marloes M.", rag: "adequate" },
+  { outcome: "Protect culture & energy under pressure", capability: "Energy management, retention, well-being discipline", who: "Founder philosophy + Nadia E.", rag: "adequate" },
 ];
 
 const FIXTURE_KEYPERSON: KeyPersonCard[] = [
   {
-    title: "Founder duo \u2014 Dimitri O & Maarten B.", sev: "HIGH", color: RED,
+    title: "Founder duo \u2014 Ilse V & Joris C.", sev: "HIGH", color: RED,
     impact: "Strategic vision, investor/partner relationships and cultural authorship concentrate in the two founders. Simultaneous loss would directly threaten the scale-up thesis.",
     depth: "Succession depth: THIN at vision level; strong at operating level.",
     mitigation: "Mitigation: founder retention/equity lock-ups, documented strategy, board-level co-pilot, phased delegation of external relationships.",
   },
   {
-    title: "VP People \u2014 Marloes M.", sev: "WATCH", color: AMBER,
+    title: "VP People \u2014 Nadia E.", sev: "WATCH", color: AMBER,
     impact: "Sole verified C-suite/VP authority and the only deep owner of people-systems as the org scales 300\u2192600 FTE. Departure would stall organisational build-out.",
     depth: "Succession depth: LIMITED \u2014 no clear second owner of people architecture.",
     mitigation: "Mitigation: deputy/people-ops hire, codified HR playbooks, retention review.",
@@ -191,11 +191,11 @@ const FIXTURE_COMPPOT: CompPotPoint[] = [
 // Member cards (specimen roster). Used as default when the live roster has no
 // per-member detail to render; otherwise we build cards from live members.
 const FIXTURE_CARDS: CardSpec[] = [
-  { title: "Dimitri O", role: "Co-founder \u00b7 Vision & brand", lines: ["Strategy + Innovation foci; Be Strong / Try Hard drivers.", "Cultural author; external relationships. Stratum IV (indicative)."] },
-  { title: "Maarten Bodewes", role: "Co-founder \u00b7 Product & technology", lines: ["Innovation + Operational foci; Be Perfect / Be Strong drivers.", "Product engine; market sensing. Stratum IV (indicative)."] },
-  { title: "Marloes Mantel", role: "VP People", lines: ["Interrelational + Operational foci; Please Others / Be Perfect.", "People systems owner for 300\u2192600 FTE scale-out. Stratum III."] },
-  { title: "Cedric Schepers", role: "Operations leadership", lines: ["Operational focus; Try Hard / Hurry Up drivers.", "Execution rigour at multi-hub scale. Stratum III."] },
-  { title: "Rob Weston", role: "Commercial leadership", lines: ["Strategy + Operational foci; Be Strong / Hurry Up.", "Top-line scaling across 150+ markets. Stratum III\u2013IV."] },
+  { title: "Ilse V", role: "Co-founder \u00b7 Vision & brand", lines: ["Strategy + Innovation foci; Be Strong / Try Hard drivers.", "Cultural author; external relationships. Stratum IV (indicative)."] },
+  { title: "Joris Craeninckx", role: "Co-founder \u00b7 Product & technology", lines: ["Innovation + Operational foci; Be Perfect / Be Strong drivers.", "Product engine; market sensing. Stratum IV (indicative)."] },
+  { title: "Nadia El Amrani", role: "VP People", lines: ["Interrelational + Operational foci; Please Others / Be Perfect.", "People systems owner for 300\u2192600 FTE scale-out. Stratum III."] },
+  { title: "Bram Segers", role: "Operations leadership", lines: ["Operational focus; Try Hard / Hurry Up drivers.", "Execution rigour at multi-hub scale. Stratum III."] },
+  { title: "Hanne Loridan", role: "Commercial leadership", lines: ["Strategy + Operational foci; Be Strong / Hurry Up.", "Top-line scaling across 150+ markets. Stratum III\u2013IV."] },
   { title: "Ryan Helps", role: "Finance & control", lines: ["Operational + Analysis focus; Be Perfect / Try Hard.", "Financial control and reporting discipline. Stratum III."] },
   { title: "Menno Schreuder", role: "Strategy & growth", lines: ["Strategy focus; Be Strong / Try Hard drivers.", "Strategic scaling and governance build. Stratum III\u2013IV."] },
 ];
@@ -233,11 +233,11 @@ function buildEnergy(agg: Fase2Aggregaat, leden: BoardMemberInput[]): VisualData
     }));
   } else {
     members = [
-      { name: "Dimitri O", energy: 9, phase: "Phase 0" },
-      { name: "Maarten B.", energy: 9, phase: "Phase 0" },
-      { name: "Marloes M.", energy: 8, phase: "Phase 0" },
-      { name: "Cedric S.", energy: 8, phase: "Phase 0" },
-      { name: "Rob W.", energy: 8, phase: "Phase 0" },
+      { name: "Ilse V", energy: 9, phase: "Phase 0" },
+      { name: "Joris C.", energy: 9, phase: "Phase 0" },
+      { name: "Nadia E.", energy: 8, phase: "Phase 0" },
+      { name: "Bram S.", energy: 8, phase: "Phase 0" },
+      { name: "Hanne W.", energy: 8, phase: "Phase 0" },
       { name: "Ryan H.", energy: 8, phase: "Phase 0" },
       { name: "Menno S.", energy: 8, phase: "Phase 0" },
     ];

@@ -23,6 +23,7 @@
 import { storage, sqlite } from "./storage";
 import { schrijfAuditLog } from "./audit-log";
 import { ruimVerstrekenIntakesOp } from "./prive-aankoop/bewaartermijn";
+import { ruimVerstrekenContactaanvragenOp } from "./onthaal-contact-bewaartermijn";
 
 export const ANONIMISERINGSREDEN = "bewaartermijn verstreken - automatisch";
 
@@ -81,6 +82,13 @@ export async function voerBewaartermijnOpruimingUit(): Promise<number> {
     ruimVerstrekenIntakesOp();
   } catch (err) {
     console.error("[bewaartermijn] Opruiming van de aankoop-intakes mislukt:", err);
+  }
+  // De vragen van het contactformulier vallen onder dezelfde opslagbeperking en
+  // worden in dezelfde ronde opgeruimd, met een eigen termijn van twaalf maanden.
+  try {
+    ruimVerstrekenContactaanvragenOp();
+  } catch (err) {
+    console.error("[bewaartermijn] Opruiming van de contactaanvragen mislukt:", err);
   }
 
   if (ids.length === 0) {

@@ -30,6 +30,7 @@ export const AUDIT_ACTIES = [
   "afname_inzage",
   "gdpr_rectificatie",
   "prive_intake_anonimisering",
+  "contactaanvraag_anonimisering",
   "traject_aangemaakt",
   "traject_partij_toegevoegd",
   "traject_lijn_toegevoegd",

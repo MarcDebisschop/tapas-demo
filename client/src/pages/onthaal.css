@@ -201,6 +201,14 @@ html.dark .onthaal{--primary:#5EAEBA; --primary-dp:#8ACAD3;      /* 188 40% 55% 
 .onthaal textarea{min-height:112px;resize:vertical}
 .onthaal .veld{margin-top:18px}
 .onthaal .na{margin-top:16px;font-size:14px;color:var(--muted)}
+/* Het privacyluik onder het contactformulier. Bevinding 15: de bezoeker leest
+   eerst wat er met zijn gegevens gebeurt en zet daarna zelf het vinkje. Rustige
+   opmaak, geen waarschuwingskleur: dit is informatie, geen alarm. */
+.onthaal .privacyluik{margin-top:26px;padding:18px 20px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+.onthaal .privacyluik .pl-kop{font-size:13px;font-weight:600;letter-spacing:.04em;color:var(--label);margin:0}
+.onthaal .privacyluik .pl-tekst{margin-top:9px;font-size:14px;line-height:1.65;color:var(--muted)}
+.onthaal .privacyluik .pl-vink{display:flex;gap:11px;align-items:flex-start;margin:15px 0 0;font-size:14.5px;font-weight:400;letter-spacing:0;line-height:1.55;color:var(--fg-2);cursor:pointer}
+.onthaal .privacyluik .pl-vink input{width:17px;height:17px;flex:0 0 17px;margin-top:2px;padding:0;accent-color:var(--accent);cursor:pointer}
 /* De verwijzing naar de film. De film zelf staat in de demo-omgeving, want daar
    komt iemand met de bedoeling het platform te zien werken. */
 .onthaal .filmwijzer{margin:0 0 40px;font-size:15px;line-height:1.65;color:var(--muted)}

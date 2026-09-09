@@ -22,6 +22,8 @@ import {
   bouwOnthaalBericht,
   isGeldigEmail,
   MAX_VRAAG,
+  CONTACT_BEWAARMAANDEN,
+  bewaartotVoorContact,
 } from "../server/routes-onthaal-contact";
 
 const routeBron = readFileSync(
@@ -166,5 +168,90 @@ describe("E. De registratie", () => {
   it("het overzicht voor de beheerder vraagt een aanmelding", () => {
     expect(routeBron).toMatch(/app\.get\("\/api\/admin\/onthaal-contactaanvragen"/);
     expect(routeBron).toMatch(/if \(!adminId\) return res\.status\(401\)/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// F. Toestemming en bewaartermijn (bevinding 15 uit het privacydossier)
+//
+// Wat er eerder gemeten werd: het formulier vroeg naam, e-mailadres, organisatie,
+// rol en een vrij tekstveld, en bewaarde dat zonder toestemmingsvinkje, zonder
+// informatie aan de bezoeker en zonder enige termijn. Die drie gaten zijn nu
+// gedicht; deze toetsen leggen dat vast.
+// ---------------------------------------------------------------------------
+
+const bewaarBron = readFileSync(
+  resolve(__dirname, "../server/onthaal-contact-bewaartermijn.ts"),
+  "utf8",
+);
+const jobBron = readFileSync(resolve(__dirname, "../server/bewaartermijn-job.ts"), "utf8");
+const paginaBron = readFileSync(resolve(__dirname, "../client/src/pages/onthaal.tsx"), "utf8");
+const tekstenBron = readFileSync(
+  resolve(__dirname, "../client/src/publiek/teksten-onthaal.ts"),
+  "utf8",
+);
+
+describe("F. Toestemming en bewaartermijn", () => {
+  it("de route weigert een aanvraag zonder uitdrukkelijke toestemming", () => {
+    expect(routeBron).toMatch(/if \(b\.toestemming !== true\)/);
+    expect(routeBron).toMatch(/return res\.status\(400\)\.json\(\{\s*error:/);
+  });
+
+  it("het bewijs van de toestemming gaat mee de opslag in", () => {
+    for (const kolom of [
+      "toestemming",
+      "toestemming_op",
+      "verklaring_versie",
+      "toestemming_ip",
+      "bewaartot",
+    ]) {
+      expect(routeBron, `kolom ${kolom} hoort in de insert te staan`).toContain(kolom);
+    }
+    expect(routeBron).toMatch(/PRIVACY_VERKLARING_VERSIE/);
+  });
+
+  it("de bewaartermijn is twaalf maanden en wordt bij het opslaan gezet", () => {
+    expect(CONTACT_BEWAARMAANDEN).toBe(12);
+    const nu = new Date("2026-01-01T00:00:00.000Z");
+    const tot = new Date(bewaartotVoorContact(nu));
+    const maanden = (tot.getTime() - nu.getTime()) / (30 * 24 * 3600 * 1000);
+    expect(Math.round(maanden)).toBe(12);
+    expect(routeBron).toMatch(/bewaartotVoorContact\(\)/);
+  });
+
+  it("de opruiming wist de inhoud en houdt enkel de vaststelling over", () => {
+    expect(bewaarBron).toMatch(/export function ruimVerstrekenContactaanvragenOp/);
+    expect(bewaarBron).toMatch(/naam = '', organisatie = '', email = '', rol = '', vraag = ''/);
+    expect(bewaarBron).toMatch(/toestemming_ip = NULL/);
+    expect(bewaarBron).toMatch(/geanonimiseerd_op IS NULL/);
+    expect(bewaarBron).toMatch(/actie: "contactaanvraag_anonimisering"/);
+  });
+
+  it("de opruiming draait mee in de dagelijkse bewaartermijnronde", () => {
+    expect(jobBron).toMatch(
+      /import \{ ruimVerstrekenContactaanvragenOp \} from "\.\/onthaal-contact-bewaartermijn"/,
+    );
+    expect(jobBron).toMatch(/ruimVerstrekenContactaanvragenOp\(\)/);
+  });
+
+  it("de pagina vraagt het vinkje, leeg bij het begin, en stuurt het mee", () => {
+    expect(paginaBron).toMatch(/useState\(false\)/);
+    expect(paginaBron).toContain('data-testid="onthaal-toestemming"');
+    expect(paginaBron).toMatch(/if \(!toestemming\) \{/);
+    expect(paginaBron).toMatch(/toestemming: true,/);
+    // Na een gelukte verzending staat het vinkje weer leeg.
+    expect(paginaBron).toMatch(/setToestemming\(false\)/);
+  });
+
+  it("de bezoeker leest in beide talen wat er met zijn gegevens gebeurt", () => {
+    expect(paginaBron).toContain('data-testid="onthaal-privacyluik"');
+    for (const sleutel of ["privacyKop", "privacyTekst", "toestemmingLabel", "foutToestemming"]) {
+      expect(tekstenBron, `tekst ${sleutel} ontbreekt`).toContain(`${sleutel}: {`);
+    }
+    // De kern van artikel 13: wie, waarvoor, hoe lang, en hoe je het laat wissen.
+    expect(tekstenBron).toMatch(/TaPasCity, Zandstraat 85, 2110 Wijnegem/);
+    expect(tekstenBron).toMatch(/twaalf maanden/);
+    expect(tekstenBron).toMatch(/twelve months/);
+    expect(tekstenBron).toMatch(/info@tapascity\.com/);
   });
 });

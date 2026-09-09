@@ -39,7 +39,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { storage } from "./storage";
 import { adminIdVanSessie } from "./admin-guard";
-import { isMinderjarigInstrument, valideerLeeftijdspoort } from "@shared/leeftijd";
+import { geldtLeeftijdspoort, valideerLeeftijdspoort } from "@shared/leeftijd";
 import { normaliseerTaal, t as vertaal, STANDAARD_TAAL } from "@shared/i18n";
 import type { Afname } from "@shared/schema";
 
@@ -64,7 +64,10 @@ export function controleerToestemmingVastgelegd(afname: Afname): ToestemmingUits
     };
   }
 
-  if (!isMinderjarigInstrument(afname.instrumentId)) {
+  // De poort geldt voor T4Kids, T4Teens en T4Students. Enkel bij de eerste twee
+  // kan er ook ouderlijke toestemming nodig zijn; dat onderscheid zit in
+  // valideerLeeftijdspoort zelf.
+  if (!geldtLeeftijdspoort(afname.instrumentId)) {
     return { ok: true };
   }
 

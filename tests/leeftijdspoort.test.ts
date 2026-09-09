@@ -1,7 +1,9 @@
 // ---------------------------------------------------------------------------
 // tests/leeftijdspoort.test.ts - AVG art. 8: leeftijdspoort en ouderlijke
 // toestemming. Deze test legt het beleid van TaPasCity vast:
-//   - andere instrumenten blijven volledig ongewijzigd (geen poort);
+//   - instrumenten buiten de poort blijven volledig ongewijzigd;
+//   - T4Students vraagt een band, met 16 als ondergrens, zonder ouderlijke
+//     toestemming (zie tests/t4students-doelgroep-ondergrens.test.ts);
 //   - T4Kids vereist altijd ouderlijke toestemming;
 //   - T4Teens onder 16 vereist ouderlijke bevestiging, 16-17 niet;
 //   - een band buiten het bereik van het instrument wordt netjes geweigerd.
@@ -20,8 +22,10 @@ const ouder = {
 };
 
 describe("leeftijdspoort", () => {
-  it("laat instrumenten zonder minderjarige doelgroep ongemoeid", () => {
-    for (const id of ["t4p", "t4sports", "t4students", null, undefined]) {
+  it("laat instrumenten buiten de leeftijdspoort ongemoeid", () => {
+    // T4Students stond hier eerder bij; sinds bevinding 07 valt dat instrument wel
+    // onder de poort (zie tests/t4students-doelgroep-ondergrens.test.ts).
+    for (const id of ["t4p", "t4sports", null, undefined]) {
       const r = valideerLeeftijdspoort({ instrumentId: id });
       expect(r.ok).toBe(true);
       if (r.ok) {

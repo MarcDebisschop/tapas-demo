@@ -1483,8 +1483,18 @@ seedLana();
 
     // -----------------------------------------------------------------------
     // Human Due Diligence (HDD) demo-traject
-    // Vlaggenschip-instrument: 1 volledig afgerond M&A-traject voor
-    // "Loop Founder-Management Team" (Loop Earplugs — fictief).
+    // Vlaggenschip-instrument: 1 volledig afgerond M&A-traject voor een
+    // verzonnen onderneming, "Veldstroom Audio".
+    //
+    // BEWUST VERZONNEN (beslispunt 7 uit het privacydossier)
+    // Hier stond eerder een bestaande Belgische onderneming met vijf namen die op
+    // echte bestuurders leken, met adressen op het echte domein van dat bedrijf.
+    // Een demo-omgeving die voor iedereen met een demo-aanmelding open staat, hoort
+    // geen uitspraken over aanwijsbare personen te tonen: een gate-advies of een
+    // waardenverschil naast een echte naam is een persoonsgegeven, en een
+    // gevoelige uitspraak bovendien. Alles is daarom vervangen door een verzonnen
+    // onderneming en verzonnen personen, met adressen op het domein .example, dat
+    // per norm (RFC 2606) nooit aan iemand kan toebehoren.
     // 5 boardleden, fase 1 klaar, gate = Go, fase 2 klaar, status = afgerond.
     // Idempotent via COUNT hdd_trajecten = 0.
     // -----------------------------------------------------------------------
@@ -1517,7 +1527,7 @@ seedLana();
     if (hddLeeg) {
       const msAgo3 = (dagen: number) => Date.now() - dagen * 86400000;
 
-      // Traject: Loop Founder-Management Team (M&A, vereist stratum 5, afgerond)
+      // Traject: Veldstroom Founder-Management Team (M&A, vereist stratum 5, afgerond)
       const hddTrIns = sqlite.prepare(
         `INSERT INTO hdd_trajecten
            (board_naam, org_label, context, vereist_stratum, status, gate_resultaat, created_at)
@@ -1537,8 +1547,8 @@ seedLana();
         consultantMotivatie: "Bevestigd na bespreking met investerende partij. Waardenverschil is bespreekbaar en manageable in integratiefase."
       });
       hddTrIns.run(
-        "Loop Founder-Management Team",
-        "Loop Earplugs",
+        "Veldstroom Founder-Management Team",
+        "Veldstroom Audio",
         "ma",
         5,
         "afgerond",
@@ -1558,48 +1568,48 @@ seedLana();
       );
       const boardLeden = [
         {
-          naam: "Dimitri Oosterlinck",
-          email: "dimitri@loop-earplugs.com",
+          naam: "Ilse Vandervelde",
+          email: "ilse@veldstroom-audio.example",
           tokens: {
-            "tapas-teamscan": "TSDEMO-DIMITRI-HDD01",
-            "twominscan": "2MS-DIMITRI-HDD01",
-            "t4p-business-kompas": "T4P-DIMITRI-HDD01"
+            "tapas-teamscan": "TSDEMO-ILSE-HDD01",
+            "twominscan": "2MS-ILSE-HDD01",
+            "t4p-business-kompas": "T4P-ILSE-HDD01"
           }
         },
         {
-          naam: "Maarten Bodewes",
-          email: "maarten@loop-earplugs.com",
+          naam: "Joris Craeninckx",
+          email: "joris@veldstroom-audio.example",
           tokens: {
-            "tapas-teamscan": "TSDEMO-MAARTEN-HDD01",
-            "twominscan": "2MS-MAARTEN-HDD01",
-            "t4p-business-kompas": "T4P-MAARTEN-HDD01"
+            "tapas-teamscan": "TSDEMO-JORIS-HDD01",
+            "twominscan": "2MS-JORIS-HDD01",
+            "t4p-business-kompas": "T4P-JORIS-HDD01"
           }
         },
         {
-          naam: "Marloes Mantel",
-          email: "marloes@loop-earplugs.com",
+          naam: "Nadia El Amrani",
+          email: "nadia@veldstroom-audio.example",
           tokens: {
-            "tapas-teamscan": "TSDEMO-MARLOES-HDD01",
-            "twominscan": "2MS-MARLOES-HDD01",
-            "t4p-business-kompas": "T4P-MARLOES-HDD01"
+            "tapas-teamscan": "TSDEMO-NADIA-HDD01",
+            "twominscan": "2MS-NADIA-HDD01",
+            "t4p-business-kompas": "T4P-NADIA-HDD01"
           }
         },
         {
-          naam: "Cedric Schepers",
-          email: "cedric@loop-earplugs.com",
+          naam: "Bram Segers",
+          email: "bram@veldstroom-audio.example",
           tokens: {
-            "tapas-teamscan": "TSDEMO-CEDRIC-HDD01",
-            "twominscan": "2MS-CEDRIC-HDD01",
-            "t4p-business-kompas": "T4P-CEDRIC-HDD01"
+            "tapas-teamscan": "TSDEMO-BRAM-HDD01",
+            "twominscan": "2MS-BRAM-HDD01",
+            "t4p-business-kompas": "T4P-BRAM-HDD01"
           }
         },
         {
-          naam: "Rob Weston",
-          email: "rob@loop-earplugs.com",
+          naam: "Hanne Loridan",
+          email: "hanne@veldstroom-audio.example",
           tokens: {
-            "tapas-teamscan": "TSDEMO-ROB-HDD01",
-            "twominscan": "2MS-ROB-HDD01",
-            "t4p-business-kompas": "T4P-ROB-HDD01"
+            "tapas-teamscan": "TSDEMO-HANNE-HDD01",
+            "twominscan": "2MS-HANNE-HDD01",
+            "t4p-business-kompas": "T4P-HANNE-HDD01"
           }
         }
       ];
@@ -1607,7 +1617,74 @@ seedLana();
       for (const lid of boardLeden) {
         hddLidIns.run(hddTrId, lid.naam, lid.email, JSON.stringify(lid.tokens), hddNow);
       }
-      console.log("[tapas] HDD demo-traject geseed: Loop Founder-Management Team (M&A, afgerond, 5 boardleden).");
+      console.log("[tapas] HDD demo-traject geseed: Veldstroom Founder-Management Team (M&A, afgerond, 5 boardleden).");
+    }
+
+    // -----------------------------------------------------------------------
+    // Herstel op bestaande installaties (beslispunt 7 uit het privacydossier)
+    //
+    // De seed hierboven loopt alleen bij een lege tabel. Op een installatie die
+    // al draait, staan de oude demo-rijen er dus nog: een bestaande onderneming
+    // met vijf namen die op echte bestuurders leken, met adressen op het echte
+    // domein van dat bedrijf. Die rijen worden hier omgezet naar de verzonnen
+    // onderneming en de verzonnen personen. Bewust een omzetting en geen
+    // verwijdering: de demo blijft werken, en de rapporten die eraan hangen
+    // blijven bestaan zonder ooit nog naar iemand te verwijzen.
+    //
+    // Idempotent: draait de omzetting een tweede keer, dan vindt ze niets meer.
+    // De namen van toen staan hier eenmalig als zoeksleutel; ze zijn geen
+    // demo-inhoud meer.
+    // -----------------------------------------------------------------------
+    try {
+      const teHernoemen = sqlite
+        .prepare(
+          `SELECT id FROM hdd_trajecten
+            WHERE org_label = 'Loop Earplugs' OR board_naam = 'Loop Founder-Management Team'`,
+        )
+        .all() as Array<{ id: number }>;
+      if (teHernoemen.length > 0) {
+        sqlite
+          .prepare(
+            `UPDATE hdd_trajecten
+                SET board_naam = 'Veldstroom Founder-Management Team',
+                    org_label = 'Veldstroom Audio'
+              WHERE org_label = 'Loop Earplugs' OR board_naam = 'Loop Founder-Management Team'`,
+          )
+          .run();
+        console.log(
+          `[tapas] HDD demo-traject omgezet naar een verzonnen onderneming (${teHernoemen.length} traject(en)).`,
+        );
+      }
+      const oudeLeden: Array<[string, string, string]> = [
+        ["Dimitri Oosterlinck", "Ilse Vandervelde", "ilse@veldstroom-audio.example"],
+        ["Maarten Bodewes", "Joris Craeninckx", "joris@veldstroom-audio.example"],
+        ["Marloes Mantel", "Nadia El Amrani", "nadia@veldstroom-audio.example"],
+        ["Cedric Schepers", "Bram Segers", "bram@veldstroom-audio.example"],
+        ["Rob Weston", "Hanne Loridan", "hanne@veldstroom-audio.example"],
+      ];
+      const lidUpd = sqlite.prepare(
+        `UPDATE hdd_board_leden SET naam = ?, email = ? WHERE naam = ?`,
+      );
+      let omgezet = 0;
+      for (const [oud, nieuw, mail] of oudeLeden) {
+        const r = lidUpd.run(nieuw, mail, oud);
+        omgezet += Number(r?.changes ?? 0);
+      }
+      // Een lid dat niet in de reeks hierboven staat maar wel een adres op het
+      // oude domein heeft, krijgt geen naam meer en geen adres dat bestaat.
+      const restant = sqlite
+        .prepare(
+          `UPDATE hdd_board_leden
+              SET naam = 'Demolid', email = 'demo@veldstroom-audio.example'
+            WHERE email LIKE '%@loop-earplugs.com'`,
+        )
+        .run();
+      omgezet += Number(restant?.changes ?? 0);
+      if (omgezet > 0) {
+        console.log(`[tapas] ${omgezet} HDD-demoboardlid(leden) omgezet naar verzonnen personen.`);
+      }
+    } catch (e) {
+      console.warn("[tapas] Omzetting van het HDD-demoboard overgeslagen:", (e as Error)?.message);
     }
 
     console.log("[tapas] Demo-data volledig: org + afnames + credits + transacties + facturen + licenties + T4R + Teamscan + HDD.");
@@ -3703,9 +3780,12 @@ export const storage = new DatabaseStorage();
 // ---------------------------------------------------------------------------
 // ADDITIEF — Seed starthash voor prior beheerders (enkel definitieve modus).
 // In de demo (TAPAS_DEMO="1") gebeurt niets: login blijft daar e-mail-only.
-// In de definitieve modus krijgt elke prior beheerder ZONDER wachtwoord-hash
-// het startwachtwoord "Tintinenco01", zodat de bestaande gewoonte blijft
-// werken. Idempotent: accounts die al een hash hebben worden niet aangeraakt.
+// In de definitieve modus krijgt elke prior beheerder ZONDER wachtwoord-hash het
+// startwachtwoord uit de omgevingsvariabele TAPAS_START_WACHTWOORD. Staat die
+// niet, dan wordt er GEEN wachtwoord gezet: het account blijft zonder hash en de
+// aanmeldroute meldt dat er nog geen wachtwoord is ingesteld. Er staat dus geen
+// enkel wachtwoord meer in deze broncode.
+// Idempotent: accounts die al een hash hebben worden niet aangeraakt.
 // De hash-berekening is async (scrypt); we voeren ze na de start uit.
 // ---------------------------------------------------------------------------
 // S-4 (audit): de demovraag komt uit server/demomodus.ts, zodat de schakelaar
@@ -3720,20 +3800,29 @@ if (!isDemoModus()) {
         )
         .all() as Array<{ id: number }>;
       if (rijen.length === 0) return;
-      // Auditronde 5: het startwachtwoord stond hardgecodeerd in de broncode en
-      // was voor alle prior beheerders hetzelfde. Dat blijft de terugvalwaarde
-      // zodat bestaande accounts niet buitengesloten raken, maar een omgeving kan
-      // nu een eigen startwachtwoord meegeven. In productie zonder eigen waarde
-      // waarschuwen we luid: een gedeeld startwachtwoord uit een openbare
-      // broncode hoort daar niet thuis.
+      // Auditronde 6 (privacydossier, bevinding 08): het startwachtwoord stond
+      // hardgecodeerd in de broncode en was voor alle prior beheerders hetzelfde.
+      // Een wachtwoord in een broncodebeheer is geen wachtwoord meer: het staat er
+      // ook in de geschiedenis. De terugvalwaarde is daarom volledig weg. Zonder
+      // TAPAS_START_WACHTWOORD zetten we niets en zeggen we luid waarom.
       const eigenStart = (process.env.TAPAS_START_WACHTWOORD ?? "").trim();
-      if (!eigenStart && process.env.NODE_ENV === "production") {
+      if (!eigenStart) {
         console.warn(
-          "[tapas] LET OP: prior beheerders krijgen het startwachtwoord uit de broncode. " +
-            "Zet TAPAS_START_WACHTWOORD en laat elke beheerder zijn wachtwoord wijzigen.",
+          `[tapas] ${rijen.length} prior beheerder(s) hebben nog geen wachtwoord. ` +
+            "Er wordt er GEEN gezet: TAPAS_START_WACHTWOORD staat niet in de omgeving. " +
+            "Zet die variabele met een eigen, sterk startwachtwoord en herstart, of geef " +
+            "elke beheerder een wachtwoord via de beheerdersomgeving.",
         );
+        return;
       }
-      const hash = await hashWachtwoord(eigenStart || "Tintinenco01");
+      if (eigenStart.length < 12) {
+        console.warn(
+          "[tapas] TAPAS_START_WACHTWOORD is korter dan twaalf tekens. Er wordt geen " +
+            "starthash gezet: kies een langer startwachtwoord.",
+        );
+        return;
+      }
+      const hash = await hashWachtwoord(eigenStart);
       const upd = sqlite.prepare(`UPDATE beheerders SET wachtwoord_hash = ? WHERE id = ?`);
       for (const r of rijen) upd.run(hash, r.id);
       console.log(`[tapas] Starthash gezet voor ${rijen.length} prior beheerder(s).`);

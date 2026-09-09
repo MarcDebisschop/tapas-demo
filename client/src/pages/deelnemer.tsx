@@ -293,7 +293,7 @@ export default function Deelnemer() {
               <p className="text-xs text-muted-foreground">{tt("veld_baseline_hint")}</p>
             </div>
 
-            {/* Leeftijdspoort: enkel zichtbaar bij T4Teens/T4Kids (AVG art. 8). */}
+            {/* Leeftijdspoort: zichtbaar bij T4Kids, T4Teens en T4Students (AVG art. 8). */}
             <Leeftijdspoort
               instrumentId={data.instrumentId}
               taal={taal}
