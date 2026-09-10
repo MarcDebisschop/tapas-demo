@@ -54,6 +54,9 @@ import {
   type T4SRapport,
   type T4SRij,
 } from "./rapport-contract";
+// Het Tapas-oog: de regels, de meetkunde en de tintenreeks staan in de
+// gedeelde module, zodat het Studiekompas en het Kompas hetzelfde oog tonen.
+import { oogStatus, oogTintReeks, type OogConstruct } from "../../shared/tapas-oog";
 
 // ── Vaste teksten uit de blauwdruk, letterlijk ──────────────────────────────
 
@@ -165,6 +168,22 @@ function zwaarsteItemVan(inst: T4SInstrument, construct: string): string | null 
       return id;
   }
   return null;
+}
+
+/**
+ * Eén laag als constructgegevens voor het Tapas-oog. De volgorde is de rangorde
+ * die het rapport zelf al gebruikt, en de kleuren zijn tinten van de kleur die
+ * deze laag in het hele rapport heeft: het oog voegt geen nieuw kleurenstelsel
+ * toe. Een construct waarvan de energie niet ingevuld is, krijgt geen status en
+ * blijft in het beeld wit.
+ */
+function oogLaag(dim: T4SDimensie): OogConstruct[] {
+  const tinten = oogTintReeks(dim.kleur, dim.rijen.length);
+  return dim.rijen.map((r, i) => ({
+    naam: r.construct,
+    status: oogStatus(r.energie),
+    kleur: tinten[i]!,
+  }));
 }
 
 function bandVan(dim: T4SDimensie, nummer: number, titel: string, onderschrift: string, noot: string | null): T4SBand {
@@ -1212,6 +1231,20 @@ export function bouwT4StudentsRapport(
           banden: [bandVan(drivers, 3, "DRIVERS", "wat je aandrijft", null)],
           legende: [],
           naschrift: nietIngevuldZin(drivers),
+        },
+        // Het Tapas-oog: dezelfde drie lagen, nu als één beeld. Het sluit het
+        // hoofdstuk af: eerst laag per laag, daarna het geheel in één oogopslag.
+        // De straling komt uit shared/tapas-oog.ts.
+        {
+          soort: "oog",
+          kop: "Het Tapas-oog",
+          foci: oogLaag(foci),
+          versnellers: oogLaag(versnellers),
+          drivers: oogLaag(drivers),
+          noot:
+            "In het midden staan je drivers. Die zijn geen talent: het is wat opkomt wanneer iets " +
+            "spanning geeft. Kosten je twee sterkste drivers energie, dan gaat je aandacht eerst " +
+            "daarnaartoe, en komt er van je talent minder door. Dat zegt niets over hoeveel talent je hebt.",
         },
       ],
       ONEPAGE_ONDERTITEL,

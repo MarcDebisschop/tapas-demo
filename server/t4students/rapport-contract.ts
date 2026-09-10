@@ -50,6 +50,9 @@ import { tekstVan, SLEUTEL } from "../duidingstekst-register";
 import type { T4SInstrument, T4SItem, T4SVertaalbaar } from "./instrument";
 import type { T4SAntwoorden, T4SResultaat } from "./kompas-scoring";
 import { itemIndex, voedingPerConstruct, type T4SVoeding } from "./voeding";
+// Het Tapas-oog: het bloktype hieronder draagt de constructen van de drie
+// lagen; de straling wordt in de gedeelde module bepaald.
+import type { OogConstruct } from "../../shared/tapas-oog";
 
 // itemIndex en voedingPerConstruct stonden hier voorheen zelf gedefinieerd.
 // Ze staan nu in server/t4students/voeding.ts, zodat kompas-scoring.ts (de
@@ -163,6 +166,20 @@ export type T4SBlok =
    */
   | { soort: "citaat"; kop: string; opschrift: string; kleur: string; regels: T4SCitaatRegel[] }
   | { soort: "batterij"; waarde: number | null; zin: string }
+  /**
+   * "oog" is het Tapas-oog: de drie lagen van de talentmotor in één beeld, met
+   * een legende en één balk die zegt hoeveel licht er vandaag doorkomt. De
+   * regels en de meetkunde staan in shared/tapas-oog.ts; het rapport levert
+   * enkel de constructen met hun rangorde, hun energiestatus en hun kleur.
+   */
+  | {
+      soort: "oog";
+      kop: string;
+      foci: OogConstruct[];
+      versnellers: OogConstruct[];
+      drivers: OogConstruct[];
+      noot: string | null;
+    }
   | { soort: "kolommen"; kopLinks: string; kopRechts: string; links: T4SCitaatRegel[]; rechts: T4SCitaatRegel[] }
   | { soort: "opsomming"; kop: string | null; punten: string[] }
   /**

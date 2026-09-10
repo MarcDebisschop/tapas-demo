@@ -15,6 +15,10 @@
 // niet in het rapport.
 import { KOMPAS_CSS } from "./kompas-css";
 import { KOMPAS_ICONEN } from "./kompas-iconen";
+// Het Tapas-oog is een nieuw onderdeel naast de gemeten componenten. Het tekent
+// zijn eigen SVG en brengt zijn eigen stijl mee; alle klassenamen beginnen met
+// "oog-", zodat geen enkele bestaande component erdoor verandert.
+import { tapasoog, OOG_CSS } from "./kompas-oog";
 
 // --------------------------------------------------------------- Python-basis
 
@@ -583,6 +587,7 @@ const RENDERAARS: Record<string, (o: any) => string> = {
   pistes,
   batterijlegende,
   reflectie,
+  tapasoog,
 };
 
 /** Optionele, per onderdeel gemeten lettergroottes: `pt` (body) en `kop`
@@ -703,7 +708,7 @@ function document(paginas: string[], titel = "T4P Business Kompas",
     : "";
   return '<!doctype html><html lang="nl"><head><meta charset="utf-8">' +
     `<title>${esc(titel)}</title>` +
-    `<style>${KOMPAS_CSS}</style>` + correctie +
+    `<style>${KOMPAS_CSS}</style>` + `<style>${OOG_CSS}</style>` + correctie +
     "</head><body>" + paginas.join("") + "</body></html>";
 }
 

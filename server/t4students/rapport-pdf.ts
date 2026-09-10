@@ -43,6 +43,9 @@ import {
   type T4SVorm,
 } from "./rapport-contract";
 import { F, registerFonts } from "../hdd/pdf/theme";
+// Het Tapas-oog staat in een eigen bestand: het meet zijn eigen hoogte en zet
+// zijn eigen beeld, zodat dit bestand niets over de meetkunde hoeft te weten.
+import { oogHoogte, tekenOog } from "./rapport-oog";
 import { COVERFOTO } from "./beeld/coverfoto";
 
 // ── Bladmaat en marges, uit blauwdruk 3.6 ───────────────────────────────────
@@ -451,6 +454,8 @@ function blokHoogte(doc: Doc, blok: T4SBlok): number {
     }
     case "batterij":
       return hoogteVan(doc, blok.zin, F.dm, 9.2, TEKST_B, 3.4) + 44;
+    case "oog":
+      return oogHoogte(doc, blok, TEKST_B);
     case "kolommen": {
       const kolB = (TEKST_B - 20) / 2;
       const kol = (rr: typeof blok.links): number => {
@@ -727,6 +732,8 @@ function tekenBlok(doc: Doc, blok: T4SBlok, y: number): number {
       // blijft gelijk aan de hoogtemeting hierboven (44 + regels + 18).
       return vlakH + 8;
     }
+    case "oog":
+      return tekenOog(doc, blok, x, y, TEKST_B);
     case "batterij": {
       const b = 176;
       const h = 22;

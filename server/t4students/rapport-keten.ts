@@ -23,6 +23,9 @@ import { bouwT4StudentsRapport } from "./rapport-paginas";
 import { renderT4StudentsRapport } from "./rapport-pdf";
 import type { T4SBlok, T4SRapport, T4SRij } from "./rapport-contract";
 import { leesT4StudentsContract } from "./afnamecontract";
+// Het Tapas-oog: dezelfde regel als in de druk, zodat de tekstweergave nooit
+// iets anders zegt dan het beeld.
+import { oogStraling, oogStatuswoord } from "../../shared/tapas-oog";
 import type { T4SAfnameContract } from "./afnamecontract";
 
 /** Bouwt het volledige rapport uit een bevroren afnamecontract. */
@@ -168,6 +171,26 @@ function blokHtml(blok: T4SBlok): string {
       );
     case "batterij":
       return `<p class="batterij"><strong>${getal(blok.waarde, 0)} op 10</strong> ${veilig(blok.zin)}</p>`;
+    case "oog": {
+      // De tekstweergave van het Tapas-oog. Het beeld zelf hoort op het blad;
+      // hier komt in woorden wat het beeld zegt, zodat de HTML-lezing niets
+      // mist. De straling komt uit dezelfde gedeelde regel als de druk.
+      const u = oogStraling({
+        foci: blok.foci,
+        versnellers: blok.versnellers,
+        drivers: blok.drivers,
+      });
+      const regels = [...blok.foci, ...blok.versnellers, ...blok.drivers]
+        .map((c) => `<li>${veilig(c.naam)}: ${veilig(oogStatuswoord(c.status))}</li>`)
+        .join("");
+      return (
+        `<section class="oog"><h4>${veilig(blok.kop)}</h4>` +
+        `<p class="opschrift">${veilig(u.niveauNaam)}: ${veilig(u.alertKop)}</p>` +
+        `<p>${veilig(u.alertTekst)}</p><ul>${regels}</ul>` +
+        (blok.noot ? `<p>${veilig(blok.noot)}</p>` : "") +
+        "</section>"
+      );
+    }
     case "kolommen":
       return (
         `<div class="kolommen"><section><h4>${veilig(blok.kopLinks)}</h4>` +

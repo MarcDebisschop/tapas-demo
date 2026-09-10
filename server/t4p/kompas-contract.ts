@@ -24,6 +24,10 @@ import {
 // geeft de brontekst terug zolang er geen beheerde stand is, dus het rapport
 // blijft deterministisch: dezelfde stand geeft dezelfde tekst.
 import { KERN_STANDAARD, KORT_STANDAARD, EH_STANDAARD } from "./kompas-teksten";
+// Het Tapas-oog: de regels staan in shared/tapas-oog.ts, de kleuren per
+// construct bij het onderdeel zelf.
+import { oogStatus, type OogConstruct } from "../../shared/tapas-oog";
+import { oogKleurT4P } from "./kompas-oog";
 import { tekstVan, SLEUTEL } from "../duidingstekst-register";
 
 export interface KompasDeelnemer {
@@ -96,6 +100,17 @@ function netTekst(n: number): string {
 // dezelfde regel, zodat dezelfde energie nooit twee statussen kan krijgen.
 function statusVanEnergie(gem: number): "geeft" | "kost" | "neutraal" {
   return energieStatusVanGemiddelde(gem);
+}
+
+/** Een rij als constructgegeven voor het Tapas-oog: naam, energiestatus en
+ * identiteitskleur. De rangorde is die van de rij zelf; er wordt hier niets
+ * herberekend en niets bijgemaakt. */
+function oogRij(r: Rij): OogConstruct {
+  return {
+    naam: r.construct,
+    status: oogStatus(r.avgEnergy),
+    kleur: oogKleurT4P(r.construct),
+  };
 }
 
 /** Som van de gemiddelde energie over rijen, afgerond op twee decimalen. */
@@ -1492,7 +1507,7 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
   secties.push({
     nummer: "13",
     titel: "De talentmotor in één oogopslag",
-    ondertitel: "Drie dimensies samen gelezen — toegang, versnelling en bewaking in één beeld.",
+    ondertitel: "Drie dimensies samen gelezen: toegang, versnelling en bewaking in één beeld.",
     onderdelen: [
       {
         type: "paragraaf",
@@ -1501,6 +1516,20 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
           "drivers samen worden gelezen. Dit is geen rangorde en geen stappenplan, maar een kaart " +
           "van toegang, versnelling en bewaking.",
         pt: 9.4,
+      },
+      // Het Tapas-oog. Het staat vóór de drie panelen omdat het precies dezelfde
+      // drie lagen samenbrengt in één beeld: de lezer ziet eerst het geheel en
+      // leest daarna de lagen apart. De straling komt uit shared/tapas-oog.ts en
+      // wordt hier niet opnieuw uitgerekend.
+      {
+        type: "tapasoog",
+        kop: "Het Tapas-oog",
+        foci: foci.map(oogRij),
+        versnellers: versnellers.map(oogRij),
+        drivers: drivers.map(oogRij),
+        noot:
+          "De pupil toont de drivers: zij zijn geen talent, maar het gedrag dat opkomt wanneer de " +
+          "omgeving spanning geeft. Daarom kan de driverlaag het licht dempen en nooit versterken.",
       },
       {
         type: "motorpanelen",
