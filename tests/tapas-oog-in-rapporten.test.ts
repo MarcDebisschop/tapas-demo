@@ -19,6 +19,7 @@ import { bouwT4pBusinessKompas, renderT4pBusinessKompasHtml } from "../server/t4
 import { itemsVanInstrument, itemSoort } from "../server/t4students/antwoorden";
 import { bouwT4StudentsAfnameContract } from "../server/t4students/afnamecontract";
 import { bouwRapportUitContract } from "../server/t4students/rapport-keten";
+import { OOG_KLEUR_T4P } from "../server/t4p/kompas-oog";
 
 function t4pAntwoorden(): Responses {
   const responses: Responses = {};
@@ -128,5 +129,23 @@ describe("het Tapas-oog in het T4Students Studiekompas", () => {
     const band: any = (blad.blokken as any[]).find((b) => b.soort === "banden");
     const rijen = band.banden[0].rijen.map((r: any) => r.construct);
     expect(oog.foci.map((c: any) => c.naam)).toEqual(rijen);
+  });
+  it("geeft elke talentlaag een eigen kleur en niet één tintenreeks", () => {
+    const talent = [...oog.foci, ...oog.versnellers].map((c: any) => c.kleur);
+    // Twaalf constructen, twaalf verschillende identiteitskleuren.
+    expect(new Set(talent).size).toBe(talent.length);
+    // De drivers zijn geen talent en dragen daarom één rustige grijstint.
+    expect(new Set(oog.drivers.map((c: any) => c.kleur)).size).toBe(1);
+  });
+
+  it("gebruikt dezelfde kleur als het Business Kompas waar de naam dezelfde is", () => {
+    for (const c of [...oog.foci, ...oog.versnellers]) {
+      const inKompas = OOG_KLEUR_T4P[c.naam];
+      if (inKompas) expect(c.kleur).toBe(inKompas);
+    }
+    // Drie namen komen letterlijk in beide instrumenten voor: Analyse, Impact
+    // en Constructief onderscheidend. Anders zegt de controle hierboven niets.
+    const gedeeld = [...oog.foci, ...oog.versnellers].filter((c: any) => OOG_KLEUR_T4P[c.naam]);
+    expect(gedeeld.length).toBeGreaterThanOrEqual(3);
   });
 });

@@ -56,7 +56,8 @@ import {
 } from "./rapport-contract";
 // Het Tapas-oog: de regels, de meetkunde en de tintenreeks staan in de
 // gedeelde module, zodat het Studiekompas en het Kompas hetzelfde oog tonen.
-import { oogStatus, oogTintReeks, type OogConstruct } from "../../shared/tapas-oog";
+import { oogStatus, type OogConstruct } from "../../shared/tapas-oog";
+import { oogKleurT4S } from "./rapport-oog";
 
 // ── Vaste teksten uit de blauwdruk, letterlijk ──────────────────────────────
 
@@ -178,11 +179,10 @@ function zwaarsteItemVan(inst: T4SInstrument, construct: string): string | null 
  * blijft in het beeld wit.
  */
 function oogLaag(dim: T4SDimensie): OogConstruct[] {
-  const tinten = oogTintReeks(dim.kleur, dim.rijen.length);
-  return dim.rijen.map((r, i) => ({
+  return dim.rijen.map((r) => ({
     naam: r.construct,
     status: oogStatus(r.energie),
-    kleur: tinten[i]!,
+    kleur: oogKleurT4S(r.construct),
   }));
 }
 

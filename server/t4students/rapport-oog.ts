@@ -31,6 +31,46 @@ export interface OogBlok {
   noot: string | null;
 }
 
+/**
+ * De identiteitskleur per construct van het Studiekompas. De tinten zijn zo
+ * gelijk gehouden als mogelijk met het Tapas-oog van het Business Kompas: waar
+ * een construct daar een tegenhanger heeft, krijgt het hier exact dezelfde
+ * kleur. Waar het Studiekompas een construct in twee varianten opsplitst, is de
+ * kleurfamilie behouden en enkel de diepte verschoven, zodat de twee ringdelen
+ * naast elkaar te onderscheiden blijven.
+ *
+ * De kleur hoort bij het construct en niet bij de energie: de energie verandert
+ * enkel de helderheid van de vulling (zie oogVulling in shared/tapas-oog.ts).
+ */
+export const OOG_KLEUR_T4S: Record<string, string> = {
+  // Talentfoci. Innovatief volgt Innovatie, Interactief volgt Inter-relationeel,
+  // Conceptueel volgt Strategie en Uitvoerend volgt Operationeel.
+  "Functioneel Innovatief": "#f7d007",
+  "Artistiek Innovatief": "#d9a800",
+  "Complexiteit/Conceptueel": "#4697b8",
+  "Systematisch/Uitvoerend": "#ed111a",
+  "Sociaal Interactief": "#43bb50",
+  "Overdrachtelijk Interactief": "#2f9a45",
+  // Talentversnellers. Vier namen zijn dezelfde als in het Business Kompas;
+  // ondersteunend volgt Coaching en Faciliteren.
+  Analyse: "#5e6da0",
+  "Constructief onderscheidend": "#f59c09",
+  Impact: "#b4dd21",
+  Resultaat: "#c83667",
+  "Individueel ondersteunend": "#44bb5a",
+  Groepsondersteunend: "#45b996",
+};
+
+/** De rustige grijstint van de drivers, gelijk aan die in het Business Kompas.
+ * De drivers zijn geen talent en krijgen daarom geen eigen talentkleur. */
+export const OOG_KLEUR_T4S_DRIVER = "#9a968c";
+
+/** De kleur van een construct, met dezelfde rustige terugval als in het
+ * Business Kompas: liever een neutrale tint dan een verzonnen kleur. */
+export function oogKleurT4S(construct: string): string {
+  return OOG_KLEUR_T4S[construct] ?? OOG_KLEUR_T4S_DRIVER;
+}
+
 const OOG_B = 288;
 const OOG_H = 208;
 const LEG_KORPS = 7.6;
