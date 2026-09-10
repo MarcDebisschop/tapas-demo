@@ -1529,7 +1529,10 @@ export function bouwKompasContract(contract: any, deelnemer: KompasDeelnemer): a
         drivers: drivers.map(oogRij),
         noot:
           "De pupil toont de drivers: zij zijn geen talent, maar het gedrag dat opkomt wanneer de " +
-          "omgeving spanning geeft. Daarom kan de driverlaag het licht dempen en nooit versterken.",
+          "omgeving spanning geeft. Geven de twee dominantste drivers energie, dan is het " +
+          "talentpotentieel goed beschikbaar en dus zichtbaar inzetbaar. Kosten zij energie, dan gaat " +
+          "de aandacht naar het terugwinnen van controle en wordt het talentpotentieel niet inzetbaar " +
+          "en daardoor ook niet zichtbaar.",
       },
       {
         type: "motorpanelen",

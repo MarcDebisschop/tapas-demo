@@ -117,7 +117,7 @@ function maakTekening(blok: OogBlok): OogTekening {
 function notenVan(blok: OogBlok, tek: OogTekening): string[] {
   return [
     "De ringen tonen wat er is, in de volgorde waarin het naar voren komt. Het licht zegt niets over " +
-      "hoe groot je talent is, enkel over de energie waarmee het vandaag naar buiten kan.",
+      "hoe groot je talent is, enkel of je talentpotentieel vandaag inzetbaar en dus zichtbaar is.",
     ...tek.uitkomst.meldingen,
     ...(blok.noot ? [blok.noot] : []),
   ];

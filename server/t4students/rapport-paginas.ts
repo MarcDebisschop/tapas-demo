@@ -1243,8 +1243,10 @@ export function bouwT4StudentsRapport(
           drivers: oogLaag(drivers),
           noot:
             "In het midden staan je drivers. Die zijn geen talent: het is wat opkomt wanneer iets " +
-            "spanning geeft. Kosten je twee sterkste drivers energie, dan gaat je aandacht eerst " +
-            "daarnaartoe, en komt er van je talent minder door. Dat zegt niets over hoeveel talent je hebt.",
+            "spanning geeft. Geven je twee sterkste drivers energie, dan is je talentpotentieel goed " +
+            "beschikbaar en dus ook zichtbaar inzetbaar. Kosten ze energie, dan gaat je aandacht eerst " +
+            "naar het terugwinnen van controle, en wordt je talentpotentieel niet inzetbaar en daardoor " +
+            "ook niet zichtbaar. Dat zegt niets over hoeveel talent je hebt.",
         },
       ],
       ONEPAGE_ONDERTITEL,

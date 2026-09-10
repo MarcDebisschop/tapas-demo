@@ -172,4 +172,20 @@ describe("de tekening", () => {
       expect(u.alertKop).not.toMatch(/[0-9]/);
     }
   });
+  it("spreekt in elke stand over inzetbaar en zichtbaar talentpotentieel", () => {
+    const open = oogStraling({ ...talenten("geeft"), drivers: drivers("geeft", "geeft") });
+    expect(open.alertKop).toContain("inzetbaar");
+    expect(open.alertTekst).toContain("zichtbaar inzetbaar");
+
+    const dicht = oogStraling({ ...talenten("geeft"), drivers: drivers("kost", "kost") });
+    expect(dicht.alertKop).toContain("niet inzetbaar");
+    expect(dicht.alertKop).toContain("niet zichtbaar");
+    expect(dicht.alertTekst).toContain("niet inzetbaar wordt en daardoor ook niet zichtbaar");
+
+    // Nergens nog de oude verwoording waarin talent opgebracht zou worden.
+    for (const u of [open, dicht]) {
+      expect(u.alertKop + u.alertTekst).not.toContain("opgebracht");
+      expect(u.alertKop + u.alertTekst).not.toContain("gedragen");
+    }
+  });
 });

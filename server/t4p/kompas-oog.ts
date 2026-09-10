@@ -168,7 +168,7 @@ export function tapasoog(o: OogOnderdeel): string {
 
   const noten = [
     "De ringen tonen wat aanwezig is, in de rangorde waarin het naar voren komt. " +
-      "De straling zegt niets over de omvang of de waarde van het talent, enkel over de energie waarmee het vandaag beschikbaar is.",
+      "De straling zegt niets over de omvang of de waarde van het talent, enkel of het talentpotentieel vandaag inzetbaar en daardoor zichtbaar is.",
     ...u.meldingen,
     ...(o.noot ? [String(o.noot)] : []),
   ];

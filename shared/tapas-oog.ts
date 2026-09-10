@@ -13,10 +13,10 @@
 // potentieel er vandaag ook uit kan. Daarom kan de driverlaag het licht enkel
 // dempen en nooit versterken: drivers zijn geen talent, maar het gedrag dat
 // opkomt wanneer de omgeving spanning geeft. Kosten de twee dominantste drivers
-// energie, dan gaat de aandacht naar het terugwinnen van controle en is er
-// nauwelijks doorstroming naar het potentieel. Het oog hangt dan achter zware
-// gordijnen: er blijft een spleet licht, want het talent is niet kleiner
-// geworden, het is enkel amper bereikbaar.
+// energie, dan gaat de aandacht naar het terugwinnen van controle en wordt het
+// talentpotentieel niet inzetbaar en daardoor ook niet zichtbaar. Het oog hangt
+// dan achter zware gordijnen: er blijft een spleet licht, want het talent is
+// niet kleiner geworden, het is enkel niet beschikbaar.
 //
 // STATUS VAN DE GRENZEN
 // Alle grenzen hieronder zijn conventies, in dezelfde lijn als de banden in
@@ -185,27 +185,26 @@ export interface OogUitkomst {
 
 const ALERT: Record<OogNiveau, { kop: string; tekst: string }> = {
   3: {
-    kop: "Talent en context lopen samen",
+    kop: "Het talentpotentieel is inzetbaar en zichtbaar",
     tekst:
-      "De twee dominantste drivers geven energie en het talentlicht is hoog. Het potentieel komt naar buiten zonder dat het opgebracht moet worden.",
+      "De twee dominantste drivers geven energie. Daardoor is het talentpotentieel goed beschikbaar, en dus ook zichtbaar inzetbaar.",
   },
   2: {
-    kop: "Talent draagt, en er is iets dat aandacht vraagt",
+    kop: "Het talentpotentieel is inzetbaar, met aandachtspunten",
     tekst:
-      "Het talentlicht is er, maar de drivers of enkele van de sterkste talenten vragen energie. Dat is houdbaar, op voorwaarde dat de aandachtspunten benoemd worden.",
+      "De drivers of enkele van de sterkste talenten vragen energie. Het talentpotentieel blijft beschikbaar en zichtbaar inzetbaar, op voorwaarde dat die aandachtspunten benoemd worden.",
   },
   1: {
-    kop: "Talent wordt opgebracht in plaats van gedragen",
+    kop: "Het talentpotentieel is maar deels inzetbaar en daardoor maar deels zichtbaar",
     tekst:
-      "Het potentieel is aanwezig, maar de dominantste drivers of de zwakke energie maken dat het inspanning kost om het te laten zien.",
+      "De dominantste drivers of de lage energie maken dat het talentpotentieel minder beschikbaar is. Het wordt daardoor maar gedeeltelijk inzetbaar, en dus ook maar gedeeltelijk zichtbaar. Het potentieel zelf is er wel.",
   },
   0: {
-    kop: "De aandacht gaat naar controle terugwinnen",
+    kop: "Het talentpotentieel is niet inzetbaar en daardoor niet zichtbaar",
     tekst:
-      "De twee dominantste drivers kosten energie. Vrijwel alle energie gaat dan naar het terugwinnen van controle over de situatie, waardoor er nauwelijks doorstroming is naar het potentieel. Het oog hangt achter zware gordijnen: er blijft een spleet licht, want het talent is niet kleiner geworden, het is enkel amper bereikbaar. Het gesprek gaat hier eerst over de context en de werkomstandigheden, en niet over het talent zelf.",
+      "De twee dominantste drivers kosten energie. Vrijwel alle energie gaat dan naar het terugwinnen van controle over de situatie, waardoor het talentpotentieel niet inzetbaar wordt en daardoor ook niet zichtbaar. Het oog hangt achter zware gordijnen: er blijft een spleet licht, want het talent is niet kleiner geworden, het is enkel niet beschikbaar. Het gesprek gaat hier eerst over de context en de werkomstandigheden, en niet over het talent zelf.",
   },
 };
-
 /** De volledige beoordeling: talentlicht, poort, rem, niveau en alert. */
 export function oogStraling(invoer: OogInvoer): OogUitkomst {
   const meldingen: string[] = [];
@@ -239,7 +238,7 @@ export function oogStraling(invoer: OogInvoer): OogUitkomst {
       gordijnen: false,
       alertKop: "Energie niet gemeten",
       alertTekst:
-        "Zonder gemeten energie zegt dit beeld enkel wat er aanwezig is, en niets over de vraag of het vandaag beschikbaar is.",
+        "Zonder gemeten energie zegt dit beeld enkel wat er aanwezig is, en niets over de vraag of het talentpotentieel vandaag inzetbaar en zichtbaar is.",
       meldingen,
     };
   }
@@ -438,7 +437,7 @@ export function oogTekening(invoer: OogInvoer, breedte: number, hoogte: number):
   const legende: OogTekening["legende"] = [];
 
   // Het licht. Ook op het laagste niveau blijft er een rest, want het talent is
-  // niet verdwenen; het is enkel amper bereikbaar.
+  // niet verdwenen; het is enkel niet beschikbaar.
   if (kracht > 0) {
     for (const [factor, dekking] of [
       [2.35, 0.16],
@@ -538,7 +537,7 @@ export function oogTekening(invoer: OogInvoer, breedte: number, hoogte: number):
   // De zware gordijnen. Zij hangen VOOR het hele beeld en niet enkel voor de
   // eerste laag: kosten de twee dominantste drivers energie, dan is het hele
   // potentieel amper inzetbaar. In het midden blijft een spleet open, want het
-  // talent staat er nog volledig; het is enkel amper bereikbaar.
+  // talent staat er nog volledig; het is enkel niet beschikbaar.
   if (uitkomst.gordijnen) {
     const spleet = R * 0.16;
     const nnn = (v: number) => v.toFixed(1);
