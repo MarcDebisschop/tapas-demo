@@ -38,6 +38,7 @@ import { registerRondeRoutes } from "./bekwaamheid/routes-rondes";
 import { registerBeslissingRoutes } from "./bekwaamheid/routes-beslissingen";
 import { registerCyclusRoutes } from "./bekwaamheid/routes-cyclus";
 import { registerT4OrganizationsRoutes } from "./t4organizations/routes";
+import { registerKwaliteitEvaluatiesRoutes } from "./kwaliteit-evaluaties/routes";
 import { registerDriverScanRoutes } from "./driverscan/routes";
 import { registerTwominscanRoutes } from "./twominscan/routes";
 import { buildInstrumentBeschikbaarheidRoutes } from "./instrument-beschikbaarheid";
@@ -125,6 +126,7 @@ export async function registerRoutes(
   // (leiding/medewerker/stakeholder). Nieuwe module (Regel 2): eigen bestanden.
   // -------------------------------------------------------------------------
   registerT4OrganizationsRoutes(app);
+  registerKwaliteitEvaluatiesRoutes(app);
 
   // -------------------------------------------------------------------------
   // Driver-scan — 5 Kahler-drivers via de 10 T4P forced-choice blokken.

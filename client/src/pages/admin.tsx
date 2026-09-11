@@ -35,7 +35,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Afname, OrganisatieMetSaldo } from "@/lib/types";
-import { Copy, Check, Send, UserPlus, Bell, Languages, Settings2, ChartColumn, GraduationCap, Mail, KeyRound, Users, CreditCard, BarChart2, Building2, ArrowRight, Layers, Euro, FileSpreadsheet, Sparkles, Power, MonitorPlay, Palette, Network, LogOut, ShieldCheck } from "lucide-react";
+import { Copy, Check, Send, UserPlus, Bell, Languages, Settings2, ChartColumn, GraduationCap, Mail, KeyRound, Users, CreditCard, BarChart2, Building2, ArrowRight, Layers, Euro, FileSpreadsheet, Sparkles, Power, MonitorPlay, Palette, Network, LogOut, ShieldCheck, ClipboardCheck } from "lucide-react";
 import { LegeStaat } from "@/components/LegeStaat";
 import {
   TALEN,
@@ -503,6 +503,14 @@ export default function Admin() {
               <Link href="/admin/kwaliteit">
                 <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-kwaliteit-cluster">
                   <BarChart2 className="h-3.5 w-3.5 shrink-0" /> Kwaliteitsmonitor
+                </a>
+              </Link>
+              {/* Kwaliteit & Evaluaties (nieuwe module, Fase 1: organisatie-evaluatie).
+                  Eigen route/prefix (evaluatie_*, /admin/kwaliteit-evaluaties) om
+                  botsing met de bestaande STM-kwaliteitsmonitor te vermijden. */}
+              <Link href="/admin/kwaliteit-evaluaties">
+                <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-kwaliteit-evaluaties">
+                  <ClipboardCheck className="h-3.5 w-3.5 shrink-0" /> Kwaliteit &amp; Evaluaties
                 </a>
               </Link>
               {/* De bekwaamheidsmodule bestond wel als schermenreeks onder

@@ -56,6 +56,55 @@ beschreven omdat weten beter is dan vermoeden.
 
 ### Toegevoegd
 
+- Eerste bouwfase van de module Kwaliteit & Evaluaties: de organisatie-evaluatie.
+  Een beheerder nodigt een organisatiecontact uit voor een sessie
+  (`POST /api/training-sessions/:id/evaluations/invite`), het contact vult de
+  evaluatie in via een tijdelijke, tokengebonden link zonder aanmelding
+  (`GET/POST /api/evaluations/public/:token/...`) en de antwoorden worden
+  automatisch gewogen gescoord met signalering bij een lage score of een eigen
+  "ernstig"-melding. De module is zelfstandig opgebouwd onder
+  `server/kwaliteit-evaluaties/` (`schema.ts`, `vragen.ts`, `scoring.ts`,
+  `storage.ts`, `mailer.ts`, `routes.ts`), met een eigen tabelvoorvoegsel
+  `evaluatie_` om botsing met de bestaande `kwaliteit_*`-tabellen van STM te
+  vermijden. Zeven tabellen:
+  `evaluatie_organisatie_contacten`, `evaluatie_coaches`, `evaluatie_sessies`,
+  `evaluatie_uitnodigingen`, `evaluatie_organisatie_evaluaties`,
+  `evaluatie_antwoorden` en `evaluatie_signalen`, aangemaakt via het gebruikelijke
+  dubbele patroon van dit project: rechtstreeks inline in `storage.ts` en,
+  gespiegeld, in de handgeschreven migratie
+  `migrations/0011_kwaliteit_evaluaties_organisatie.sql` (met een toets in
+  `server/migratieloper.ts` omdat het bestand strikt additief is, naar analogie
+  van 0006 en 0009).
+  - Zes vragenrubrieken (A–F) over passendheid, professionaliteit, activering,
+    toepasbaarheid en duurzaamheid, met per domein een gewicht
+    (`ORG_EVAL_DOMEIN_GEWICHT`) en een kwaliteitsnorm van 8,0 op het totaal en
+    7,0 per domein; een score onder 6,0 op één domein geldt als kritiek.
+    `bepaalAutomatischSignaal` maakt een signaal aan zodra de norm niet gehaald
+    wordt, los van een eventueel zelf gemeld "ernstig"-signaal van het contact.
+  - Een concept-evaluatie kan tussentijds bewaard worden
+    (`vindOfMaakConceptEvaluatie`, `bewaarConcept`) en wordt pas onwijzigbaar na
+    indienen; een tweede keer indienen levert dezelfde uitkomst zonder de
+    score of het tijdstip te herberekenen (`alReedsIngediend: true`).
+  - Elke stap komt in het auditlogboek: `evaluatie_organisatie_uitnodiging_verstuurd`,
+    `evaluatie_organisatie_uitnodiging_ingetrokken`,
+    `evaluatie_organisatie_evaluatie_ingediend` en
+    `evaluatie_organisatie_signaal_aangemaakt` zijn toegevoegd aan
+    `AUDIT_ACTIES` in `server/audit-log.ts`.
+  - Nieuwe schermen: `client/src/pages/evaluatie-organisatie.tsx` (het publieke
+    tokenformulier voor het contact) en
+    `client/src/pages/admin-kwaliteit-evaluaties.tsx` (het beheerdersoverzicht,
+    met hergebruik van de bestaande, scope-bewaakte `/api/organisaties`-route
+    voor de organisatiekeuze), beide ontsloten via `client/src/App.tsx` en
+    `client/src/pages/admin.tsx`.
+  - `tests/kwaliteit-evaluaties-organisatie.test.ts` (14 toetsen) dekt de
+    tabelaanmaak, tokengeldigheid, de verplichte-vragencontrole, de volledige
+    gewogen scoreberekening, de signaleringsgevallen, de dubbele-indiening en de
+    onwijzigbaarheid na indienen.
+  - Nog niet gebouwd, bewust uitgesteld naar de volgende bouwfase: de anonieme
+    deelnemerscampagne, de coach-zelfevaluatie, de vragenbibliotheek met
+    versiebeheer (spec §10), het kwaliteitscasedashboard en fijnmazige
+    RBAC-rollen voor deze module.
+
 - De naam van de organisatie staat nu ook op de cover van het gedownloade
   individuele 2MINSCAN-profielrapport. Op het scherm stond ze er al, in het
   bindende document niet: de honderdtwintig vooraf opgemaakte covers hebben

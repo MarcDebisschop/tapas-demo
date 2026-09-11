@@ -83,6 +83,8 @@ import Academy from "@/pages/academy";
 import AcademyJester from "@/pages/academy-jester";
 import CoachAanvraag from "@/pages/coach-aanvraag";
 import AdminKwaliteit from "@/pages/admin-kwaliteit";
+import AdminKwaliteitEvaluaties from "@/pages/admin-kwaliteit-evaluaties";
+import EvaluatieOrganisatie from "@/pages/evaluatie-organisatie";
 import AdminBekwaamheidNormprofiel from "@/pages/admin-bekwaamheid-normprofiel";
 import AdminBekwaamheidRegister from "@/pages/admin-bekwaamheid-register";
 import AdminBekwaamheidItems from "@/pages/admin-bekwaamheid-items";
@@ -164,6 +166,7 @@ function AppRouter() {
       <Route path="/admin/academy">{() => <AdminLoginGate><AdminAcademy /></AdminLoginGate>}</Route>
       <Route path="/admin/mailbeheer">{() => <AdminLoginGate><AdminMailbeheer /></AdminLoginGate>}</Route>
       <Route path="/admin/kwaliteit">{() => <AdminLoginGate><AdminKwaliteit /></AdminLoginGate>}</Route>
+      <Route path="/admin/kwaliteit-evaluaties">{() => <AdminLoginGate><AdminKwaliteitEvaluaties /></AdminLoginGate>}</Route>
       <Route path="/admin/bekwaamheid/normprofiel">{() => <AdminLoginGate><AdminBekwaamheidNormprofiel /></AdminLoginGate>}</Route>
       <Route path="/admin/bekwaamheid/register">{() => <AdminLoginGate><AdminBekwaamheidRegister /></AdminLoginGate>}</Route>
       <Route path="/admin/bekwaamheid/items">{() => <AdminLoginGate><AdminBekwaamheidItems /></AdminLoginGate>}</Route>
@@ -210,6 +213,9 @@ function AppRouter() {
       <Route path="/t4o" component={T4OHome} />
       <Route path="/t4o/sessie/:id" component={T4OSessie} />
       <Route path="/t4o/r/:token" component={T4ODeelnemer} />
+      {/* Kwaliteit & Evaluaties — organisatie-evaluatie: publieke token-flow,
+          geen login (het token is de authenticatie, zie §7 bouwspecificatie). */}
+      <Route path="/evaluatie-organisatie/:token" component={EvaluatieOrganisatie} />
       <Route path="/2minscan" component={TwominscanAfname} />
       <Route path="/driverscan" component={DriverScanAfname} />
       {/* Facilitator-only: HDD (Human Due Diligence) achter de coach-login. */}

@@ -87,6 +87,15 @@ export const AUDIT_ACTIES = [
   "bekwaamheid_beslissing_gepubliceerd",
   "bekwaamheid_bezwaar_ingediend",
   "bekwaamheid_bezwaar_uitspraak",
+  // Module Kwaliteit & Evaluaties, stap organisatie-evaluatie. Het lezen van
+  // een evaluatie staat er niet in, het versturen van een uitnodiging en het
+  // indienen van een evaluatie wel: dat zijn de twee handelingen die de
+  // persoonlijke gegevens van een organisatiecontact (naam, e-mailadres)
+  // respectievelijk in beweging zetten of vastleggen.
+  "evaluatie_organisatie_uitnodiging_verstuurd",
+  "evaluatie_organisatie_uitnodiging_ingetrokken",
+  "evaluatie_organisatie_evaluatie_ingediend",
+  "evaluatie_organisatie_signaal_aangemaakt",
 ] as const;
 
 export type AuditActie = (typeof AUDIT_ACTIES)[number];

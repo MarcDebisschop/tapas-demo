@@ -7,6 +7,7 @@ export default defineConfig({
     "./server/audit/schema.ts",
     "./server/bekwaamheid/schema.ts",
     "./server/hdd/schema.ts",
+    "./server/kwaliteit-evaluaties/schema.ts",
     "./server/prive-aankoop/schema.ts",
     "./server/stm/schema.ts",
     "./server/t4organizations/schema.ts",
