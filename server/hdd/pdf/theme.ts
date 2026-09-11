@@ -1,5 +1,5 @@
 /**
- * Flagship HDD PDF — theme: palette, geometry, fonts.
+ * Flagship HDD PDF - theme: palette, geometry, fonts.
  * Mirrors build_flagship_pdf.py exactly so the Node output matches the
  * approved specimen.
  */

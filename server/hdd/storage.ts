@@ -9,9 +9,19 @@ import type {
   InsertHddBoardLid,
   GateResultaat,
 } from "./schema";
+import {
+  teamscanSessies,
+  teamscanDeelnemers,
+  teamscanAntwoorden,
+} from "../teamscan/schema";
+import type {
+  TeamscanDeelnemer,
+  TeamscanAntwoordenInhoud,
+} from "../teamscan/schema";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
+import { randomBytes } from "crypto";
 import { pasEncryptieToe } from "../db-encryptie";
 import { vindDatabasePad } from "../db-pad";
 
@@ -24,6 +34,15 @@ import { vindDatabasePad } from "../db-pad";
  *
  * Een HDD-traject bewaart per board member enkel de tokens van de onderliggende
  * instrumenten; de meet-/antwoorddata leeft in die instrumenten zelf.
+ *
+ * Waarom staan de Teamscan-hulpjes onderaan dit bestand en niet in
+ * server/teamscan/storage.ts? Om de invoerketen kort te houden: HDD zou anders
+ * de volledige Teamscan-module moeten inladen enkel om drie rijen te schrijven.
+ * Beide handles wijzen wel naar hetzelfde databestand, want elke opslagmodule
+ * opent vindDatabasePad() en volgt dus TAPAS_DB_PATH; tests/hdd-databestand.test.ts
+ * houdt dat vast. Het Teamscan-schema blijft de enige waarheid over de kolommen
+ * (geen tweede DDL, geen tweede scoringslogica: scoren gebeurt in
+ * server/teamscan/scoring.ts).
  */
 
 const sqlite = new Database(vindDatabasePad());
@@ -44,6 +63,9 @@ CREATE TABLE IF NOT EXISTS hdd_trajecten (
   vereist_stratum INTEGER,
   status TEXT NOT NULL DEFAULT 'fase1_open',
   gate_resultaat TEXT,
+  teamscan_sessie_id INTEGER,
+  credits_geboekt INTEGER NOT NULL DEFAULT 0,
+  credits_geboekt_op TEXT,
   platform_sessie_id INTEGER,
   created_at INTEGER NOT NULL
 );
@@ -56,6 +78,20 @@ CREATE TABLE IF NOT EXISTS hdd_board_leden (
   created_at INTEGER NOT NULL
 );
 `);
+
+// Bestaande databestanden kregen hun hdd_trajecten voor deze kolommen bestonden.
+// CREATE TABLE IF NOT EXISTS voegt niets toe aan een tabel die er al is, dus de
+// kolommen worden hier los bijgezet. Idempotent: enkel wat nog ontbreekt.
+function vulKolomAan(tabel: string, kolom: string, definitie: string): void {
+  const aanwezig = sqlite
+    .prepare(`PRAGMA table_info(${tabel})`)
+    .all() as Array<{ name: string }>;
+  if (aanwezig.some((k) => k.name === kolom)) return;
+  sqlite.exec(`ALTER TABLE ${tabel} ADD COLUMN ${kolom} ${definitie}`);
+}
+vulKolomAan("hdd_trajecten", "teamscan_sessie_id", "INTEGER");
+vulKolomAan("hdd_trajecten", "credits_geboekt", "INTEGER NOT NULL DEFAULT 0");
+vulKolomAan("hdd_trajecten", "credits_geboekt_op", "TEXT");
 
 const db = drizzle(sqlite);
 
@@ -77,6 +113,9 @@ export const hddStorage = {
       vereistStratum: data.vereistStratum ?? null,
       status: "fase1_open",
       gateResultaat: null as string | null,
+      teamscanSessieId: null as number | null,
+      creditsGeboekt: 0,
+      creditsGeboektOp: null as string | null,
       platformSessieId: platformSessieId ?? null,
       createdAt: Date.now(),
     };
@@ -91,6 +130,24 @@ export const hddStorage = {
   setGateResultaat(id: number, gate: GateResultaat): void {
     db.update(trajecten)
       .set({ gateResultaat: JSON.stringify(gate), status: "gate" })
+      .where(eq(trajecten.id, id))
+      .run();
+  },
+
+  // Koppelt de Teamscan-sessie aan het traject (eenmalig, bij start fase 1).
+  setTeamscanSessie(id: number, sessieId: number): void {
+    db.update(trajecten)
+      .set({ teamscanSessieId: sessieId })
+      .where(eq(trajecten.id, id))
+      .run();
+  },
+
+  // Legt vast dat de trajectprijs afgeboekt is. Wordt alleen aangeroepen nadat
+  // de afboeking gelukt is; de routekant leest creditsGeboekt eerst en boekt
+  // niets meer als er al iets staat.
+  markeerCreditsGeboekt(id: number, credits: number): void {
+    db.update(trajecten)
+      .set({ creditsGeboekt: credits, creditsGeboektOp: new Date().toISOString() })
       .where(eq(trajecten.id, id))
       .run();
   },
@@ -158,5 +215,107 @@ export const hddStorage = {
     } catch {
       return {};
     }
+  },
+
+  // ---- Teamscan-rijen op de HDD-handle ------------------------------------
+  // Zie de kopnoot: server/teamscan/storage.ts opent een ander bestand dan
+  // TAPAS_DB_PATH, dus HDD kan er niet doorheen werken zonder het traject en
+  // zijn Teamscan-sessie in twee databestanden te laten landen.
+
+  // Staan de Teamscan-tabellen in dit databestand? Zo niet, dan is er niets te
+  // lezen en mag er zeker niets geschreven worden.
+  teamscanTabellenAanwezig(): boolean {
+    const rij = sqlite
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'teamscan_deelnemers'",
+      )
+      .get();
+    return Boolean(rij);
+  },
+
+  maakTeamscanSessie(teamNaam: string, orgLabel: string, platformSessieId?: number): number {
+    const rij = db
+      .insert(teamscanSessies)
+      .values({
+        teamNaam,
+        orgLabel,
+        status: "open",
+        platformSessieId: platformSessieId ?? null,
+        createdAt: Date.now(),
+      })
+      .returning()
+      .get();
+    return rij.id;
+  },
+
+  getTeamscanSessie(id: number) {
+    return db.select().from(teamscanSessies).where(eq(teamscanSessies.id, id)).get();
+  },
+
+  // Zelfde tokenlengte en -alfabet als server/teamscan/storage.ts: 24 tekens
+  // url-veilige base64 uit crypto.randomBytes.
+  maakTeamscanDeelnemer(sessieId: number, label: string): TeamscanDeelnemer {
+    const token = randomBytes(18).toString("base64url").slice(0, 24);
+    return db
+      .insert(teamscanDeelnemers)
+      .values({
+        sessieId,
+        token,
+        label,
+        afgerond: false,
+        afgerondAt: null,
+        createdAt: Date.now(),
+      })
+      .returning()
+      .get();
+  },
+
+  getTeamscanDeelnemerViaToken(token: string): TeamscanDeelnemer | undefined {
+    return db
+      .select()
+      .from(teamscanDeelnemers)
+      .where(eq(teamscanDeelnemers.token, token))
+      .get();
+  },
+
+  teamscanDeelnemersVanSessie(sessieId: number): TeamscanDeelnemer[] {
+    return db
+      .select()
+      .from(teamscanDeelnemers)
+      .where(eq(teamscanDeelnemers.sessieId, sessieId))
+      .all();
+  },
+
+  // De ingevulde antwoorden van een deelnemer, in het contract van het
+  // Teamscan-schema. Null zolang de deelnemer niets bewaarde.
+  getTeamscanAntwoorden(deelnemerId: number): TeamscanAntwoordenInhoud | null {
+    const rij = db
+      .select()
+      .from(teamscanAntwoorden)
+      .where(eq(teamscanAntwoorden.deelnemerId, deelnemerId))
+      .all()
+      .at(-1);
+    if (!rij) return null;
+    try {
+      return {
+        fundament: JSON.parse(rij.fundament),
+        lencioni: JSON.parse(rij.lencioni),
+        vertrouwenRanking: JSON.parse(rij.vertrouwenRanking),
+        vertrouwenPrestatie: JSON.parse(rij.vertrouwenPrestatie),
+      };
+    } catch {
+      return null;
+    }
+  },
+
+  // Handig voor de voortgangsroute: welke deelnemer-ids hebben antwoorden?
+  teamscanDeelnemersMetAntwoorden(deelnemerIds: number[]): Set<number> {
+    if (!deelnemerIds.length) return new Set();
+    const rijen = db
+      .select({ deelnemerId: teamscanAntwoorden.deelnemerId })
+      .from(teamscanAntwoorden)
+      .where(inArray(teamscanAntwoorden.deelnemerId, deelnemerIds))
+      .all();
+    return new Set(rijen.map((r) => r.deelnemerId));
   },
 };

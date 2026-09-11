@@ -12,19 +12,26 @@ import type {
 } from "./schema";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
+import { vindDatabasePad } from "../db-pad";
 import { eq, and } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import { pasEncryptieToe } from "../db-encryptie";
 
 /**
- * TaPas 4 Organizations — storage.
+ * TaPas 4 Organizations - storage.
  * ------------------------------------------------------------------
  * Eigen better-sqlite3-handle op hetzelfde data.db-bestand als het
  * platform (WAL laat meerdere handles toe). Tabellen krijgen het prefix
  * t4o_ en botsen niet met de platform-, teamscan- of t4r-tabellen.
  */
 
-const sqlite = new Database("data.db");
+// Hetzelfde databestand als de hoofdopslag: vindDatabasePad() volgt
+// TAPAS_DB_PATH. Een hardgecodeerde "data.db" is relatief aan de werkmap
+// en laat de rijen van deze module in een ander bestand belanden dan het
+// traject dat ernaar verwijst.
+/** Het databestand waarop deze module werkt; ook door de test gelezen. */
+export const databestandPad = vindDatabasePad();
+const sqlite = new Database(databestandPad);
 // FIX 6 (AVG art. 32): dezelfde encryptie-hook als in storage.ts. Bij Optie B
 // moet ELKE handle de sleutel toepassen; eén handle die het vergeet opent het
 // bestand zonder sleutel. No-op zolang TAPAS_DB_SLEUTEL niet gezet is.

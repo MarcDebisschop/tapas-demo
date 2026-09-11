@@ -8,7 +8,7 @@ import { maakT, type Vertaler, type Taal } from "@/twominscan/i18n";
 import { normaliseerTaal } from "@shared/talen";
 import { Temperamentenwiel, initialenVan, positieByWielpositie, sectorLabel, wielAlsPng } from "@/temperamentenwiel";
 
-// 2MINSCAN rapport — T4P Business Kompas-stijl, Energetic Flow-inhoud.
+// 2MINSCAN rapport - T4P Business Kompas-stijl, Energetic Flow-inhoud.
 // 14 hoofdstukken. Web-weergave + print (PDF via venster-print).
 
 // Anker rond het wiel op de wielpagina. De printbalk zoekt daarmee de getekende
@@ -57,6 +57,8 @@ export default function TwominscanRapport() {
   const ieLabel = payload?.ie?.label ?? "";
   // Organisatie is optioneel: alleen tonen wanneer ze bij de afname is ingevuld.
   const organisatie: string = (payload?.organisatie ?? "").trim();
+  // Rol komt alleen mee wanneer de deelnemer via een uitnodiging binnenkwam.
+  const rol: string = (payload?.rol ?? "").trim();
   // Portretfoto is altijd optioneel. Ontbreekt ze, dan toont het rapport niets:
   // geen leeg kader en geen melding dat er iets mist.
   const foto: Portret | null = leesPortret(payload?.foto);
@@ -69,7 +71,7 @@ export default function TwominscanRapport() {
 
   return (
     <div className="twominscan-pagina rapport-achtergrond" style={{ background: "#e8e6df", minHeight: "100vh", paddingBottom: 60 }}>
-      <PrintBalk tr={tr} egCode={data.egCode} volgorde={volgorde} xStand={xStand} naam={data.naam} datum={data.datum} taal={taal} wielpositie={data.wielpositie} organisatie={organisatie} kleurvolgordeLabel={data.kleurvolgordeLabel} />
+      <PrintBalk tr={tr} egCode={data.egCode} volgorde={volgorde} xStand={xStand} naam={data.naam} datum={data.datum} taal={taal} wielpositie={data.wielpositie} organisatie={organisatie} rol={rol} kleurvolgordeLabel={data.kleurvolgordeLabel} />
       <div className="rapport-doc" style={docStyle}>
         <Cover data={data} ieLabel={ieLabel} organisatie={organisatie} foto={foto} tr={tr} />
         <Inhoud tr={tr} />
@@ -102,7 +104,7 @@ const docStyle: React.CSSProperties = {
   fontFamily: "Georgia, 'Times New Roman', serif",
 };
 
-function PrintBalk({ tr, egCode, volgorde, xStand, naam, datum, taal, wielpositie, organisatie, kleurvolgordeLabel }: { tr: Vertaler; egCode: string; volgorde?: string[]; xStand?: string; naam?: string; datum?: string; taal: Taal; wielpositie?: string; organisatie?: string; kleurvolgordeLabel?: string }) {
+function PrintBalk({ tr, egCode, volgorde, xStand, naam, datum, taal, wielpositie, organisatie, rol, kleurvolgordeLabel }: { tr: Vertaler; egCode: string; volgorde?: string[]; xStand?: string; naam?: string; datum?: string; taal: Taal; wielpositie?: string; organisatie?: string; rol?: string; kleurvolgordeLabel?: string }) {
   const [bezig, setBezig] = useState(false);
 
   // De wielpagina die op het scherm staat mee laten reizen naar de PDF. Het
@@ -133,7 +135,7 @@ function PrintBalk({ tr, egCode, volgorde, xStand, naam, datum, taal, wielpositi
 
   // Download het OFFICIËLE, vooraf ontwikkelde energetische rapport-PDF
   // (24 profielen × 5 talen, eigen layout) met naam + datum geïnjecteerd op
-  // pagina 1. Dit is het bindende document — niet de web-print van deze pagina.
+  // pagina 1. Dit is het bindende document - niet de web-print van deze pagina.
   async function downloadOfficielePdf() {
     if (bezig) return;
     setBezig(true);
@@ -195,6 +197,7 @@ function PrintBalk({ tr, egCode, volgorde, xStand, naam, datum, taal, wielpositi
         wielpositie={wielpositie}
         egCode={egCode}
         organisatie={organisatie}
+        rol={rol}
         taal={taal}
         datum={datum}
       />
@@ -215,6 +218,7 @@ function BewaarVoorTeam({
   wielpositie,
   egCode,
   organisatie,
+  rol,
   taal,
   datum,
 }: {
@@ -223,6 +227,7 @@ function BewaarVoorTeam({
   wielpositie?: string;
   egCode: string;
   organisatie?: string;
+  rol?: string;
   taal: Taal;
   datum?: string;
 }) {
@@ -242,6 +247,7 @@ function BewaarVoorTeam({
           wielpositie,
           egCode,
           organisatie: organisatie || undefined,
+          rol: rol || undefined,
           taal,
           datum: datum || undefined,
         }),
@@ -260,7 +266,7 @@ function BewaarVoorTeam({
       : stand === "bezig"
         ? tr("ui.rapport.bewaren_bezig", "Bezig…")
         : stand === "fout"
-          ? tr("ui.rapport.bewaren_fout", "Bewaren lukte niet — opnieuw")
+          ? tr("ui.rapport.bewaren_fout", "Bewaren lukte niet - opnieuw")
           : tr("ui.rapport.bewaar_team", "Bewaar voor teamrapport");
 
   return (
@@ -444,11 +450,11 @@ function Cover({ data, ieLabel, organisatie, foto, tr }: { data: any; ieLabel: s
         {foto ? <Portretbeeld foto={foto} naam={data.naam || ""} breedte={104} tr={tr} /> : null}
         <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ height: 1, background: KLEUR.lijn, marginBottom: 18 }} />
-        <Veld label={tr("ui.cover.naam", "NAAM")} waarde={data.naam || "—"} />
+        <Veld label={tr("ui.cover.naam", "NAAM")} waarde={data.naam || "-"} />
         {organisatie ? <Veld label={tr("ui.cover.organisatie", "ORGANISATIE")} waarde={organisatie} /> : null}
         <Veld label={tr("ui.cover.datum", "DATUM")} waarde={data.datum} />
         <Veld label={tr("ui.cover.egcode", "EG-CODE")} waarde={data.egCode} mono />
-        <Veld label={tr("ui.cover.energiestand", "ENERGIESTAND")} waarde={ieLabel ? cap(ieLabel) : "—"} />
+        <Veld label={tr("ui.cover.energiestand", "ENERGIESTAND")} waarde={ieLabel ? cap(ieLabel) : "-"} />
         <div style={{ height: 1, background: KLEUR.lijn, margin: "18px 0 10px" }} />
         <div style={{ fontFamily: "Arial, sans-serif", letterSpacing: 2, fontSize: 11.5, color: KLEUR.teal, fontWeight: 700 }}>
           {tr("ui.cover.vertrouwelijk", "VERTROUWELIJK PROFIELRAPPORT")}
@@ -524,7 +530,7 @@ function H1({ data, ontleed, ieLabel, score, tr }: { data: any; ontleed: any; ie
           </div>
         )}
       </div>
-      <div style={{ fontSize: 11, color: "#9a9a9a", fontFamily: "Arial, sans-serif", marginTop: -8, marginBottom: 18 }}>{tr("ui.h1.eg_legenda", "EG = Energetisch Gedrag · energiestand:")} {ieLabel || "—"}</div>
+      <div style={{ fontSize: 11, color: "#9a9a9a", fontFamily: "Arial, sans-serif", marginTop: -8, marginBottom: 18 }}>{tr("ui.h1.eg_legenda", "EG = Energetisch Gedrag · energiestand:")} {ieLabel || "-"}</div>
 
       {/* 4 kwadranten */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>

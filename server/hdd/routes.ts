@@ -12,16 +12,26 @@ import { bouwRapport, type Audience } from "./rapport";
 import { buildFlagshipInput } from "./pdf/mapping";
 import { renderFlagshipPdf } from "./pdf/index";
 import { z } from "zod";
-import { vereisScope } from "../scope-guard";
+import { vereisScope, scopeVanVerzoek, verzenderVanVerzoek } from "../scope-guard";
+import { CreditError } from "../storage";
+import { boekTrajectCredits, stuurFaseUit } from "./uitsturen";
+import { bouwLedenInvoer, leesVoortgang } from "./bronnen";
+import { registerHddTeamanalyseRoutes } from "./teamanalyse-routes";
 
 /**
- * Human Due Diligence — routes (prefix /api/hdd/...).
+ * Human Due Diligence - routes (prefix /api/hdd/...).
  * ------------------------------------------------------------------
- * HDD orkestreert in twee fasen bestaande instrumenten voor één board. Deze
- * eerste oplevering levert de traject-CRUD, het fasen-/statusbeheer en het
- * Go/No-Go-scharnier. De daadwerkelijke link-generatie/uitsturing en de
- * geaggregeerde rapportage worden in een volgende stap aangesloten op de
- * Teamscan-, 2MINSCAN- en T4P Business-bronnen (zie bouwplan §7, stappen B–E).
+ * HDD orkestreert in twee fasen bestaande instrumenten voor één board: de
+ * traject-CRUD, het fasen-/statusbeheer, het Go/No-Go-scharnier, het werkelijke
+ * uitsturen van de fasen (zie ./uitsturen.ts) en de rapportage op de echte
+ * meetwaarden uit de bronnen (zie ./bronnen.ts).
+ *
+ * Twee regels die overal in dit bestand terugkomen:
+ *   - Uitsturen is idempotent. Een tweede start maakt geen tweede uitnodiging
+ *     en boekt geen tweede keer credits af; bestaande tokens komen terug.
+ *   - De ledeninvoer komt standaard uit de bronnen. `leden` in de body blijft
+ *     bestaan als uitdrukkelijke overschrijving (proefdraai, specimen), nooit
+ *     als stille terugval.
  */
 
 export function registerHddRoutes(app: Express): void {
@@ -84,20 +94,89 @@ export function registerHddRoutes(app: Express): void {
     res.json(lid);
   });
 
-  // ---- Fase 1 starten (link-generatie + uitsturen — skelet) ----
-  // Volledige implementatie hangt samen met Teamscan-/2MINSCAN-token-aanmaak
-  // (bouwplan §3.1). Deze route zet de trajectstatus en is het inhaakpunt.
-  app.post("/api/hdd/trajecten/:id/start-fase1", (req, res) => {
+  /**
+   * Stuurt een fase werkelijk uit.
+   *
+   * Volgorde: eerst de credits (een leeg saldo mag geen halve uitsturing
+   * achterlaten), dan de uitnodigingen, dan pas de status. Alles idempotent.
+   */
+  async function startFase(req: any, res: any, fase: number, status: string) {
     const traject = storage.getTraject(Number(req.params.id));
     if (!traject) return res.status(404).json({ error: "Niet gevonden" });
-    storage.setStatus(traject.id, "fase1_open");
-    res.json({
-      ok: true,
-      status: "fase1_open",
-      todo:
-        "Genereer per board member een Teamscan- en 2MINSCAN-token en stuur twee " +
-        "links uit (zie bouwplan §3.1).",
+    const leden = storage.ledenVanTraject(traject.id);
+    if (!leden.length) {
+      return res.status(400).json({
+        error: "Dit traject heeft nog geen board members; er valt niets uit te sturen.",
+      });
+    }
+
+    const scope = scopeVanVerzoek(req);
+    let credits;
+    try {
+      credits = await boekTrajectCredits(traject, scope);
+    } catch (err) {
+      if (err instanceof CreditError) {
+        return res.status(402).json({ error: err.message, code: "GEEN_CREDITS" });
+      }
+      throw err;
+    }
+
+    // Het traject opnieuw lezen: boekTrajectCredits kan het net bijgewerkt
+    // hebben, en stuurFaseUit heeft het actuele teamscanSessieId nodig.
+    const vers = storage.getTraject(traject.id) ?? traject;
+    const verzender = await verzenderVanVerzoek(req);
+    const uitgestuurd = await stuurFaseUit({
+      traject: vers,
+      leden,
+      fase,
+      scope,
+      verzender,
+      taal: typeof req.body?.taal === "string" ? req.body.taal : "nl",
     });
+
+    storage.setStatus(traject.id, status);
+    res.json({ ok: true, status, credits, ...uitgestuurd });
+  }
+
+  // ---- Fase 1 starten: Teamscan + 2MINSCAN per board member ----
+  app.post("/api/hdd/trajecten/:id/start-fase1", async (req, res) => {
+    try {
+      await startFase(req, res, 1, "fase1_open");
+    } catch (err) {
+      res.status(500).json({
+        error: "Uitsturen van fase 1 mislukt",
+        detail: err instanceof Error ? err.message : String(err),
+      });
+    }
+  });
+
+  // ---- Voortgang: wie vulde wat in, gelezen bij de bronnen zelf ----
+  app.get("/api/hdd/trajecten/:id/voortgang", async (req, res) => {
+    const traject = storage.getTraject(Number(req.params.id));
+    if (!traject) return res.status(404).json({ error: "Niet gevonden" });
+    try {
+      const leden = storage.ledenVanTraject(traject.id);
+      const voortgang = await leesVoortgang(traject, leden);
+      const ingevuld = (instrument: string) =>
+        voortgang.filter((l) => l.instrumenten.some((i) => i.instrumentId === instrument && i.ingevuld))
+          .length;
+      res.json({
+        trajectId: traject.id,
+        status: traject.status,
+        aantalLeden: leden.length,
+        totalen: {
+          "tapas-teamscan": ingevuld("tapas-teamscan"),
+          twominscan: ingevuld("twominscan"),
+          "t4p-business-kompas": ingevuld("t4p-business-kompas"),
+        },
+        leden: voortgang,
+      });
+    } catch (err) {
+      res.status(500).json({
+        error: "Voortgang lezen mislukt",
+        detail: err instanceof Error ? err.message : String(err),
+      });
+    }
   });
 
   // ---- Go/No-Go-scharnier ----
@@ -133,18 +212,38 @@ export function registerHddRoutes(app: Express): void {
     res.json(gate);
   });
 
-  // ---- Fase 2 starten (T4P-links — skelet) ----
-  app.post("/api/hdd/trajecten/:id/start-fase2", (req, res) => {
+  // ---- Fase 2 starten: T4P Business Kompas per board member ----
+  app.post("/api/hdd/trajecten/:id/start-fase2", async (req, res) => {
+    try {
+      await startFase(req, res, 2, "fase2_open");
+    } catch (err) {
+      res.status(500).json({
+        error: "Uitsturen van fase 2 mislukt",
+        detail: err instanceof Error ? err.message : String(err),
+      });
+    }
+  });
+
+  // ---- Traject afronden ----
+  // Mag alleen vanuit fase2_open of gate. Vanuit fase1_open is er nog geen
+  // diepteanalyse en vanuit afgerond valt er niets meer af te ronden; in beide
+  // gevallen hoort daar een duidelijke melding bij en geen stille statuswissel.
+  const AFRONDEN_VANUIT = ["fase2_open", "gate"];
+  app.post("/api/hdd/trajecten/:id/afronden", (req, res) => {
     const traject = storage.getTraject(Number(req.params.id));
     if (!traject) return res.status(404).json({ error: "Niet gevonden" });
-    storage.setStatus(traject.id, "fase2_open");
-    res.json({
-      ok: true,
-      status: "fase2_open",
-      todo:
-        "Genereer per board member een T4P Business-token en stuur één link uit " +
-        "(zie bouwplan §3.2).",
-    });
+    if (!AFRONDEN_VANUIT.includes(traject.status)) {
+      return res.status(409).json({
+        error:
+          `Een traject met status "${traject.status}" kan niet afgerond worden. ` +
+          `Afronden kan vanuit ${AFRONDEN_VANUIT.join(" of ")}.`,
+        code: "ONGELDIGE_STATUSOVERGANG",
+        status: traject.status,
+        toegestaanVanuit: AFRONDEN_VANUIT,
+      });
+    }
+    storage.setStatus(traject.id, "afgerond");
+    res.json({ ok: true, status: "afgerond", vorigeStatus: traject.status });
   });
 
   // ---- Fase 2-aggregaat (vier dimensies + HDD Human Capital Index) ----
@@ -190,30 +289,49 @@ export function registerHddRoutes(app: Express): void {
     }),
   );
 
-  function leesFase2Input(traject: { context: string; vereistStratum: number | null }, body: unknown): Fase2Input | null {
-    const parsed = ledenSchema.safeParse((body as { leden?: unknown })?.leden ?? []);
-    if (!parsed.success) return null;
-    return {
-      context: (traject.context === "ma" ? "ma" : "self-screening"),
-      vereistStratum: traject.vereistStratum,
-      leden: parsed.data as BoardMemberInput[],
-    };
+  /**
+   * De ledeninvoer van een traject.
+   *
+   * Staat er `leden` in de body, dan is dat een uitdrukkelijke overschrijving
+   * en wordt die gebruikt. Staat er niets, dan leest de brug in ./bronnen.ts de
+   * echte meetwaarden bij de instrumenten via de bewaarde tokens. Wat niet
+   * gemeten is, blijft leeg; er wordt nooit een middenwaarde ingevuld.
+   */
+  async function leesFase2Input(
+    traject: { id: number; context: string; vereistStratum: number | null },
+    body: unknown,
+  ): Promise<Fase2Input | null> {
+    const context = traject.context === "ma" ? "ma" : "self-screening";
+    const uitBody = (body as { leden?: unknown })?.leden;
+    if (uitBody !== undefined) {
+      const parsed = ledenSchema.safeParse(uitBody);
+      if (!parsed.success) return null;
+      return {
+        context,
+        vereistStratum: traject.vereistStratum,
+        leden: parsed.data as BoardMemberInput[],
+      };
+    }
+    const volledig = storage.getTraject(traject.id);
+    if (!volledig) return null;
+    const leden = await bouwLedenInvoer(volledig, storage.ledenVanTraject(volledig.id));
+    return { context, vereistStratum: traject.vereistStratum, leden };
   }
 
-  app.post("/api/hdd/trajecten/:id/fase2", (req, res) => {
+  app.post("/api/hdd/trajecten/:id/fase2", async (req, res) => {
     const traject = storage.getTraject(Number(req.params.id));
     if (!traject) return res.status(404).json({ error: "Niet gevonden" });
-    const input = leesFase2Input(traject, req.body);
+    const input = await leesFase2Input(traject, req.body);
     if (!input) return res.status(400).json({ error: "Ongeldige leden-input" });
     res.json(bouwFase2Aggregaat(input));
   });
 
-  // ---- Eindrapport (ALTIJD Engelstalig) — audience = investor | team ----
-  app.post("/api/hdd/trajecten/:id/rapport", (req, res) => {
+  // ---- Eindrapport (ALTIJD Engelstalig) - audience = investor | team ----
+  app.post("/api/hdd/trajecten/:id/rapport", async (req, res) => {
     const traject = storage.getTraject(Number(req.params.id));
     if (!traject) return res.status(404).json({ error: "Niet gevonden" });
     const audience: Audience = req.query.audience === "team" ? "team" : "investor";
-    const input = leesFase2Input(traject, req.body);
+    const input = await leesFase2Input(traject, req.body);
     if (!input) return res.status(400).json({ error: "Ongeldige leden-input" });
     const agg = bouwFase2Aggregaat(input);
     const rapport = bouwRapport({
@@ -227,7 +345,7 @@ export function registerHddRoutes(app: Express): void {
     res.json(rapport);
   });
 
-  // ---- Eindrapport als PDF (vlaggenschip-specimen — ALTIJD Engelstalig) ----
+  // ---- Eindrapport als PDF (vlaggenschip-specimen - ALTIJD Engelstalig) ----
   // Eén print-knop -> exact specimen-format. Genereert het goedgekeurde
   // vlaggenschiprapport (investor | team) als gestreamde PDF, gevoed met de
   // live fase-2 leden-data uit de body (zelfde body als POST .../rapport).
@@ -237,7 +355,7 @@ export function registerHddRoutes(app: Express): void {
     const traject = storage.getTraject(Number(req.params.id));
     if (!traject) return res.status(404).json({ error: "Niet gevonden" });
     const audience: Audience = req.query.audience === "team" ? "team" : "investor";
-    const input = leesFase2Input(traject, req.body);
+    const input = await leesFase2Input(traject, req.body);
     if (!input) return res.status(400).json({ error: "Ongeldige leden-input" });
 
     try {
@@ -282,4 +400,10 @@ export function registerHddRoutes(app: Express): void {
       });
     }
   });
+
+  // ---- 2MINSCAN-teamanalyse (JSON + PDF) ----
+  // Staat in een eigen bestand omdat de rekenkern en de opmaak uit een ander
+  // spoor komen; registreren gebeurt hier zodat de scope-poort hierboven ook
+  // voor die routes geldt.
+  registerHddTeamanalyseRoutes(app);
 }

@@ -3,7 +3,7 @@ import express, { Response, NextFunction } from 'express';
 import type { Request } from 'express';
 import session from "express-session";
 import helmet from "helmet";
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { SessieOpslag } from "./sessie-opslag";
 import { AANMELD_VERSIE } from "./admin-guard";
 import { registerRoutes } from "./routes";
@@ -26,7 +26,7 @@ import { GEWONE_BODYGRENS, RUIME_BODYGRENS, magRuimBericht } from "./bodygrens";
 const app = express();
 const httpServer = createServer(app);
 
-// A3 — SESSION_SECRET fail-fast in productie. In productie mag de app NOOIT met
+// A3 - SESSION_SECRET fail-fast in productie. In productie mag de app NOOIT met
 // een hardgecodeerde fallback-secret draaien; dat zou sessies vervalsbaar maken.
 if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET) {
   throw new Error(
@@ -35,7 +35,7 @@ if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET) {
 }
 if (!process.env.SESSION_SECRET) {
   console.warn(
-    "[tapas] WAARSCHUWING: SESSION_SECRET niet gezet — hardgecodeerde fallback wordt gebruikt (enkel voor niet-productie).",
+    "[tapas] WAARSCHUWING: SESSION_SECRET niet gezet - hardgecodeerde fallback wordt gebruikt (enkel voor niet-productie).",
   );
 }
 
@@ -67,7 +67,7 @@ app.use(
 
 app.use(express.urlencoded({ extended: false }));
 
-// A4 / S-2 (audit) — Security-hardening via helmet.
+// A4 / S-2 (audit) - Security-hardening via helmet.
 //
 // Tot ronde 4 stond het inhoudsbeleid voor de browser (Content Security Policy)
 // volledig uit, met als reden dat een te strikt beleid de bestaande
@@ -117,7 +117,7 @@ app.use(
   }),
 );
 
-// S-2 — Ontvangstpunt voor de meldingen van de browser. Bewust klein gehouden:
+// S-2 - Ontvangstpunt voor de meldingen van de browser. Bewust klein gehouden:
 // het logt beknopt welke richtlijn overtreden werd en op welke pagina, en nooit
 // de inhoud van de pagina zelf. Antwoord is altijd 204, zodat de browser niets
 // hoeft te verwerken.
@@ -137,7 +137,7 @@ app.post(
   },
 );
 
-// A4 — Ruime rate-limiting op auth-/token-endpoints (login, wachtwoord-,
+// A4 - Ruime rate-limiting op auth-/token-endpoints (login, wachtwoord-,
 // token- en magic-link-endpoints). Limieten zijn zo gekozen dat normaal gebruik
 // niet gehinderd wordt; enkel brute-force valt op. `trust proxy` staat al op 1
 // (hieronder), zodat het echte client-IP achter de pplx.app-proxy telt.
@@ -161,22 +161,70 @@ app.use(
   authLimiter,
 );
 
-// K-1 (audit, tweede ronde) — Het koppelpad van het eindscherm en het afrond-
+// K-1 (audit, tweede ronde) - Het koppelpad van het eindscherm en het afrond-
 // pad van deel 2 zijn de twee routes waar een onraadbaar bezitsbewijs of een
 // oplopend afname-id de toegang bepaalt. Voor die twee is de ruime auth-limiet
 // (50 per 15 min) te los: ze zou een aanvaller 50 gokpogingen per kwartier per
 // IP geven. Daarom een eigen, strengere begrenzer. Een echte deelnemer raakt
 // deze paden hoogstens enkele keren aan, dus 10 per kwartier hindert niemand.
+//
+// Waarom NIET per IP tellen (derde ronde)?
+// Per IP telt de verkeerde eenheid, en wel twee keer verkeerd. Een heel bedrijf,
+// een school of een mobiel netwerk komt achter een enkel adres naar buiten: tien
+// collega's die dezelfde middag hun afname afronden lopen samen tegen de grens
+// aan, terwijl geen van hen iets verkeerd doet. Omgekeerd kost een ander IP een
+// aanvaller niets, dus systematisch proberen loopt er gewoon omheen. Wat we
+// willen beschermen is de AFNAME: per afname mag er maar een handvol pogingen
+// zijn om het bezitsbewijs juist te krijgen.
+//
+// Daarom telt de sleutel hieronder per AFNAME-ID, dat uit het pad komt. Bewust
+// NIET per bewijs: wie het bewijs zit te raden, stuurt elke poging een andere
+// waarde, en met het bewijs in de sleutel zou elke gok in een verse emmer
+// vallen. Precies het gedrag dat we willen tegenhouden zou dan ongelimiteerd
+// zijn. Tien pogingen per afname per kwartier, wie of wat er ook meegestuurd
+// wordt.
+//
+// Zonder afname-id in het pad valt de sleutel terug op het IP; dan is er niets
+// specifiekers en is streng tellen nog altijd beter dan niet tellen.
+function afnameIdUitPad(req: Request): string | null {
+  const uitParams = (req.params as Record<string, string> | undefined)?.id;
+  if (uitParams && /^\d+$/.test(uitParams)) return uitParams;
+  const treffer = /\/api\/afnames\/(\d+)\//.exec(req.originalUrl || req.url || "");
+  return treffer ? treffer[1] : null;
+}
+
 const koppelLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
+  // Per afname, niet per IP: tien pogingen op een en dezelfde afname is voor een
+  // echte deelnemer ruim (hij raakt dit pad hoogstens enkele keren aan) en voor
+  // wie een bezitsbewijs zit te raden meteen te weinig.
   limit: 10,
   standardHeaders: "draft-7",
   legacyHeaders: false,
+  keyGenerator: (req: Request) => {
+    const id = afnameIdUitPad(req);
+    if (!id) return `ip:${ipKeyGenerator(req.ip ?? "")}`;
+    return `afname:${id}`;
+  },
   message: { message: "Te veel pogingen. Probeer het over enkele minuten opnieuw." },
 });
+
+// Vangnet bovenop de telling per afname: een IP mag deze twee paden in een
+// kwartier hooguit 100 keer raken, over alle afnames samen. Ruim genoeg voor een
+// kantoor vol deelnemers, en het smoort het enige scenario waarvoor de telling
+// per afname blind is: iemand die een poging per afname doet en zo rij na rij
+// afgaat.
+const koppelIpVangnet = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 100,
+  standardHeaders: false,
+  legacyHeaders: false,
+  message: { message: "Te veel verzoeken. Probeer het over enkele minuten opnieuw." },
+});
+app.use(["/api/afnames/:id/koppel-dashboard", "/api/afnames/:id/connection"], koppelIpVangnet);
 app.use(["/api/afnames/:id/koppel-dashboard", "/api/afnames/:id/connection"], koppelLimiter);
 
-// S-5 (audit) — De dashboards van deelnemers, atleten en respondenten zijn enkel
+// S-5 (audit) - De dashboards van deelnemers, atleten en respondenten zijn enkel
 // beschermd door een token in de URL. Dat is een aanvaardbaar ontwerp voor een
 // persoonlijke link, maar zonder begrenzing kan iemand ongelimiteerd tokens
 // uitproberen. Deze begrenzer is ruim genoeg voor echt gebruik - een deelnemer
@@ -202,7 +250,7 @@ app.use(
   tokenLimiter,
 );
 
-// H-2 (audit) — Bescherming tegen cross-site request forgery via
+// H-2 (audit) - Bescherming tegen cross-site request forgery via
 // oorsprongverificatie op statuswijzigende verzoeken. Staat bewust VOOR de
 // sessiemiddleware: een geweigerd verzoek raakt de sessieopslag niet. Zie
 // server/csrf-bescherming.ts voor de volledige verantwoording en de
@@ -210,7 +258,7 @@ app.use(
 app.use(csrfBescherming);
 
 // Sessie-middleware (voor admin login)
-// A2 — SQLite-backed session store i.p.v. MemoryStore, op dezelfde better-sqlite3
+// A2 - SQLite-backed session store i.p.v. MemoryStore, op dezelfde better-sqlite3
 // DB als de app (via de gedeelde `sqlite`-instantie uit storage.ts). Zo blijven
 // sessies bewaard over herstarts heen. De cookie-config blijft ONGEWIJZIGD.
 // L-1 (audit): de opslag is eigen code (server/sessie-opslag.ts) i.p.v. het
@@ -317,7 +365,7 @@ function _demoVervalPagina(vervalIso: string): string {
   });
   return `<!doctype html><html lang="nl"><head><meta charset="UTF-8"/>` +
     `<meta name="viewport" content="width=device-width, initial-scale=1"/>` +
-    `<title>Demo verlopen — TaPas</title>` +
+    `<title>Demo verlopen - TaPas</title>` +
     `<style>*{box-sizing:border-box}body{margin:0;min-height:100vh;display:flex;` +
     `align-items:center;justify-content:center;background:#0b0f17;color:#e6e9ef;` +
     `font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px}` +
@@ -328,7 +376,7 @@ function _demoVervalPagina(vervalIso: string): string {
     `<h1>Deze demo is niet langer beschikbaar</h1>` +
     `<p>De demoperiode is verstreken op <strong>${datum}</strong>.</p>` +
     `<p>Neem gerust contact op met TaPasCity voor een nieuwe toegang.</p>` +
-    `<p class="klein">TaPas — één platform voor inzicht in mens &amp; team</p>` +
+    `<p class="klein">TaPas - één platform voor inzicht in mens &amp; team</p>` +
     `</div></body></html>`;
 }
 

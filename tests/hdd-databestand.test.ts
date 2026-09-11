@@ -60,4 +60,27 @@ describe("HDD-databestand", () => {
       sqlite.prepare("SELECT board_naam FROM hdd_trajecten WHERE board_naam = ?").get(boardNaam),
     ).toEqual({ board_naam: boardNaam });
   });
+  it("laat elke opslagmodule op hetzelfde databestand werken", async () => {
+    // De HDD-uitsturing schrijft een Teamscan-deelnemer, en de deelnemersroute
+    // van de Teamscan leest die weer op. Openen die twee modules een ander
+    // bestand, dan is de uitgestuurde link onvindbaar ("Ongeldige link").
+    const { map, databestand } = maakTijdelijkPad();
+    process.env.TAPAS_DB_PATH = databestand;
+    process.chdir(map);
+    vi.resetModules();
+    for (const pad of [
+      "../server/teamscan/storage",
+      "../server/t4r/storage",
+      "../server/t4organizations/storage",
+    ]) {
+      const mod: any = await import(pad);
+      expect(resolve(mod.databestandPad)).toBe(resolve(databestand));
+    }
+    // De hoofdopslag leest de instrumentdefinitie relatief aan de werkmap, dus
+    // eerst terug naar de projectmap; het databestand blijft het tijdelijke pad.
+    process.chdir(oorspronkelijkeWerkmap);
+    const hoofd: any = await import("../server/storage");
+    expect(resolve(hoofd.sqlite.name)).toBe(resolve(databestand));
+    expect(existsSync(join(map, "data.db"))).toBe(false);
+  });
 });

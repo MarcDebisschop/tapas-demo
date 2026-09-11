@@ -169,18 +169,25 @@ export function bouwRapport(opts: BouwRapportOpts): RapportModel {
   const vLabel = verdictLabel(agg.verdict, audience);
   const secties: RapportSectie[] = [];
 
-  // --- Privacy guard: below minimum-N, suppress aggregates ---
+  // --- Small-group caution -------------------------------------------------
+  // Eerlijk in plaats van een schijnbescherming: dit rapport benoemt de leden bij
+  // naam in de individuele kaarten, dus "aggregaten achterhouden" zou niets
+  // beschermen. Bij een klein gezelschap staat er daarom een waarschuwing die zegt
+  // wat er werkelijk aan de hand is.
   if (!agg.minNMet) {
     secties.push({
       id: "min-n",
-      title: "Aggregated results withheld",
+      title: "Small-group reading: read with caution",
       audience: ["investor", "team"],
       callout: {
-        label: "Privacy safeguard",
+        label: "Read this first",
         text:
-          `Team-level results require at least ${HDD_MIN_RESPONDENTS} respondents before ` +
-          `individual data becomes non-inferable. With ${agg.n} respondent(s), aggregated ` +
-          `scores are withheld to protect participant privacy (GDPR data-minimisation).`,
+          `A team-level reading assumes at least ${HDD_MIN_RESPONDENTS} respondents. This report ` +
+          `rests on ${agg.n} respondent(s), so every team figure below is indicative only: with a ` +
+          `group this small, a team average is close to an individual score and can be traced back ` +
+          `to a person. The figures are reported rather than suppressed, because this report names ` +
+          `the members in the individual cards anyway; withholding the averages would protect ` +
+          `nobody. Use them as a conversation starter, not as a measurement.`,
       },
     });
   }
@@ -252,11 +259,11 @@ export function bouwRapport(opts: BouwRapportOpts): RapportModel {
     ],
     bullets: [
       `Team Health uses the official 38-item Lencioni cut-offs: High \u2265 ${TEAM_HEALTH_BANDS.high}, ` +
-        `Medium ${TEAM_HEALTH_BANDS.medium}\u2013${(TEAM_HEALTH_BANDS.high - 0.01).toFixed(2)}, ` +
-        `Low \u2264 ${(TEAM_HEALTH_BANDS.medium - 0.01).toFixed(2)} on the 1\u20135 scale.`,
+        `Medium ${TEAM_HEALTH_BANDS.medium}-${(TEAM_HEALTH_BANDS.high - 0.01).toFixed(2)}, ` +
+        `Low \u2264 ${(TEAM_HEALTH_BANDS.medium - 0.01).toFixed(2)} on the 1-5 scale.`,
       `Energy uses the shared platform bands: Robust \u2265 ${ENERGY_BANDS.robust}, Watch ` +
-        `${ENERGY_BANDS.watch}\u2013${(ENERGY_BANDS.robust - 0.1).toFixed(1)}, Fragile < ` +
-        `${ENERGY_BANDS.watch} on 0\u201310. These cut-offs are a developer convention, not a ` +
+        `${ENERGY_BANDS.watch}-${(ENERGY_BANDS.robust - 0.1).toFixed(1)}, Fragile < ` +
+        `${ENERGY_BANDS.watch} on 0-10. These cut-offs are a developer convention, not a ` +
         "calibration on a norm group.",
       "Energy is only counted when it comes from an instrument that actually asks about energy. " +
         "The 2MINSCAN produces an energetic behaviour profile, not a figure on this 0-10 scale, so " +
@@ -272,20 +279,40 @@ export function bouwRapport(opts: BouwRapportOpts): RapportModel {
   });
 
   // --- 3. Team Health (Lencioni) ---
-  const th = agg.d1TeamHealth.detail as { overall: number; perPillar: Record<string, { avg: number; band: string }> };
-  secties.push({
-    id: "team-health",
-    title: "Team Health: Lencioni Pillars",
-    audience: ["investor", "team"],
-    body: [
-      `Overall team-health average: ${th.overall}/5 (${agg.d1TeamHealth.band}). ` +
-        `The five pillars build on one another from Trust upward.`,
-    ],
-    table: {
-      headers: ["Pillar", "Average (1\u20135)", "Band"],
-      rows: Object.entries(th.perPillar).map(([k, v]) => [k, String(v.avg), v.band]),
-    },
-  });
+  // Zonder antwoorden op de teamgezondheidsvragenlijst blijft deze sectie leeg op
+  // een eerlijke melding na. Een tabel met nullen zou een slechte score suggereren
+  // waar in werkelijkheid niets gemeten is.
+  const th = agg.d1TeamHealth.detail as {
+    overall: number | null;
+    perPillar: Record<string, { avg: number; band: string }>;
+    toelichting?: string;
+  };
+  if (!agg.d1TeamHealth.beschikbaar || th.overall === null) {
+    secties.push({
+      id: "team-health",
+      title: "Team Health: Lencioni Pillars",
+      audience: ["investor", "team"],
+      body: [
+        "Not measured. No board member completed the team-health questionnaire, so no pillar " +
+          "average can be reported and this dimension does not enter the composite index. " +
+          "Nothing is inferred from the other instruments in its place.",
+      ],
+    });
+  } else {
+    secties.push({
+      id: "team-health",
+      title: "Team Health: Lencioni Pillars",
+      audience: ["investor", "team"],
+      body: [
+        `Overall team-health average: ${th.overall}/5 (${agg.d1TeamHealth.band}). ` +
+          `The five pillars build on one another from Trust upward.`,
+      ],
+      table: {
+        headers: ["Pillar", "Average (1-5)", "Band"],
+        rows: Object.entries(th.perPillar).map(([k, v]) => [k, String(v.avg), v.band]),
+      },
+    });
+  }
 
   // --- 4. Energy Sustainability ---
   const en = agg.d2Energy.detail as {
@@ -360,7 +387,7 @@ export function bouwRapport(opts: BouwRapportOpts): RapportModel {
       `Aggregated DRIVER(S): ${Object.entries(tl.driverFreq)
         .sort((a, b) => b[1] - a[1])
         .map(([d, c]) => `${d} (\u00d7${c})`)
-        .join(", ") || "\u2014"}.`,
+        .join(", ") || "-"}.`,
       tl.driverHighRiskCount > 0
         ? `${tl.driverHighRiskCount} member(s) show elevated burnout-sensitivity under sustained pressure.`
         : "No member shows elevated burnout-sensitivity at this time.",
@@ -376,7 +403,7 @@ export function bouwRapport(opts: BouwRapportOpts): RapportModel {
     body: [
       cm.requiredStratum != null
         ? `The growth ambition implies work-complexity at Stratum ${cm.requiredStratum} ` +
-          `(${STRATUM_TIMESPAN[cm.requiredStratum] ?? "\u2014"}). The board's highest indicative stratum is ` +
+          `(${STRATUM_TIMESPAN[cm.requiredStratum] ?? "-"}). The board's highest indicative stratum is ` +
           `${cm.teamMaxStratum} → fit: ${cm.fit}.`
         : `The board's indicative cognitive capacity spans the strata below. No required level was set, ` +
           `so this is a distribution, not a fit test.`,
@@ -482,8 +509,12 @@ export function bouwRapport(opts: BouwRapportOpts): RapportModel {
     title: "GDPR · Privacy · Ethics Charter",
     audience: ["investor", "team"],
     bullets: [
-      `Minimum respondents: team-level results require \u2265 ${HDD_MIN_RESPONDENTS} respondents before ` +
-        "individual data becomes inferable; below that, aggregates are withheld.",
+      `Group size: a team-level reading assumes at least ${HDD_MIN_RESPONDENTS} respondents. ` +
+        "Below that, the report says so plainly and marks every team figure as indicative, because " +
+        "this report names the members in the individual cards and suppressing averages would " +
+        "protect nobody.",
+      "Named reporting with consent: individual cards are shown by name because each participant " +
+        "gave documented consent for this purpose. There is no pretence of anonymity.",
       "Data minimisation & separation: the Team Report contains no investor-only material; the " +
         "Investor Report exposes scored constructs, not raw item responses.",
       "Lawful basis & consent: each profile carries a documented consent scope and timestamp; " +
@@ -502,9 +533,14 @@ export function bouwRapport(opts: BouwRapportOpts): RapportModel {
     title: "Methodology Appendix",
     audience: ["investor", "team"],
     body: [
-      "Instruments: TaPas Teamscan (Lencioni 38-item), 2MINSCAN (energy), T4P Business (talent, " +
-        "DRIVER(S), indicative Jaques stratum). All analysis is grounded in the participants' own " +
-        "assessment data. The report is always rendered in English.",
+      "Instruments: TaPas Teamscan (Lencioni 38-item), 2MINSCAN (energetic behaviour profile: " +
+        "colour order and X-position, deliberately not a figure on the 0-10 energy scale), T4P " +
+        "Business (talent, DRIVER(S), indicative Jaques stratum). All analysis is grounded in the " +
+        "participants' own assessment data. The report is always rendered in English.",
+      "The individual 2MINSCAN intakes are additionally read together as one energetic team " +
+        "profile: colour distribution, behavioural dynamics and how this group is likely to " +
+        "deliberate. That team profile is a separate document in this dossier and carries the same " +
+        "claim boundary: behaviour and energy in interaction, never talent, potential or selection.",
     ],
   });
 

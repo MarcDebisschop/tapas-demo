@@ -1,5 +1,5 @@
 /**
- * Flagship HDD PDF renderer — pure-Node entry point.
+ * Flagship HDD PDF renderer - pure-Node entry point.
  *
  * renderFlagshipPdf() produces ONE variant (investor OR team) of the
  * approved HDD flagship report, byte-for-byte faithful to the reportlab
@@ -31,7 +31,7 @@ export type { VisualData } from "./visuals";
  *
  * Page flow (mirrors the specimen, per variant):
  *   1. Dark cover page (audience-specific recipient, index, verdict)
- *   2. First body page (chrome painted) — chapters flow with auto page-breaks
+ *   2. First body page (chrome painted) - chapters flow with auto page-breaks
  *      and keep-together guards exactly as the specimen.
  */
 export function renderFlagshipPdf(fi: FlagshipInput): Promise<Buffer> {
@@ -44,10 +44,10 @@ export function renderFlagshipPdf(fi: FlagshipInput): Promise<Buffer> {
         bufferPages: true,
       });
 
-      // metadata — Author MUST be "Perplexity Computer"
+      // metadata - Author MUST be "Perplexity Computer"
       doc.info.Author = "Perplexity Computer";
       doc.info.Title =
-        `Human Due Diligence — ${fi.meta.company} — ${fi.meta.variant}`;
+        `Human Due Diligence - ${fi.meta.company} - ${fi.meta.variant}`;
       doc.info.Subject = fi.meta.subject;
 
       registerFonts(doc);
@@ -72,6 +72,7 @@ export function renderFlagshipPdf(fi: FlagshipInput): Promise<Buffer> {
         verdict: fi.index.verdict,
         verdictShort: fi.index.verdictShort,
         pillSub: fi.index.pillSub,
+        pillLabel: fi.index.pillLabel,
       };
       doc.addPage();
       drawDarkCover(doc, coverMeta, coverIndex, fi.meta.variant);

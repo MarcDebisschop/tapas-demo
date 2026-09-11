@@ -20,6 +20,7 @@ import type {
 } from "./schema";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
+import { vindDatabasePad } from "../db-pad";
 import { eq, and } from "drizzle-orm";
 import { pasEncryptieToe } from "../db-encryptie";
 
@@ -37,7 +38,13 @@ import { pasEncryptieToe } from "../db-encryptie";
  *     naar de Fase 2 credit-/collaboratielaag). De beslislogica blijft gelijk.
  */
 
-const sqlite = new Database("data.db");
+// Hetzelfde databestand als de hoofdopslag: vindDatabasePad() volgt
+// TAPAS_DB_PATH. Een hardgecodeerde "data.db" is relatief aan de werkmap
+// en laat de rijen van deze module in een ander bestand belanden dan het
+// traject dat ernaar verwijst.
+/** Het databestand waarop deze module werkt; ook door de test gelezen. */
+export const databestandPad = vindDatabasePad();
+const sqlite = new Database(databestandPad);
 // FIX 6 (AVG art. 32): dezelfde encryptie-hook als in storage.ts. Bij Optie B
 // moet ELKE handle de sleutel toepassen; eén handle die het vergeet opent het
 // bestand zonder sleutel. No-op zolang TAPAS_DB_SLEUTEL niet gezet is.
@@ -202,7 +209,7 @@ export class T4RDatabaseStorage implements IT4RStorage {
       .values({ ...data, platformSessieId: platformSessieId ?? null, createdAt: Date.now() })
       .returning()
       .get();
-    await this.addAudit(row.id, "Sessie aangemaakt", `${data.functionTitle} — ${data.orgLabel}`);
+    await this.addAudit(row.id, "Sessie aangemaakt", `${data.functionTitle} - ${data.orgLabel}`);
     return row;
   }
 

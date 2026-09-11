@@ -1,5 +1,5 @@
 /**
- * Vector visuals for the flagship HDD PDF — native pdfkit reproductions of the
+ * Vector visuals for the flagship HDD PDF - native pdfkit reproductions of the
  * eight matplotlib mocks (pyramid, sliders, driver-conflict, energy strip,
  * stratum ladder, gauge, scorecard, key-person, competence/potential).
  *
@@ -108,6 +108,34 @@ class Surface {
   }
 }
 
+/**
+ * Breekt tekst af op de echt beschikbare breedte in punten, gemeten met het
+ * ingestelde lettertype. Nodig omdat een vaste tekenlimiet niets zegt over de
+ * plaats naast een figuur: een lange regel schoof anders over de piramide.
+ * Meer regels dan `maxLines` worden op de laatste regel afgekort met een punt.
+ */
+function wrapByWidth(c: PDFKit.PDFDocument, text: string, font: string, size: number,
+  availPts: number, maxLines: number): string[] {
+  c.font(font).fontSize(size);
+  const woorden = text.split(/\s+/).filter(Boolean);
+  const regels: string[] = [];
+  let cur = "";
+  for (const w of woorden) {
+    const kandidaat = cur ? `${cur} ${w}` : w;
+    if (c.widthOfString(kandidaat) <= availPts || !cur) cur = kandidaat;
+    else { regels.push(cur); cur = w; }
+  }
+  if (cur) regels.push(cur);
+  if (regels.length <= maxLines) return regels;
+  const behouden = regels.slice(0, maxLines);
+  let laatste = `${behouden[maxLines - 1]} ${regels.slice(maxLines).join(" ")}`;
+  while (laatste.length > 1 && c.widthOfString(`${laatste}.`) > availPts) {
+    laatste = laatste.slice(0, -1).trimEnd();
+  }
+  behouden[maxLines - 1] = `${laatste}.`;
+  return behouden;
+}
+
 // tiny manual word-wrap (mirrors new_visuals._wrap)
 function wrapText(text: string, width: number): string[] {
   const words = text.split(/\s+/);
@@ -136,7 +164,9 @@ export interface VisualData {
   pyramid: { levels: PyramidLevel[]; hi: number; mid: number };
   sliders: SliderGroup[];
   conflict: ConflictAlert[];
-  energy: { members: EnergyMember[]; mean: number; meanBand: string; dispersion: number };
+  // mean is null when no member carries an energy reading; missing counts the
+  // members without one, so the figure can say so instead of implying zero.
+  energy: { members: EnergyMember[]; mean: number | null; meanBand: string; dispersion: number; missing: number };
   stratum: { rows: StratumRow[]; maxCount: number; requiredIdx: number; fitVerdict: string; fitNote: string };
   gauge: { value: number; band: string; color: string };
   scorecard: ScorecardRow[];
@@ -162,7 +192,7 @@ function fit(figW: number, figH: number, maxW: number, maxHmm?: number): { w: nu
 // 1. SIX-LEVEL PYRAMID
 // ============================================================
 export function drawPyramid(L: Layout, d: VisualData["pyramid"]) {
-  // figsize 9.6 x 6.7, axis 0..10 x 0..10 ; tight bbox + pad — approximate by full box
+  // figsize 9.6 x 6.7, axis 0..10 x 0..10 ; tight bbox + pad - approximate by full box
   const { w, h } = fit(9.6, 6.7, CONTENT_W);
   L.ensure(h + 6);
   const s = new Surface(L.doc, L.docX(), L.y, w, h, 10, 10);
@@ -184,22 +214,36 @@ export function drawPyramid(L: Layout, d: VisualData["pyramid"]) {
     const ymid = (y0 + y1) / 2;
     const railx = 0.2;
     s.line(railx + 1.95, ymid, cx - hb - 0.15, ymid, V_LINE, 0.8);
-    s.text(label, railx, ymid + 0.12, F.interSemi, 9.6, INK, "left");
-    s.text(desc, railx, ymid - 0.20, F.inter, 7.4, V_SUB, "left");
+    // De linkerrail loopt tot net voor de schuine zijde van deze laag. Bij een
+    // brede basis is die ruimte klein, dus wordt de toelichting op de echte
+    // breedte afgebroken in plaats van door de piramide te lopen.
+    const railBreedte = s.SX(Math.max(1.2, (cx - hb - 0.30) - railx));
+    const descRegels = wrapByWidth(L.doc, desc, F.inter, 7.4, railBreedte, 2);
+    const labelY = descRegels.length > 1 ? ymid + 0.26 : ymid + 0.12;
+    s.text(label, railx, labelY, F.interSemi, 9.6, INK, "left");
+    descRegels.forEach((regel, r) => {
+      s.text(regel, railx, labelY - 0.32 - r * 0.26, F.inter, 7.4, V_SUB, "left");
+    });
     const rightx = cx + half_base + 0.55;
     s.line(cx + hb + 0.12, ymid, rightx - 0.08, ymid, V_LINE, 0.8);
     if (score !== null) {
+      // Bandlabel volgt het gemeten cijfer; nooit een vast woord.
+      const bandLabel = score >= d.hi ? "High" : score >= d.mid ? "Average" : "Low";
       s.text(score.toFixed(2), rightx, ymid, F.dmBold, 14, fc, "left");
-      s.text("High", rightx + 0.95, ymid, F.interMed, 8.3, V_SUB, "left");
+      s.text(bandLabel, rightx + 0.95, ymid, F.interMed, 8.3, V_SUB, "left");
     } else {
       s.text("QUALITATIVE", rightx, ymid, F.interSemi, 8.3, ACCENT, "left");
     }
   }
   s.text("Team Health Architecture", 0.2, 9.78, F.dmBold, 15, INK, "left");
-  s.text("Six-level model \u2014 psychological-safety foundation beneath the five Lencioni dimensions",
+  s.text("Six-level model - psychological-safety foundation beneath the five Lencioni dimensions",
     0.2, 9.45, F.inter, 9, V_SUB, "left");
-  const legend: [string, string][] = [[RED, "Low 1.00\u20133.24"], [AMBER, "Average 3.25\u20133.75"],
-    [GREEN, "High 3.76\u20135.00"], [INK, "Foundation (qualitative)"]];
+  const legend: [string, string][] = [
+    [RED, `Low 1.00-${(d.mid - 0.01).toFixed(2)}`],
+    [AMBER, `Average ${d.mid.toFixed(2)}-${d.hi.toFixed(2)}`],
+    [GREEN, `High ${(d.hi + 0.01).toFixed(2)}-5.00`],
+    [INK, "Foundation (qualitative)"],
+  ];
   legend.forEach(([col, t], i) => {
     s.rect(0.2 + i * 2.45, 0.16, 0.28, 0.28, col);
     s.text(t, 0.2 + i * 2.45 + 0.38, 0.30, F.inter, 7.6, V_SUB, "left");
@@ -211,10 +255,11 @@ export function drawPyramid(L: Layout, d: VisualData["pyramid"]) {
 // 2. POTENTIAL SLIDERS (3 groups)
 // ============================================================
 export function drawSliders(L: Layout, groups: SliderGroup[], maxHmm = 200) {
+  if (!groups.length) return;
   const { w, h } = fit(9.2, 9.2, CONTENT_W, maxHmm);
   L.ensure(h + 6);
   const s = new Surface(L.doc, L.docX(), L.y, w, h, 10, 12);
-  s.text("Team Potential \u2014 Three Dimensions", 0.15, 11.6, F.dmBold, 15, INK, "left");
+  s.text("Team Potential - Measured Dimensions", 0.15, 11.6, F.dmBold, 15, INK, "left");
   s.text("Where the collective strength sits on each axis. Marker = team position; band = dispersion.",
     0.15, 11.26, F.inter, 9, V_SUB, "left");
   let y = 10.5;
@@ -243,15 +288,19 @@ export function drawSliders(L: Layout, groups: SliderGroup[], maxHmm = 200) {
 // 3. DRIVER-CONFLICT ALERTS
 // ============================================================
 export function drawConflict(L: Layout, alerts: ConflictAlert[]) {
-  const { w, h } = fit(9.2, 5.6, CONTENT_W);
+  if (!alerts.length) return;
+  // De hoogte volgt het aantal kaarten. Met een vaste hoogte liepen vijf kaarten
+  // onder de figuurrand door en schoof de figuurlegende over de laatste kaart.
+  const cardH = 1.62, kaartGat = 0.22, kopBlok = 1.8;
+  const axisH = kopBlok + alerts.length * cardH + (alerts.length - 1) * kaartGat + 0.15;
+  const { w, h } = fit(9.2, 0.56 * axisH, CONTENT_W);
   L.ensure(h + 6);
-  const s = new Surface(L.doc, L.docX(), L.y, w, h, 10, 10);
-  s.text("Driver-Conflict Alerts", 0.15, 9.6, F.dmBold, 15, INK, "left");
+  const s = new Surface(L.doc, L.docX(), L.y, w, h, 10, axisH);
+  s.text("Driver-Conflict Alerts", 0.15, axisH - 0.4, F.dmBold, 15, INK, "left");
   s.text("Structural friction points between dominant team drivers under sustained pressure.",
-    0.15, 9.22, F.inter, 9, V_SUB, "left");
-  let y = 8.2;
+    0.15, axisH - 0.78, F.inter, 9, V_SUB, "left");
+  let y = axisH - kopBlok;
   for (const a of alerts) {
-    const cardH = 1.62;
     s.roundRect(0.15, y - cardH, 9.55, cardH, 0.06, WHITE, V_LINE, 1.0);
     s.rect(0.15, y - cardH, 0.09, cardH, a.color);
     s.text(a.title, 0.45, y - 0.18, F.interSemi, 11, INK, "left", "top");
@@ -262,7 +311,7 @@ export function drawConflict(L: Layout, alerts: ConflictAlert[]) {
     let by = y - 0.56;
     for (const ln of bodyLines) { s.text(ln, 0.45, by, F.inter, 8.2, "#33414a", "left", "top"); by -= 0.30; }
     s.text(a.evidence, 0.45, by - 0.16, F.interMed, 7.6, V_SUB, "left", "top");
-    y -= cardH + 0.22;
+    y -= cardH + kaartGat;
   }
   L.y = L.y + h + 6; // advance cursor below the figure (from-top)
 }
@@ -271,11 +320,17 @@ export function drawConflict(L: Layout, alerts: ConflictAlert[]) {
 // 4. ENERGY STRIP
 // ============================================================
 export function drawEnergy(L: Layout, e: VisualData["energy"], maxHmm = 74) {
+  if (!e.members.length || e.mean === null) return;
   const { w, h } = fit(9.2, 4.6, CONTENT_W, maxHmm);
   L.ensure(h + 6);
   const s = new Surface(L.doc, L.docX(), L.y, w, h, 10, 10.4);
-  s.text("Energy Sustainability \u2014 Point-in-Time Signal", 0.15, 10.0, F.dmBold, 14, INK, "left");
-  s.text(`Team mean ${e.mean.toFixed(1)}/10 (${e.meanBand}) \u00b7 dispersion ${e.dispersion.toFixed(1)} \u00b7 all members Phase 0 (fully energised).`,
+  const mean = e.mean;
+  s.text("Energy Sustainability - Point-in-Time Signal", 0.15, 10.0, F.dmBold, 14, INK, "left");
+  // Fasen staan per lid onder de balk; de kopregel telt alleen wat gemeten is.
+  const ontbreekt = e.missing > 0
+    ? ` \u00b7 ${e.missing} member(s) without an energy reading`
+    : "";
+  s.text(`Team mean ${mean.toFixed(1)}/10 (${e.meanBand}) \u00b7 dispersion ${e.dispersion.toFixed(1)} \u00b7 ${e.members.length} member(s) measured${ontbreekt}.`,
     0.15, 9.45, F.inter, 8.4, V_SUB, "left");
   s.text("Energy is read with caution: a single rising-exhaustion member can be masked by the mean.",
     0.15, 9.08, F.inter, 8.4, V_SUB, "left");
@@ -289,11 +344,11 @@ export function drawEnergy(L: Layout, e: VisualData["energy"], maxHmm = 74) {
     s.roundRect(x, base, bw, bh, 0.05, col, undefined, 1, 0.85);
     s.text(String(m.energy), x + bw / 2, base + bh + 0.2, F.dmBold, 11, INK, "center", "bottom");
     s.text(m.name, x + bw / 2, base - 0.55, F.inter, 7.4, V_SUB, "center");
-    s.text(m.phase, x + bw / 2, base - 0.95, F.interMed, 6.6, GREEN, "center");
+    s.text(m.phase, x + bw / 2, base - 0.95, F.interMed, 6.6, m.phase === "Phase 0" ? GREEN : AMBER, "center");
   });
-  const ym = base + maxh * (e.mean / 10);
+  const ym = base + maxh * (mean / 10);
   s.line(x0 - 0.1, ym, x1 - gap + bw + 0.1, ym, INK, 1.0, [4, 3]);
-  s.text(`mean ${e.mean.toFixed(1)}`, x1 - gap + bw + 0.15, ym, F.interMed, 7.6, INK, "left");
+  s.text(`mean ${mean.toFixed(1)}`, x1 - gap + bw + 0.15, ym, F.interMed, 7.6, INK, "left");
   L.y = L.y + h + 6; // advance cursor below the figure (from-top)
 }
 
@@ -301,16 +356,23 @@ export function drawEnergy(L: Layout, e: VisualData["energy"], maxHmm = 74) {
 // 5. COGNITIVE STRATUM LADDER
 // ============================================================
 export function drawStratum(L: Layout, st: VisualData["stratum"]) {
-  const { w, h } = fit(9.2, 6.2, CONTENT_W);
-  L.ensure(h + 6);
-  const s = new Surface(L.doc, L.docX(), L.y, w, h, 10, 11);
-  s.text("Cognitive Capacity Map (Indicative)", 0.15, 10.5, F.dmBold, 14, INK, "left");
-  const introLines = wrapText("Work-complexity required by the growth ambition vs. the board's indicative strata. " +
-    "Indicative only \u2014 derived from talent profile, never a ranking of people.", 118);
-  let iy = 9.95;
-  for (const ln of introLines) { s.text(ln, 0.15, iy, F.inter, 8.4, V_SUB, "left", "top"); iy -= 0.32; }
-  let y = 8.7;
+  if (!st.rows.length) return;
+  // De hoogte volgt het aantal treden en de lengte van de verdictnota, zodat er
+  // geen leeg veld tussen de laatste trede en het kader blijft staan.
   const rowh = 1.55, x0 = 2.7, barmax = 5.4;
+  const noteLines = wrapText(st.fitNote, 120);
+  const bandH = 0.55 + noteLines.length * 0.30;
+  const axisH = 2.3 + (st.rows.length - 1) * rowh + 0.9 + 0.35 + bandH + 0.15;
+  const { w, h } = fit(9.2, 0.5636 * axisH, CONTENT_W);
+  L.ensure(h + 6);
+  const s = new Surface(L.doc, L.docX(), L.y, w, h, 10, axisH);
+  s.text("Cognitive Capacity Map (Indicative)", 0.15, axisH - 0.5, F.dmBold, 14, INK, "left");
+  const introLines = wrapText("Work-complexity required by the growth ambition vs. the board's indicative strata. " +
+    "Indicative only - derived from talent profile, never a ranking of people.", 118);
+  let iy = axisH - 1.05;
+  for (const ln of introLines) { s.text(ln, 0.15, iy, F.inter, 8.4, V_SUB, "left", "top"); iy -= 0.32; }
+  const rowsTop = axisH - 2.3;
+  let y = rowsTop;
   const maxcount = st.maxCount;
   st.rows.forEach((r) => {
     s.text(r.name, 0.15, y, F.interSemi, 10.5, INK, "left");
@@ -323,16 +385,21 @@ export function drawStratum(L: Layout, st: VisualData["stratum"]) {
     }
     y -= rowh;
   });
-  // required arrow at the required stratum row
-  const req_y = 8.7 - st.requiredIdx * rowh;
-  s.text("Growth ambition implies " + st.rows[st.requiredIdx].name.replace("Stratum ", "Stratum ") + " work-complexity",
-    x0 + 0.2, req_y - 0.55, F.interSemi, 8.5, RED, "left", "top");
-  s.line(x0 + 0.25, req_y - 0.9, x0 + 0.25, req_y - 0.1, RED, 1.4);
-  // verdict band
-  s.roundRect(0.15, 0.15, 9.55, 0.95, 0.05, "#eef5f7", ACCENT, 1.0);
-  s.text(`FIT VERDICT: ${st.fitVerdict.toUpperCase()}`, 0.4, 0.83, F.interSemi, 9.5, ACCENT, "left");
-  const noteLines = wrapText(st.fitNote, 120);
-  let ny = 0.50;
+  // required arrow at the required stratum row - only when a level was set and
+  // that level is actually one of the rows drawn above.
+  if (st.requiredIdx >= 0 && st.requiredIdx < st.rows.length) {
+    const req_y = rowsTop - st.requiredIdx * rowh;
+    // Het merkstreepje staat links van de tekst; stond de tekst op dezelfde x,
+    // dan liep de rode lijn door de eerste letter.
+    s.text(`Growth ambition implies ${st.rows[st.requiredIdx].name} work-complexity`,
+      x0 + 0.5, req_y - 0.55, F.interSemi, 8.5, RED, "left", "top");
+    s.line(x0 + 0.25, req_y - 0.9, x0 + 0.25, req_y - 0.1, RED, 1.4);
+  }
+  // Verdictband: de hoogte volgt het aantal regels van de nota, zodat de tekst
+  // nooit onder de rand van het kader uitkomt.
+  s.roundRect(0.15, 0.15, 9.55, bandH, 0.05, "#eef5f7", ACCENT, 1.0);
+  s.text(`FIT VERDICT: ${st.fitVerdict.toUpperCase()}`, 0.4, 0.15 + bandH - 0.27, F.interSemi, 9.5, ACCENT, "left");
+  let ny = 0.15 + bandH - 0.62;
   for (const ln of noteLines) { s.text(ln, 0.4, ny, F.inter, 8, "#33414a", "left"); ny -= 0.30; }
   L.y = L.y + h + 6; // advance cursor below the figure (from-top)
 }
@@ -341,11 +408,12 @@ export function drawStratum(L: Layout, st: VisualData["stratum"]) {
 // 6. INVESTMENT SCORECARD
 // ============================================================
 export function drawScorecard(L: Layout, rows: ScorecardRow[]) {
+  if (!rows.length) return;
   const { w, h } = fit(9.6, 6.6, CONTENT_W);
   L.ensure(h + 6);
   const s = new Surface(L.doc, L.docX(), L.y, w, h, 10, 10.6);
-  s.text("Investment Scorecard", 0.15, 10.25, F.dmBold, 15, INK, "left");
-  s.text("Every value-creation outcome the deal thesis requires, the capability it demands, and the team\u2019s current bench strength against it.",
+  s.text("Capability Scorecard", 0.15, 10.25, F.dmBold, 15, INK, "left");
+  s.text("Per outcome: the capability it demands, the members who actually carry it today, and the measured coverage.",
     0.15, 9.88, F.inter, 7.4, V_SUB, "left");
   const x_out = 0.15, x_cap = 3.35, x_who = 6.80, x_rag = 9.20;
   const header_y = 9.25;
@@ -364,7 +432,7 @@ export function drawScorecard(L: Layout, rows: ScorecardRow[]) {
     s.text(RAG_LABEL[r.rag], x_rag + 0.18, cy - 0.42, F.interSemi, 6.8, col, "center");
     y -= rowh;
   });
-  const items: [string, string][] = [[GREEN, "Covered \u2014 dependable bench"], [AMBER, "Partial \u2014 present, needs depth"], [RED, "Build \u2014 add via board / hire"]];
+  const items: [string, string][] = [[GREEN, "Covered - dependable bench"], [AMBER, "Partial - present, needs depth"], [RED, "Build - add via board / hire"]];
   let lx = 0.15;
   items.forEach(([col, t]) => {
     s.circle(lx + 0.12, 0.38, 0.12, col);
@@ -378,14 +446,18 @@ export function drawScorecard(L: Layout, rows: ScorecardRow[]) {
 // 7. KEY-PERSON RISK
 // ============================================================
 export function drawKeyPerson(L: Layout, cards: KeyPersonCard[], maxHmm = 160) {
-  const { w, h } = fit(9.6, 7.0, CONTENT_W, maxHmm);
+  if (!cards.length) return;
+  // De hoogte volgt het aantal kaarten; met een vaste hoogte bleef er bij een
+  // enkele kaart een leeg veld tussen de kaart en de figuurlegende staan.
+  const cardh = 3.05, gap = 0.30, kopBlok = 1.25;
+  const axisH = kopBlok + cards.length * cardh + (cards.length - 1) * gap + 0.15;
+  const { w, h } = fit(9.6, 0.625 * axisH, CONTENT_W, maxHmm);
   L.ensure(h + 6);
-  const s = new Surface(L.doc, L.docX(), L.y, w, h, 10, 11.2);
-  s.text("Key-Person Risk", 0.15, 10.85, F.dmBold, 15, INK, "left");
+  const s = new Surface(L.doc, L.docX(), L.y, w, h, 10, axisH);
+  s.text("Key-Person Risk", 0.15, axisH - 0.35, F.dmBold, 15, INK, "left");
   s.text("Named concentrations, the impact if each departs, the depth of cover behind them, and the concrete mitigation.",
-    0.15, 10.48, F.inter, 8.6, V_SUB, "left");
-  let y = 9.95;
-  const cardh = 3.05, gap = 0.30;
+    0.15, axisH - 0.72, F.inter, 8.6, V_SUB, "left");
+  let y = axisH - kopBlok;
   for (const cd of cards) {
     s.roundRect(0.15, y - cardh, 9.7, cardh, 0.07, WHITE, V_LINE, 1.0);
     s.rect(0.15, y - cardh, 0.1, cardh, cd.color);
@@ -405,6 +477,9 @@ export function drawKeyPerson(L: Layout, cards: KeyPersonCard[], maxHmm = 160) {
 // 8. COMPETENCE vs POTENTIAL
 // ============================================================
 export function drawCompPot(L: Layout, pts: CompPotPoint[], maxHmm = 150) {
+  // Potentieel wordt in deze keten niet gemeten. Zonder punten wordt de matrix
+  // dus niet getekend, in plaats van met aannames gevuld.
+  if (!pts.length) return;
   const { w, h } = fit(8.6, 7.4, CONTENT_W, maxHmm);
   L.ensure(h + 6);
   const s = new Surface(L.doc, L.docX(), L.y, w, h, 10, 10.8);
@@ -428,13 +503,13 @@ export function drawCompPot(L: Layout, pts: CompPotPoint[], maxHmm = 150) {
   s.line(px0, py0, px1 + 0.25, py0, INK, 1.2);
   s.line(px0, py0, px0, py1 + 0.25, INK, 1.2);
   s.text("CURRENT COMPETENCE  \u2192  what the team can do today", (px0 + px1) / 2, py0 - 0.55, F.interSemi, 8.4, INK, "center");
-  // vertical axis label — rotated
+  // vertical axis label - rotated
   drawRotatedText(s, "POTENTIAL / SCALABILITY  \u2192  capacity to grow into the exit need", px0 - 0.45, (py0 + py1) / 2, F.interSemi, 8.4, INK);
   // quadrant captions
-  s.text("STRENGTH \u2014 ready & scalable", midx + 0.12, py1 - 0.18, F.interSemi, 7.4, GREEN, "left", "top");
-  s.text("RAW \u2014 invest to convert", px0 + 0.12, py1 - 0.18, F.interSemi, 7.4, ACCENT, "left", "top");
-  s.text("PLATEAU \u2014 strong now, ceiling risk", midx + 0.12, py0 + 0.30, F.interSemi, 7.4, AMBER, "left", "bottom");
-  s.text("BUILD \u2014 develop or hire", px0 + 0.12, py0 + 0.30, F.interSemi, 7.4, RED, "left", "bottom");
+  s.text("STRENGTH - ready & scalable", midx + 0.12, py1 - 0.18, F.interSemi, 7.4, GREEN, "left", "top");
+  s.text("RAW - invest to convert", px0 + 0.12, py1 - 0.18, F.interSemi, 7.4, ACCENT, "left", "top");
+  s.text("PLATEAU - strong now, ceiling risk", midx + 0.12, py0 + 0.30, F.interSemi, 7.4, AMBER, "left", "bottom");
+  s.text("BUILD - develop or hire", px0 + 0.12, py0 + 0.30, F.interSemi, 7.4, RED, "left", "bottom");
   for (const p of pts) {
     const x = X(p.competence), y = Y(p.potential);
     const col = (p.competence >= 0.6 && p.potential >= 0.6) ? GREEN : (p.competence < 0.6 && p.potential < 0.6 ? RED : ACCENT);

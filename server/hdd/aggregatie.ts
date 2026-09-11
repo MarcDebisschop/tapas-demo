@@ -1,16 +1,16 @@
 /**
- * Human Due Diligence — Phase 2 aggregation & scoring model.
+ * Human Due Diligence - Phase 2 aggregation & scoring model.
  * ------------------------------------------------------------------
  * Reads each board member's Phase-1 (Teamscan + 2MINSCAN) and Phase-2
  * (T4P Business) results and builds the board-level aggregates that feed the
  * flagship report:
  *
- *   D1 Team Health            (Lencioni, Teamscan)        — pillar averages 1–5
+ *   D1 Team Health            (Lencioni, Teamscan)        - pillar averages 1-5
  *   D2 Energy Sustainability  (instrument dat naar energie vraagt): 0-10
- *   D3 Talent Capability      (T4P Business)              — coverage + alignment
- *   D4 Cognitive Capacity     (indicative Jaques, T4P)    — stratum distribution
+ *   D3 Talent Capability      (T4P Business)              - coverage + alignment
+ *   D4 Cognitive Capacity     (indicative Jaques, T4P)    - stratum distribution
  *
- * Each dimension keeps its native scientific band AND is normalised to 0–100
+ * Each dimension keeps its native scientific band AND is normalised to 0-100
  * for one weighted composite, the HDD Human Capital Index. This multidimensional
  * approach (bands + composite) is the psychometrically recommended one: a
  * well-weighted composite is more reliable/valid than its subscores, while the
@@ -44,18 +44,18 @@ export const ENERGY_BANDS = {
 // is an INDICATION (not a validated measurement) and must never rank people.
 export const INDEX_WEIGHTS = { d1: 0.3, d2: 0.25, d3: 0.25, d4: 0.2 } as const;
 
-// Verdict thresholds on the 0–100 index.
+// Verdict thresholds on the 0-100 index.
 export const VERDICT_THRESHOLDS = { proceed: 78, conditional: 64, hold: 50 } as const;
 
 // Elliott Jaques stratum time-spans (Requisite Organization reference scale).
 export const STRATUM_TIMESPAN: Record<number, string> = {
-  1: "1 day – 3 months",
-  2: "3 – 12 months",
-  3: "1 – 2 years",
-  4: "2 – 5 years",
-  5: "5 – 10 years",
-  6: "10 – 20 years",
-  7: "20 – 50 years",
+  1: "1 day - 3 months",
+  2: "3 - 12 months",
+  3: "1 - 2 years",
+  4: "2 - 5 years",
+  5: "5 - 10 years",
+  6: "10 - 20 years",
+  7: "20 - 50 years",
 };
 
 // The four T4P talent families we track for coverage.
@@ -71,7 +71,7 @@ export const TALENT_FAMILIES = [
 // ---------------------------------------------------------------------------
 
 export interface MemberTeamscan {
-  // Pillar averages on the 1–5 Lencioni scale (member's perception).
+  // Pillar averages on the 1-5 Lencioni scale (member's perception).
   vertrouwen?: number;
   conflict?: number;
   betrokkenheid?: number;
@@ -121,12 +121,12 @@ export interface MemberTalent {
   // Dominant talent foci (ordered, deterministic) and accelerators.
   talentFoci?: string[]; // e.g. ["Strategy","Operational","Interrelational"]
   versnellers?: string[]; // accelerators, e.g. ["Analysis","Facilitation","Impact"]
-  // Kahler DRIVER(S) — term kept untranslated by rule.
+  // Kahler DRIVER(S) - term kept untranslated by rule.
   drivers?: string[]; // e.g. ["Try Hard","Be Strong","Hurry Up"]
   driverRisico?: "laag" | "matig" | "hoog";
-  // Indicative Jaques stratum (1..7) derived from the T4P profile — NOT a test.
+  // Indicative Jaques stratum (1..7) derived from the T4P profile - NOT a test.
   stratumIndicatie?: number;
-  // Talent-energy congruence 0–100 (from T4P consistency metric), optional.
+  // Talent-energy congruence 0-100 (from T4P consistency metric), optional.
   congruentie?: number;
 }
 
@@ -167,7 +167,7 @@ function band3(x: number, high: number, medium: number): "High" | "Medium" | "Lo
   if (x >= medium) return "Medium";
   return "Low";
 }
-// Map a 1–5 average onto 0–100 (1 → 0, 5 → 100).
+// Map a 1-5 average onto 0-100 (1 → 0, 5 → 100).
 function scale5to100(x: number): number {
   return Math.max(0, Math.min(100, ((x - 1) / 4) * 100));
 }
@@ -177,7 +177,7 @@ function scale5to100(x: number): number {
 // ---------------------------------------------------------------------------
 
 export interface DimensionResult {
-  score100: number; // normalised 0–100 (feeds composite)
+  score100: number; // normalised 0-100 (feeds composite)
   band: string; // native scientific band label
   detail: Record<string, unknown>;
   // Is er voor deze dimensie werkelijk iets gemeten? Bij false is score100
@@ -206,7 +206,7 @@ export interface Fase2Aggregaat {
   d3Talent: DimensionResult;
   d4Cognitive: DimensionResult;
   cognitiveMap: CognitiveMap;
-  index: number; // HDD Human Capital Index 0–100
+  index: number; // HDD Human Capital Index 0-100
   verdict: "proceed" | "conditional" | "hold-conditional" | "hold";
   // Op welke dimensies rust het samengestelde cijfer, en welke ontbreken? Bij
   // een ontbrekende dimensie is het gewicht ervan herverdeeld over de overige,
@@ -218,11 +218,28 @@ export interface Fase2Aggregaat {
     // Zin in gewone taal die het rapport kan tonen.
     toelichting: string;
   };
-  // Privacy: aggregates suppressed below minimum-N.
+  // Privacy: is dit gezelschap groot genoeg voor een teamlezing?
   minNMet: boolean;
 }
 
-export const HDD_MIN_RESPONDENTS = 4;
+/**
+ * Minimum aantal respondenten voor een teamlezing.
+ *
+ * Waarom drie en niet vier: een directiecomite van drie is een echt en courant
+ * bestuursorgaan, en HDD is juist voor dat soort kleine gezelschappen gemaakt.
+ * Bij twee respondenten is een teamgemiddelde geen teamlezing meer maar een
+ * vergelijking van twee personen; bij drie ontstaat er wel een patroon.
+ *
+ * Wat dit getal NIET betekent: het rapport doet geen alsof-anonimisering. Een
+ * HDD-rapport benoemt de leden bij naam in de individuele kaarten, met
+ * gedocumenteerde toestemming per deelnemer. Onder dit minimum houdt het rapport
+ * de cijfers dus niet achter, want dat zou een schijnbescherming zijn naast
+ * kaarten die de personen toch benoemen. In plaats daarvan draagt het rapport een
+ * uitdrukkelijke waarschuwing dat de teamcijfers bij dit aantal makkelijk naar
+ * individuen te herleiden zijn en als indicatief moeten worden gelezen. Zie
+ * bouwRapport() in rapport.ts.
+ */
+export const HDD_MIN_RESPONDENTS = 3;
 
 // ---- D1 Team Health (Lencioni) --------------------------------------------
 function bouwTeamHealth(leden: BoardMemberInput[]): DimensionResult {
@@ -240,25 +257,53 @@ function bouwTeamHealth(leden: BoardMemberInput[]): DimensionResult {
     verantwoordelijkheid: "Accountability",
     resultaten: "Results",
   };
+  // Een pijler zonder enig antwoord komt niet in perPillar terecht. Vroeger werd
+  // het gemiddelde van een lege lijst 0 en kwam de pijler als 0,0 in het rapport,
+  // alsof er slecht gescoord was. Een ontbrekende meting blijft nu ontbrekend, en
+  // wanneer geen enkele pijler antwoorden heeft is de hele dimensie niet
+  // beschikbaar: ze telt dan ook niet mee in het samengestelde cijfer.
   const perPillar: Record<string, { avg: number; band: string }> = {};
   const pillarAverages: number[] = [];
+  const ontbrekendePijlers: string[] = [];
   for (const p of pillars) {
     const vals = leden
       .map((l) => l.teamscan?.[p])
       .filter((v): v is number => typeof v === "number");
+    if (!vals.length) {
+      ontbrekendePijlers.push(pillarLabels[p]);
+      continue;
+    }
     const avg = round1(gemiddelde(vals));
     perPillar[pillarLabels[p]] = {
       avg,
       band: band3(avg, TEAM_HEALTH_BANDS.high, TEAM_HEALTH_BANDS.medium),
     };
-    if (vals.length) pillarAverages.push(avg);
+    pillarAverages.push(avg);
   }
+
+  if (!pillarAverages.length) {
+    return {
+      score100: 0,
+      band: NIET_GEMETEN_BAND,
+      beschikbaar: false,
+      detail: {
+        overall: null,
+        perPillar,
+        ontbrekendePijlers,
+        toelichting:
+          "Geen enkel lid leverde antwoorden op de teamgezondheidsvragenlijst. Deze dimensie " +
+          "telt daarom niet mee in het samengestelde cijfer en het rapport doet er geen " +
+          "uitspraak over.",
+      },
+    };
+  }
+
   const overall = round1(gemiddelde(pillarAverages));
   return {
     score100: Math.round(scale5to100(overall)),
     band: band3(overall, TEAM_HEALTH_BANDS.high, TEAM_HEALTH_BANDS.medium),
     beschikbaar: true,
-    detail: { overall, perPillar },
+    detail: { overall, perPillar, ontbrekendePijlers },
   };
 }
 
@@ -373,7 +418,7 @@ function bouwCognitive(input: Fase2Input): { dim: DimensionResult; map: Cognitiv
 
   // Cognitive score: only meaningful against a required level (M&A context).
   // Without a required stratum we score on team coverage of strategic strata
-  // (III+ = multi-year horizon), capped — never used to rank individuals.
+  // (III+ = multi-year horizon), capped - never used to rank individuals.
   let score100: number;
   if (required != null && teamMax > 0) {
     score100 = Math.round(Math.max(0, Math.min(100, (teamMax / required) * 100)));

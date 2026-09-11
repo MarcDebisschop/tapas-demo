@@ -6,14 +6,29 @@ import { vertaalItembank } from "./itembank-i18n";
 import { renderIndividueelRapport, renderTeamRapport } from "./rapport";
 import { renderRapportPdf } from "../rapport-pdf";
 import { z } from "zod";
+import { vereisScope, scopeVanVerzoek } from "../scope-guard";
+import { storage as platformStorage } from "../storage";
 
 /**
- * TaPas Teamscan — routes (prefix /api/teamscan/...).
+ * TaPas Teamscan - routes (prefix /api/teamscan/...).
  * ------------------------------------------------------------------
  * Reflectie- en ontwikkelinstrument. Een coach/teamleider maakt een
  * sessie, voegt (anonieme) deelnemers toe, deelnemers vullen via hun
  * token in. Het teamrapport vereist minimaal 3 afgeronde invullingen
  * (privacy/aggregatie).
+ *
+ * Twee soorten weg, twee soorten poort:
+ *
+ *   1. De BEHEERDERSWEG (sessies aanmaken en bekijken, deelnemers aanmaken,
+ *      sluiten, teamrapport) toont en maakt organisatiegegevens. Die routes
+ *      staan achter `vereisScope`, net zoals de HDD-routes in
+ *      server/hdd/routes.ts. Tot nu toe stonden ze helemaal open: iedereen kon
+ *      alle sessies van alle organisaties opsommen en er deelnemers bij maken.
+ *
+ *   2. De DEELNEMERSWEG loopt over het token in de link en heeft per definitie
+ *      geen aanmelding. Die routes (itembank, /deelnemer/:token en het eigen
+ *      rapport daarachter) blijven dus open; hun bescherming is het onraadbare
+ *      token plus de tokenbegrenzer in server/index.ts.
  */
 
 const MIN_DEELNEMERS_TEAMRAPPORT = 3;
@@ -26,20 +41,30 @@ export function registerTeamscanRoutes(app: Express): void {
   });
 
   // ---- Sessies ----
-  app.get("/api/teamscan/sessies", (_req, res) => {
+  app.get("/api/teamscan/sessies", vereisScope, (_req, res) => {
     res.json(storage.alleSessies());
   });
 
-  app.post("/api/teamscan/sessies", (req, res) => {
+  app.post("/api/teamscan/sessies", vereisScope, async (req, res) => {
     const parsed = insertTeamscanSessieSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
     const platformSessieId =
       req.body?.platformSessieId != null ? Number(req.body.platformSessieId) : undefined;
-    const sessie = storage.maakSessie(parsed.data, platformSessieId);
+    // De sessie hoort bij een organisatie, niet bij een leeg label. Staat er
+    // geen orgLabel in de body, dan komt het uit de scope van de oproeper, en
+    // dus uit de sessie en nooit uit het verzoek. Bij een prior-oproeper blijft
+    // het leeg tenzij hij er zelf een meegeeft: het platform is geen klant.
+    const scope = scopeVanVerzoek(req);
+    let orgLabel = parsed.data.orgLabel ?? "";
+    if (!orgLabel.trim() && scope.soort === "organisatie") {
+      const org = await platformStorage.getOrganisatie(scope.organisatieId);
+      orgLabel = org?.naam ?? "";
+    }
+    const sessie = storage.maakSessie({ ...parsed.data, orgLabel }, platformSessieId);
     res.json(sessie);
   });
 
-  app.get("/api/teamscan/sessies/:id", (req, res) => {
+  app.get("/api/teamscan/sessies/:id", vereisScope, (req, res) => {
     const sessie = storage.getSessie(Number(req.params.id));
     if (!sessie) return res.status(404).json({ error: "Niet gevonden" });
     const deelnemers = storage.deelnemersVanSessie(sessie.id);
@@ -51,14 +76,14 @@ export function registerTeamscanRoutes(app: Express): void {
     });
   });
 
-  app.post("/api/teamscan/sessies/:id/sluiten", (req, res) => {
+  app.post("/api/teamscan/sessies/:id/sluiten", vereisScope, (req, res) => {
     const sessie = storage.sluitSessie(Number(req.params.id));
     if (!sessie) return res.status(404).json({ error: "Niet gevonden" });
     res.json(sessie);
   });
 
   // ---- Deelnemers ----
-  app.post("/api/teamscan/sessies/:id/deelnemers", (req, res) => {
+  app.post("/api/teamscan/sessies/:id/deelnemers", vereisScope, (req, res) => {
     const sessieId = Number(req.params.id);
     const sessie = storage.getSessie(sessieId);
     if (!sessie) return res.status(404).json({ error: "Sessie niet gevonden" });
@@ -137,7 +162,7 @@ export function registerTeamscanRoutes(app: Express): void {
     if (formaat === "pdf") {
       const html = renderIndividueelRapport(resultaat, deelnemer.label);
       try {
-        const buffer = await renderRapportPdf(html, { titel: `Teamscan — ${deelnemer.label}` });
+        const buffer = await renderRapportPdf(html, { titel: `Teamscan - ${deelnemer.label}` });
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader("Content-Disposition", 'attachment; filename="teamscan-individueel.pdf"');
         return res.send(buffer);
@@ -154,7 +179,7 @@ export function registerTeamscanRoutes(app: Express): void {
   });
 
   // ---- Teamrapport (aggregatie) ----
-  app.get("/api/teamscan/sessies/:id/teamrapport", async (req, res) => {
+  app.get("/api/teamscan/sessies/:id/teamrapport", vereisScope, async (req, res) => {
     const sessieId = Number(req.params.id);
     const sessie = storage.getSessie(sessieId);
     if (!sessie) return res.status(404).json({ error: "Sessie niet gevonden" });
@@ -172,7 +197,7 @@ export function registerTeamscanRoutes(app: Express): void {
     if (formaat === "pdf") {
       const html = renderTeamRapport(team, sessie.teamNaam);
       try {
-        const buffer = await renderRapportPdf(html, { titel: `Teamscan — ${sessie.teamNaam}` });
+        const buffer = await renderRapportPdf(html, { titel: `Teamscan - ${sessie.teamNaam}` });
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader("Content-Disposition", 'attachment; filename="teamscan-teamrapport.pdf"');
         return res.send(buffer);

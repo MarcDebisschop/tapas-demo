@@ -16,10 +16,16 @@
  *                                      van de organisatie werd verbruikt.
  *
  * Deze module bevat één poortwachter die op die drie routes staat. Het bewijs is
- * dezelfde onraadbare waarde als bij het koppelen: de respondentCode of het
- * invite-token van deze afname. De deelnemer krijgt die waarde bij het starten
- * van de afname en de webclient stuurt ze automatisch mee in de kop
- * `X-TaPas-Bewijs`; ze mag ook in de body staan.
+ * dezelfde onraadbare waarde als bij het koppelen: het bezitsToken of het
+ * invite-token van deze afname. De respondentCode telt NIET als bewijs, ook al
+ * mag ze in de body onder die naam meekomen: `bewijsGeldig()` in
+ * server/koppel-bewijs.ts vergelijkt uitsluitend met bezitsToken en inviteToken,
+ * omdat een respondentCode in rapporten en lijsten terechtkomt en dus geen
+ * geheim is. (Deze kopnoot beschreef vroeger de respondentCode wel als geldig
+ * bewijs; dat klopte niet met de controle en is hier rechtgezet. Aan het gedrag
+ * verandert niets.) De deelnemer krijgt de bewijswaarde bij het starten van de
+ * afname en de webclient stuurt ze automatisch mee in de kop `X-TaPas-Bewijs`;
+ * ze mag ook in de body staan.
  *
  * Keuzes die bewust zo zijn:
  *   - Een beheerderssessie mag altijd door (ondersteuning en herstelwerk).

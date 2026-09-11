@@ -1,7 +1,7 @@
 /**
  * Layout engine for the flagship HDD PDF.
  * pdfkit is imperative (no flowables), so we manage a y-cursor with
- * automatic page breaks, keep-together guards and per-page chrome —
+ * automatic page breaks, keep-together guards and per-page chrome -
  * reproducing reportlab's BaseDocTemplate behaviour.
  */
 import {

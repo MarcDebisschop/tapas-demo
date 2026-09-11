@@ -86,7 +86,7 @@ async function roep(route: HddRoute, aanmelding: "geen" | "organisatie" | "zonde
 describe("HDD-endpoint-poort", () => {
   it("weigert zonder aanmelding elk geregistreerd HDD-endpoint", async () => {
     const routes = geregistreerdeHddRoutes(maakApp("geen"));
-    expect(routes).toHaveLength(11);
+    expect(routes).toHaveLength(15);
     for (const route of routes) {
       expect(await roep(route, "geen"), `${route.methode} ${route.pad}`).toBe(403);
     }
@@ -94,7 +94,7 @@ describe("HDD-endpoint-poort", () => {
 
   it("weigert een aangemelde beheerder zonder organisatie-scope", async () => {
     const routes = geregistreerdeHddRoutes(maakApp("zonderRecht"));
-    expect(routes).toHaveLength(11);
+    expect(routes).toHaveLength(15);
     for (const route of routes) {
       expect(await roep(route, "zonderRecht"), `${route.methode} ${route.pad}`).toBe(403);
     }

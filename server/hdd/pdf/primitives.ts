@@ -1,5 +1,5 @@
 /**
- * Component builders for the flagship HDD PDF — reproduce the reportlab
+ * Component builders for the flagship HDD PDF - reproduce the reportlab
  * helpers from build_flagship_pdf.py (chip, headings, tables, callout,
  * member cards, hard Q&A, gauge, dark cover, section divider).
  */
@@ -72,7 +72,7 @@ export function bullets(L: Layout, items: string[]) {
   const c = L.doc;
   for (const it of items) {
     const runs = L.parseRuns(it, F.inter, "#2f3a40");
-    // bullet dot — L.y is the top of the line (from-top)
+    // bullet dot - L.y is the top of the line (from-top)
     c.font(F.inter).fontSize(ST.bullet.size).fillColor("#2f3a40");
     c.text("\u2022", MARGIN + 2, L.y, { lineBreak: false });
     const h = L.drawRuns(runs, {
@@ -372,6 +372,11 @@ export interface CoverIndex {
   verdict: string;
   verdictShort: string;
   pillSub: string;
+  /**
+   * Label in front of the verdict on the cover. The team-facing report does not
+   * carry a recommendation, so it says READING instead.
+   */
+  pillLabel?: string;
 }
 
 export function drawDarkCover(doc: PDFKit.PDFDocument, meta: CoverMeta, index: CoverIndex, variantLabel: string) {
@@ -430,7 +435,8 @@ export function drawDarkCover(doc: PDFKit.PDFDocument, meta: CoverMeta, index: C
   const pillCY = topOf(H - 152 * MM), pillH = 24 * MM, pillW = 92 * MM;
   c.roundedRect(LX, pillCY - pillH / 2, pillW, pillH, 3).fill(vc);
   c.fillColor(WHITE).font(F.interSemi).fontSize(10);
-  c.text(`RECOMMENDATION: ${index.verdictShort.toUpperCase()}`, LX + 8 * MM, pillCY - 2.4 * MM - 10, { lineBreak: false });
+  c.text(`${(index.pillLabel ?? "RECOMMENDATION").toUpperCase()}: ${index.verdictShort.toUpperCase()}`,
+    LX + 8 * MM, pillCY - 2.4 * MM - 10, { lineBreak: false });
   c.fillColor("#d7ece1").font(F.inter).fontSize(7.2);
   c.text(index.pillSub, LX + 8 * MM, pillCY + 4.6 * MM - 8, { width: pillW - 12 * MM, lineBreak: false });
 
@@ -448,7 +454,7 @@ export function drawDarkCover(doc: PDFKit.PDFDocument, meta: CoverMeta, index: C
   c.fillColor(WHITE).font(F.interSemi).fontSize(9);
   c.text("TaPas Platform", LX, bl(22 * MM, 9), { lineBreak: false });
   c.fillColor("#7f9aa4").font(F.inter).fontSize(7.8);
-  c.text("Always produced in English \u2014 the international character is immediate.", LX, bl(16 * MM, 7.8), { lineBreak: false });
+  c.text("Always produced in English - the international character is immediate.", LX, bl(16 * MM, 7.8), { lineBreak: false });
 }
 
 // ---- section divider (light, for Team Report start) ----

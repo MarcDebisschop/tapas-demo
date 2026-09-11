@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { ALLE_WOORDEN, IE_STELLINGEN, berekenKleurScores, berekenIE } from "@/twominscan/data";
 import { matchProfiel } from "@/twominscan/profielen";
@@ -6,11 +6,11 @@ import { KLEUR } from "@/twominscan/theme";
 import { maakT, Vertaler, Taal, STANDAARD_TAAL } from "@/twominscan/i18n";
 import { verkleinAfbeeldingNaarDataUrl } from "@/lib/afbeelding";
 
-// 2MINSCAN afname — Energetisch Gedragsprofiel.
+// 2MINSCAN afname - Energetisch Gedragsprofiel.
 // Stap 1: kies 8 van 32 woorden (sterkste herkenning).
 // Stap 2: kies uit de resterende 24 nog eens 8 woorden.
 // Stap 3: 21 stellingen (intro/extravert), kruis alle herkenbare aan.
-// Geen localStorage — alle state in React.
+// Geen localStorage - alle state in React.
 
 type Stap = "intro" | "ronde1" | "ronde2" | "stellingen" | "berekenen";
 
@@ -35,6 +35,13 @@ export default function TwominscanAfname() {
   const [taal, setTaal] = useState<Taal>(STANDAARD_TAAL);
   const [naam, setNaam] = useState("");
   const [organisatie, setOrganisatie] = useState("");
+  const [rol, setRol] = useState("");
+  // Kwam de deelnemer via een uitnodigingslink, dan staan naam en organisatie al
+  // vast. Dat is nodig omdat een bewaarde scan later op naam binnen de
+  // organisatie wordt teruggevonden: een zelf getypte variant zou daar niet meer
+  // op aansluiten. Zonder link blijft alles precies zoals het was.
+  const [uitnodiging, setUitnodiging] = useState<string>("");
+  const [uitnodigingFout, setUitnodigingFout] = useState("");
   // Portret dat de deelnemer zelf meegeeft. Blijft in de browser: de foto reist
   // met het rapport mee en wordt hier niet naar de server gestuurd.
   const [foto, setFoto] = useState<string | null>(null);
@@ -42,6 +49,36 @@ export default function TwominscanAfname() {
   const [ronde1, setRonde1] = useState<string[]>([]);
   const [ronde2, setRonde2] = useState<string[]>([]);
   const [stellingen, setStellingen] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    const zoek = new URLSearchParams(window.location.search);
+    const token = (zoek.get("uitnodiging") ?? zoek.get("u") ?? "").trim();
+    if (!token) return;
+    let afgebroken = false;
+    (async () => {
+      try {
+        const antwoord = await fetch(`/api/uitnodigingen/${encodeURIComponent(token)}`);
+        if (!antwoord.ok) throw new Error(`status ${antwoord.status}`);
+        const gegevens = await antwoord.json();
+        if (afgebroken) return;
+        setUitnodiging(token);
+        if (typeof gegevens?.name === "string" && gegevens.name.trim()) setNaam(gegevens.name.trim());
+        if (typeof gegevens?.company === "string" && gegevens.company.trim()) {
+          setOrganisatie(gegevens.company.trim());
+        }
+        if (typeof gegevens?.role === "string" && gegevens.role.trim()) setRol(gegevens.role.trim());
+      } catch (e) {
+        if (afgebroken) return;
+        // Eerlijk melden en de deelnemer gewoon zelf laten invullen.
+        setUitnodigingFout(
+          "Deze uitnodigingslink kon niet gelezen worden. Vul je naam en organisatie zelf in.",
+        );
+      }
+    })();
+    return () => {
+      afgebroken = true;
+    };
+  }, []);
 
   const gemengd = useMemo(() => shuffle(ALLE_WOORDEN), []);
   const ronde2Pool = useMemo(
@@ -81,6 +118,8 @@ export default function TwominscanAfname() {
       JSON.stringify({
         naam,
         organisatie,
+        ...(rol ? { rol } : {}),
+        ...(uitnodiging ? { uitnodiging } : {}),
         ...(foto ? { foto: { src: foto } } : {}),
         taal,
         datum: new Date().toLocaleDateString("nl-BE"),
@@ -111,6 +150,8 @@ export default function TwominscanAfname() {
             setNaam={setNaam}
             organisatie={organisatie}
             setOrganisatie={setOrganisatie}
+            vast={!!uitnodiging}
+            uitnodigingFout={uitnodigingFout}
             foto={foto}
             setFoto={setFoto}
             start={() => setStap("ronde1")}
@@ -122,7 +163,7 @@ export default function TwominscanAfname() {
         {stap === "ronde1" && (
           <WoordKeuze
             tr={tr}
-            titel={tr("ui.afname.ronde1.titel", "Ronde 1 — kies de 8 woorden die je het méést kenmerken")}
+            titel={tr("ui.afname.ronde1.titel", "Ronde 1 - kies de 8 woorden die je het méést kenmerken")}
             subtitel={tr("ui.afname.ronde1.subtitel", "Duid uit alle begrippen de 8 aan die het sterkst bij jou passen in een professionele context.")}
             woorden={gemengd}
             gekozen={ronde1}
@@ -137,7 +178,7 @@ export default function TwominscanAfname() {
         {stap === "ronde2" && (
           <WoordKeuze
             tr={tr}
-            titel={tr("ui.afname.ronde2.titel", "Ronde 2 — kies nog eens 8 woorden die je óók herkent")}
+            titel={tr("ui.afname.ronde2.titel", "Ronde 2 - kies nog eens 8 woorden die je óók herkent")}
             subtitel={tr("ui.afname.ronde2.subtitel", "Uit de overige begrippen duid je nu de 8 aan die ook bij je passen, maar net iets minder sterk.")}
             woorden={ronde2Pool}
             gekozen={ronde2}
@@ -209,12 +250,14 @@ function TopBalk({ taal, setTaal, tr }: { taal: Taal; setTaal: (t: Taal) => void
 }
 
 function IntroBlok({
-  naam, setNaam, organisatie, setOrganisatie, foto, setFoto, start, toonDemo, tr,
+  naam, setNaam, organisatie, setOrganisatie, vast, uitnodigingFout, foto, setFoto, start, toonDemo, tr,
 }: {
   naam: string;
   setNaam: (v: string) => void;
   organisatie: string;
   setOrganisatie: (v: string) => void;
+  vast: boolean;
+  uitnodigingFout: string;
   foto: string | null;
   setFoto: (v: string | null) => void;
   start: () => void;
@@ -244,7 +287,7 @@ function IntroBlok({
         {tr("ui.afname.intro.titel", "Breng je energie in kaart")}
       </h1>
       <p style={{ fontSize: 16, lineHeight: 1.6, color: KLEUR.inkt, maxWidth: 620 }}>
-        {tr("ui.afname.intro.tekst", "De 2MINSCAN brengt in beeld hoe jij energie geeft en krijgt in samenwerking met anderen. Je doorloopt drie korte stappen. Er zijn geen goede of foute antwoorden — kies wat het meest spontaan bij je past.")}
+        {tr("ui.afname.intro.tekst", "De 2MINSCAN brengt in beeld hoe jij energie geeft en krijgt in samenwerking met anderen. Je doorloopt drie korte stappen. Er zijn geen goede of foute antwoorden - kies wat het meest spontaan bij je past.")}
       </p>
 
       <div style={{ display: "grid", gap: 12, margin: "22px 0", maxWidth: 620 }}>
@@ -253,25 +296,55 @@ function IntroBlok({
         <StapKaart nr="3" titel={tr("ui.afname.stap3.titel", "21 korte stellingen")} tekst={tr("ui.afname.stap3.tekst", "Kruis aan wat op jou van toepassing is.")} />
       </div>
 
+      {uitnodigingFout ? (
+        <div
+          style={{
+            border: `1px solid ${KLEUR.lijn}`,
+            borderRadius: 8,
+            padding: "10px 12px",
+            marginBottom: 14,
+            fontSize: 13.5,
+            color: KLEUR.inkt,
+            background: "#fff",
+          }}
+        >
+          {uitnodigingFout}
+        </div>
+      ) : null}
+
       <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: KLEUR.petrol, marginBottom: 6 }}>
-        {tr("ui.afname.naam.label", "Je naam (optioneel)")}
+        {vast
+          ? tr("ui.afname.naam.label_vast", "Je naam")
+          : tr("ui.afname.naam.label", "Je naam (optioneel)")}
       </label>
       <input
         value={naam}
         onChange={(e) => setNaam(e.target.value)}
+        readOnly={vast}
         placeholder={tr("ui.afname.naam.placeholder", "bv. Anne-Sofie Bogaerts")}
-        style={veldStijl}
+        style={vast ? { ...veldStijl, background: "#F3F5F5" } : veldStijl}
       />
 
       <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: KLEUR.petrol, margin: "16px 0 6px" }}>
-        {tr("ui.afname.organisatie.label", "Je organisatie (optioneel)")}
+        {vast
+          ? tr("ui.afname.organisatie.label_vast", "Je organisatie")
+          : tr("ui.afname.organisatie.label", "Je organisatie (optioneel)")}
       </label>
       <input
         value={organisatie}
         onChange={(e) => setOrganisatie(e.target.value)}
+        readOnly={vast}
         placeholder={tr("ui.afname.organisatie.placeholder", "bv. Newco")}
-        style={veldStijl}
+        style={vast ? { ...veldStijl, background: "#F3F5F5" } : veldStijl}
       />
+      {vast ? (
+        <div style={{ fontSize: 12.5, color: "#5B6B6B", marginTop: 6 }}>
+          {tr(
+            "ui.afname.uitnodiging.vast",
+            "Naam en organisatie komen uit je uitnodiging en staan daarom vast.",
+          )}
+        </div>
+      ) : null}
 
       <label style={{ display: "block", fontSize: 13, fontWeight: 700, color: KLEUR.petrol, margin: "16px 0 6px" }}>
         {tr("ui.afname.foto.label", "Je foto (optioneel)")}

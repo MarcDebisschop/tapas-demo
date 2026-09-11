@@ -36,6 +36,18 @@ export const hddTrajecten = sqliteTable("hdd_trajecten", {
   status: text("status").notNull().default("fase1_open"),
   // Go/No-Go-resultaat zodra de gate is geëvalueerd (JSON-contract) of null.
   gateResultaat: text("gate_resultaat"),
+  // De Teamscan-sessie van dit traject. Fase 1 stuurt per boardlid een
+  // Teamscan-link uit, en die deelnemers horen in EEN sessie te zitten: het
+  // teamrapport van de Teamscan aggregeert per sessie. Het id staat hier zodat
+  // een tweede aanroep van start-fase1 dezelfde sessie hergebruikt in plaats van
+  // een tweede sessie te openen.
+  teamscanSessieId: integer("teamscan_sessie_id"),
+  // Credits: hoeveel credits er voor DIT traject al afgeboekt zijn, en wanneer.
+  // HDD is een journey met een prijs per traject (registry: creditCost van
+  // "hdd"), niet een prijs per uitgestuurde link. Deze twee velden maken de
+  // afboeking idempotent: is er al geboekt, dan boekt een tweede start niets.
+  creditsGeboekt: integer("credits_geboekt").notNull().default(0),
+  creditsGeboektOp: text("credits_geboekt_op"),
   platformSessieId: integer("platform_sessie_id"),
   createdAt: integer("created_at").notNull(),
 });
@@ -44,6 +56,9 @@ export const insertHddTrajectSchema = createInsertSchema(hddTrajecten).omit({
   id: true,
   status: true,
   gateResultaat: true,
+  teamscanSessieId: true,
+  creditsGeboekt: true,
+  creditsGeboektOp: true,
   platformSessieId: true,
   createdAt: true,
 });
