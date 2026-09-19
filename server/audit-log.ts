@@ -96,6 +96,11 @@ export const AUDIT_ACTIES = [
   "evaluatie_organisatie_uitnodiging_ingetrokken",
   "evaluatie_organisatie_evaluatie_ingediend",
   "evaluatie_organisatie_signaal_aangemaakt",
+  // Notulen van het Team of Captains. Het verslag bevat namen van aanwezigen en
+  // gaat naar aandeelhouders en investeringspartners, dus de omzetting zelf is
+  // een handeling met persoonsgegevens erin. Het downloaden van het lege
+  // invulblad staat er niet in: daar staat niemand in.
+  "notulen_toc_omgezet",
 ] as const;
 
 export type AuditActie = (typeof AUDIT_ACTIES)[number];

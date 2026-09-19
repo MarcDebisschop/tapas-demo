@@ -34,6 +34,9 @@ export const RUIME_BODYPADEN: RegExp[] = [
   /^\/api\/t4r\/sessions\/\d+\/candidate\/extract\/?$/,
   // Bulk-import: eerst controleren, dan verwerken. Beide dragen het bestand.
   /^\/api\/admin\/bulk-import\/(preview|verwerk)\/?$/,
+  // Beknopte notulen van het Team of Captains: het Word-bestand komt als base64
+  // in het lichaam, en base64 maakt een bestand een derde groter.
+  /^\/api\/admin\/notulen-toc\/omzetten\/?$/,
 ];
 
 /** True wanneer deze weg een ruim JSON-bericht mag ontvangen. */
