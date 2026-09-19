@@ -1,12 +1,12 @@
 // =============================================================================
-// server/bulk-import/routes.ts  —  NIEUW BESTAND (Werkprotocol Regel 2)
+// server/bulk-import/routes.ts  -  NIEUW BESTAND (Werkprotocol Regel 2)
 // -----------------------------------------------------------------------------
 // registerBulkImportRoutes(app): admin-endpoints voor bulk-import via Excel/CSV.
 //
-//   GET  /api/admin/bulk-import/instrumenten            — ondersteunde instrumenten + velden
-//   GET  /api/admin/bulk-import/template/:instrumentId  — download .xlsx-template
-//   POST /api/admin/bulk-import/preview                 — parse + valideer (maakt niets aan)
-//   POST /api/admin/bulk-import/verwerk                 — maak uitnodigingen + verstuur/queue mail
+//   GET  /api/admin/bulk-import/instrumenten            : ondersteunde instrumenten + velden
+//   GET  /api/admin/bulk-import/template/:instrumentId  : download .xlsx-template
+//   POST /api/admin/bulk-import/preview                 : parse + valideer (maakt niets aan)
+//   POST /api/admin/bulk-import/verwerk                 : maak uitnodigingen + verstuur/queue mail
 //
 // De verwerk-stap HERGEBRUIKT de bestaande uitnodig-logica (saldo-check +
 // storage.reserveer, 1 credit per uitnodiging), net als POST /api/uitnodigingen.
@@ -15,7 +15,7 @@
 // dezelfde Drizzle-tabel, additief uitgebreid met e-mail + instrumentId.
 //
 // Org-eigen afzender: opgeslagen in een APARTE kleine tabel org_mail_afzender
-// (Regel 1/2 — shared/schema.ts blijft ongewijzigd).
+// (Regel 1/2, shared/schema.ts blijft ongewijzigd).
 // =============================================================================
 
 import type { Express, Request, Response } from "express";
@@ -46,7 +46,7 @@ function requireAdmin(req: Request, res: Response): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Prior-beheerdercheck (Werkprotocol Regel 2 — additief).
+// Prior-beheerdercheck (Werkprotocol Regel 2, additief).
 // Gratis bulk-verzending ZONDER organisatie (geen credits) is voorbehouden aan
 // de hoofdbeheerder (isPrior). Gewone admins moeten een organisatie kiezen
 // zodat het bestaande credit-model geldt. Deze helper wijzigt niets aan de
@@ -174,7 +174,7 @@ function volledigeNaam(waarden: Record<string, string>): string {
 }
 
 // ---------------------------------------------------------------------------
-// Linktype voor de uitnodigingsmail (additief — bestaand gedrag = default).
+// Linktype voor de uitnodigingsmail (additief, bestaand gedrag = default).
 //   "vragenlijst" (default) → #/deelnemer/TOKEN   (vragenlijst starten/invullen)
 //   "dashboard"             → /toegang.html?t=TOKEN (cijferslot-permalink,
 //                              rechtstreeks naar het persoonlijke dashboard)
@@ -474,9 +474,34 @@ export function registerBulkImportRoutes(app: Express): void {
     // De keuring gaat met vers op true. Een verzender die net een sleutel zette,
     // mag niet op een oordeel van een minuut geleden blijven hangen.
     // -----------------------------------------------------------------------
-    const afzenderNaarBuiten = afzenderVoor(afzender);
+    let afzenderNaarBuiten = afzenderVoor(afzender);
     const tochAanmaken = req.body?.tochAanmaken === true;
-    const mailKeuring = await keurVerzendweg(afzenderNaarBuiten, { vers: true });
+    let mailKeuring = await keurVerzendweg(afzenderNaarBuiten, { vers: true });
+
+    // TERUGVAL OP DE AFZENDER VAN HET PLATFORM.
+    //
+    // AANLEIDING. Een afzender die eens getypt werd, blijft voor die organisatie
+    // bewaard en wordt bij elke latere batch opnieuw gebruikt. Wordt dat adres
+    // later bij de leverancier niet meer erkend, dan blijft elke batch van die
+    // organisatie stilvallen op een adres dat niemand nog voor ogen had, terwijl
+    // het adres van het platform zelf wel erkend is.
+    //
+    // Daarom: is de bewaarde afzender onbruikbaar en het adres van het platform
+    // wel, dan vertrekt het bericht vanaf dat laatste. Het antwoord zegt met
+    // welk adres er werkelijk verstuurd is, zodat de terugval te zien is en
+    // niet stil gebeurt.
+    let afzenderTeruggevallen: { van: string; naar: string } | null = null;
+    if (!mailKeuring.bruikbaar) {
+      const platformAfzender = afzenderVoor(null);
+      if (platformAfzender !== afzenderNaarBuiten) {
+        const tweede = await keurVerzendweg(platformAfzender, { vers: true });
+        if (tweede.bruikbaar) {
+          afzenderTeruggevallen = { van: afzenderNaarBuiten, naar: platformAfzender };
+          afzenderNaarBuiten = platformAfzender;
+          mailKeuring = tweede;
+        }
+      }
+    }
     if (!mailKeuring.bruikbaar && !tochAanmaken) {
       return res.status(409).json({
         error:
@@ -511,8 +536,8 @@ export function registerBulkImportRoutes(app: Express): void {
     }
 
     // Bekwaamheidspoort. Eén oordeel voor de hele import, niet één per rij: bij
-    // een bulkverzending is de licentievraag één vraag — mag deze persoon dit
-    // instrument afnemen — en die verandert niet halverwege het bestand. Per rij
+    // een bulkverzending is de licentievraag één vraag, namelijk of deze persoon dit
+    // instrument mag afnemen, en die verandert niet halverwege het bestand. Per rij
     // toetsen zou honderden identieke opzoekingen doen en, erger, honderden
     // identieke auditregels schrijven voor één handeling.
     //
@@ -661,7 +686,7 @@ export function registerBulkImportRoutes(app: Express): void {
         naam,
         link,
         instrument: tpl.titel,
-        from: afzender,
+        from: afzenderNaarBuiten,
       });
 
       resultaten.push({
@@ -690,6 +715,8 @@ export function registerBulkImportRoutes(app: Express): void {
       geslaagd: oordeel.geslaagd,
       mailAlarm: oordeel.alarm,
       mailweg: mailKeuring,
+      afzenderGebruikt: afzenderNaarBuiten,
+      afzenderTeruggevallen,
       resultaten,
     });
   });
