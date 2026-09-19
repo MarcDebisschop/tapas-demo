@@ -288,10 +288,21 @@ describe("verzendlogboek: bronvoorwaarden", () => {
     // geslaagde als een mislukte stand op, want het antwoord van de mailserver
     // wordt op een enkele plaats beoordeeld. Zakt een uitgang weg, dan ontstaat
     // er een stil gat in het logboek, en een gat in een logboek merkt niemand.
+    // Sinds de mailpoort loopt de weg naar buiten voor elk bericht langs
+    // naarBuiten. Elke verzendfunctie legt daar nog haar eigen simulatie-uitgang
+    // vast, en de twee werkelijke uitgangen worden in naarBuiten vastgelegd, met
+    // de soort als waarde. Het logboek dekt dus nog altijd elke uitgang, maar op
+    // twee plaatsen in plaats van op twaalf.
     for (const soort of ["toegangsmail", "aanmeldlink", "bericht"]) {
       const aantal = (MAILER.match(new RegExp(`boek\\(\\s*"${soort}"`, "g")) ?? []).length;
-      expect(aantal, `soort ${soort} legt niet elke uitgang vast`).toBe(3);
+      expect(aantal, `de simulatie-uitgang van ${soort} wordt niet vastgelegd`).toBe(1);
+      expect(MAILER, `${soort} loopt niet langs de gedeelde weg`).toContain(`naarBuiten("${soort}"`);
     }
+    const naarBuiten = MAILER.slice(MAILER.indexOf("async function naarBuiten"));
+    expect(
+      (naarBuiten.match(/boek\(\s*soort,/g) ?? []).length,
+      "de gedeelde weg legt niet beide werkelijke uitgangen vast",
+    ).toBe(2);
     // De gedeelde functie voor de uitnodiging en de herinnering legt haar drie
     // uitgangen op dezelfde manier vast, met de soort als waarde.
     const gedeeld = (MAILER.match(/boek\(\s*soort,/g) ?? []).length;

@@ -26,7 +26,9 @@ import { beoordeelSchrijfweg, weigeringslichaam } from "../bekwaamheid/poortbrug
 import { afnames, type Afname } from "@shared/schema";
 import { getTemplate, alleTemplates, TEMPLATES } from "./templates";
 import { templateAlsBuffer, parseUpload, type ParseFout } from "./excel";
-import { verstuurUitnodiging, isSimulatiemodus } from "./mailer";
+import { verstuurUitnodiging, isSimulatiemodus, afzenderVoor } from "./mailer";
+import { keurOntvangers, keurVerzendweg } from "../mailpoort/poort";
+import { beoordeelBatch, type Ontvangerkeuring } from "../mailpoort/keuring";
 import { poortVoorUitstuur } from "../t4students/uitstuurcontrole";
 import { t4oStorage } from "../t4organizations/storage";
 import { T4O_GROEPEN, type T4OGroep } from "../t4organizations/schema";
@@ -306,15 +308,20 @@ async function verwerkT4O(
       const naam = volledigeNaam(r.waarden);
       const mail = await verstuurUitnodiging({ naar: email, taal: r.waarden.taal || "nl", naam, link, instrument: titel, from: null });
       mailStatus = mail.status;
-      melding = mail.melding ?? (mail.gesimuleerd ? "Mail gesimuleerd (SMTP niet geconfigureerd)." : "Uitnodiging verstuurd.");
+      melding = mail.melding ?? (mail.gesimuleerd ? "De mail is alleen nagebootst (SMTP staat niet ingesteld)." : "Uitnodiging verstuurd.");
     }
 
     resultaten.push({ rij: r.rij, email, status: "ok", link, mailStatus, melding });
   }
 
+  const oordeel = beoordeelBatch(resultaten);
   const aantalOk = resultaten.filter((r) => r.status === "ok").length;
   return res.json({
     instrumentId: "t4o",
+    aantalMailVerstuurd: oordeel.aantalVerstuurd,
+    aantalZonderMail: oordeel.aantalZonderMail,
+    geslaagd: oordeel.geslaagd,
+    mailAlarm: oordeel.alarm,
     simulatiemodus: isSimulatiemodus(),
     sessieId: sessie.id,
     sessieLink: origin ? `${origin}#/t4o/sessie/${sessie.id}` : `#/t4o/sessie/${sessie.id}`,
@@ -361,16 +368,16 @@ export function registerBulkImportRoutes(app: Express): void {
     if (!requireAdmin(req, res)) return;
     const instrumentId = String(req.body?.instrumentId ?? "");
     const tpl = getTemplate(instrumentId);
-    if (!tpl) return res.status(400).json({ error: "Onbekend of niet-ondersteund instrument." });
+    if (!tpl) return res.status(400).json({ error: "Dit instrument bestaat niet of het platform ondersteunt het niet." });
 
     const bestand = leesBestand(req);
-    if (!bestand) return res.status(400).json({ error: "Geen bestand ontvangen (bestandBase64 ontbreekt)." });
+    if (!bestand) return res.status(400).json({ error: "Het platform heeft geen bestand ontvangen (bestandBase64 ontbreekt)." });
 
     const { rijen, fouten } = await parseUpload(bestand, tpl);
     const kopFout = fouten.find((f) => f.rij === 0);
     if (kopFout) {
       return res.status(422).json({
-        error: "Kolomkoppen komen niet overeen met de template.",
+        error: "De kolomkoppen komen niet overeen met het sjabloon.",
         fouten,
       });
     }
@@ -391,7 +398,7 @@ export function registerBulkImportRoutes(app: Express): void {
   app.post("/api/admin/bulk-import/verwerk", vereisScope, async (req, res) => {
     const instrumentId = String(req.body?.instrumentId ?? "");
     const tpl = getTemplate(instrumentId);
-    if (!tpl) return res.status(400).json({ error: "Onbekend of niet-ondersteund instrument." });
+    if (!tpl) return res.status(400).json({ error: "Dit instrument bestaat niet of het platform ondersteunt het niet." });
 
     // Uitstuurcontrole van het studiekompas, dezelfde poort als op
     // /api/afnames en /api/uitnodigingen. Een bulkverzending is de deur waar de
@@ -424,8 +431,8 @@ export function registerBulkImportRoutes(app: Express): void {
     if (organisatieId == null && scope.soort !== "prior") {
       return res.status(403).json({
         error:
-          "Gratis verzending zonder organisatie is voorbehouden aan de hoofdbeheerder. " +
-          "Kies een organisatie (credits worden verrekend) of vraag de hoofdbeheerder.",
+          "Alleen de hoofdbeheerder mag gratis versturen zonder organisatie. " +
+          "Kies een organisatie, dan verrekent het platform de credits. Of vraag het aan de hoofdbeheerder.",
         code: "ENKEL_PRIOR_GRATIS",
       });
     }
@@ -441,13 +448,57 @@ export function registerBulkImportRoutes(app: Express): void {
     const afzender = afzenderOverride ?? afzenderVoorOrg(organisatieId);
 
     const bestand = leesBestand(req);
-    if (!bestand) return res.status(400).json({ error: "Geen bestand ontvangen (bestandBase64 ontbreekt)." });
+    if (!bestand) return res.status(400).json({ error: "Het platform heeft geen bestand ontvangen (bestandBase64 ontbreekt)." });
 
     const { rijen, fouten } = await parseUpload(bestand, tpl);
     const kopFout = fouten.find((f) => f.rij === 0);
     if (kopFout) {
-      return res.status(422).json({ error: "Kolomkoppen komen niet overeen met de template.", fouten });
+      return res.status(422).json({ error: "De kolomkoppen komen niet overeen met het sjabloon.", fouten });
     }
+
+    // -----------------------------------------------------------------------
+    // DE MAILPOORT, vóór er iets wordt aangemaakt.
+    //
+    // AANLEIDING. Een batch van drie uitnodigingen werd aangemaakt, drie credits
+    // gingen eraf, het scherm meldde "3 aangemaakt" in het groen, en er vertrok
+    // geen enkel bericht. De reden stond wel in een kolom verderop, maar een
+    // groene kop leest iedereen en een kolom verderop leest niemand. Wie op dat
+    // bericht wachtte, wachtte voor niets.
+    //
+    // Sindsdien geldt de omgekeerde orde: eerst vragen of de deur open staat,
+    // dan pas aanmaken. Staat de deur dicht, dan wordt er niets aangemaakt en
+    // niets gereserveerd, en zegt het antwoord wat eraan schort en wat helpt.
+    // Wie toch alleen de links wil, stuurt tochAanmaken mee: dan is het een
+    // keuze en geen verrassing.
+    //
+    // De keuring gaat met vers op true. Een verzender die net een sleutel zette,
+    // mag niet op een oordeel van een minuut geleden blijven hangen.
+    // -----------------------------------------------------------------------
+    const afzenderNaarBuiten = afzenderVoor(afzender);
+    const tochAanmaken = req.body?.tochAanmaken === true;
+    const mailKeuring = await keurVerzendweg(afzenderNaarBuiten, { vers: true });
+    if (!mailKeuring.bruikbaar && !tochAanmaken) {
+      return res.status(409).json({
+        error:
+          "Er kan nu geen enkel bericht vertrekken. Er is dus niets aangemaakt en u betaalt geen credits. " +
+          mailKeuring.bezwaren.join(" "),
+        code: "MAILWEG_ONBRUIKBAAR",
+        keuring: mailKeuring,
+        // Met dit veld in het verzoek maakt de verzender bewust alleen de links
+        // aan, om ze zelf door te geven.
+        hoeToch: "Stuur tochAanmaken mee als je alleen de links wilt aanmaken, zonder te versturen.",
+      });
+    }
+
+    // De blokkeerlijst van de leverancier. Dit is het enige geval waarin een
+    // bericht aanvaard wordt en nooit aankomt, en dus het enige dat vóór het
+    // aanmaken thuishoort.
+    const ontvangerKeuringen = await keurOntvangers(
+      rijen.map((r) => r.waarden.email ?? "").filter(Boolean),
+    );
+    const geblokkeerdeAdressen = new Map<string, Ontvangerkeuring>(
+      ontvangerKeuringen.filter((k) => !k.bruikbaar).map((k) => [k.email, k]),
+    );
 
     // -----------------------------------------------------------------------
     // T4O-organisatiescan: eigen verwerking (geen afname/credit-model). Elke
@@ -532,6 +583,21 @@ export function registerBulkImportRoutes(app: Express): void {
       const naam = volledigeNaam(r.waarden);
       const taal = r.waarden.taal || "nl";
 
+      // Blokkeert de leverancier dit adres, dan komt er niets aan. Geen
+      // uitnodiging, geen credit, en een rij die zegt waarom.
+      const blokkade = geblokkeerdeAdressen.get(email.trim().toLowerCase());
+      if (blokkade && !tochAanmaken) {
+        resultaten.push({
+          rij: r.rij,
+          email,
+          status: "fout",
+          link: null,
+          mailStatus: "-",
+          melding: blokkade.bezwaar ?? "De mailleverancier blokkeert dit adres.",
+        });
+        continue;
+      }
+
       // Idempotentie: bestaat er al zo'n uitnodiging → overslaan.
       const bestaand = bestaandeUitnodiging(email, instrumentId, organisatieId);
       if (bestaand) {
@@ -542,7 +608,7 @@ export function registerBulkImportRoutes(app: Express): void {
           status: "overgeslagen",
           link,
           mailStatus: "-",
-          melding: "Bestond al (zelfde e-mail + instrument + organisatie).",
+          melding: "Bestond al (zelfde e-mail, instrument en organisatie).",
         });
         continue;
       }
@@ -604,10 +670,13 @@ export function registerBulkImportRoutes(app: Express): void {
         status: "ok",
         link,
         mailStatus: mail.status,
-        melding: mail.melding ?? (mail.gesimuleerd ? "Mail gesimuleerd (SMTP niet geconfigureerd)." : "Uitnodiging aangemaakt."),
+        melding: mail.melding ?? (mail.gesimuleerd ? "De mail is alleen nagebootst (SMTP staat niet ingesteld)." : "Uitnodiging aangemaakt."),
       });
     }
 
+    // Het oordeel over de batch. Aangemaakt is niet verstuurd: alleen een
+    // vertrokken bericht telt als geslaagd. Zie server/mailpoort/keuring.ts.
+    const oordeel = beoordeelBatch(resultaten);
     const aantalOk = resultaten.filter((r) => r.status === "ok").length;
     res.json({
       instrumentId,
@@ -616,6 +685,11 @@ export function registerBulkImportRoutes(app: Express): void {
       aantalOk,
       aantalOvergeslagen: resultaten.filter((r) => r.status === "overgeslagen").length,
       aantalFout: resultaten.filter((r) => r.status === "fout").length,
+      aantalMailVerstuurd: oordeel.aantalVerstuurd,
+      aantalZonderMail: oordeel.aantalZonderMail,
+      geslaagd: oordeel.geslaagd,
+      mailAlarm: oordeel.alarm,
+      mailweg: mailKeuring,
       resultaten,
     });
   });

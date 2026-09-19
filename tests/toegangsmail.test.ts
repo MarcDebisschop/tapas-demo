@@ -96,13 +96,15 @@ describe("de mailer kan een toegangsmail versturen", () => {
   it("hergebruikt dezelfde afzender en dezelfde verzendwegen", () => {
     const start = mailerBron.indexOf("export async function verstuurToegangsmail");
     expect(start).toBeGreaterThan(-1);
-    const blok = mailerBron.slice(start, start + 1400);
+    const blok = mailerBron.slice(start, start + 1600);
     expect(blok).toMatch(/afzenderVoor\(/);
     expect(blok).toMatch(/isSimulatiemodus\(\)/);
-    expect(blok).toMatch(/brevoApiGeconfigureerd\(\)/);
+    expect(blok).toMatch(/naarBuiten\("toegangsmail"/);
+    const gedeeld = mailerBron.slice(mailerBron.indexOf("async function naarBuiten"));
+    expect(gedeeld).toMatch(/brevoApiGeconfigureerd\(\)/);
     // De SMTP-weg loopt langs verstuurViaSmtp, waar het antwoord van de
     // mailserver wordt beoordeeld voordat er "verstuurd" mag staan.
-    expect(blok).toMatch(/verstuurViaSmtp\(/);
+    expect(gedeeld).toMatch(/verstuurViaSmtp\(/);
   });
 });
 

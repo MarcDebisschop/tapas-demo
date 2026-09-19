@@ -23,6 +23,8 @@ import { bouwToegangsmail } from "../toegangsmail";
 import { bouwAanmeldmail } from "../aanmeldmail";
 import { schrijfVerzendregel, type VerzendSoort } from "./verzendlog";
 import { beoordeelSmtpAntwoord } from "./smtp-antwoord";
+import { isTijdelijkeFout } from "../mailpoort/keuring";
+import { keurVerzendweg } from "../mailpoort/poort";
 
 const STANDAARD_AFZENDER = "info@tapascity.com";
 
@@ -65,6 +67,70 @@ export interface MailResultaat {
   status: MailStatus;
   gesimuleerd: boolean;
   melding?: string;
+  /**
+   * De HTTP-status van de leverancier bij een mislukte poging, of 0 wanneer het
+   * verzoek de leverancier niet bereikte. Nodig om te beslissen of een
+   * herkansing zin heeft; staat er niet bij een geslaagde verzending.
+   */
+  httpStatus?: number;
+  /** Hoeveel pogingen het bericht heeft gekost. */
+  pogingen?: number;
+}
+
+// ---------------------------------------------------------------------------
+// Herkansen bij een fout van voorbijgaande aard.
+//
+// Een snelheidsgrens bij de leverancier, een korte storing of een verbinding die
+// wegvalt: dat waren tot nu drie manieren om een uitnodiging definitief te
+// verliezen. Eén poging, mislukt, klaar. Een herkansing lost dat op, maar alleen
+// voor het soort fout dat overgaat. Een geweigerde sleutel en een geweigerde
+// afzender worden niet herkanst: die veranderen niet door wachten, en driemaal
+// hetzelfde vragen maakt de fout alleen later zichtbaar.
+// ---------------------------------------------------------------------------
+const POGINGEN = 3;
+const WACHTEN_MS = [1000, 4000];
+
+async function metHerkansing(
+  poging: () => Promise<MailResultaat>,
+  noem: string,
+): Promise<MailResultaat> {
+  let laatste: MailResultaat = { status: "fout", gesimuleerd: false, melding: "Niet gepoogd." };
+  for (let n = 1; n <= POGINGEN; n++) {
+    laatste = await poging();
+    if (laatste.status === "verstuurd") return { ...laatste, pogingen: n };
+    // Zonder httpStatus is er geen leverancier die een getal gaf, en dan beslist
+    // de melding alleen. De waarde min één staat voor "geen status": nul betekent
+    // uitdrukkelijk dat het verzoek de leverancier niet bereikte, en dat is wel
+    // tijdelijk.
+    const status = laatste.httpStatus === undefined ? -1 : laatste.httpStatus;
+    if (!isTijdelijkeFout(status, laatste.melding)) {
+      return { ...laatste, pogingen: n };
+    }
+    if (n < POGINGEN) {
+      console.warn(`[mailer] ${noem}: poging ${n} mislukte tijdelijk, herkansing volgt.`);
+      await new Promise((klaar) => setTimeout(klaar, WACHTEN_MS[n - 1] ?? 4000));
+    }
+  }
+  return { ...laatste, pogingen: POGINGEN };
+}
+
+// ---------------------------------------------------------------------------
+// De afzender die de leverancier werkelijk aanvaardt.
+//
+// De leverancier weigert een bericht van een afzender die bij hem niet
+// gevalideerd is, met een fout per bericht. Dat overkwam elke rij van een batch
+// afzonderlijk, terwijl het bezwaar één keer gold. De poort kent de lijst met
+// gevalideerde afzenders en wijst er een aan wanneer de gevraagde er niet bij
+// staat. Faalt die navraag, dan blijft de gevraagde afzender staan: een
+// onbereikbare leverancier mag geen afzender veranderen.
+// ---------------------------------------------------------------------------
+async function afzenderVoorLeverancier(from: string): Promise<string> {
+  try {
+    const keuring = await keurVerzendweg(from);
+    return keuring.werkelijkeAfzender || from;
+  } catch {
+    return from;
+  }
 }
 
 function smtpGeconfigureerd(): boolean {
@@ -84,7 +150,7 @@ export function isSimulatiemodus(): boolean {
   return !smtpGeconfigureerd() && !brevoApiGeconfigureerd();
 }
 
-function afzenderVoor(from?: string | null): string {
+export function afzenderVoor(from?: string | null): string {
   if (from && from.trim()) return from.trim();
   if (process.env.SMTP_FROM && process.env.SMTP_FROM.trim()) return process.env.SMTP_FROM.trim();
   // C1 — extra configureerbare fallback-afzender vóór de hardgecodeerde default,
@@ -238,7 +304,8 @@ async function verstuurViaSmtp(args: {
   } catch (e) {
     const melding = e instanceof Error ? e.message : "Onbekende SMTP-fout";
     console.error(`[mailer] ${args.noem} mislukt naar ${args.naar}: ${melding}`);
-    return { status: "fout", gesimuleerd: false, melding };
+    // Nul: het bericht bereikte de mailserver niet. Een herkansing heeft dan zin.
+    return { status: "fout", gesimuleerd: false, melding, httpStatus: 0 };
   }
 }
 
@@ -267,19 +334,58 @@ async function verstuurSjabloonmail(
     return boek(soort, meta, { status: "gesimuleerd", gesimuleerd: true });
   }
 
-  // C3 — Voorkeur: Brevo HTTP-API (werkt op Render free; SMTP is daar geblokkeerd).
+  return naarBuiten(soort, meta, { naam: input.naam, subject, text, noem: soort });
+}
+
+// ---------------------------------------------------------------------------
+// De weg naar buiten, voor elk bericht dezelfde.
+//
+// Er waren vier verzendfuncties en elk van hen koos zelf haar kanaal, met haar
+// eigen kopie van dezelfde drie regels. Een verbetering aan de ene tak gold
+// daarmee niet voor de andere drie, en zo bleef de herkansing lang uit bij de
+// berichten die er het meest van afhingen. Sinds alles hier samenkomt, geldt
+// elke regel voor elk bericht: de afzender wordt gekeurd, een tijdelijke fout
+// wordt herkanst, en de uitkomst gaat naar het verzendlogboek.
+// ---------------------------------------------------------------------------
+async function naarBuiten(
+  soort: VerzendSoort,
+  meta: { naar: string; from: string; onderwerp: string; taal?: string | null; instrument?: string | null },
+  args: { naam: string; subject: string; text: string; antwoordNaar?: string | null; noem: string },
+): Promise<MailResultaat> {
   if (brevoApiGeconfigureerd()) {
+    meta.from = await afzenderVoorLeverancier(meta.from);
     return boek(
       soort,
       meta,
-      await verstuurViaBrevoApi({ from, naar: input.naar, naam: input.naam, subject, text }),
+      await metHerkansing(
+        () =>
+          verstuurViaBrevoApi({
+            from: meta.from,
+            naar: meta.naar,
+            naam: args.naam,
+            subject: args.subject,
+            text: args.text,
+            antwoordNaar: args.antwoordNaar ?? null,
+          }),
+        args.noem,
+      ),
     );
   }
-
   return boek(
     soort,
     meta,
-    await verstuurViaSmtp({ naar: input.naar, from, subject, text, noem: soort }),
+    await metHerkansing(
+      () =>
+        verstuurViaSmtp({
+          naar: meta.naar,
+          from: meta.from,
+          subject: args.subject,
+          text: args.text,
+          antwoordNaar: args.antwoordNaar ?? null,
+          noem: args.noem,
+        }),
+      args.noem,
+    ),
   );
 }
 
@@ -326,31 +432,12 @@ export async function verstuurToegangsmail(input: ToegangsmailVerzending): Promi
     return boek("toegangsmail", meta, { status: "gesimuleerd", gesimuleerd: true });
   }
 
-  if (brevoApiGeconfigureerd()) {
-    return boek(
-      "toegangsmail",
-      meta,
-      await verstuurViaBrevoApi({
-        from,
-        naar: input.naar,
-        naam: input.naam,
-        subject: onderwerp,
-        text: tekst,
-      }),
-    );
-  }
-
-  return boek(
-    "toegangsmail",
-    meta,
-    await verstuurViaSmtp({
-      naar: input.naar,
-      from,
-      subject: onderwerp,
-      text: tekst,
-      noem: "Toegangsmail",
-    }),
-  );
+  return naarBuiten("toegangsmail", meta, {
+    naam: input.naam,
+    subject: onderwerp,
+    text: tekst,
+    noem: "Toegangsmail",
+  });
 }
 
 // -----------------------------------------------------------------------------
@@ -382,31 +469,12 @@ export async function verstuurAanmeldlink(input: AanmeldlinkVerzending): Promise
     return boek("aanmeldlink", meta, { status: "gesimuleerd", gesimuleerd: true });
   }
 
-  if (brevoApiGeconfigureerd()) {
-    return boek(
-      "aanmeldlink",
-      meta,
-      await verstuurViaBrevoApi({
-        from,
-        naar: input.naar,
-        naam: input.naam,
-        subject: onderwerp,
-        text: tekst,
-      }),
-    );
-  }
-
-  return boek(
-    "aanmeldlink",
-    meta,
-    await verstuurViaSmtp({
-      naar: input.naar,
-      from,
-      subject: onderwerp,
-      text: tekst,
-      noem: "Aanmeldlink",
-    }),
-  );
+  return naarBuiten("aanmeldlink", meta, {
+    naam: input.naam,
+    subject: onderwerp,
+    text: tekst,
+    noem: "Aanmeldlink",
+  });
 }
 
 // C3 — Verstuur via de Brevo transactionele HTTP-API (POST https://api.brevo.com/v3/smtp/email).
@@ -466,11 +534,11 @@ async function verstuurViaBrevoApi(args: {
     const foutTekst = await resp.text().catch(() => "");
     const melding = `Brevo-API HTTP ${resp.status}: ${foutTekst.slice(0, 300)}`;
     console.error(`[bulk-import/mailer] Brevo-API verzending mislukt naar ${args.naar}: ${melding}`);
-    return { status: "fout", gesimuleerd: false, melding };
+    return { status: "fout", gesimuleerd: false, melding, httpStatus: resp.status };
   } catch (e) {
     const melding = e instanceof Error ? e.message : "Onbekende Brevo-API-fout";
     console.error(`[bulk-import/mailer] Brevo-API-fout naar ${args.naar}: ${melding}`);
-    return { status: "fout", gesimuleerd: false, melding };
+    return { status: "fout", gesimuleerd: false, melding, httpStatus: 0 };
   }
 }
 
@@ -508,31 +576,11 @@ export async function verstuurBericht(input: BerichtVerzending): Promise<MailRes
     return boek("bericht", meta, { status: "gesimuleerd", gesimuleerd: true });
   }
 
-  if (brevoApiGeconfigureerd()) {
-    return boek(
-      "bericht",
-      meta,
-      await verstuurViaBrevoApi({
-        from,
-        naar: input.naar,
-        naam: input.naam,
-        subject: input.onderwerp,
-        text: input.tekst,
-        antwoordNaar: input.antwoordNaar ?? null,
-      }),
-    );
-  }
-
-  return boek(
-    "bericht",
-    meta,
-    await verstuurViaSmtp({
-      naar: input.naar,
-      from,
-      subject: input.onderwerp,
-      text: input.tekst,
-      antwoordNaar: input.antwoordNaar ?? null,
-      noem: "Bericht",
-    }),
-  );
+  return naarBuiten("bericht", meta, {
+    naam: input.naam,
+    subject: input.onderwerp,
+    text: input.tekst,
+    antwoordNaar: input.antwoordNaar ?? null,
+    noem: "Bericht",
+  });
 }

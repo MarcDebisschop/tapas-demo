@@ -1,5 +1,5 @@
 // =============================================================================
-// client/src/pages/admin-bulk-import.tsx  —  NIEUW BESTAND (Werkprotocol Regel 2)
+// client/src/pages/admin-bulk-import.tsx - NIEUW BESTAND (Werkprotocol Regel 2)
 // -----------------------------------------------------------------------------
 // Admin-pagina op /admin/bulk-import: nodig meerdere deelnemers tegelijk uit via
 // een Excel/CSV-upload. Kiest een instrument, downloadt de bijhorende template,
@@ -15,6 +15,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
+import { MailpoortPaneel } from "@/components/mailpoort-paneel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -100,6 +101,12 @@ interface VerwerkResponse {
   aantalOk: number;
   aantalOvergeslagen: number;
   aantalFout: number;
+  // Aangemaakt is niet verstuurd. Deze vier velden bestaan omdat een batch
+  // "3 aangemaakt" in het groen meldde terwijl er geen enkel bericht vertrok.
+  aantalMailVerstuurd?: number;
+  aantalZonderMail?: number;
+  geslaagd?: boolean;
+  mailAlarm?: string | null;
   resultaten: VerwerkRij[];
 }
 
@@ -122,6 +129,10 @@ export default function AdminBulkImport() {
   const [verwerkt, setVerwerkt] = useState<VerwerkResponse | null>(null);
   const [bezig, setBezig] = useState<"controle" | "verwerk" | "template" | null>(null);
   const [fout, setFout] = useState<string | null>(null);
+  // Staat er geen verzendweg open, dan weigert de server de reeks. Deze knop
+  // maakt van die weigering een keuze: enkel de links aanmaken en ze zelf
+  // doorgeven. Zonder die keuze zou een beheerder vastzitten.
+  const [magZonderVerzending, setMagZonderVerzending] = useState(false);
 
   const { data: instrumentenData } = useQuery<InstrumentenResponse>({
     queryKey: ["/api/admin/bulk-import/instrumenten"],
@@ -203,7 +214,7 @@ export default function AdminBulkImport() {
     }
   }
 
-  async function verwerk() {
+  async function verwerk(zonderVerzending = false) {
     if (!instrumentId || !bestand) return;
     setBezig("verwerk");
     setFout(null);
@@ -217,11 +228,31 @@ export default function AdminBulkImport() {
         afzenderEmail: afzenderEmail.trim() || null,
         linkType,
         origin: `${window.location.origin}${window.location.pathname}`,
+        tochAanmaken: zonderVerzending,
       });
       const data = (await res.json()) as VerwerkResponse;
       setVerwerkt(data);
+      setMagZonderVerzending(false);
     } catch (e) {
-      setFout(e instanceof Error ? e.message : "Verwerken mislukt.");
+      // Weigert de server omdat er geen bericht kan vertrekken, dan is er niets
+      // aangemaakt en zijn er geen credits gebruikt. Dat hoort met zoveel woorden
+      // in het scherm te staan, en niet als een ruwe foutcode.
+      const ruw = e instanceof Error ? e.message : "Verwerken mislukt.";
+      const haakje = ruw.indexOf("{");
+      if (ruw.startsWith("409") && haakje > -1) {
+        try {
+          const lijf = JSON.parse(ruw.slice(haakje));
+          const helpt: string[] = lijf?.keuring?.wathelpt ?? [];
+          setFout(
+            `${lijf.error ?? "Er kan geen bericht vertrekken."}${helpt.length ? " Wat helpt: " + helpt.join(" ") : ""}`,
+          );
+          setMagZonderVerzending(true);
+          return;
+        } catch {
+          // Geen leesbaar lichaam: de ruwe melding blijft staan.
+        }
+      }
+      setFout(ruw);
     } finally {
       setBezig(null);
     }
@@ -253,17 +284,32 @@ export default function AdminBulkImport() {
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>SMTP nog niet geconfigureerd</AlertTitle>
             <AlertDescription>
-              Mails worden <strong>gesimuleerd</strong> — de deelnemerslinks worden wél aangemaakt.
+              Mails worden <strong>gesimuleerd</strong>: de deelnemerslinks worden wel aangemaakt.
               Stel de SMTP-omgevingsvariabelen in om echt te versturen.
             </AlertDescription>
           </Alert>
         )}
 
+        <MailpoortPaneel afzender={afzenderEmail} />
+
         {fout && (
           <Alert className="mb-6 border-destructive/40 bg-destructive/10">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Er ging iets mis</AlertTitle>
-            <AlertDescription>{fout}</AlertDescription>
+            <AlertDescription className="space-y-3">
+              <p>{fout}</p>
+              {magZonderVerzending && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => verwerk(true)}
+                  disabled={bezig !== null}
+                  data-testid="button-toch-aanmaken"
+                >
+                  Toch aanmaken, zonder verzending
+                </Button>
+              )}
+            </AlertDescription>
           </Alert>
         )}
 
@@ -345,7 +391,7 @@ export default function AdminBulkImport() {
                   </SelectTrigger>
                   <SelectContent>
                     {isPrior && (
-                      <SelectItem value="geen">Geen organisatie (gratis — hoofdbeheerder)</SelectItem>
+                      <SelectItem value="geen">Geen organisatie (gratis, hoofdbeheerder)</SelectItem>
                     )}
                     {(organisaties ?? []).map((o) => (
                       <SelectItem key={o.id} value={String(o.id)}>
@@ -374,7 +420,7 @@ export default function AdminBulkImport() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="vragenlijst">Vragenlijst starten (#/deelnemer/TOKEN)</SelectItem>
-                  <SelectItem value="dashboard">Rechtstreeks naar dashboard (cijferslot — /toegang.html?t=TOKEN)</SelectItem>
+                  <SelectItem value="dashboard">Rechtstreeks naar dashboard (cijferslot, /toegang.html?t=TOKEN)</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
@@ -409,7 +455,7 @@ export default function AdminBulkImport() {
                 variant="default"
                 className="gap-1.5"
                 disabled={!instrumentId || !bestand || bezig === "verwerk" || !preview || preview.aantalGeldig === 0}
-                onClick={verwerk}
+                onClick={() => verwerk(false)}
                 data-testid="button-verwerk"
               >
                 {bezig === "verwerk" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
@@ -470,12 +516,18 @@ export default function AdminBulkImport() {
             <CardHeader>
               <CardTitle>Verwerkt</CardTitle>
               <CardDescription>
-                {verwerkt.aantalOk} aangemaakt · {verwerkt.aantalOvergeslagen} overgeslagen ·{" "}
-                {verwerkt.aantalFout} mislukt.
-                {verwerkt.simulatiemodus && " Mails werden gesimuleerd (SMTP niet geconfigureerd)."}
+                {verwerkt.aantalOk} aangemaakt · {verwerkt.aantalMailVerstuurd ?? 0} bericht(en) verstuurd ·{" "}
+                {verwerkt.aantalOvergeslagen} overgeslagen · {verwerkt.aantalFout} mislukt.
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {verwerkt.mailAlarm && (
+                <Alert className="mb-4 border-destructive/40 bg-destructive/10" data-testid="alert-mail-alarm">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>De uitnodigingen staan er, de berichten niet</AlertTitle>
+                  <AlertDescription>{verwerkt.mailAlarm}</AlertDescription>
+                </Alert>
+              )}
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -505,13 +557,22 @@ export default function AdminBulkImport() {
                         </span>
                       </TableCell>
                       <TableCell>{r.mailStatus}</TableCell>
-                      <TableCell className="max-w-[280px] truncate">
-                        {r.link ? (
-                          <a href={r.link} className="text-primary hover:underline" title={r.link}>
+                      <TableCell className="max-w-[280px]">
+                        {r.link && (
+                          <a href={r.link} className="block truncate text-primary hover:underline" title={r.link}>
                             {r.link}
                           </a>
-                        ) : (
-                          <span className="text-muted-foreground">{r.melding}</span>
+                        )}
+                        {/* De reden staat er ook bij wanneer de link gelukt is: juist
+                            dan werd ze vroeger gemist. */}
+                        {r.melding && (
+                          <span
+                            className={
+                              r.mailStatus === "verstuurd" ? "text-xs text-muted-foreground" : "text-xs text-destructive"
+                            }
+                          >
+                            {r.melding}
+                          </span>
                         )}
                       </TableCell>
                     </TableRow>

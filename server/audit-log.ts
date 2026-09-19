@@ -101,6 +101,10 @@ export const AUDIT_ACTIES = [
   // een handeling met persoonsgegevens erin. Het downloaden van het lege
   // invulblad staat er niet in: daar staat niemand in.
   "notulen_toc_omgezet",
+  // Mailpoort. Een proefbericht en het weghalen van een blokkering zijn
+  // handelingen met een gevolg buiten het platform, dus horen ze in het logboek.
+  "mailpoort_proef",
+  "mailpoort_deblokkeerd",
 ] as const;
 
 export type AuditActie = (typeof AUDIT_ACTIES)[number];

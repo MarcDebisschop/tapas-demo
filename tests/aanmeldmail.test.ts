@@ -114,16 +114,18 @@ describe("De verzending is aangesloten op de bestaande weg", () => {
   });
 
   it("die functie gebruikt Brevo over HTTPS wanneer de sleutel staat", () => {
-    const blok = mailerBron.slice(
-      mailerBron.indexOf("export async function verstuurAanmeldlink"),
-      mailerBron.indexOf("// C3 — Verstuur via de Brevo transactionele HTTP-API"),
-    );
-    expect(blok).toMatch(/brevoApiGeconfigureerd\(\)/);
-    expect(blok).toMatch(/verstuurViaBrevoApi/);
+    const start = mailerBron.indexOf("export async function verstuurAanmeldlink");
+    const blok = mailerBron.slice(start, start + 1600);
+    expect(blok).toMatch(/isSimulatiemodus\(\)/);
+    // De keuze tussen de HTTPS-API en de mailserver ligt sinds de mailpoort in
+    // naarBuiten, voor elk bericht dezelfde.
+    expect(blok).toMatch(/naarBuiten\("aanmeldlink"/);
+    const gedeeld = mailerBron.slice(mailerBron.indexOf("async function naarBuiten"));
+    expect(gedeeld).toMatch(/brevoApiGeconfigureerd\(\)/);
+    expect(gedeeld).toMatch(/verstuurViaBrevoApi/);
     // De weg over SMTP loopt langs verstuurViaSmtp, de ene plaats waar het
     // antwoord van de mailserver werkelijk wordt gelezen.
-    expect(blok).toMatch(/verstuurViaSmtp\(/);
-    expect(blok).toMatch(/isSimulatiemodus\(\)/);
+    expect(gedeeld).toMatch(/verstuurViaSmtp\(/);
   });
 
   it("de route roept de verzending aan", () => {

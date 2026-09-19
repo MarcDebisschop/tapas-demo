@@ -6,7 +6,7 @@ services:
     # LET OP: 'disk' vereist een BETAALD plan. Zet dit op 'starter' (of hoger)
     # in het Render-dashboard; een gratis service kan geen persistente schijf
     # gebruiken. Met een disk draait de service op max 1 instance (geen horizontale
-    # schaling) — voor deze pilot geen bezwaar.
+    # schaling), voor deze pilot geen bezwaar.
     plan: starter
     nodeVersion: 20.19.0
 
@@ -46,7 +46,7 @@ services:
       - key: SESSION_SECRET
         generateValue: true
       # Persistentie: dwingt SQLite naar de gemounte schijf (server/storage.ts
-      # regel 75 — TAPAS_DB_PATH-override wint altijd).
+      # regel 75: de TAPAS_DB_PATH-override wint altijd).
       - key: TAPAS_DB_PATH
         value: /data/data.db
       # Nodig voor de Vlaamse Sulafat-stem via Gemini TTS (server/tts.py, pad 1).
@@ -66,5 +66,28 @@ services:
       # wat al in de databank staat, blijft dan gewoon staan.
       - key: TAPAS_VOORBEELDDOSSIER
         value: "1"
+      # DE VERZENDWEG VOOR E-MAIL. Zonder een van de twee onderstaande wegen
+      # verstuurt het platform niets: elke uitnodiging wordt dan enkel vastgelegd
+      # met de stand "gesimuleerd". Dat is op 12 september gebeurd bij een reeks
+      # van drie uitnodigingen, en het scherm meldde toen nog dat alles gelukt was.
+      #
+      # Weg 1, de aanbevolen weg: de HTTPS-API van Brevo. Render blokkeert de
+      # uitgaande SMTP-poorten 25, 465 en 587, dus een gewone mailserver is daar
+      # geen weg. sync: false betekent dat Render om de waarde vraagt en dat de
+      # sleutel nooit in git staat.
+      - key: BREVO_API_KEY
+        sync: false
+      # Het adres waarvan de berichten vertrekken. Dit adres moet bij Brevo
+      # gevalideerd zijn, anders weigert Brevo elk bericht met "Sender is
+      # invalid". De mailpoort kijkt dat na en wijkt uit naar een adres dat wel
+      # gevalideerd is, maar dan komen de berichten van dat andere adres.
+      - key: SMTP_FROM
+        value: info@tapascity.com
+      # Weg 2, enkel voor een eigen server buiten Render: SMTP_HOST, SMTP_PORT,
+      # SMTP_USER en SMTP_PASS. Laat deze leeg zolang weg 1 gebruikt wordt.
+      #
+      # NA HET ZETTEN: ga in het beheerscherm naar de bulk-import en gebruik
+      # "Verzendweg nakijken" en "Proefbericht versturen". Die twee knoppen zijn
+      # het bewijs dat er werkelijk iets vertrekt.
       # VITE_DEMO_MODE is ingebakken via .env.production tijdens de build (DEMO_MODE=true)
-      # PORT wordt automatisch door Render geïnjecteerd op 10000 — niet overschrijven
+      # PORT wordt automatisch door Render geïnjecteerd op 10000, niet overschrijven

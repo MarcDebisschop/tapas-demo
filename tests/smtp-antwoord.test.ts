@@ -103,9 +103,12 @@ describe("broncontrole van de verzendmodule", () => {
 
   it("stuurt elke SMTP-verzending langs dezelfde ene weg", () => {
     const aanroepen = bron.match(/verstuurViaSmtp\(/g) ?? [];
-    // Een aangifte plus vier verzendfuncties: uitnodiging, toegangsmail,
-    // aanmeldlink en bericht.
-    expect(aanroepen.length).toBe(5);
+    // Een aangifte plus een enkele aanroep. De vier verzendfuncties kiezen hun
+    // weg niet meer zelf: zij gaan alle vier langs naarBuiten, en daar staat de
+    // ene SMTP-aanroep. Zo kan geen enkele tak nog achterblijven bij een
+    // verbetering aan de verzendweg.
+    expect(aanroepen.length).toBe(2);
+    expect((bron.match(/naarBuiten\(/g) ?? []).length).toBe(5);
     const rechtstreeks = bron.match(/getTransporter\(\)\.sendMail/g) ?? [];
     expect(rechtstreeks.length).toBe(1);
   });

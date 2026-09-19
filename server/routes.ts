@@ -40,6 +40,7 @@ import { registerCyclusRoutes } from "./bekwaamheid/routes-cyclus";
 import { registerT4OrganizationsRoutes } from "./t4organizations/routes";
 import { registerKwaliteitEvaluatiesRoutes } from "./kwaliteit-evaluaties/routes";
 import { registerNotulenTocRoutes } from "./notulen-toc/routes";
+import { registerMailpoortRoutes } from "./mailpoort/routes";
 import { registerDriverScanRoutes } from "./driverscan/routes";
 import { registerTwominscanRoutes } from "./twominscan/routes";
 import { buildInstrumentBeschikbaarheidRoutes } from "./instrument-beschikbaarheid";
@@ -135,6 +136,7 @@ export async function registerRoutes(
   // (Regel 2): eigen bestanden, geen tabel, dus ook geen migratie.
   // -------------------------------------------------------------------------
   registerNotulenTocRoutes(app);
+  registerMailpoortRoutes(app);
 
   // -------------------------------------------------------------------------
   // Driver-scan — 5 Kahler-drivers via de 10 T4P forced-choice blokken.

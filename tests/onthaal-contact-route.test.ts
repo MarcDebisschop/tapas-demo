@@ -134,11 +134,17 @@ describe("D. De generieke verzendweg in de mailer", () => {
     const begin = mailerBron.indexOf("export async function verstuurBericht");
     const blok = mailerBron.slice(begin);
     expect(blok).toContain('status: "gesimuleerd"');
-    expect(blok).toContain("verstuurViaSmtp(");
-    expect(blok).toContain("verstuurViaBrevoApi(");
-    expect(blok).not.toContain('status: "verstuurd"');
     expect(blok).toContain("isSimulatiemodus()");
-    expect(blok).toContain("brevoApiGeconfigureerd()");
+    expect(blok).not.toContain('status: "verstuurd"');
+    // De twee werkelijke wegen liggen sinds de mailpoort in naarBuiten, waar ze
+    // voor elk bericht dezelfde zijn. Deze functie kiest ze dus niet zelf meer,
+    // en dat is precies de bedoeling: een verbetering aan die ene plaats geldt
+    // meteen voor elk bericht dat het platform stuurt.
+    expect(blok).toContain('naarBuiten("bericht"');
+    const gedeeld = mailerBron.slice(mailerBron.indexOf("async function naarBuiten"));
+    expect(gedeeld).toContain("verstuurViaSmtp(");
+    expect(gedeeld).toContain("verstuurViaBrevoApi(");
+    expect(gedeeld).toContain("brevoApiGeconfigureerd()");
   });
 
   it("stuurt een antwoordadres mee wanneer dat er is", () => {
