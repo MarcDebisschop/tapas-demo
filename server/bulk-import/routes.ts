@@ -476,6 +476,20 @@ export function registerBulkImportRoutes(app: Express): void {
     // -----------------------------------------------------------------------
     let afzenderNaarBuiten = afzenderVoor(afzender);
     const tochAanmaken = req.body?.tochAanmaken === true;
+
+    // AANLEIDING. Een uitnodiging die al bestond werd overgeslagen, en daarmee
+    // kreeg de deelnemer ook geen bericht. Dat gaat goed zolang het eerste
+    // bericht vertrok. Vertrok het niet, omdat de afzender bij de leverancier
+    // nog niet gevalideerd was, dan zat de uitnodiging vast: aanmaken kon niet
+    // meer, want ze bestond, en versturen deed het scherm niet. De beheerder
+    // moest de link met de hand uit de tabel halen.
+    //
+    // Staat herverstuur aan, dan stuurt de invoer het bericht opnieuw naar de
+    // bestaande link. Er komt geen tweede uitnodiging en er gaat geen tweede
+    // credit af: het is hetzelfde token, enkel de weg naar buiten wordt
+    // opnieuw gelopen. Standaard staat de schakelaar uit, zodat een gewone
+    // invoer niemand tweemaal aanschrijft.
+    const herverstuur = req.body?.herverstuur === true;
     let mailKeuring = await keurVerzendweg(afzenderNaarBuiten, { vers: true });
 
     // TERUGVAL OP DE AFZENDER VAN HET PLATFORM.
@@ -623,17 +637,40 @@ export function registerBulkImportRoutes(app: Express): void {
         continue;
       }
 
-      // Idempotentie: bestaat er al zo'n uitnodiging → overslaan.
+      // Idempotentie: bestaat er al zo'n uitnodiging. Dan komt er geen tweede
+      // uitnodiging en geen tweede credit. Vroeg de beheerder om herverzending,
+      // dan gaat het bericht wel opnieuw naar dezelfde link.
       const bestaand = bestaandeUitnodiging(email, instrumentId, organisatieId);
       if (bestaand) {
         const link = bouwUitnodigingsLink(origin, bestaand.inviteToken, linkType);
+        if (!herverstuur) {
+          resultaten.push({
+            rij: r.rij,
+            email,
+            status: "overgeslagen",
+            link,
+            mailStatus: "-",
+            melding: "Bestond al (zelfde e-mail, instrument en organisatie).",
+          });
+          continue;
+        }
+        const herhaling = await verstuurUitnodiging({
+          naar: email,
+          taal,
+          naam,
+          link,
+          instrument: tpl.titel,
+          from: afzenderNaarBuiten,
+        });
         resultaten.push({
           rij: r.rij,
           email,
           status: "overgeslagen",
           link,
-          mailStatus: "-",
-          melding: "Bestond al (zelfde e-mail, instrument en organisatie).",
+          mailStatus: herhaling.status,
+          melding:
+            herhaling.melding ??
+            "De uitnodiging bestond al. Wij stuurden het bericht opnieuw en rekenden geen nieuwe credit aan.",
         });
         continue;
       }
@@ -709,6 +746,9 @@ export function registerBulkImportRoutes(app: Express): void {
       totaal: rijen.length,
       aantalOk,
       aantalOvergeslagen: resultaten.filter((r) => r.status === "overgeslagen").length,
+      aantalHerverstuurd: resultaten.filter(
+        (r) => r.status === "overgeslagen" && (r.mailStatus === "verstuurd" || r.mailStatus === "gesimuleerd"),
+      ).length,
       aantalFout: resultaten.filter((r) => r.status === "fout").length,
       aantalMailVerstuurd: oordeel.aantalVerstuurd,
       aantalZonderMail: oordeel.aantalZonderMail,

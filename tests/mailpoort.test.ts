@@ -205,6 +205,38 @@ describe("het oordeel over de batch", () => {
     expect(oordeel.alarm).toBe(null);
   });
 
+  it("telt een bestaande uitnodiging mee die opnieuw verstuurd is", () => {
+    // Een ronde die alleen bestaande uitnodigingen opnieuw verstuurt, meldde
+    // vroeger "nul verstuurd" terwijl er wel berichten vertrokken, want het
+    // oordeel keek enkel naar nieuwe rijen.
+    const oordeel = beoordeelBatch([
+      { status: "overgeslagen", mailStatus: "verstuurd" },
+      { status: "overgeslagen", mailStatus: "verstuurd" },
+    ]);
+    expect(oordeel.aantalVerstuurd).toBe(2);
+    expect(oordeel.geslaagd).toBe(true);
+    expect(oordeel.alarm).toBe(null);
+  });
+
+  it("slaat alarm wanneer een herverzending naar een bestaande uitnodiging mislukt", () => {
+    const oordeel = beoordeelBatch([
+      { status: "ok", mailStatus: "verstuurd" },
+      { status: "overgeslagen", mailStatus: "fout" },
+    ]);
+    expect(oordeel.aantalVerstuurd).toBe(1);
+    expect(oordeel.geslaagd).toBe(false);
+    expect(oordeel.alarm).toContain("vertrok niet");
+  });
+
+  it("laat een overgeslagen rij zonder gevraagd bericht buiten het oordeel", () => {
+    const oordeel = beoordeelBatch([
+      { status: "ok", mailStatus: "verstuurd" },
+      { status: "overgeslagen", mailStatus: "-" },
+    ]);
+    expect(oordeel.aantalZonderMail).toBe(0);
+    expect(oordeel.geslaagd).toBe(true);
+  });
+
   it("rekent een rij zonder adres niet als mislukking aan", () => {
     const oordeel = beoordeelBatch([
       { status: "ok", mailStatus: "verstuurd" },

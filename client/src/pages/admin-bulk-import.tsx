@@ -100,6 +100,7 @@ interface VerwerkResponse {
   totaal: number;
   aantalOk: number;
   aantalOvergeslagen: number;
+  aantalHerverstuurd?: number;
   aantalFout: number;
   // Aangemaakt is niet verstuurd. Deze vier velden bestaan omdat een batch
   // "3 aangemaakt" in het groen meldde terwijl er geen enkel bericht vertrok.
@@ -133,6 +134,12 @@ export default function AdminBulkImport() {
   // maakt van die weigering een keuze: enkel de links aanmaken en ze zelf
   // doorgeven. Zonder die keuze zou een beheerder vastzitten.
   const [magZonderVerzending, setMagZonderVerzending] = useState(false);
+  // Staat dit aan, dan krijgt een deelnemer die al een uitnodiging heeft het
+  // bericht opnieuw, naar dezelfde link en zonder nieuwe credit. Nodig wanneer
+  // een eerdere ronde de uitnodiging wel aanmaakte maar het bericht niet
+  // vertrok. Standaard uit, zodat een gewone invoer niemand tweemaal
+  // aanschrijft.
+  const [herverstuur, setHerverstuur] = useState(false);
 
   const { data: instrumentenData } = useQuery<InstrumentenResponse>({
     queryKey: ["/api/admin/bulk-import/instrumenten"],
@@ -229,6 +236,7 @@ export default function AdminBulkImport() {
         linkType,
         origin: `${window.location.origin}${window.location.pathname}`,
         tochAanmaken: zonderVerzending,
+        herverstuur,
       });
       const data = (await res.json()) as VerwerkResponse;
       setVerwerkt(data);
@@ -441,6 +449,20 @@ export default function AdminBulkImport() {
                 data-testid="input-bestand"
               />
             </div>
+            <label className="mb-3 flex items-start gap-2 text-sm text-muted-foreground">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 accent-primary"
+                checked={herverstuur}
+                onChange={(e) => setHerverstuur(e.target.checked)}
+                data-testid="checkbox-herverstuur"
+              />
+              <span>
+                Stuur het bericht ook naar deelnemers die al een uitnodiging hebben. Zij houden
+                dezelfde link en er gaat geen tweede credit af. Gebruik dit wanneer een eerdere
+                ronde de uitnodigingen wel aanmaakte, maar de berichten niet vertrokken.
+              </span>
+            </label>
             <div className="flex flex-wrap gap-2">
               <Button
                 className="gap-1.5"
@@ -517,7 +539,11 @@ export default function AdminBulkImport() {
               <CardTitle>Verwerkt</CardTitle>
               <CardDescription>
                 {verwerkt.aantalOk} aangemaakt · {verwerkt.aantalMailVerstuurd ?? 0} bericht(en) verstuurd ·{" "}
-                {verwerkt.aantalOvergeslagen} overgeslagen · {verwerkt.aantalFout} mislukt.
+                {verwerkt.aantalOvergeslagen} hadden al een uitnodiging
+                {(verwerkt.aantalHerverstuurd ?? 0) > 0
+                  ? `, waarvan wij ${verwerkt.aantalHerverstuurd} opnieuw aanschreven`
+                  : ""}{" "}
+                · {verwerkt.aantalFout} mislukt.
               </CardDescription>
             </CardHeader>
             <CardContent>

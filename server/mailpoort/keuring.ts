@@ -342,7 +342,12 @@ export interface Batchoordeel {
  * blijven staan.
  */
 export function beoordeelBatch(rijen: RijUitslag[]): Batchoordeel {
-  const aangemaakt = rijen.filter((r) => r.status === "ok");
+  // Elke rij waarvoor een bericht gevraagd is, telt mee. Dat zijn de nieuwe
+  // uitnodigingen en ook de rijen die al bestonden en waarvoor de beheerder om
+  // herverzending vroeg. Voordien keek dit oordeel enkel naar nieuwe rijen,
+  // waardoor een ronde die alleen bestaande uitnodigingen opnieuw verstuurde
+  // "nul verstuurd" meldde terwijl er berichten vertrokken.
+  const aangemaakt = rijen.filter((r) => r.status !== "fout" && r.mailStatus !== "-");
   const aantalVerstuurd = aangemaakt.filter((r) => r.mailStatus === "verstuurd").length;
   // Een streepje betekent dat er voor die rij geen adres was en dus geen bericht
   // gevraagd werd. Dat is geen mislukking en hoort niet in het alarm; alleen een
