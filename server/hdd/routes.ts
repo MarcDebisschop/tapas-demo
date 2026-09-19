@@ -15,6 +15,9 @@ import { z } from "zod";
 import { vereisScope, scopeVanVerzoek, verzenderVanVerzoek } from "../scope-guard";
 import { CreditError } from "../storage";
 import { boekTrajectCredits, stuurFaseUit } from "./uitsturen";
+import { mailFaseUit } from "./uitnodigingsmail";
+import { keurVerzendweg } from "../mailpoort/poort";
+import { afzenderVoor } from "../bulk-import/mailer";
 import { bouwLedenInvoer, leesVoortgang } from "./bronnen";
 import { registerHddTeamanalyseRoutes } from "./teamanalyse-routes";
 
@@ -106,8 +109,39 @@ export function registerHddRoutes(app: Express): void {
     const leden = storage.ledenVanTraject(traject.id);
     if (!leden.length) {
       return res.status(400).json({
-        error: "Dit traject heeft nog geen board members; er valt niets uit te sturen.",
+        error: "Dit traject heeft nog geen board members, dus er valt niets uit te sturen.",
       });
+    }
+
+    // -----------------------------------------------------------------------
+    // DE MAILPOORT, vóór de credits en vóór de tokens.
+    //
+    // Een fase uitsturen betekent voor de opdrachtgever: mijn board members
+    // krijgen een bericht. Staat de deur naar buiten dicht, dan hoort dat te
+    // blijken vóór de trajectprijs eraf gaat, en niet achteraf uit het feit dat
+    // niemand antwoordt. Wie enkel de links wil om ze zelf door te geven,
+    // stuurt tochUitsturen mee en kiest daarmee uitdrukkelijk.
+    //
+    // Heeft geen enkel lid een e-mailadres, dan wordt er niets gevraagd van de
+    // mailweg en mag de poort niet in de weg staan.
+    // -----------------------------------------------------------------------
+    const tochUitsturen = req.body?.tochUitsturen === true;
+    const afzenderNaarBuiten = afzenderVoor(null);
+    const iemandMetAdres = leden.some((l: { email?: string | null }) => (l.email ?? "").trim());
+    let mailweg = null as Awaited<ReturnType<typeof keurVerzendweg>> | null;
+    if (iemandMetAdres) {
+      mailweg = await keurVerzendweg(afzenderNaarBuiten, { vers: true });
+      if (!mailweg.bruikbaar && !tochUitsturen) {
+        return res.status(409).json({
+          error:
+            "Het systeem kan nu geen enkel bericht versturen. Het traject is niet uitgestuurd en de trajectprijs is niet aangerekend." +
+            (mailweg.bezwaren[0] ?? ""),
+          code: "MAILWEG_ONBRUIKBAAR",
+          mailweg,
+          hoeToch:
+            "Stuur tochUitsturen mee als je alleen de links wilt aanmaken en ze zelf wilt doorgeven.",
+        });
+      }
     }
 
     const scope = scopeVanVerzoek(req);
@@ -135,7 +169,36 @@ export function registerHddRoutes(app: Express): void {
     });
 
     storage.setStatus(traject.id, status);
-    res.json({ ok: true, status, credits, ...uitgestuurd });
+
+    // De ontbrekende stap van 12 september: het bericht zelf. Zie
+    // ./uitnodigingsmail.ts voor waarom dit hier hoort en niet in uitsturen.ts.
+    const origin =
+      typeof req.body?.origin === "string" && req.body.origin.trim()
+        ? req.body.origin.trim().replace(/\/+$/, "")
+        : "";
+    const post = await mailFaseUit({
+      boardNaam: vers.boardNaam,
+      fase,
+      uitsturingen: uitgestuurd.leden,
+      origin,
+      afzender: null,
+    });
+
+    res.json({
+      ok: true,
+      status,
+      credits,
+      ...uitgestuurd,
+      // Uitgestuurd is niet verstuurd. Deze vier velden zeggen wat er werkelijk
+      // de deur uit ging; het scherm leest ze en maakt er geen groene kop van
+      // wanneer er niets vertrok.
+      mail: post.leden,
+      aantalMailVerstuurd: post.aantalMailVerstuurd,
+      aantalZonderMail: post.aantalZonderMail,
+      mailGeslaagd: post.mailGeslaagd,
+      mailAlarm: post.mailAlarm,
+      mailweg,
+    });
   }
 
   // ---- Fase 1 starten: Teamscan + 2MINSCAN per board member ----
@@ -144,7 +207,7 @@ export function registerHddRoutes(app: Express): void {
       await startFase(req, res, 1, "fase1_open");
     } catch (err) {
       res.status(500).json({
-        error: "Uitsturen van fase 1 mislukt",
+        error: "Fase 1 uitsturen is mislukt",
         detail: err instanceof Error ? err.message : String(err),
       });
     }
@@ -218,7 +281,7 @@ export function registerHddRoutes(app: Express): void {
       await startFase(req, res, 2, "fase2_open");
     } catch (err) {
       res.status(500).json({
-        error: "Uitsturen van fase 2 mislukt",
+        error: "Fase 2 uitsturen is mislukt",
         detail: err instanceof Error ? err.message : String(err),
       });
     }
@@ -395,7 +458,7 @@ export function registerHddRoutes(app: Express): void {
       res.end(pdf);
     } catch (err) {
       res.status(500).json({
-        error: "Rapport-generatie mislukt",
+        error: "Rapport maken is mislukt",
         detail: err instanceof Error ? err.message : String(err),
       });
     }

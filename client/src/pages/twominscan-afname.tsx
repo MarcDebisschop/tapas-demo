@@ -51,8 +51,21 @@ export default function TwominscanAfname() {
   const [stellingen, setStellingen] = useState<Set<number>>(new Set());
 
   useEffect(() => {
+    // Het token kan op twee plaatsen staan. De gewone zoekreeks is de eerste,
+    // maar een uitnodigingslink uit de post zet de route in de hash, en een
+    // zoekreeks achter de hash komt nooit in window.location.search terecht.
+    // Beide lezen kost een regel en voorkomt een deelnemer met een leeg
+    // formulier die denkt dat zijn link stuk is.
     const zoek = new URLSearchParams(window.location.search);
-    const token = (zoek.get("uitnodiging") ?? zoek.get("u") ?? "").trim();
+    const naHekje = window.location.hash.indexOf("?");
+    const hashZoek = new URLSearchParams(naHekje >= 0 ? window.location.hash.slice(naHekje + 1) : "");
+    const token = (
+      zoek.get("uitnodiging") ??
+      zoek.get("u") ??
+      hashZoek.get("uitnodiging") ??
+      hashZoek.get("u") ??
+      ""
+    ).trim();
     if (!token) return;
     let afgebroken = false;
     (async () => {
