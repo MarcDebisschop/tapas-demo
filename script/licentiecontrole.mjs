@@ -25,6 +25,41 @@ import { join, resolve } from "node:path";
 // vermogensrechten het kernactivum zijn, is dat een materieel risico.
 const VERBODEN = [/\bAGPL/i, /\bGPL-[23]/i, /\bGPL\b(?!.*LGPL)/i, /\bSSPL/i, /\bOSL\b/i, /\bEUPL/i];
 
+// Permissieve licenties. Deze lijst dient enkel om een keuzelicentie te kunnen
+// lezen: staat er "(MIT OR GPL-3.0-or-later)", dan geeft de uitgever de gebruiker
+// zelf de keuze en kiest dit huis MIT. Dat is geen uitzondering en geen
+// gedoogbeleid, dat is de licentie volgen zoals zij bedoeld is. SPDX noemt dit
+// een keuze-uitdrukking met OR.
+const PERMISSIEF = [
+  /^MIT$/i,
+  /^ISC$/i,
+  /^BSD-[23]-Clause$/i,
+  /^0BSD$/i,
+  /^Apache-2\.0$/i,
+  /^Unlicense$/i,
+  /^CC0-1\.0$/i,
+  /^Python-2\.0$/i,
+  /^BlueOak-1\.0\.0$/i,
+];
+
+/**
+ * Leest een keuzelicentie. Bevat de uitdrukking OR en is minstens een van de
+ * keuzes permissief, dan geeft deze functie die keuze terug. In alle andere
+ * gevallen null, en dan geldt de uitdrukking onverkort zoals ze er staat.
+ *
+ * Alleen OR levert een keuze. Bij AND gelden alle voorwaarden samen en helpt
+ * een permissief deel niet.
+ */
+function permissieveKeuze(uitdrukking) {
+  if (!/\bOR\b/i.test(uitdrukking) || /\bAND\b/i.test(uitdrukking)) return null;
+  const keuzes = uitdrukking
+    .replace(/[()]/g, " ")
+    .split(/\bOR\b/i)
+    .map((k) => k.trim())
+    .filter(Boolean);
+  return keuzes.find((k) => PERMISSIEF.some((r) => r.test(k))) ?? null;
+}
+
 // Uitzonderingen die na beoordeling toegelaten zijn. Elke regel hoort een reden te
 // hebben; een lege lijst is het doel.
 const UITZONDERINGEN = new Map([
@@ -68,6 +103,7 @@ function* pakketten(map) {
 
 const verdeling = new Map();
 const treffers = [];
+const keuzes = [];
 let bekeken = 0;
 
 for (const [naam, pad] of pakketten(modules)) {
@@ -76,11 +112,22 @@ for (const [naam, pad] of pakketten(modules)) {
   bekeken += 1;
   verdeling.set(licentie, (verdeling.get(licentie) ?? 0) + 1);
   if (VERBODEN.some((r) => r.test(licentie)) && !UITZONDERINGEN.has(naam)) {
-    treffers.push({ naam, licentie });
+    const keuze = permissieveKeuze(licentie);
+    if (keuze) {
+      keuzes.push({ naam, licentie, keuze });
+    } else {
+      treffers.push({ naam, licentie });
+    }
   }
 }
 
 console.log(`Licentiecontrole: ${bekeken} pakketten bekeken.`);
+
+if (keuzes.length > 0) {
+  console.log("");
+  console.log("Keuzelicenties: het permissieve deel geldt, de rest van de keuze valt weg.");
+  for (const k of keuzes) console.log(`  ${k.naam}: ${k.licentie} -> ${k.keuze}`);
+}
 
 if (process.argv.includes("--lijst")) {
   for (const [licentie, aantal] of [...verdeling.entries()].sort((a, b) => b[1] - a[1])) {
