@@ -62,8 +62,33 @@ interface Omzetrapport {
   aandacht: string[];
 }
 
+interface Wijziging {
+  plaats: string;
+  categorie: string;
+  voor: string;
+  na: string;
+}
+
+interface Aandachtspunt {
+  plaats: string;
+  categorie: string;
+  melding: string;
+  fragment: string;
+}
+
+interface Redactierapport {
+  aantalWijzigingen: number;
+  wijzigingen: Wijziging[];
+  aandacht: Aandachtspunt[];
+  gemiddeldeZinslengte: number;
+  lijdendeVormProcent: number;
+  leesrondeNodig: boolean;
+  slotwoord: string;
+}
+
 interface OmzetAntwoord {
   rapport: Omzetrapport;
+  redactie: Redactierapport | null;
   bestandsnaam: string;
   bestandBase64: string;
 }
@@ -126,6 +151,7 @@ export default function AdminNotulen() {
   const [bestand, setBestand] = useState<File | null>(null);
   const [antwoord, setAntwoord] = useState<OmzetAntwoord | null>(null);
   const [bezig, setBezig] = useState<"omzetten" | "invulblad" | null>(null);
+  const [redactieAan, setRedactieAan] = useState(true);
   const [fout, setFout] = useState<string | null>(null);
 
   async function haalInvulblad() {
@@ -162,6 +188,7 @@ export default function AdminNotulen() {
       const res = await apiRequest("POST", "/api/admin/notulen-toc/omzetten", {
         bestandsnaam: bestand.name,
         bestandBase64,
+        redactie: redactieAan,
       });
       setAntwoord((await res.json()) as OmzetAntwoord);
     } catch (e) {
@@ -172,6 +199,7 @@ export default function AdminNotulen() {
   }
 
   const rapport = antwoord?.rapport ?? null;
+  const redactie = antwoord?.redactie ?? null;
   const tellingen: Array<[string, number]> = rapport
     ? [
         ["Besluiten", rapport.aantallen.besluiten],
@@ -271,6 +299,24 @@ export default function AdminNotulen() {
                 data-testid="input-bestand"
               />
             </div>
+            <label className="flex items-start gap-2.5 rounded-md border border-border px-3 py-2.5 text-sm">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 accent-primary"
+                checked={redactieAan}
+                onChange={(e) => setRedactieAan(e.target.checked)}
+                data-testid="input-redactie"
+              />
+              <span>
+                <span className="font-medium text-foreground">Ook de redactieronde uitvoeren</span>
+                <span className="block text-muted-foreground">
+                  De omzetting vervangt dan Engelse leenwoorden, ambtelijke wendingen en
+                  naamwoordstijl door gewoon Nederlands. Zij meldt ook de zinnen die u zelf moet
+                  herschrijven. Achteraf krijgt u de tabel met wat er stond en wat er nu staat.
+                </span>
+              </span>
+            </label>
+
             <Button onClick={zetOm} disabled={!bestand || bezig !== null} data-testid="button-omzetten">
               {bezig === "omzetten" ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -354,6 +400,69 @@ export default function AdminNotulen() {
                   </ul>
                 </div>
               </div>
+
+              {redactie && (
+                <div data-testid="blok-redactie">
+                  <h3 className="mb-2 text-sm font-semibold text-foreground">De redactieronde</h3>
+                  <p className="mb-3 text-sm text-muted-foreground">
+                    {redactie.aantalWijzigingen === 0
+                      ? "De ronde vond geen enkel woord om te vervangen."
+                      : `De ronde verving ${redactie.aantalWijzigingen} woord(en) of wending(en).`}{" "}
+                    Gemiddelde zinslengte: {redactie.gemiddeldeZinslengte} woorden, streefwaarde
+                    achttien. Zinnen in de lijdende vorm: {redactie.lijdendeVormProcent} procent,
+                    hoogstens twintig.
+                  </p>
+
+                  {redactie.wijzigingen.length > 0 && (
+                    <div className="mb-4 overflow-x-auto rounded-md border border-border">
+                      <table className="w-full text-left text-sm" data-testid="tabel-redactie">
+                        <thead className="bg-muted/50 text-xs uppercase text-muted-foreground">
+                          <tr>
+                            <th className="px-3 py-2 font-medium">Waar</th>
+                            <th className="px-3 py-2 font-medium">Er stond</th>
+                            <th className="px-3 py-2 font-medium">Er staat nu</th>
+                            <th className="px-3 py-2 font-medium">Soort</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {redactie.wijzigingen.map((w, i) => (
+                            <tr key={i} className="border-t border-border">
+                              <td className="px-3 py-2 text-muted-foreground">{w.plaats}</td>
+                              <td className="px-3 py-2 text-foreground">{w.voor}</td>
+                              <td className="px-3 py-2 font-medium text-foreground">{w.na}</td>
+                              <td className="px-3 py-2 text-muted-foreground">{w.categorie}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {redactie.aandacht.length > 0 && (
+                    <div className="mb-3">
+                      <h4 className="mb-1.5 text-sm font-medium text-foreground">
+                        Zinnen die u zelf moet herschrijven ({redactie.aandacht.length})
+                      </h4>
+                      <ul className="space-y-2 text-sm" data-testid="lijst-redactie-aandacht">
+                        {redactie.aandacht.map((a, i) => (
+                          <li key={i} className="rounded-md border border-border px-3 py-2">
+                            <span className="block text-muted-foreground">
+                              {a.plaats}, {a.categorie}: {a.melding}
+                            </span>
+                            <span className="mt-1 block italic text-foreground">"{a.fragment}"</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  <Alert className="border-amber-500/40 bg-amber-500/5">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>De ronde keurt de vorm, niet de betekenis</AlertTitle>
+                    <AlertDescription>{redactie.slotwoord}</AlertDescription>
+                  </Alert>
+                </div>
+              )}
 
               {rapport.aandacht.length > 0 && (
                 <div>

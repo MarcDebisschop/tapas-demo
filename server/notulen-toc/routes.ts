@@ -22,6 +22,7 @@ import { schrijfAuditLog } from "../audit-log";
 import { herken } from "./herkennen";
 import { InleesFout, leesDocx } from "./inlezen";
 import { bestandsnaamVoor, bouwInvulblad, bouwVerslag } from "./verslag";
+import { redigeerVerslag } from "./redactie";
 
 const MAX_BYTES = 8 * 1024 * 1024;
 
@@ -72,6 +73,15 @@ export function registerNotulenTocRoutes(app: Express): void {
 
       const { inhoud, rapport } = herken(ingelezen, bestandsnaam);
       rapport.bestandsnaam = bestandsnaam;
+
+      // De redactieronde staat tussen het herkennen en het opmaken, en niet
+      // erna. Redigeren in de opmaak kost een uur en redigeren in de gegevens
+      // kost een seconde; dat is dezelfde regel als in de redactiepoort van het
+      // huis. Wie de ronde niet wil, stuurt redactie:false mee; dan blijft de
+      // taal van de beknopte notulen letterlijk staan.
+      const redactieGevraagd = (lichaam as { redactie?: unknown }).redactie !== false;
+      const redactie = redactieGevraagd ? redigeerVerslag(inhoud) : null;
+
       const verslag = await bouwVerslag(inhoud);
       const naam = bestandsnaamVoor(inhoud);
 
@@ -79,11 +89,16 @@ export function registerNotulenTocRoutes(app: Express): void {
         adminId,
         actie: "notulen_toc_omgezet",
         afnameId: null,
-        detail: `bestand=${bestandsnaam}; alineas=${rapport.alineas}; tabellen=${rapport.tabellen}; besluiten=${rapport.aantallen.besluiten}; acties=${rapport.aantallen.acties}; nietGeplaatst=${rapport.aantallen.nietGeplaatst}`,
+        detail:
+          `bestand=${bestandsnaam}; alineas=${rapport.alineas}; tabellen=${rapport.tabellen}; ` +
+          `besluiten=${rapport.aantallen.besluiten}; acties=${rapport.aantallen.acties}; ` +
+          `nietGeplaatst=${rapport.aantallen.nietGeplaatst}; ` +
+          `redactie=${redactie ? `${redactie.aantalWijzigingen} wijziging(en), ${redactie.aandacht.length} melding(en)` : "niet gevraagd"}`,
       });
 
       res.json({
         rapport,
+        redactie,
         bestandsnaam: naam,
         bestandBase64: verslag.toString("base64"),
       });
