@@ -1,5 +1,5 @@
 // =============================================================================
-// server/bulk-import/mailer.ts  —  NIEUW BESTAND (Werkprotocol Regel 2)
+// server/bulk-import/mailer.ts  -  NIEUW BESTAND (Werkprotocol Regel 2)
 // -----------------------------------------------------------------------------
 // Dunne nodemailer-wrapper met SIMULATIEMODUS. Leest SMTP-config uit env:
 //   SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM
@@ -23,7 +23,7 @@ import { bouwToegangsmail } from "../toegangsmail";
 import { bouwAanmeldmail } from "../aanmeldmail";
 import { schrijfVerzendregel, type VerzendSoort } from "./verzendlog";
 import { beoordeelSmtpAntwoord } from "./smtp-antwoord";
-import { isTijdelijkeFout } from "../mailpoort/keuring";
+import { isTijdelijkeFout, ontleedAfzender } from "../mailpoort/keuring";
 import { keurVerzendweg } from "../mailpoort/poort";
 
 const STANDAARD_AFZENDER = "info@tapascity.com";
@@ -137,7 +137,7 @@ function smtpGeconfigureerd(): boolean {
   return !!(process.env.SMTP_HOST && process.env.SMTP_HOST.trim());
 }
 
-// C3 — Brevo HTTP-API (additief). Render's gratis plan blokkeert uitgaande
+// C3. Brevo HTTP-API (additief). Render's gratis plan blokkeert uitgaande
 // SMTP-poorten (25/465/587) sinds 26 sept 2025, waardoor nodemailer een
 // 'Connection timeout' geeft. De Brevo transactionele API werkt over HTTPS
 // (poort 443) en wordt NIET geblokkeerd. Staat BREVO_API_KEY ingevuld, dan
@@ -153,7 +153,7 @@ export function isSimulatiemodus(): boolean {
 export function afzenderVoor(from?: string | null): string {
   if (from && from.trim()) return from.trim();
   if (process.env.SMTP_FROM && process.env.SMTP_FROM.trim()) return process.env.SMTP_FROM.trim();
-  // C1 — extra configureerbare fallback-afzender vóór de hardgecodeerde default,
+  // C1. Extra configureerbare fallback-afzender vóór de hardgecodeerde default,
   // zodat productie een eigen afzender kan zetten zonder SMTP_FROM te overschrijven.
   if (process.env.MAIL_FALLBACK_FROM && process.env.MAIL_FALLBACK_FROM.trim())
     return process.env.MAIL_FALLBACK_FROM.trim();
@@ -248,7 +248,7 @@ function getTransporter(): nodemailer.Transporter {
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT ?? 587),
     secure: Number(process.env.SMTP_PORT ?? 587) === 465,
-    // C2 — expliciete timeouts (additief): zonder deze wacht nodemailer
+    // C2. Expliciete timeouts (additief): zonder deze wacht nodemailer
     // onbeperkt als de SMTP-host niet (tijdig) antwoordt, waardoor de
     // verzend-request volledig blijft hangen. Met timeouts krijgen we binnen
     // korte tijd een eerlijke 'fout'-status i.p.v. een hangende verbinding.
@@ -329,7 +329,7 @@ async function verstuurSjabloonmail(
   // SIMULATIEMODUS: niet echt versturen.
   if (isSimulatiemodus()) {
     console.log(
-      `[bulk-import/mailer] SIMULATIE — mail NIET verstuurd. naar=${input.naar} van=${from} onderwerp="${subject}"`,
+      `[bulk-import/mailer] SIMULATIE, mail NIET verstuurd. naar=${input.naar} van=${from} onderwerp="${subject}"`,
     );
     return boek(soort, meta, { status: "gesimuleerd", gesimuleerd: true });
   }
@@ -427,7 +427,7 @@ export async function verstuurToegangsmail(input: ToegangsmailVerzending): Promi
 
   if (isSimulatiemodus()) {
     console.log(
-      `[mailer] SIMULATIE — toegangsmail NIET verstuurd. naar=${input.naar} van=${from} onderwerp="${onderwerp}"`,
+      `[mailer] SIMULATIE, toegangsmail NIET verstuurd. naar=${input.naar} van=${from} onderwerp="${onderwerp}"`,
     );
     return boek("toegangsmail", meta, { status: "gesimuleerd", gesimuleerd: true });
   }
@@ -448,7 +448,7 @@ export async function verstuurToegangsmail(input: ToegangsmailVerzending): Promi
 // HTTPS wanneer er een sleutel staat, anders SMTP, en anders wordt er niets
 // verstuurd en zegt de status dat.
 //
-// LET OP — de link mag nooit in een logregel belanden. Wie de logs kan lezen,
+// LET OP: de link mag nooit in een logregel belanden. Wie de logs kan lezen,
 // zou dan de deur van een deelnemer kunnen openen. De simulatie- en foutregels
 // hieronder vermelden daarom het adres en het onderwerp, maar nooit de link.
 // -----------------------------------------------------------------------------
@@ -464,7 +464,7 @@ export async function verstuurAanmeldlink(input: AanmeldlinkVerzending): Promise
 
   if (isSimulatiemodus()) {
     console.log(
-      `[mailer] SIMULATIE — aanmeldlink NIET verstuurd. naar=${input.naar} van=${from} onderwerp="${onderwerp}"`,
+      `[mailer] SIMULATIE, aanmeldlink NIET verstuurd. naar=${input.naar} van=${from} onderwerp="${onderwerp}"`,
     );
     return boek("aanmeldlink", meta, { status: "gesimuleerd", gesimuleerd: true });
   }
@@ -477,7 +477,7 @@ export async function verstuurAanmeldlink(input: AanmeldlinkVerzending): Promise
   });
 }
 
-// C3 — Verstuur via de Brevo transactionele HTTP-API (POST https://api.brevo.com/v3/smtp/email).
+// C3. Verstuur via de Brevo transactionele HTTP-API (POST https://api.brevo.com/v3/smtp/email).
 // Gebruikt de ingebouwde fetch (Node 18+). Splitst de afzender in naam+e-mail.
 async function verstuurViaBrevoApi(args: {
   from: string;
@@ -490,10 +490,12 @@ async function verstuurViaBrevoApi(args: {
   antwoordNaar?: string | null;
 }): Promise<MailResultaat> {
   const apiKey = process.env.BREVO_API_KEY!.trim();
-  // Splits "Naam <email@x>" of val terug op puur e-mailadres.
-  const m = args.from.match(/^\s*(.*?)\s*<\s*([^>]+)\s*>\s*$/);
-  const senderEmail = (m ? m[2] : args.from).trim();
-  const senderNaam = (m && m[1] ? m[1] : "TaPasCity").trim();
+  // Splitst "Naam <email@x>", een vermelding met een los teken erin, of een puur
+  // adres. Dezelfde lezing als de mailpoort gebruikt, zodat de poort en de
+  // verzending nooit een ander adres voor ogen hebben.
+  const ontleed = ontleedAfzender(args.from);
+  const senderEmail = ontleed.email;
+  const senderNaam = ontleed.naam ?? "TaPasCity";
   const body = {
     sender: { email: senderEmail, name: senderNaam },
     to: [{ email: args.naar, name: args.naam || undefined }],

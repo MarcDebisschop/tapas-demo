@@ -71,9 +71,36 @@ export function leesTegoed(account: BrevoAccount | undefined): number | null {
   return null;
 }
 
+/**
+ * Haalt naam en adres uit een afzendervermelding.
+ *
+ * AANLEIDING. In de instellingen stond een afzender met een puntkomma te veel:
+ * "marc@tapascity.com>", overgebleven uit een geknipte vermelding "Naam
+ * <adres>". De vorige lezing vroeg een openende punthaak en liet dat losse teken
+ * dus staan, waarna de leverancier elk bericht weigerde op een adres dat op het
+ * scherm juist leek. Een teken te veel mag geen verzending kosten.
+ *
+ * Daarom leest deze functie in drie beurten: eerst de nette vorm "Naam <adres>",
+ * dan een vermelding met losse punthaken, en tot slot het eerste woord met een
+ * apenstaartje erin. Wat er ook rond staat, het adres komt eruit.
+ */
+export function ontleedAfzender(afzender: string): { email: string; naam: string | null } {
+  const ruw = (afzender ?? "").trim();
+  const net = ruw.match(/^\s*(.*?)\s*<\s*([^<>]+?)\s*>\s*$/);
+  if (net) return { email: net[2].trim(), naam: net[1].trim() || null };
+
+  const zonderHaken = ruw.replace(/[<>]/g, " ").trim();
+  const woorden = zonderHaken.split(/[\s,;]+/).filter(Boolean);
+  const adres = woorden.find((w) => w.includes("@"));
+  if (!adres) return { email: zonderHaken, naam: null };
+
+  const schoon = adres.replace(/^[^\w.+-]+/, "").replace(/[^\w.@-]+$/, "");
+  const naam = woorden.filter((w) => w !== adres).join(" ").trim();
+  return { email: schoon, naam: naam || null };
+}
+
 function adresUit(afzender: string): string {
-  const m = afzender.match(/^\s*(.*?)\s*<\s*([^>]+)\s*>\s*$/);
-  return (m ? m[2] : afzender).trim().toLowerCase();
+  return ontleedAfzender(afzender).email.toLowerCase();
 }
 
 /**
