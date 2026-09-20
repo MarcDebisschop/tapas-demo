@@ -214,17 +214,23 @@ describe("POST /api/uitnodigingen", () => {
     expect(res.body.mailStatus).toBe("fout");
   });
 
-  it("verstuurt niets wanneer er geen publiek adres meekomt", async () => {
-    // Zonder dat adres zou er een onbruikbare link in het bericht staan, en een
-    // bericht met een dode link is erger dan geen bericht.
+  it("bouwt de link op het eigen adres wanneer de browser er geen meestuurt", async () => {
+    // Vroeger verstuurde de server dan niets, want zonder adres bleef er een
+    // onbruikbare link over. Sinds server/publieke-basis.ts leest de server zijn
+    // eigen adres uit de koppen van het verzoek, dus er staat wel een werkende
+    // link in het bericht en het mag vertrekken. Een bericht met een dode link
+    // blijft verboden; er is er nu geen meer.
     const res = await post("/api/uitnodigingen", {
       name: "Herman",
       deelnemerEmail: "herman@voorbeeld.be",
       verstuurMail: true,
     });
     expect(res.status).toBe(200);
-    expect(res.body.mailStatus).toBe("fout");
-    expect(verzonden).toHaveLength(0);
+    expect(res.body.mailStatus).toBe("verstuurd");
+    expect(verzonden).toHaveLength(1);
+    expect(verzonden[0].link).toContain("#/deelnemer/TOKEN123");
+    // Eén hekje, nooit twee. Twee hekjes gaven de deelnemer een foutpagina.
+    expect(verzonden[0].link.split("#")).toHaveLength(2);
   });
 });
 

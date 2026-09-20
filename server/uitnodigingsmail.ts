@@ -31,6 +31,7 @@ import {
 } from "./bulk-import/mailer";
 import type { Afname } from "@shared/schema";
 import type { Ontvangerrol } from "@shared/uitnodigingsontvanger";
+import { eenHekje, normaliseerBasis } from "./publieke-basis";
 
 /**
  * De persoonlijke deelnemerslink.
@@ -41,9 +42,12 @@ import type { Ontvangerrol } from "@shared/uitnodigingsontvanger";
  * dus dan wordt er niet verstuurd.
  */
 export function bouwDeelnemerLink(origin: string, token: string | null | undefined): string {
-  const schoon = (origin ?? "").trim().replace(/\/+$/, "");
+  // De voordeur van het platform. Kwam er een pad of een hash mee uit de
+  // browser van de beheerder, dan stonden er twee hekjes in de link en liep de
+  // deelnemer op "pagina niet gevonden". Zie ./publieke-basis.ts.
+  const schoon = normaliseerBasis(origin) || (origin ?? "").trim().replace(/\/+$/, "");
   const t = token ?? "";
-  return schoon ? `${schoon}#/deelnemer/${t}` : "";
+  return schoon ? eenHekje(`${schoon}#/deelnemer/${t}`) : "";
 }
 
 /** De leesbare naam van het instrument, voor in de tekst van het bericht. */

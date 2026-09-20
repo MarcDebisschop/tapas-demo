@@ -20,6 +20,7 @@ import { keurVerzendweg } from "../mailpoort/poort";
 import { afzenderVoor } from "../bulk-import/mailer";
 import { bouwLedenInvoer, leesVoortgang } from "./bronnen";
 import { registerHddTeamanalyseRoutes } from "./teamanalyse-routes";
+import { publiekeBasis } from "../publieke-basis";
 
 /**
  * Human Due Diligence - routes (prefix /api/hdd/...).
@@ -172,10 +173,11 @@ export function registerHddRoutes(app: Express): void {
 
     // De ontbrekende stap van 12 september: het bericht zelf. Zie
     // ./uitnodigingsmail.ts voor waarom dit hier hoort en niet in uitsturen.ts.
-    const origin =
-      typeof req.body?.origin === "string" && req.body.origin.trim()
-        ? req.body.origin.trim().replace(/\/+$/, "")
-        : "";
+    // De basis van de link komt van de voordeur van het platform, niet van de
+    // pagina waarop de beheerder stond. Stuurde die pagina haar eigen pad en
+    // hash mee, dan kwamen er twee hekjes in de link en kreeg de deelnemer
+    // "pagina niet gevonden". Zie ../publieke-basis.ts.
+    const origin = publiekeBasis(req, req.body?.origin);
     const post = await mailFaseUit({
       boardNaam: vers.boardNaam,
       fase,

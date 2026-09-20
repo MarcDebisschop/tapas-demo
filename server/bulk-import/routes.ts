@@ -32,6 +32,7 @@ import { beoordeelBatch, type Ontvangerkeuring } from "../mailpoort/keuring";
 import { poortVoorUitstuur } from "../t4students/uitstuurcontrole";
 import { t4oStorage } from "../t4organizations/storage";
 import { T4O_GROEPEN, type T4OGroep } from "../t4organizations/schema";
+import { eenHekje, publiekeBasis } from "../publieke-basis";
 
 // ---------------------------------------------------------------------------
 // Admin-sessiecheck (zelfde patroon als de rest van het platform).
@@ -193,7 +194,7 @@ function bouwUitnodigingsLink(origin: string, token: string | null, linkType: Li
     // Statische cijferslot-permalink; origin heeft geen trailing slash meer.
     return origin ? `${origin}/toegang.html?t=${t}` : `/toegang.html?t=${t}`;
   }
-  return origin ? `${origin}#/deelnemer/${t}` : `#/deelnemer/${t}`;
+  return eenHekje(origin ? `${origin}#/deelnemer/${t}` : `#/deelnemer/${t}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -545,7 +546,7 @@ export function registerBulkImportRoutes(app: Express): void {
     // uit de kolom 'Ring/Groep'. Retourneert persoonlijke #/t4o/r/:token-links.
     // -----------------------------------------------------------------------
     if (instrumentId === "t4o") {
-      const t4oOrigin = typeof req.body?.origin === "string" ? req.body.origin.replace(/\/+$/, "") : "";
+      const t4oOrigin = publiekeBasis(req, req.body?.origin);
       return verwerkT4O(req, res, tpl.titel, rijen, fouten, t4oOrigin);
     }
 
@@ -600,7 +601,10 @@ export function registerBulkImportRoutes(app: Express): void {
       melding: string;
     }> = [];
 
-    const origin = typeof req.body?.origin === "string" ? req.body.origin.replace(/\/+$/, "") : "";
+    // Zelfde reden als in de HDD-route: de basis van de link is de voordeur van
+    // het platform. Kwam het pad van de beheerderspagina mee, dan stond er een
+    // tweede hekje in de link en liep de deelnemer op een foutpagina.
+    const origin = publiekeBasis(req, req.body?.origin);
     const linkType = leesLinkType(req);
 
     for (const r of rijen) {

@@ -12,7 +12,7 @@ export default function NotFound() {
         <CardContent className="pt-6">
           <div className="mb-3 flex items-center gap-2">
             <AlertCircle className="h-7 w-7 text-destructive" />
-            <h1 className="text-xl font-semibold text-foreground">404 — {t("nf_titel")}</h1>
+            <h1 className="text-xl font-semibold text-foreground">404. {t("nf_titel")}</h1>
           </div>
           <p className="mt-2 text-sm text-muted-foreground">{t("nf_tekst")}</p>
           <Link href="/">

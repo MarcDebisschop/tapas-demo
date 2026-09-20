@@ -5,21 +5,21 @@
  * Geëxtraheerd uit server/routes.ts (item 1.1, Fase 5).
  *
  * Routes:
- *   POST /api/afnames                         — nieuwe afname starten
- *   GET  /api/afnames/:id                     — afname ophalen
- *   POST /api/uitnodigingen                   — uitnodigingslink aanmaken
- *   GET  /api/uitnodigingen/:token            — uitnodiging ophalen via token
- *   POST /api/uitnodigingen/:token/start      — deelnemer start via link
- *   POST /api/afnames/:id/herinner            — herinnering markeren
- *   POST /api/afnames/:id/concept             — deel 1 tussentijds bewaren
- *   POST /api/afnames/:id/main                — deel 1 inleveren
- *   POST /api/afnames/:id/connection          — deel 2 inleveren + profiel genereren
- *   GET  /api/gdpr/afnames/:id/export         — GDPR persoonsexport (JSON)
- *   GET  /api/gdpr/afnames/:id/export.json    — GDPR persoonsexport (download)
- *   POST /api/gdpr/bewaartermijn              — bewaartermijn instellen
- *   POST /api/gdpr/afnames/:id/intrekken      - consent intrekken (wist meteen)
- *   POST /api/gdpr/afnames/:id/rectificatie   - verbetering (AVG art. 16)
- *   POST /api/gdpr/afnames/:id/anonimiseer    — afname anonimiseren
+ *   POST /api/afnames                           - nieuwe afname starten
+ *   GET  /api/afnames/:id                       - afname ophalen
+ *   POST /api/uitnodigingen                     - uitnodigingslink aanmaken
+ *   GET  /api/uitnodigingen/:token              - uitnodiging ophalen via token
+ *   POST /api/uitnodigingen/:token/start        - deelnemer start via link
+ *   POST /api/afnames/:id/herinner              - herinnering markeren
+ *   POST /api/afnames/:id/concept               - deel 1 tussentijds bewaren
+ *   POST /api/afnames/:id/main                  - deel 1 inleveren
+ *   POST /api/afnames/:id/connection            - deel 2 inleveren + profiel genereren
+ *   GET  /api/gdpr/afnames/:id/export           - GDPR persoonsexport (JSON)
+ *   GET  /api/gdpr/afnames/:id/export.json      - GDPR persoonsexport (download)
+ *   POST /api/gdpr/bewaartermijn                - bewaartermijn instellen
+ *   POST /api/gdpr/afnames/:id/intrekken        - consent intrekken (wist meteen)
+ *   POST /api/gdpr/afnames/:id/rectificatie     - verbetering (AVG art. 16)
+ *   POST /api/gdpr/afnames/:id/anonimiseer      - afname anonimiseren
  */
 
 import type { Express, Request, Response } from "express";
@@ -73,6 +73,7 @@ import {
   magRapportDirectNaAfronden,
 } from "../afname-instrument";
 import { verstuurToegangsmail } from "../bulk-import/mailer";
+import { publiekeBasis } from "../publieke-basis";
 
 // Het instrument dat geldt wanneer de client er geen meestuurt.
 //
@@ -318,7 +319,7 @@ export function registerAfnameRoutes(app: Express): void {
   });
 
   // =========================================================================
-  // Fase D — Deelnemerslink / uitnodiging
+  // Fase D. Deelnemerslink / uitnodiging
   // =========================================================================
 
   // Beheerder: maak een uitnodiging (link) aan.
@@ -425,7 +426,7 @@ export function registerAfnameRoutes(app: Express): void {
         afname: metAdres,
         naar: ontvanger.email,
         rol: ontvanger.rol,
-        origin: typeof req.body?.origin === "string" ? req.body.origin : "",
+        origin: publiekeBasis(req, req.body?.origin),
         soort: "uitnodiging",
       });
       return res.json({
@@ -563,7 +564,7 @@ export function registerAfnameRoutes(app: Express): void {
         afname: bestaand,
         naar,
         rol,
-        origin: typeof req.body?.origin === "string" ? req.body.origin : "",
+        origin: publiekeBasis(req, req.body?.origin),
         soort: "herinnering",
       });
       mailStatus = uitkomst.status;
@@ -789,7 +790,7 @@ export function registerAfnameRoutes(app: Express): void {
       }
     }
 
-    // TaPas Persoonlijk — Fase 1: als de deelnemer (optioneel) een e-mailadres
+    // TaPas Persoonlijk. Fase 1: als de deelnemer (optioneel) een e-mailadres
     // opgaf bij het afronden, koppelen we deze afname meteen aan een
     // deelnemer-account zodat ze later via hun persoonlijk dashboard inloggen.
     //
@@ -886,8 +887,9 @@ export function registerAfnameRoutes(app: Express): void {
       // staat er geen verzendweg ingesteld, dan blijven de link en de code op
       // het scherm de weg naar binnen; `mailStatus` vertelt het scherm welke
       // van de twee het is, zodat er niets beweerd wordt dat niet waar is.
-      const origin =
-        typeof req.body?.origin === "string" ? req.body.origin.trim().replace(/\/+$/, "") : "";
+      // De voordeur van het platform, niet de pagina van de beheerder. Zie
+      // ../publieke-basis.ts.
+      const origin = publiekeBasis(req, req.body?.origin);
       const dashboardLink = `${origin}/#/dashboard/${deelnemer.dashboardToken}`;
       const instrumentId = instrumentVanAfname(leesContract(a.generatorContract), a.instrumentId);
       const descriptor = (instrumentId && getDescriptor(instrumentId)) || getDefaultDescriptor();
@@ -920,7 +922,7 @@ export function registerAfnameRoutes(app: Express): void {
   });
 
   // =========================================================================
-  // Fase C4c — GDPR: betrokkenenrechten
+  // Fase C4c. GDPR: betrokkenenrechten
   // =========================================================================
 
   // Toegangscontrole (AVG art. 32): al deze routes raken persoonsgegevens van

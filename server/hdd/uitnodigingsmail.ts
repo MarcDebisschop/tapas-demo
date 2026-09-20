@@ -36,6 +36,7 @@ import { verstuurBericht } from "../bulk-import/mailer";
 import { beoordeelBatch } from "../mailpoort/keuring";
 import { TEAMSCAN_INSTRUMENT, TWOMINSCAN_INSTRUMENT, T4P_INSTRUMENT } from "./uitsturen";
 import type { LidUitsturing } from "./uitsturen";
+import { eenHekje, normaliseerBasis } from "../publieke-basis";
 
 /** Wat de ontvanger leest in plaats van een instrument-id. */
 const INSTRUMENTNAMEN: Record<string, string> = {
@@ -57,14 +58,17 @@ export function instrumentnaam(instrumentId: string): string {
  * Voor dat ene geval zet deze functie het token vooraan en de route erachter.
  */
 export function absoluteLink(origin: string, pad: string): string {
-  const basis = (origin ?? "").replace(/\/+$/, "");
+  // De basis wordt teruggebracht tot de voordeur van het platform. Stond er een
+  // pad of een hash in, dan kwamen er twee hekjes in de link en kreeg de
+  // deelnemer een foutpagina. Zie ../publieke-basis.ts.
+  const basis = normaliseerBasis(origin) || (origin ?? "").replace(/\/+$/, "");
   const vraagteken = pad.indexOf("?");
   if (vraagteken >= 0) {
     const route = pad.slice(0, vraagteken);
     const zoekreeks = pad.slice(vraagteken + 1);
-    return basis ? `${basis}/?${zoekreeks}#${route}` : `/?${zoekreeks}#${route}`;
+    return eenHekje(basis ? `${basis}/?${zoekreeks}#${route}` : `/?${zoekreeks}#${route}`);
   }
-  return basis ? `${basis}#${pad}` : `#${pad}`;
+  return eenHekje(basis ? `${basis}#${pad}` : `#${pad}`);
 }
 
 export interface LidMailUitslag {
