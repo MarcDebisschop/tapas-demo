@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PROFIELEN } from "@/twominscan/profielen";
 import { kleurVolgorde } from "@/twominscan/data";
 import { bouwRapportData } from "@/twominscan/content";
@@ -26,10 +26,60 @@ function parseData() {
   }
 }
 
+// De rapportsluis van Human Due Diligence op dit scherm.
+// ---------------------------------------------------------------------------
+// De 2MINSCAN rekent het profiel in de browser uit, dus dit scherm zou het hele
+// rapport tonen zonder dat de server eraan te pas komt. Voor een board member
+// van een traject mag dat niet: de begeleider leest eerst. Daarom vraagt dit
+// scherm bij de server na of de sluis voor dit token open staat, en toont het
+// tot dat antwoord geen inhoud. Zie server/hdd/rapportsluis.ts.
+type Sluisstand = "geen-token" | "navragen" | "open" | "dicht";
+
+function useRapportsluis(token: string | undefined): {
+  stand: Sluisstand;
+  melding: string;
+} {
+  const [stand, setStand] = useState<Sluisstand>(token ? "navragen" : "geen-token");
+  const [melding, setMelding] = useState("");
+  useEffect(() => {
+    if (!token) {
+      setStand("geen-token");
+      return;
+    }
+    let afgebroken = false;
+    setStand("navragen");
+    fetch(`/api/rapportsluis/${encodeURIComponent(token)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (afgebroken) return;
+        if (d && d.gesloten) {
+          setMelding(typeof d.melding === "string" ? d.melding : "");
+          setStand("dicht");
+        } else {
+          setStand("open");
+        }
+      })
+      .catch(() => {
+        // Is de server onbereikbaar, dan blijft het scherm dicht. Een sluis die
+        // bij twijfel opengaat, is geen sluis.
+        if (!afgebroken) setStand("dicht");
+      });
+    return () => {
+      afgebroken = true;
+    };
+  }, [token]);
+  return { stand, melding };
+}
+
 export default function TwominscanRapport() {
   const [payload] = useState(() => parseData());
   const taal: Taal = normaliseerTaal(payload?.taal ?? "nl");
   const tr = useMemo(() => maakT(taal), [taal]);
+  const uitnodiging: string | undefined =
+    typeof payload?.uitnodiging === "string" && payload.uitnodiging.trim()
+      ? payload.uitnodiging.trim()
+      : undefined;
+  const sluis = useRapportsluis(uitnodiging);
 
   const data = useMemo(() => {
     if (!payload) return null;
@@ -53,6 +103,18 @@ export default function TwominscanRapport() {
     );
   }
 
+  // De sluis staat voor de inhoud. Zolang het antwoord van de server niet binnen
+  // is, of zolang de begeleider niet vrijgaf, komt er geen rapport op het scherm.
+  if (sluis.stand === "navragen" || sluis.stand === "dicht") {
+    return (
+      <Wachtscherm
+        bezig={sluis.stand === "navragen"}
+        melding={sluis.melding}
+        tr={tr}
+      />
+    );
+  }
+
   const ontleed = ontleedEGCode(data.egCode, taal);
   const ieLabel = payload?.ie?.label ?? "";
   // Organisatie is optioneel: alleen tonen wanneer ze bij de afname is ingevuld.
@@ -71,7 +133,7 @@ export default function TwominscanRapport() {
 
   return (
     <div className="twominscan-pagina rapport-achtergrond" style={{ background: "#e8e6df", minHeight: "100vh", paddingBottom: 60 }}>
-      <PrintBalk tr={tr} egCode={data.egCode} volgorde={volgorde} xStand={xStand} naam={data.naam} datum={data.datum} taal={taal} wielpositie={data.wielpositie} organisatie={organisatie} rol={rol} kleurvolgordeLabel={data.kleurvolgordeLabel} />
+      <PrintBalk tr={tr} egCode={data.egCode} volgorde={volgorde} xStand={xStand} naam={data.naam} datum={data.datum} taal={taal} wielpositie={data.wielpositie} organisatie={organisatie} rol={rol} kleurvolgordeLabel={data.kleurvolgordeLabel} uitnodiging={uitnodiging} />
       <div className="rapport-doc" style={docStyle}>
         <Cover data={data} ieLabel={ieLabel} organisatie={organisatie} foto={foto} tr={tr} />
         <Inhoud tr={tr} />
@@ -104,7 +166,68 @@ const docStyle: React.CSSProperties = {
   fontFamily: "Georgia, 'Times New Roman', serif",
 };
 
-function PrintBalk({ tr, egCode, volgorde, xStand, naam, datum, taal, wielpositie, organisatie, rol, kleurvolgordeLabel }: { tr: Vertaler; egCode: string; volgorde?: string[]; xStand?: string; naam?: string; datum?: string; taal: Taal; wielpositie?: string; organisatie?: string; rol?: string; kleurvolgordeLabel?: string }) {
+/**
+ * Het wachtscherm van de rapportsluis.
+ *
+ * Dit is het enige dat een board member van een traject ziet zolang de
+ * begeleider het rapport niet vrijgaf. Het zegt drie dingen: de antwoorden zijn
+ * aangekomen, de begeleider leest eerst, en er valt niets opnieuw in te vullen.
+ */
+function Wachtscherm({ bezig, melding, tr }: { bezig: boolean; melding: string; tr: Vertaler }) {
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#e8e6df",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 24,
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 560,
+          background: "#fff",
+          borderRadius: 14,
+          padding: "34px 36px",
+          boxShadow: "0 10px 30px rgba(0,0,0,0.08)",
+          fontFamily: "Georgia, serif",
+          color: KLEUR.inkt,
+        }}
+        data-testid="sluis-wachtscherm"
+      >
+        <div style={{ fontSize: 12, letterSpacing: 1.4, textTransform: "uppercase", color: KLEUR.petrol, fontWeight: 700 }}>
+          2MINSCAN
+        </div>
+        <h1 style={{ fontSize: 24, lineHeight: 1.25, margin: "10px 0 14px" }}>
+          {bezig
+            ? tr("ui.sluis.bezig.titel", "Een ogenblik")
+            : tr("ui.sluis.titel", "Uw antwoorden zijn aangekomen")}
+        </h1>
+        <p style={{ fontSize: 16, lineHeight: 1.6, margin: 0 }}>
+          {bezig
+            ? tr("ui.sluis.bezig.tekst", "Wij kijken na of uw rapport al klaarstaat.")
+            : melding ||
+              tr(
+                "ui.sluis.tekst",
+                "Uw antwoorden zijn aangekomen en er ging niets verloren. De rapporten van dit traject gaan eerst naar de begeleider. De begeleider bespreekt de uitkomst met u en geeft uw rapport daarna vrij. Zolang de begeleider uw rapport niet vrijgegeven heeft, kunt u het niet openen en niet downloaden.",
+              )}
+        </p>
+        {!bezig ? (
+          <p style={{ fontSize: 15, lineHeight: 1.6, marginTop: 16, color: "#5b5b55" }}>
+            {tr(
+              "ui.sluis.rust",
+              "U hoeft niets opnieuw in te vullen en u mag dit venster sluiten.",
+            )}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function PrintBalk({ tr, egCode, volgorde, xStand, naam, datum, taal, wielpositie, organisatie, rol, kleurvolgordeLabel, uitnodiging }: { tr: Vertaler; egCode: string; volgorde?: string[]; xStand?: string; naam?: string; datum?: string; taal: Taal; wielpositie?: string; organisatie?: string; rol?: string; kleurvolgordeLabel?: string; uitnodiging?: string }) {
   const [bezig, setBezig] = useState(false);
 
   // De wielpagina die op het scherm staat mee laten reizen naar de PDF. Het
@@ -158,6 +281,9 @@ function PrintBalk({ tr, egCode, volgorde, xStand, naam, datum, taal, wielpositi
           // Ontbreekt de wielpagina op het scherm, dan gaat het rapport gewoon
           // zonder bijlage mee: de download mag daar niet op stranden.
           wielbijlage: await bouwWielbijlage(),
+          // Het token van de uitnodiging gaat mee zodat de server de
+          // rapportsluis kan toepassen. Zie server/hdd/rapportsluis.ts.
+          uitnodiging: uitnodiging || undefined,
         }),
       });
       if (!resp.ok) throw new Error(`status ${resp.status}`);

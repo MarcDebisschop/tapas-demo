@@ -28,6 +28,8 @@ import { registerOrganisatiefotoRoutes } from "./organisatiefotos";
 import { registerTwominscanAfnameRoutes } from "./afname-opslag";
 import { registerTwominscanTeamwielAankoopRoutes } from "./teamwiel-aankoop";
 import { voegWielpaginaToe, wielbijlageSchema } from "./wielbijlage";
+// De rapportsluis van Human Due Diligence. Zie ../hdd/rapportsluis.ts.
+import { rapportGesloten, sluisWeigering } from "../hdd/rapportsluis";
 
 const KLEUR = z.enum(["rood", "geel", "groen", "blauw"]);
 
@@ -46,6 +48,12 @@ const rapportSchema = z.object({
   // Optionele wielpagina achteraan: de browser stuurt het al getekende wiel mee
   // als PNG plus de al vertaalde regels. Zie wielbijlage.ts voor het waarom.
   wielbijlage: wielbijlageSchema.optional(),
+  // Het token van de uitnodiging, wanneer de deelnemer via een uitnodigingslink
+  // kwam. De 2MINSCAN rekent de profielkeuze in de browser uit, dus deze route
+  // is de enige plaats waar de server de download nog kan tegenhouden. Hoort het
+  // token bij een lid van een Human Due Diligence-traject dat nog niet
+  // vrijgegeven is, dan komt er geen PDF. Zie ../hdd/rapportsluis.ts.
+  uitnodiging: z.string().max(120).optional(),
 }).refine((d) => (d.volgorde && d.volgorde.length >= 2) || (d.egCode && d.egCode.length >= 2), {
   message: "Geef een kleurvolgorde (aanbevolen) of een egCode op.",
 });
@@ -80,6 +88,9 @@ export function registerTwominscanRoutes(app: Express): void {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige aanvraag" });
     }
     const { egCode, volgorde, xStand, naam, taal, datum, organisatie, wielbijlage } = parsed.data;
+    // De rapportsluis, vóór het renderen: een geweigerde aanvraag hoort geen
+    // rekenwerk te kosten.
+    if (rapportGesloten(parsed.data.uitnodiging)) return sluisWeigering(res);
     const afnamedatum = datum && datum.trim() ? datum : new Date().toLocaleDateString("nl-BE");
 
     try {

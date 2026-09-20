@@ -79,12 +79,22 @@ export const hddBoardLeden = sqliteTable("hdd_board_leden", {
   // Tokens verwijzen naar de bestaande deelnemer-/uitnodigingstabellen van elk
   // onderliggend instrument: HDD dupliceert geen meetlogica.
   instrumentTokens: text("instrument_tokens").notNull().default("{}"),
+  // De rapportsluis. Een lid van een traject vult in, maar leest niet mee: de
+  // uitkomsten van een Human Due Diligence zijn er voor de begeleider en voor
+  // de opdrachtgever, en het lid ziet zijn eigen rapport pas wanneer de
+  // begeleider het vrijgeeft. Staat hier null, dan is de sluis dicht. Staat er
+  // een tijdstip, dan mag dit lid zijn eigen rapporten zien en downloaden.
+  // Zie ./rapportsluis.ts voor de plaatsen waar dit gelezen wordt.
+  rapportVrijgaveOp: integer("rapport_vrijgave_op"),
+  rapportVrijgaveDoor: text("rapport_vrijgave_door"),
   createdAt: integer("created_at").notNull(),
 });
 
 export const insertHddBoardLidSchema = createInsertSchema(hddBoardLeden).omit({
   id: true,
   instrumentTokens: true,
+  rapportVrijgaveOp: true,
+  rapportVrijgaveDoor: true,
   createdAt: true,
 });
 export type InsertHddBoardLid = z.infer<typeof insertHddBoardLidSchema>;

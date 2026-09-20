@@ -8,6 +8,10 @@ import { renderRapportPdf } from "../rapport-pdf";
 import { z } from "zod";
 import { vereisScope, scopeVanVerzoek } from "../scope-guard";
 import { storage as platformStorage } from "../storage";
+// De rapportsluis van Human Due Diligence: hoort dit token bij een lid van een
+// traject, dan leest het lid zijn Teamscan-rapport niet voor de begeleider het
+// vrijgeeft. Zie ../hdd/rapportsluis.ts.
+import { rapportGesloten, sluisWeigering } from "../hdd/rapportsluis";
 
 /**
  * TaPas Teamscan - routes (prefix /api/teamscan/...).
@@ -155,6 +159,11 @@ export function registerTeamscanRoutes(app: Express): void {
   app.get("/api/teamscan/deelnemer/:token/rapport", async (req, res) => {
     const deelnemer = storage.getDeelnemerViaToken(req.params.token);
     if (!deelnemer) return res.status(404).json({ error: "Ongeldige link" });
+    // Deze route staat open op het token, want een Teamscan-deelnemer heeft geen
+    // login. Precies daarom hoort de sluis hier: een board member van een
+    // Human Due Diligence zou anders zijn eigen Teamscan-rapport lezen voordat
+    // de begeleider het gezien heeft.
+    if (rapportGesloten(req.params.token)) return sluisWeigering(res);
     const antwoorden = storage.getAntwoorden(deelnemer.id);
     if (!antwoorden) return res.status(404).json({ error: "Nog geen antwoorden ingediend" });
     const resultaat = scoorIndividueel(antwoorden);

@@ -159,6 +159,11 @@ interface DashboardResponse {
     instrumentId: string;
     instrumentNaam: string;
     rapporten: Array<{ id: number; variant: string; titel: string }>;
+    // De rapportsluis: hoort deze afname bij een lid van een Human Due
+    // Diligence-traject dat de begeleider nog niet vrijgaf, dan stuurt de server
+    // een lege rapportlijst en deze vlag.
+    wachtOpVrijgave?: boolean;
+    vrijgaveMelding?: string | null;
     // Pad naar een rapport dat in de client getekend wordt en dus geen
     // rapportrecord heeft (vandaag enkel het T4Kids-boekje). Null voor de rest.
     eigenRapportPad?: string | null;
@@ -224,6 +229,15 @@ const STR = {
   } as ML,
   mijnAfnames: { nl: "Mijn vragenlijsten", fr: "Mes questionnaires", en: "My questionnaires", es: "Mis cuestionarios", ru: "Мои опросники" } as ML,
   bekijkRapport: { nl: "Bekijk rapport", fr: "Voir le rapport", en: "View report", es: "Ver informe", ru: "Открыть отчёт" } as ML,
+  // De rapportsluis van een traject: de begeleider leest eerst en geeft daarna
+  // vrij. Zie server/hdd/rapportsluis.ts.
+  wachtOpVrijgave: {
+    nl: "Uw antwoorden zijn aangekomen. De begeleider van dit traject bekijkt eerst de uitkomst en geeft uw rapport daarna vrij.",
+    fr: "Vos réponses sont bien arrivées. L'accompagnateur de ce parcours examine d'abord le résultat, puis libère votre rapport.",
+    en: "Your answers have arrived. The facilitator of this track reviews the outcome first and releases your report afterwards.",
+    es: "Sus respuestas han llegado. El facilitador de este proceso revisa primero el resultado y después libera su informe.",
+    ru: "Ваши ответы получены. Ведущий этого процесса сначала изучает результат и затем открывает доступ к вашему отчёту.",
+  } as ML,
   geenRapport: { nl: "Rapport in voorbereiding", fr: "Rapport en préparation", en: "Report in preparation", es: "Informe en preparación", ru: "Отчёт готовится" } as ML,
   volledigProfielTitel: { nl: "Mijn volledige profiel", fr: "Mon profil complet", en: "My full profile", es: "Mi perfil completo", ru: "Мой полный профиль" } as ML,
   volledigProfielIntro: {
@@ -758,7 +772,7 @@ export default function Dashboard() {
                           </div>
                         ))}
                       </div>
-                    ) : a.eigenRapportPad ? (
+                    ) : a.eigenRapportPad && !a.wachtOpVrijgave ? (
                       // T4Kids: het boekje wordt in de client getekend, dus er is
                       // geen rapportrecord om te tonen. Zonder deze knop bleef hier
                       // "Rapport in voorbereiding" staan bij een voltooide reis en
@@ -770,6 +784,15 @@ export default function Dashboard() {
                           </Button>
                         </a>
                       </div>
+                    ) : a.wachtOpVrijgave ? (
+                      // De sluis staat dicht: geen link en geen knop, alleen de
+                      // reden. Zie server/hdd/rapportsluis.ts.
+                      <p
+                        className="mt-3 text-xs text-muted-foreground"
+                        data-testid={`rapport-wacht-op-vrijgave-${a.id}`}
+                      >
+                        {a.vrijgaveMelding || k(STR.wachtOpVrijgave, taal)}
+                      </p>
                     ) : (
                       <p className="mt-3 text-xs text-muted-foreground">{k(STR.geenRapport, taal)}</p>
                     )}

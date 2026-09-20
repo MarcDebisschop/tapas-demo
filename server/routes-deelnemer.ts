@@ -23,6 +23,15 @@ import { normaliseerTaal } from "@shared/i18n";
 import { dashboardCodeVanToken, voornaamVanNaam } from "./dashboard-code";
 import { getDescriptor, getDefaultDescriptor } from "./registry";
 import { renderRapportPdf } from "./rapport-pdf";
+// De rapportsluis van Human Due Diligence. Een lid van een traject vult in, maar
+// leest zijn eigen rapport niet mee voordat de begeleider het vrijgeeft. Zie
+// server/hdd/rapportsluis.ts.
+import {
+  leesSluisIndex,
+  rapportGesloten,
+  sluisWeigering,
+  MELDING_RAPPORT_NIET_VRIJGEGEVEN,
+} from "./hdd/rapportsluis";
 import { isDemoModus } from "./demomodus";
 import { maakMagicLink, wisselMagicLink, LINK_GELDIG_MIN } from "./magic-link";
 import { verstuurAanmeldlink } from "./bulk-import/mailer";
@@ -309,10 +318,18 @@ export function registerDeelnemerRoutes(app: Express): void {
       instrumentId: string;
       instrumentNaam: string;
       rapporten: Array<{ id: number; variant: string; titel: string }>;
+      wachtOpVrijgave: boolean;
+      vrijgaveMelding: string | null;
     }>;
+    // De sluis één keer lezen voor de hele lijst.
+    const sluis = leesSluisIndex();
     for (const a of afnames) {
       const raps = await storage.listRapporten(a.id);
       const descriptor = (a.instrumentId && getDescriptor(a.instrumentId)) || getDefaultDescriptor();
+      // Hoort deze afname bij een lid van een traject dat nog niet vrijgegeven
+      // is, dan komen de rapport-ids hier niet in de lijst. Een dichte sluis met
+      // een zichtbare downloadknop is geen sluis.
+      const gesloten = rapportGesloten(a.inviteToken, sluis);
       afnameLijst.push({
         id: a.id,
         naam: a.name,
@@ -322,7 +339,11 @@ export function registerDeelnemerRoutes(app: Express): void {
         voltooidOp: a.completedAt ?? null,
         instrumentId: descriptor.instrumentId,
         instrumentNaam: descriptor.name,
-        rapporten: raps.map((r) => ({ id: r.id, variant: r.variant, titel: r.titel })),
+        rapporten: gesloten
+          ? []
+          : raps.map((r) => ({ id: r.id, variant: r.variant, titel: r.titel })),
+        wachtOpVrijgave: gesloten,
+        vrijgaveMelding: gesloten ? MELDING_RAPPORT_NIET_VRIJGEGEVEN : null,
       });
     }
 
@@ -368,8 +389,11 @@ export function registerDeelnemerRoutes(app: Express): void {
     // deelnemer. Zonder deze controle zou een geraden rapport-id het profiel
     // van een andere deelnemer lekken.
     const afnames = await storage.listAfnamesVoorDeelnemer(deelnemer.email);
-    const magZien = afnames.some((a) => a.id === rapport.afnameId);
+    const eigen = afnames.find((a) => a.id === rapport.afnameId);
+    const magZien = Boolean(eigen);
     if (!magZien) return res.status(404).json({ error: "Rapport niet gevonden" });
+    // De rapportsluis: eigen rapport, maar niet vrijgegeven door de begeleider.
+    if (rapportGesloten(eigen?.inviteToken)) return sluisWeigering(res);
 
     const pdf = (rapport as any).pdfBase64 as string | null | undefined;
     if (pdf) {
@@ -396,8 +420,11 @@ export function registerDeelnemerRoutes(app: Express): void {
     const rapport = await storage.getRapport(rapportId);
     if (!rapport) return res.status(404).json({ error: "Rapport niet gevonden" });
     const afnames = await storage.listAfnamesVoorDeelnemer(deelnemer.email);
-    const magZien = afnames.some((a) => a.id === rapport.afnameId);
+    const eigen = afnames.find((a) => a.id === rapport.afnameId);
+    const magZien = Boolean(eigen);
     if (!magZien) return res.status(404).json({ error: "Rapport niet gevonden" });
+    // Dezelfde sluis als bij /html: zien en downloaden gaan samen.
+    if (rapportGesloten(eigen?.inviteToken)) return sluisWeigering(res);
 
     const veiligeNaam =
       (rapport.titel || "profiel")

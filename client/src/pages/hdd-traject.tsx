@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useParams } from "wouter";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Check, Layers, Compass, Mail, RefreshCw, UserPlus } from "lucide-react";
+import { ArrowLeft, Check, Layers, Compass, Lock, LockOpen, Mail, RefreshCw, UserPlus } from "lucide-react";
 import { AppHeader } from "@/components/Brand";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,6 +54,9 @@ interface Lid {
   id: number;
   naam: string;
   email: string;
+  // De rapportsluis. Staat hier niets, dan ziet het lid zijn eigen rapport niet.
+  // Zie server/hdd/rapportsluis.ts.
+  rapportVrijgaveOp?: number | null;
 }
 
 interface TrajectDetail {
@@ -152,6 +155,27 @@ export default function HddTraject() {
     },
     onError: (err: unknown) => {
       setFout(err instanceof Error ? err.message : "Het lid is niet toegevoegd.");
+    },
+  });
+
+  // ---- De rapportsluis ----
+  // Een lid van een traject vult in en leest niet mee. U leest de uitkomst eerst,
+  // bespreekt ze, en geeft daarna vrij. Zonder lidId geldt de keuze voor alle
+  // leden. Zie server/hdd/rapportsluis.ts.
+  const vrijgave = useMutation({
+    mutationFn: async (opties: { lidId?: number; vrij: boolean }) => {
+      const res = await apiRequest("POST", `/api/hdd/trajecten/${trajectId}/vrijgave`, {
+        ...(opties.lidId != null ? { lidId: opties.lidId } : {}),
+        vrij: opties.vrij,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      setFout("");
+      verversAlles();
+    },
+    onError: (err: unknown) => {
+      setFout(err instanceof Error ? err.message : "Het vrijgeven is niet gelukt.");
     },
   });
 
@@ -298,6 +322,98 @@ export default function HddTraject() {
               <UserPlus className="mr-1 h-4 w-4" /> Lid toevoegen
             </Button>
           </div>
+        </div>
+
+        {/* ---- De rapportsluis ---- */}
+        <div style={kaart}>
+          <h2 style={{ color: INK, fontSize: 18, marginTop: 0 }}>De rapporten vrijgeven</h2>
+          <p style={{ color: SUB, fontSize: 13, lineHeight: 1.55, marginTop: 0 }}>
+            Een lid vult de vragenlijsten in en leest zijn eigen rapport niet. U leest de uitkomst
+            eerst en bespreekt ze met het lid. Daarna geeft u het rapport vrij. Tot dat moment ziet
+            het lid alleen de melding dat zijn antwoorden aangekomen zijn. De rapporten haalt u zelf
+            altijd op via het
+            {" "}
+            <Link href="/hdd/rapport">
+              <a style={{ color: INK, fontWeight: 600 }} data-testid="link-sluis-rapport">
+                rapportscherm van Human Due Diligence
+              </a>
+            </Link>
+            , ook wanneer u nog niets vrijgegeven hebt.
+          </p>
+
+          {leden.length === 0 && (
+            <p style={{ color: SUB, fontSize: 14 }} data-testid="tekst-sluis-geen-leden">
+              Zodra er leden in dit traject staan, kunt u hun rapporten hier vrijgeven.
+            </p>
+          )}
+
+          {leden.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+              {leden.map((lid) => {
+                const vrij = Boolean(lid.rapportVrijgaveOp);
+                return (
+                  <div
+                    key={lid.id}
+                    data-testid={`sluis-lid-${lid.id}`}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      gap: 12,
+                      flexWrap: "wrap",
+                      border: "1px solid #eef1f2",
+                      borderRadius: 8,
+                      padding: "10px 14px",
+                    }}
+                  >
+                    <div style={{ color: INK, fontSize: 14, fontWeight: 600 }}>{lid.naam}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <span style={{ color: vrij ? GOED : SUB, fontSize: 13 }}>
+                        {vrij ? "Vrijgegeven" : "Nog niet vrijgegeven"}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant={vrij ? "outline" : "default"}
+                        onClick={() => vrijgave.mutate({ lidId: lid.id, vrij: !vrij })}
+                        disabled={vrijgave.isPending}
+                        data-testid={`button-vrijgave-${lid.id}`}
+                      >
+                        {vrij ? (
+                          <>
+                            <Lock className="mr-1 h-4 w-4" /> Terugnemen
+                          </>
+                        ) : (
+                          <>
+                            <LockOpen className="mr-1 h-4 w-4" /> Vrijgeven
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {leden.length > 0 && (
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <Button
+                onClick={() => vrijgave.mutate({ vrij: true })}
+                disabled={vrijgave.isPending}
+                data-testid="button-vrijgave-allen"
+              >
+                <LockOpen className="mr-1 h-4 w-4" /> Alle rapporten vrijgeven
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => vrijgave.mutate({ vrij: false })}
+                disabled={vrijgave.isPending}
+                data-testid="button-vrijgave-allen-terug"
+              >
+                <Lock className="mr-1 h-4 w-4" /> Alles terugnemen
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* ---- De twee fasen ---- */}

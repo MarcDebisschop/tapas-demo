@@ -24,6 +24,10 @@ vi.mock("../server/hdd/storage", () => ({
     getGateResultaat: () => null,
     ledenVanTraject: () => [],
     voegLidToe: () => ({ id: 1 }),
+    // De rapportsluis (zie server/hdd/rapportsluis.ts).
+    alleLeden: () => [],
+    getLid: () => undefined,
+    zetRapportVrijgave: () => undefined,
   },
 }));
 
@@ -86,7 +90,7 @@ async function roep(route: HddRoute, aanmelding: "geen" | "organisatie" | "zonde
 describe("HDD-endpoint-poort", () => {
   it("weigert zonder aanmelding elk geregistreerd HDD-endpoint", async () => {
     const routes = geregistreerdeHddRoutes(maakApp("geen"));
-    expect(routes).toHaveLength(15);
+    expect(routes).toHaveLength(16);
     for (const route of routes) {
       expect(await roep(route, "geen"), `${route.methode} ${route.pad}`).toBe(403);
     }
@@ -94,9 +98,27 @@ describe("HDD-endpoint-poort", () => {
 
   it("weigert een aangemelde beheerder zonder organisatie-scope", async () => {
     const routes = geregistreerdeHddRoutes(maakApp("zonderRecht"));
-    expect(routes).toHaveLength(15);
+    expect(routes).toHaveLength(16);
     for (const route of routes) {
       expect(await roep(route, "zonderRecht"), `${route.methode} ${route.pad}`).toBe(403);
+    }
+  });
+
+  // De sluiscontrole is de enige uitzondering, en met opzet. Een lid van een
+  // traject heeft geen login en moet op zijn eigen scherm kunnen lezen waarom er
+  // nog geen rapport is. Ze staat daarom buiten /api/hdd en antwoordt zonder
+  // aanmelding, maar ze noemt nooit een traject of een lid.
+  it("laat de publieke sluiscontrole zonder aanmelding antwoorden zonder iets te verklappen", async () => {
+    const server = createServer(maakApp("geen"));
+    await new Promise<void>((klaar) => server.listen(0, klaar));
+    const poort = (server.address() as AddressInfo).port;
+    try {
+      const antwoord = await fetch(`http://127.0.0.1:${poort}/api/rapportsluis/willekeurig-token`);
+      expect(antwoord.status).toBe(200);
+      const lichaam = await antwoord.json();
+      expect(lichaam).toEqual({ gesloten: false, vanTraject: false, melding: null });
+    } finally {
+      await new Promise<void>((klaar) => server.close(() => klaar()));
     }
   });
 });

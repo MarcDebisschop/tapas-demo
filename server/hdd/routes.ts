@@ -13,6 +13,12 @@ import { buildFlagshipInput } from "./pdf/mapping";
 import { renderFlagshipPdf } from "./pdf/index";
 import { z } from "zod";
 import { vereisScope, scopeVanVerzoek, verzenderVanVerzoek } from "../scope-guard";
+// De rapportsluis: zie ./rapportsluis.ts voor de regel en voor de plaatsen waar
+// zij gelezen wordt.
+import {
+  beoordeelTokenLive,
+  MELDING_RAPPORT_NIET_VRIJGEGEVEN,
+} from "./rapportsluis";
 import { CreditError } from "../storage";
 import { boekTrajectCredits, stuurFaseUit } from "./uitsturen";
 import { mailFaseUit } from "./uitnodigingsmail";
@@ -96,6 +102,54 @@ export function registerHddRoutes(app: Express): void {
     if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
     const lid = storage.voegLidToe(traject.id, parsed.data);
     res.json(lid);
+  });
+
+  // ---- De rapportsluis: vrijgeven en terugnemen ----
+  //
+  // Een board member vult in en leest niet mee. Wie zijn eigen uitkomst leest
+  // vóór het gesprek met de begeleider, leest ze alleen. Daarom staat de sluis
+  // dicht bij elk nieuw lid en opent de begeleider ze per lid, of voor het hele
+  // board tegelijk. Zie ./rapportsluis.ts voor de plaatsen waar de sluis leest.
+  //
+  // Deze route hoort bij de begeleider, dus ze staat achter vereisScope (zie de
+  // regel app.use("/api/hdd", vereisScope) bovenaan).
+  const vrijgaveSchema = z.object({
+    lidId: z.number().optional(),
+    vrij: z.boolean(),
+  });
+  app.post("/api/hdd/trajecten/:id/vrijgave", async (req, res) => {
+    const traject = storage.getTraject(Number(req.params.id));
+    if (!traject) return res.status(404).json({ error: "Niet gevonden" });
+    const parsed = vrijgaveSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: "Geef aan of u het rapport vrijgeeft of terugneemt, en voor welk lid.",
+        code: "ONGELDIGE_VRIJGAVE",
+      });
+    }
+    const leden = storage.ledenVanTraject(traject.id);
+    // Zonder lidId geldt de keuze voor het hele board. Met lidId moet het lid bij
+    // dit traject horen: een id uit een ander traject wordt geweigerd en niet
+    // stil overgeslagen.
+    const doelwit = parsed.data.lidId != null
+      ? leden.filter((l) => l.id === parsed.data.lidId)
+      : leden;
+    if (parsed.data.lidId != null && !doelwit.length) {
+      return res.status(404).json({ error: "Dit lid hoort niet bij dit traject." });
+    }
+    const verzender = await verzenderVanVerzoek(req);
+    const door = verzender.aangemaaktDoorBeheerderId != null
+      ? `beheerder:${verzender.aangemaaktDoorBeheerderId}`
+      : "begeleider";
+    for (const lid of doelwit) {
+      storage.zetRapportVrijgave(lid.id, parsed.data.vrij, door);
+    }
+    res.json({
+      ok: true,
+      vrij: parsed.data.vrij,
+      aantal: doelwit.length,
+      leden: storage.ledenVanTraject(traject.id),
+    });
   });
 
   /**
@@ -471,4 +525,21 @@ export function registerHddRoutes(app: Express): void {
   // spoor komen; registreren gebeurt hier zodat de scope-poort hierboven ook
   // voor die routes geldt.
   registerHddTeamanalyseRoutes(app);
+
+  // ---- De publieke sluiscontrole ----
+  //
+  // Let op het pad: /api/rapportsluis staat buiten /api/hdd en dus buiten de
+  // beheerderspoort hierboven. Dat is opzet. Een board member heeft geen login
+  // en moet op zijn eigen scherm kunnen lezen waarom er nog geen rapport is. De
+  // route zegt alleen of de sluis dicht staat, en nooit bij welk traject of welk
+  // lid het token hoort.
+  app.get("/api/rapportsluis/:token", (req, res) => {
+    const uitspraak = beoordeelTokenLive(req.params.token);
+    const gesloten = uitspraak.vanTraject && !uitspraak.vrijgegeven;
+    res.json({
+      gesloten,
+      vanTraject: uitspraak.vanTraject,
+      melding: gesloten ? MELDING_RAPPORT_NIET_VRIJGEGEVEN : null,
+    });
+  });
 }

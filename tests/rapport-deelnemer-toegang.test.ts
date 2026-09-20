@@ -35,7 +35,9 @@ describe("Punt B: deelnemer kan het eigen rapport bereiken via het dashboardtoke
     expect(route).toMatch(/getDeelnemerByToken/);
     // ...en verifiëren dat het rapport bij één van diens afnames hoort.
     expect(route).toMatch(/listAfnamesVoorDeelnemer/);
-    expect(route).toMatch(/afnames\.some\(\(a\) => a\.id === rapport\.afnameId\)/);
+    // De eigen afname wordt opgezocht (niet alleen geteld): de rapportsluis van
+    // Human Due Diligence heeft het uitnodigingstoken van die afname nodig.
+    expect(route).toMatch(/afnames\.find\(\(a\) => a\.id === rapport\.afnameId\)/);
     // Zonder eigenaarschap: 404, niet de inhoud.
     expect(route).toMatch(/if \(!magZien\) return res\.status\(404\)/);
   });

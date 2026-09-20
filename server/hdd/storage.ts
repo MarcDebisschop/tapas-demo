@@ -75,6 +75,8 @@ CREATE TABLE IF NOT EXISTS hdd_board_leden (
   naam TEXT NOT NULL DEFAULT '',
   email TEXT NOT NULL DEFAULT '',
   instrument_tokens TEXT NOT NULL DEFAULT '{}',
+  rapport_vrijgave_op INTEGER,
+  rapport_vrijgave_door TEXT,
   created_at INTEGER NOT NULL
 );
 `);
@@ -92,6 +94,11 @@ function vulKolomAan(tabel: string, kolom: string, definitie: string): void {
 vulKolomAan("hdd_trajecten", "teamscan_sessie_id", "INTEGER");
 vulKolomAan("hdd_trajecten", "credits_geboekt", "INTEGER NOT NULL DEFAULT 0");
 vulKolomAan("hdd_trajecten", "credits_geboekt_op", "TEXT");
+// De rapportsluis kwam later dan de eerste trajecten. Bestaande leden krijgen
+// hier een lege vrijgave, en een lege vrijgave betekent: dicht. Dat is de
+// veilige kant, ook voor trajecten die al liepen.
+vulKolomAan("hdd_board_leden", "rapport_vrijgave_op", "INTEGER");
+vulKolomAan("hdd_board_leden", "rapport_vrijgave_door", "TEXT");
 
 const db = drizzle(sqlite);
 
@@ -177,6 +184,9 @@ export const hddStorage = {
       naam: data.naam ?? "",
       email: data.email ?? "",
       instrumentTokens: "{}",
+      // Nieuw lid, sluis dicht. De begeleider geeft later vrij.
+      rapportVrijgaveOp: null as number | null,
+      rapportVrijgaveDoor: null as string | null,
       createdAt: Date.now(),
     };
     return db.insert(boardLeden).values(rij).returning().get();
@@ -199,6 +209,35 @@ export const hddStorage = {
     const samengevoegd = { ...bestaand, ...tokens };
     db.update(boardLeden)
       .set({ instrumentTokens: JSON.stringify(samengevoegd) })
+      .where(eq(boardLeden.id, lidId))
+      .run();
+  },
+
+  // Alle leden van alle trajecten. De rapportsluis heeft dit nodig om van een
+  // token naar het lid te komen: de tokens staan per lid in een JSON-veld, dus
+  // er valt niet op te zoeken in SQL. De tabel bevat één rij per board member
+  // per traject en blijft klein.
+  alleLeden(): HddBoardLid[] {
+    return db.select().from(boardLeden).all();
+  },
+
+  getLid(lidId: number): HddBoardLid | undefined {
+    return db.select().from(boardLeden).where(eq(boardLeden.id, lidId)).get();
+  },
+
+  /**
+   * Opent of sluit de rapportsluis voor één lid.
+   *
+   * Vrijgeven is een daad van de begeleider en geen bijwerking van iets anders,
+   * dus het tijdstip en de naam van wie vrijgaf blijven bewaard. Sluiten wist
+   * beide velden: dan staat er geen vrijgave meer en is dicht ook echt dicht.
+   */
+  zetRapportVrijgave(lidId: number, vrij: boolean, door: string | null): void {
+    db.update(boardLeden)
+      .set({
+        rapportVrijgaveOp: vrij ? Date.now() : null,
+        rapportVrijgaveDoor: vrij ? (door ?? "") : null,
+      })
       .where(eq(boardLeden.id, lidId))
       .run();
   },
