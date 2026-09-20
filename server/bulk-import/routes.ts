@@ -23,6 +23,7 @@ import { randomBytes } from "node:crypto";
 import { storage, db, sqlite, CreditError } from "../storage";
 import { vereisScope, scopeVanVerzoek, schrijfOrganisatieId, verzenderVanVerzoek } from "../scope-guard";
 import { beoordeelSchrijfweg, weigeringslichaam } from "../bekwaamheid/poortbrug";
+import { and, eq, isNull } from "drizzle-orm";
 import { afnames, type Afname } from "@shared/schema";
 import { getTemplate, alleTemplates, TEMPLATES } from "./templates";
 import { templateAlsBuffer, parseUpload, type ParseFout } from "./excel";
@@ -150,20 +151,29 @@ async function maakBulkUitnodiging(data: {
 }
 
 // Idempotentie: bestaat er al een uitnodiging voor dit e-mail+instrument(+org)?
-function bestaandeUitnodiging(email: string, instrumentId: string, organisatieId: number | null): Afname | undefined {
+/**
+ * De uitnodiging die er voor dit adres en dit instrument al is.
+ *
+ * WAAROM DRIZZLE EN GEEN RUWE SQL. Hier stond "SELECT * FROM afnames", en dat
+ * geeft de kolomnamen van de databank terug: invite_token, niet inviteToken. Het
+ * antwoord werd toch als Afname gelezen, dus de compiler zweeg, en
+ * bestaand.inviteToken was altijd undefined. De herverzending bouwde daarmee een
+ * link zonder code: ".../deelnemer/". Een lid van het Team of Captains kreeg zo
+ * een uitnodiging die op een foutpagina uitkwam. Drizzle zet de kolomnamen wel om,
+ * dus deze weg kan die fout niet meer maken.
+ */
+async function bestaandeUitnodiging(
+  email: string,
+  instrumentId: string,
+  organisatieId: number | null,
+): Promise<Afname | undefined> {
   try {
-    if (organisatieId == null) {
-      return sqlite
-        .prepare(
-          "SELECT * FROM afnames WHERE deelnemer_email = ? AND instrument_id = ? AND organisatie_id IS NULL LIMIT 1",
-        )
-        .get(email, instrumentId) as Afname | undefined;
-    }
-    return sqlite
-      .prepare(
-        "SELECT * FROM afnames WHERE deelnemer_email = ? AND instrument_id = ? AND organisatie_id = ? LIMIT 1",
-      )
-      .get(email, instrumentId, organisatieId) as Afname | undefined;
+    const waar = and(
+      eq(afnames.deelnemerEmail, email),
+      eq(afnames.instrumentId, instrumentId),
+      organisatieId == null ? isNull(afnames.organisatieId) : eq(afnames.organisatieId, organisatieId),
+    );
+    return await db.select().from(afnames).where(waar).limit(1).get();
   } catch {
     return undefined;
   }
@@ -188,8 +198,18 @@ function leesLinkType(req: Request): LinkType {
   return req.body?.linkType === "dashboard" ? "dashboard" : "vragenlijst";
 }
 
+/** De melding bij een uitnodiging zonder geldige code. */
+const MELDING_GEEN_CODE =
+  "De uitnodiging van deze deelnemer heeft geen geldige code. De link in de mail zou de " +
+  "deelnemer op een foutpagina brengen. Daarom stuurde het platform geen mail. Maak voor " +
+  "deze deelnemer een nieuwe uitnodiging.";
+
 function bouwUitnodigingsLink(origin: string, token: string | null, linkType: LinkType): string {
-  const t = token ?? "";
+  // Zonder code geen link. Een adres dat eindigt op "/deelnemer/" ziet er heel uit
+  // en opent een foutpagina, en dat merkt de ontvanger pas nadat hij geklikt heeft.
+  // Liever hier niets dan een dood adres in de post.
+  const t = (token ?? "").trim();
+  if (!t) return "";
   if (linkType === "dashboard") {
     // Statische cijferslot-permalink; origin heeft geen trailing slash meer.
     return origin ? `${origin}/toegang.html?t=${t}` : `/toegang.html?t=${t}`;
@@ -648,9 +668,20 @@ export function registerBulkImportRoutes(app: Express): void {
       // Idempotentie: bestaat er al zo'n uitnodiging. Dan komt er geen tweede
       // uitnodiging en geen tweede credit. Vroeg de beheerder om herverzending,
       // dan gaat het bericht wel opnieuw naar dezelfde link.
-      const bestaand = bestaandeUitnodiging(email, instrumentId, organisatieId);
+      const bestaand = await bestaandeUitnodiging(email, instrumentId, organisatieId);
       if (bestaand) {
         const link = bouwUitnodigingsLink(origin, bestaand.inviteToken, linkType);
+        if (!link) {
+          resultaten.push({
+            rij: r.rij,
+            email,
+            status: "fout",
+            link: null,
+            mailStatus: "-",
+            melding: MELDING_GEEN_CODE,
+          });
+          continue;
+        }
         if (!herverstuur) {
           resultaten.push({
             rij: r.rij,
@@ -725,6 +756,17 @@ export function registerBulkImportRoutes(app: Express): void {
       }
 
       const link = bouwUitnodigingsLink(origin, inv.inviteToken, linkType);
+      if (!link) {
+        resultaten.push({
+          rij: r.rij,
+          email,
+          status: "fout",
+          link: null,
+          mailStatus: "-",
+          melding: MELDING_GEEN_CODE,
+        });
+        continue;
+      }
       const mail = await verstuurUitnodiging({
         naar: email,
         taal,

@@ -45,8 +45,10 @@ export function bouwDeelnemerLink(origin: string, token: string | null | undefin
   // Kort en zonder hekje: de server stuurt een kaal pad zelf door naar zijn
   // plaats achter het hekje. Zie ./publieke-basis.ts en ./static.ts.
   const schoon = normaliseerBasis(origin);
-  const t = token ?? "";
-  return schoon ? eenHekje(berichtLink(schoon, `/deelnemer/${t}`)) : "";
+  const t = (token ?? "").trim();
+  // Zonder code geen link: zie de melding hierboven.
+  if (!schoon || !t) return "";
+  return eenHekje(berichtLink(schoon, `/deelnemer/${t}`));
 }
 
 /** De leesbare naam van het instrument, voor in de tekst van het bericht. */
@@ -90,8 +92,13 @@ export async function verstuurUitnodigingsmail(
 ): Promise<UitnodigingsmailUitkomst> {
   const link = bouwDeelnemerLink(invoer.origin, invoer.afname.inviteToken);
   if (!link) {
-    const melding =
-      "Er is geen publiek adres meegegeven, dus er kon geen bruikbare link in het bericht staan.";
+    // Twee oorzaken, dezelfde uitkomst: geen bruikbare link, dus geen bericht. Een
+    // adres dat eindigt op "/deelnemer/" ziet er heel uit en opent een foutpagina.
+    const melding = !(invoer.afname.inviteToken ?? "").trim()
+      ? "Deze uitnodiging heeft geen geldige code. De link in de mail zou de deelnemer op " +
+        "een foutpagina brengen. Daarom stuurde het platform geen mail. Maak een nieuwe " +
+        "uitnodiging voor deze deelnemer."
+      : "Er is geen publiek adres meegegeven, dus er kon geen bruikbare link in het bericht staan.";
     await bewaarStand(invoer.afname.id, "fout", invoer.rol);
     return { status: "fout", gesimuleerd: false, melding, link: "" };
   }

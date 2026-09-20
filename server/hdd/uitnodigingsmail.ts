@@ -182,9 +182,9 @@ export async function mailFaseUit(opties: {
         email,
         mailStatus: "fout",
         melding:
-          "De uitnodiging van dit lid heeft geen geldige code. De link in de mail zou op " +
-          "een foutpagina uitkomen, dus verstuurde het platform geen mail. Verstuur de " +
-          "uitnodiging opnieuw.",
+          "De uitnodiging van dit lid heeft geen geldige code. De link in de mail zou het " +
+          "lid op een foutpagina brengen. Daarom stuurde het platform geen mail. Maak voor " +
+          "dit lid een nieuwe uitnodiging.",
       });
       continue;
     }
