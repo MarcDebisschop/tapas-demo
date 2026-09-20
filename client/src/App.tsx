@@ -40,6 +40,7 @@ import TwominscanAfname from "@/pages/twominscan-afname";
 import DriverScanAfname from "@/pages/driverscan-afname";
 import HddHome from "@/pages/hdd-home";
 import HddRapport from "@/pages/hdd-rapport";
+import HddTraject from "@/pages/hdd-traject";
 import TwominscanRapport from "@/pages/twominscan-rapport";
 import TwominscanTeamwiel from "@/pages/twominscan-teamwiel";
 import ImpactHome from "@/pages/impact-home";
@@ -223,6 +224,9 @@ function AppRouter() {
       {/* Facilitator-only: HDD (Human Due Diligence) achter de coach-login. */}
       <Route path="/hdd">{() => <CoachLoginGate><HddHome /></CoachLoginGate>}</Route>
       <Route path="/hdd/rapport">{() => <CoachLoginGate><HddRapport /></CoachLoginGate>}</Route>
+      {/* Het trajectscherm: leden toevoegen, de twee fasen uitsturen, voortgang lezen.
+          Deze route ontbrak, waardoor de lijst op /hdd op de foutpagina uitkwam. */}
+      <Route path="/hdd/traject/:id">{() => <CoachLoginGate><HddTraject /></CoachLoginGate>}</Route>
       <Route path="/2minscan/rapport" component={TwominscanRapport} />
       <Route path="/2minscan/teamwiel" component={TwominscanTeamwiel} />
       <Route path="/t4sports" component={T4SportsVragenlijst} />

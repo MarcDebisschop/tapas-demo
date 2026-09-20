@@ -38,6 +38,7 @@ import { valideerUitnodigingsontvanger } from "@shared/uitnodigingsontvanger";
 // De uitnodiging en de herinnering versturen. Zie server/uitnodigingsmail.ts: de
 // link blijft altijd de weg naar binnen, het bericht is de dienst erbovenop.
 import { verstuurUitnodigingsmail, mailwegIngesteld } from "../uitnodigingsmail";
+import { isTrajectInstrument, trajectWeigering } from "../traject-poort";
 import { leesItemTijden } from "../afnamekwaliteit";
 import { bewijsGeldig, bewijsUitBody, koppelBeslissing } from "../koppel-bewijs";
 import { vereisAfnameBewijs } from "../afname-bewijs";
@@ -152,6 +153,14 @@ export function registerAfnameRoutes(app: Express): void {
     const parsed = startAfnameSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
+    }
+
+    // Een traject bezit geen vragen: het stuurt andere instrumenten aan. Een
+    // afname op naam van een traject zou de standaardvragenlijst openen en de
+    // twee andere vragenlijsten overslaan. Zie server/traject-poort.ts.
+    if (isTrajectInstrument(parsed.data.instrumentId)) {
+      const weigering = trajectWeigering();
+      return res.status(weigering.status).json(weigering.lichaam);
     }
 
     // Deze route heeft GEEN vereisScope: de deelnemersroutes (deel1, deel2,
@@ -331,6 +340,12 @@ export function registerAfnameRoutes(app: Express): void {
       return res.status(400).json({ error: parsed.error.errors[0]?.message ?? "Ongeldige invoer" });
     }
     const gevraagd = parsed.data;
+
+    // Zelfde poort als op /api/afnames: een traject is geen vragenlijst.
+    if (isTrajectInstrument(gevraagd.instrumentId)) {
+      const weigering = trajectWeigering();
+      return res.status(weigering.status).json(weigering.lichaam);
+    }
 
     // Naar wie mag deze uitnodiging? Deze vraag komt vóór alles wat kosten maakt:
     // een uitnodiging naar een verkeerde ontvanger mag geen credit verbruiken en

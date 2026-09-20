@@ -111,18 +111,12 @@ export const TEMPLATES: Record<string, InstrumentTemplate> = {
       { kolom: "Groep/Bundel", sleutel: "groep", verplicht: false, hint: "Naam van de groep/bundel om rozen te groeperen (optioneel)" },
     ],
   },
-  hdd: {
-    instrumentId: "hdd",
-    titel: "Human Due Diligence (HDD)",
-    instructie:
-      "Board-traject. Gebruik 'Functieniveau' en 'Team/Afdeling' om teamleden " +
-      "in één HDD-traject te plaatsen (beide optioneel).",
-    velden: [
-      ...BASIS_VELDEN,
-      { kolom: "Functieniveau", sleutel: "functieniveau", verplicht: false, hint: "Bijv. bestuurder, directie, manager (optioneel)" },
-      { kolom: "Team/Afdeling", sleutel: "team", verplicht: false, hint: "Team of afdeling binnen het traject (optioneel)" },
-    ],
-  },
+  // Human Due Diligence staat hier BEWUST niet meer bij. HDD is een traject en
+  // geen vragenlijst: het stuurt in fase 1 de Teamscan en de 2MINSCAN uit en in
+  // fase 2 het TaPas Business Kompas, elk met een eigen link per lid. Een
+  // bulk-import maakte er één afnamerij van met één link, en die link opende de
+  // standaardvragenlijst (het Kompas). De deelnemer vulde dan het Kompas in en
+  // de twee andere vragenlijsten volgden nooit. Zie server/traject-poort.ts.
   t4o: {
     instrumentId: "t4o",
     titel: "TaPas 4 Organizations (organisatiescan)",

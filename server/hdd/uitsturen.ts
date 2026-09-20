@@ -134,6 +134,32 @@ function naamSleutel(naam: string): string {
   return (naam ?? "").trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+/** Een afnamerij zoals deze module ze nodig heeft om te herkennen. */
+export interface AfnameKandidaat {
+  id: number;
+  name: string | null;
+  company: string | null;
+  deelnemerEmail?: string | null;
+  instrumentId: string | null;
+  inviteToken: string | null;
+}
+
+/**
+ * Welke instrumentId's mag een afname hebben om voor dit instrument te gelden?
+ *
+ * Voor het Kompas staan er twee in de lijst. Het traject werd een tijd lang als
+ * gewoon instrument uitgestuurd, via Bulk-import. Zo'n uitnodiging kreeg
+ * instrumentId "hdd" en een link naar /deelnemer/TOKEN, en achter die link zat
+ * de standaardvragenlijst: het TaPas Business Kompas. Die rijen bevatten dus
+ * echte Kompas-antwoorden. Wie ze niet meerekent, laat een board member zijn
+ * Kompas een tweede keer invullen. Sinds server/traject-poort.ts kunnen er geen
+ * nieuwe bijkomen; de bestaande blijven gelden.
+ */
+function aanvaardeInstrumenten(instrumentId: string): string[] {
+  if (instrumentId === T4P_INSTRUMENT) return [T4P_INSTRUMENT, "hdd"];
+  return [instrumentId];
+}
+
 /**
  * Zoekt een bestaande afname voor dit lid en dit instrument.
  *
@@ -141,25 +167,41 @@ function naamSleutel(naam: string): string {
  * organisatie kan een board member ook los hebben uitgenodigd (of de afname al
  * hebben laten afwerken) voordat het traject werd uitgestuurd. Zonder deze
  * controle maakte start-fase2 dan een tweede, lege afname aan en keek de brug
- * naar de verkeerde rij. We matchen op instrument, naam en het bedrijfslabel
- * van het traject, en nemen de jongste rij.
+ * naar de verkeerde rij.
+ *
+ * Twee sleutels, in deze volgorde. Het e-mailadres van het lid weegt het zwaarst:
+ * dat adres is uniek en het bedrijfslabel mag er dan van afwijken, want een
+ * beheerder typt dat label zelden twee keer gelijk. Staat er geen adres, dan
+ * geldt de naam binnen hetzelfde bedrijfslabel. In beide gevallen wint de
+ * jongste rij.
  */
-function zoekBestaandeAfname(
-  afnamesVanScope: { id: number; name: string | null; company: string | null; instrumentId: string | null; inviteToken: string | null }[],
-  lidNaam: string,
+export function zoekBestaandeAfname(
+  afnamesVanScope: AfnameKandidaat[],
+  lid: { naam: string; email?: string | null },
   instrumentId: string,
   orgLabel: string,
-): { id: number; inviteToken: string | null } | undefined {
-  const sleutel = naamSleutel(lidNaam);
-  const labelSleutel = naamSleutel(orgLabel);
-  const kandidaten = afnamesVanScope.filter(
-    (a) =>
-      a.instrumentId === instrumentId &&
-      naamSleutel(a.name ?? "") === sleutel &&
-      (!labelSleutel || naamSleutel(a.company ?? "") === labelSleutel) &&
-      !!a.inviteToken,
+): { id: number; instrumentId: string | null; inviteToken: string | null } | undefined {
+  const instrumenten = aanvaardeInstrumenten(instrumentId);
+  const metToken = afnamesVanScope.filter(
+    (a) => instrumenten.includes(a.instrumentId ?? "") && !!a.inviteToken,
   );
-  return kandidaten.sort((a, b) => b.id - a.id)[0];
+  const jongsteEerst = (rijen: AfnameKandidaat[]) => rijen.sort((a, b) => b.id - a.id)[0];
+
+  const adres = (lid.email ?? "").trim().toLowerCase();
+  if (adres) {
+    const opAdres = metToken.filter((a) => (a.deelnemerEmail ?? "").trim().toLowerCase() === adres);
+    const treffer = jongsteEerst(opAdres);
+    if (treffer) return treffer;
+  }
+
+  const sleutel = naamSleutel(lid.naam);
+  const labelSleutel = naamSleutel(orgLabel);
+  const opNaam = metToken.filter(
+    (a) =>
+      naamSleutel(a.name ?? "") === sleutel &&
+      (!labelSleutel || naamSleutel(a.company ?? "") === labelSleutel),
+  );
+  return jongsteEerst(opNaam);
 }
 
 /** Maakt (of hergebruikt) de Teamscan-sessie van dit traject. */
@@ -244,12 +286,19 @@ export async function stuurFaseUit(opties: {
       // dat token over in plaats van een tweede uitnodiging te maken.
       const bestaandeAfname = zoekBestaandeAfname(
         afnamesVanScope as any,
-        lid.naam,
+        { naam: lid.naam, email: lid.email },
         instrumentId,
         traject.orgLabel ?? "",
       );
       if (bestaandeAfname?.inviteToken) {
         const token = bestaandeAfname.inviteToken;
+        // Een overgenomen rij van het oude traject-als-vragenlijst draagt nog
+        // instrumentId "hdd". Zij bevat Kompas-antwoorden, dus zet het
+        // instrument recht: anders blijft een traject in de afnamelijst staan
+        // waar een Kompas hoort.
+        if (bestaandeAfname.instrumentId !== instrumentId) {
+          await storage.updateAfname(bestaandeAfname.id, { instrumentId });
+        }
         nieuweTokens[instrumentId] = token;
         links.push({ instrumentId, token, link: linkVoor(instrumentId, token), nieuw: false });
         continue;

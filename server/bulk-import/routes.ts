@@ -26,6 +26,7 @@ import { beoordeelSchrijfweg, weigeringslichaam } from "../bekwaamheid/poortbrug
 import { and, eq, isNull } from "drizzle-orm";
 import { afnames, type Afname } from "@shared/schema";
 import { getTemplate, alleTemplates, TEMPLATES } from "./templates";
+import { isTrajectInstrument, trajectWeigering } from "../traject-poort";
 import { templateAlsBuffer, parseUpload, type ParseFout } from "./excel";
 import { verstuurUitnodiging, isSimulatiemodus, afzenderVoor } from "./mailer";
 import { keurOntvangers, keurVerzendweg } from "../mailpoort/poort";
@@ -379,6 +380,10 @@ export function registerBulkImportRoutes(app: Express): void {
   // --- Download .xlsx-template voor één instrument (admin, niet publiek) ---
   app.get("/api/admin/bulk-import/template/:instrumentId", async (req, res) => {
     if (!requireAdmin(req, res)) return;
+    if (isTrajectInstrument(req.params.instrumentId)) {
+      const weigering = trajectWeigering();
+      return res.status(weigering.status).json(weigering.lichaam);
+    }
     const tpl = getTemplate(req.params.instrumentId);
     if (!tpl) return res.status(404).json({ error: "Onbekend instrument." });
     const buffer = await templateAlsBuffer(tpl);
@@ -392,6 +397,10 @@ export function registerBulkImportRoutes(app: Express): void {
   app.post("/api/admin/bulk-import/preview", async (req, res) => {
     if (!requireAdmin(req, res)) return;
     const instrumentId = String(req.body?.instrumentId ?? "");
+    if (isTrajectInstrument(instrumentId)) {
+      const weigering = trajectWeigering();
+      return res.status(weigering.status).json(weigering.lichaam);
+    }
     const tpl = getTemplate(instrumentId);
     if (!tpl) return res.status(400).json({ error: "Dit instrument bestaat niet of het platform ondersteunt het niet." });
 
@@ -422,6 +431,10 @@ export function registerBulkImportRoutes(app: Express): void {
   // --- Verwerk: maak uitnodigingen aan + verstuur/queue mail ---
   app.post("/api/admin/bulk-import/verwerk", vereisScope, async (req, res) => {
     const instrumentId = String(req.body?.instrumentId ?? "");
+    if (isTrajectInstrument(instrumentId)) {
+      const weigering = trajectWeigering();
+      return res.status(weigering.status).json(weigering.lichaam);
+    }
     const tpl = getTemplate(instrumentId);
     if (!tpl) return res.status(400).json({ error: "Dit instrument bestaat niet of het platform ondersteunt het niet." });
 
