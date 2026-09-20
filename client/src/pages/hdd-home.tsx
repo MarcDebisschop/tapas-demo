@@ -33,7 +33,32 @@ type Traject = {
   context: string;
   status: string;
   createdAt: number;
+  /** Hoeveel leden dit traject heeft, en hoeveel van hen elk instrument afwerkten. */
+  aantalLeden?: number;
+  totalen?: {
+    "tapas-teamscan": number;
+    twominscan: number;
+    "t4p-business-kompas": number;
+  } | null;
 };
+
+/**
+ * De voortgang in één regel. Als tekst opgebouwd en niet in losse stukken JSX,
+ * want JSX haalt een regeleinde tussen twee stukken tekst weg en dan plakken de
+ * getallen aan het volgende woord.
+ */
+function voortgangsregel(tr: Traject): string {
+  const leden = tr.aantalLeden ?? 0;
+  const t = tr.totalen;
+  if (!t) return "";
+  const deel = (afgewerkt: number) => `${afgewerkt}/${leden}`;
+  return [
+    `${leden} leden`,
+    `ingevuld: Teamscan ${deel(t["tapas-teamscan"])}`,
+    `2MINSCAN ${deel(t.twominscan)}`,
+    `Kompas ${deel(t["t4p-business-kompas"])}`,
+  ].join(" \u00b7 ");
+}
 
 const INK = "#16384a";
 const SUB = "#5b6b73";
@@ -270,6 +295,16 @@ export default function HddHome() {
                       {tr.orgLabel ? `${tr.orgLabel} · ` : ""}
                       {tr.context === "ma" ? n("hdd_ctx_ma_kort") : n("hdd_ctx_self_kort")} · {n("hdd_status_prefix")} {tr.status}
                     </div>
+                    {/* De voortgang staat hier zodat een beheerder een board kan
+                        opvolgen zonder elk traject te openen. */}
+                    {tr.totalen && (tr.aantalLeden ?? 0) > 0 && (
+                      <div
+                        data-testid={`voortgang-traject-${tr.id}`}
+                        style={{ color: SUB, fontSize: 12, marginTop: 4 }}
+                      >
+                        {voortgangsregel(tr)}
+                      </div>
+                    )}
                   </div>
                   <ArrowRight className="h-4 w-4" style={{ color: ACCENT }} />
                 </a>

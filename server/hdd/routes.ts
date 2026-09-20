@@ -63,8 +63,38 @@ export function registerHddRoutes(app: Express): void {
   });
 
   // ---- Trajecten (één board) ----
-  app.get("/api/hdd/trajecten", (_req, res) => {
-    res.json(storage.alleTrajecten());
+  // Het overzicht draagt de voortgang zelf mee. Anders moet een beheerder elk
+  // traject openen om te zien hoe ver een board staat, en dat is precies de
+  // opvolging die hij vanaf het beheerscherm wil doen. Faalt het lezen voor één
+  // traject, dan blijft de lijst staan met `totalen: null` voor dat traject.
+  app.get("/api/hdd/trajecten", async (_req, res) => {
+    const trajecten = storage.alleTrajecten();
+    const uit = [];
+    for (const traject of trajecten) {
+      let aantalLeden = 0;
+      let totalen: Record<string, number> | null = null;
+      try {
+        const leden = storage.ledenVanTraject(traject.id);
+        aantalLeden = leden.length;
+        const voortgang = await leesVoortgang(traject, leden);
+        const ingevuld = (instrument: string) =>
+          voortgang.filter((l) =>
+            l.instrumenten.some((i) => i.instrumentId === instrument && i.ingevuld),
+          ).length;
+        totalen = {
+          "tapas-teamscan": ingevuld("tapas-teamscan"),
+          twominscan: ingevuld("twominscan"),
+          "t4p-business-kompas": ingevuld("t4p-business-kompas"),
+        };
+      } catch (err) {
+        console.error(
+          `[hdd] voortgang van traject ${traject.id} lezen mislukt:`,
+          err instanceof Error ? err.message : err,
+        );
+      }
+      uit.push({ ...traject, aantalLeden, totalen });
+    }
+    res.json(uit);
   });
 
   app.post("/api/hdd/trajecten", (req, res) => {

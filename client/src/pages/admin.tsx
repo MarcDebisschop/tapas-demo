@@ -55,7 +55,7 @@ import {
   vereistOuderlijkeToestemming,
 } from "@shared/leeftijd";
 
-// Statuslabels per taal — gebonden aan de admin-interfacetaal.
+// Statuslabels per taal, gebonden aan de admin-interfacetaal.
 const STATUS_LABEL: Record<Taal, Record<string, string>> = {
   nl: {
     uitgenodigd: "Uitgenodigd",
@@ -184,7 +184,7 @@ export default function Admin() {
 
   // Instruments query
   // De registry-endpoint (/api/instruments) levert instrumentId (string),
-  // name en flowType. Eerder stond hier ten onrechte { id:number; naam } —
+  // name en flowType. Eerder stond hier ten onrechte { id:number; naam }, en
   // waardoor de instrumentkoppeling in de uitnodiging leeg bleef.
   const { data: instruments } = useQuery<{ instrumentId: string; name: string; flowType: string }[]>({ queryKey: ["/api/instruments"] });
   const individueleInstruments = (instruments ?? []).filter((i) => i.flowType === "individual");
@@ -366,7 +366,7 @@ export default function Admin() {
                 </SelectContent>
               </Select>
             </div>
-            {/* Snelknoppen — data-testid's bewaard voor compatibiliteit */}
+            {/* Snelknoppen: data-testid's bewaard voor compatibiliteit */}
             <Button
               size="sm"
               variant="outline"
@@ -414,7 +414,7 @@ export default function Admin() {
         )}
 
         {/* ---------------------------------------------------------------- */}
-        {/* CLUSTERTEGELS — R32: 4 groepen, alle data-testid's bewaard       */}
+        {/* CLUSTERTEGELS: R32: 4 groepen, alle data-testid's bewaard       */}
         {/* ---------------------------------------------------------------- */}
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {/* Cluster 1: Deelnemers & Afnames */}
@@ -447,6 +447,15 @@ export default function Admin() {
               <Link href="/admin/bulk-import">
                 <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-bulk-import">
                   <FileSpreadsheet className="h-3.5 w-3.5 shrink-0" /> Bulk-import (Excel)
+                </a>
+              </Link>
+              {/* De trajecten stonden alleen achter een adres dat een beheerder
+                  uit het hoofd moest kennen. Wie de voortgang van een board wil
+                  opvolgen, vertrekt van dit overzicht, daarom staat de weg naar
+                  de trajecten hier. */}
+              <Link href="/hdd">
+                <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-hdd-trajecten">
+                  <ClipboardCheck className="h-3.5 w-3.5 shrink-0" /> Human Due Diligence-trajecten
                 </a>
               </Link>
             </div>
@@ -651,7 +660,7 @@ export default function Admin() {
                       <TableRow key={a.id} data-testid={`row-afname-${a.id}`}>
                         <TableCell className="font-medium text-foreground">{a.respondentCode}</TableCell>
                         <TableCell>{a.name}</TableCell>
-                        <TableCell className="hidden sm:table-cell text-muted-foreground">{a.company || "—"}</TableCell>
+                        <TableCell className="hidden sm:table-cell text-muted-foreground">{a.company || "geen organisatie"}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className={statusBadge(a.status)} data-testid={`status-${a.id}`}>
                             {STATUS_LABEL[uiTaal][a.status] ?? a.status}
@@ -873,7 +882,7 @@ export default function Admin() {
                       <SelectItem value="geen">{t("admin_afnemer_geen")}</SelectItem>
                       {organisaties!.map((o) => (
                         <SelectItem key={o.id} value={String(o.id)} disabled={o.saldo.beschikbaar < 1}>
-                          {o.naam} — {o.saldo.beschikbaar} {t("admin_afnemer_beschikbaar")}
+                          {o.naam} · {o.saldo.beschikbaar} {t("admin_afnemer_beschikbaar")}
                         </SelectItem>
                       ))}
                     </SelectContent>
