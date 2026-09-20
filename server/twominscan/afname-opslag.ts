@@ -1,5 +1,5 @@
 // =============================================================================
-// server/twominscan/afname-opslag.ts — bewaarde 2MINSCAN-afnames voor het teamwiel
+// server/twominscan/afname-opslag.ts: bewaarde 2MINSCAN-afnames voor het teamwiel
 // -----------------------------------------------------------------------------
 // Waarom deze module bestaat
 //   De 2MINSCAN werd tot nu volledig in de browser berekend en nergens bewaard.
@@ -26,7 +26,7 @@
 // =============================================================================
 import type { Express, Request, Response } from "express";
 import { z } from "zod";
-import { sqlite } from "../storage";
+import { sqlite, storage } from "../storage";
 import { vereisAdmin } from "../admin-guard";
 
 export interface BewaardeAfname {
@@ -42,7 +42,7 @@ export interface BewaardeAfname {
 }
 
 // De 24 wielposities zelf staan in de client (client/src/temperamentenwiel/
-// posities.ts), de bron van de speelmat. De server spiegelt die lijst NIET —
+// posities.ts), de bron van de speelmat. De server spiegelt die lijst NIET,
 // dat zou twee waarheden geven. Ze toetst enkel de vorm: twee getallen met een
 // koppelteken, zoals "24-44" of "128-148". De teamwielpagina laat daarna alleen
 // posities door die in de echte lijst van 24 staan.
@@ -54,6 +54,19 @@ const bewaarSchema = z.object({
   organisatie: z.string().trim().max(120).optional(),
   rol: z.string().trim().max(120).optional(),
   egCode: z.string().trim().max(24).optional(),
+  taal: z.enum(["nl", "fr", "en", "es", "ru"]).optional(),
+  datum: z.string().trim().max(40).optional(),
+});
+
+// Een lid van een traject vult de 2MINSCAN in via zijn eigen uitnodigingslink.
+// Dan mag het bewaren niet van een knop in het rapport afhangen: die knop stond
+// achter het rapport, en een lid van een traject ziet dat rapport niet. De naam
+// en de organisatie komen hier uit de uitnodiging zelf, nooit uit de body, want
+// de voortgang van een traject zoekt de scan op precies die twee terug.
+const uitnodigingSchema = z.object({
+  wielpositie: z.string().trim().regex(WIELPOSITIE),
+  egCode: z.string().trim().max(24).optional(),
+  rol: z.string().trim().max(120).optional(),
   taal: z.enum(["nl", "fr", "en", "es", "ru"]).optional(),
   datum: z.string().trim().max(40).optional(),
 });
@@ -137,6 +150,23 @@ export function bewaarAfname(gegevens: {
   };
 }
 
+/**
+ * Verwijdert eerder bewaarde rijen van dezelfde persoon binnen dezelfde
+ * organisatie. Wie zijn scan opnieuw doet, hoort één rij te houden en niet twee
+ * die elkaar tegenspreken in een teamwiel.
+ */
+export function verwijderAfnamesVoor(naam: string, organisatie: string): number {
+  if (!sqlite) return 0;
+  zorgVoorTabel();
+  const info = sqlite
+    .prepare(
+      `DELETE FROM twominscan_afnames
+         WHERE naam = ? COLLATE NOCASE AND organisatie = ? COLLATE NOCASE`,
+    )
+    .run(naam.trim(), organisatie.trim());
+  return info.changes;
+}
+
 /** Bewaarde afnames, nieuwste eerst. Zonder organisatie: alle afnames. */
 export function leesAfnames(organisatie?: string, limiet = 200): BewaardeAfname[] {
   if (!sqlite) return [];
@@ -196,7 +226,54 @@ export function registerTwominscanAfnameRoutes(app: Express): void {
     }
   });
 
-  // Lezen: enkel voor een aangemelde beheerder — dit is een lijst met namen.
+  // Afronden via een uitnodiging: de scan wordt bewaard zonder dat de deelnemer
+  // er iets voor moet doen, en de uitnodiging gaat op voltooid. Zo ziet de
+  // begeleider in de voortgang van zijn traject dat dit lid klaar is, ook al
+  // krijgt dat lid zelf geen rapport te zien.
+  app.post(
+    "/api/twominscan/uitnodiging/:token/resultaat",
+    async (req: Request, res: Response) => {
+      const ontleed = uitnodigingSchema.safeParse(req.body);
+      if (!ontleed.success) {
+        return res.status(400).json({
+          error: ontleed.error.errors[0]?.message ?? "Ongeldige gegevens voor het bewaren.",
+        });
+      }
+      const token = String(req.params.token ?? "").trim();
+      if (!token) return res.status(400).json({ error: "Er is geen uitnodiging meegegeven." });
+      try {
+        const afname = await storage.getAfnameByToken(token);
+        if (!afname) return res.status(404).json({ error: "Deze uitnodiging bestaat niet." });
+        const naam = (afname.name ?? "").trim();
+        if (!naam) {
+          return res.status(409).json({ error: "Deze uitnodiging heeft geen naam." });
+        }
+        const organisatie = (afname.company ?? "").trim();
+        verwijderAfnamesVoor(naam, organisatie);
+        const bewaard = bewaarAfname({
+          naam,
+          organisatie,
+          rol: ontleed.data.rol ?? (afname.role ?? ""),
+          egCode: ontleed.data.egCode,
+          wielpositie: ontleed.data.wielpositie,
+          taal: ontleed.data.taal,
+          datum: ontleed.data.datum,
+        });
+        if (afname.status !== "voltooid") {
+          await storage.updateAfname(afname.id, {
+            status: "voltooid",
+            completedAt: new Date().toISOString(),
+          } as any);
+        }
+        return res.status(201).json({ afname: bewaard });
+      } catch (e: any) {
+        console.error("[twominscan] afronden via uitnodiging mislukt:", e?.message ?? e);
+        return res.status(500).json({ error: "Bewaren mislukt." });
+      }
+    },
+  );
+
+  // Lezen: enkel voor een aangemelde beheerder, dit is een lijst met namen.
   app.get("/api/twominscan/afnames", vereisAdmin, (req: Request, res: Response) => {
     const organisatie = typeof req.query.organisatie === "string" ? req.query.organisatie : "";
     const limiet = Number(req.query.limiet ?? 200);

@@ -122,10 +122,37 @@ export default function TwominscanAfname() {
     });
   }
 
-  function rond_af() {
+  async function rond_af() {
     const score = berekenKleurScores(ronde1, ronde2);
     const ie = berekenIE(stellingen);
     const match = matchProfiel(score, ie.xStand);
+    const datum = new Date().toLocaleDateString("nl-BE");
+
+    // Kwam de deelnemer via een uitnodiging, dan wordt de uitkomst hier bewaard,
+    // en niet achteraf met een knop in het rapport. Een lid van een traject ziet
+    // dat rapport namelijk niet, en zonder deze stap zag de begeleider zijn scan
+    // nooit in de voortgang staan. Er gaat enkel de wielpositie naar de server,
+    // met de EG-code: geen antwoorden en geen scores. Mislukt het bewaren, dan
+    // gaat de deelnemer gewoon verder, want zijn rapport staat volledig in de
+    // link die hierna volgt.
+    if (uitnodiging) {
+      try {
+        await fetch(`/api/twominscan/uitnodiging/${encodeURIComponent(uitnodiging)}/resultaat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            wielpositie: match.profiel.wielpositie,
+            egCode: match.egCodeIngevuld,
+            rol: rol || undefined,
+            taal,
+            datum,
+          }),
+        });
+      } catch (e) {
+        console.error("[2MINSCAN] de uitkomst bewaren via de uitnodiging mislukte:", e);
+      }
+    }
+
     // resultaat doorgeven via URL-params (geen storage)
     const payload = encodeURIComponent(
       JSON.stringify({
@@ -135,7 +162,7 @@ export default function TwominscanAfname() {
         ...(uitnodiging ? { uitnodiging } : {}),
         ...(foto ? { foto: { src: foto } } : {}),
         taal,
-        datum: new Date().toLocaleDateString("nl-BE"),
+        datum,
         score,
         ie: { uitkomst: ie.uitkomst, label: ie.label, verschil: ie.verschil, xStand: ie.xStand },
         egCode: match.egCodeIngevuld,

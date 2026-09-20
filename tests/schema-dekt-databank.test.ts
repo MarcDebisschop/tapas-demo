@@ -16,6 +16,23 @@ const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
  */
 const boekhoudTabellen = new Set(["__drizzle_migrations", "migratie_register"]);
 
+/**
+ * Tabellen die met opzet buiten het Drizzle-schema staan. Ze worden lazy
+ * aangemaakt met `CREATE TABLE IF NOT EXISTS` door de module die ze alleen
+ * gebruikt, zodat een nieuwe nevenfunctie geen migratie op de kerntabellen
+ * vraagt. Het patroon staat uitgelegd in de kop van elke module hieronder.
+ * Deze lijst blijft kort: kerngegevens horen in het schema.
+ *   twominscan_afnames      server/twominscan/afname-opslag.ts
+ *   instrument_beschikbaarheid  server/instrument-beschikbaarheid.ts
+ *   gids_teksten, gids_teksten_log  server/gids-manager.ts
+ */
+const lazyTabellen = new Set([
+  "twominscan_afnames",
+  "instrument_beschikbaarheid",
+  "gids_teksten",
+  "gids_teksten_log",
+]);
+
 function vindSchemaBestanden(): string[] {
   if (!Array.isArray(drizzleConfig.schema)) {
     throw new Error("drizzle.config.ts bevat geen lijst met schemabestanden.");
@@ -40,7 +57,12 @@ describe("Drizzle-schema en databank", () => {
       .prepare("SELECT name FROM sqlite_master WHERE type = ? ORDER BY name")
       .all("table")
       .map(({ name }: { name: string }) => name)
-      .filter((naam) => !naam.startsWith("sqlite_") && !boekhoudTabellen.has(naam));
+      .filter(
+        (naam) =>
+          !naam.startsWith("sqlite_") &&
+          !boekhoudTabellen.has(naam) &&
+          !lazyTabellen.has(naam),
+      );
     databank.close();
 
     const schemaTabellen = new Set(
