@@ -25,6 +25,7 @@ import { schrijfVerzendregel, type VerzendSoort } from "./verzendlog";
 import { beoordeelSmtpAntwoord } from "./smtp-antwoord";
 import { isTijdelijkeFout, ontleedAfzender } from "../mailpoort/keuring";
 import { keurVerzendweg } from "../mailpoort/poort";
+import { htmlVanTekst } from "../mailpoort/html-versie";
 
 const STANDAARD_AFZENDER = "info@tapascity.com";
 
@@ -292,6 +293,11 @@ async function verstuurViaSmtp(args: {
       to: args.naar,
       subject: args.subject,
       text: args.text,
+      // De klikbare versie gaat altijd mee. Een plat bericht laat het programma
+      // van de ontvanger zelf een link maken van een reeks tekens, en die lezing
+      // stopt bij een regelovergang; zo brak een token af en kwam de deelnemer
+      // op een foutpagina. Zie ../mailpoort/html-versie.ts.
+      html: htmlVanTekst(args.text),
       ...(args.antwoordNaar && args.antwoordNaar.trim()
         ? { replyTo: args.antwoordNaar.trim() }
         : {}),
@@ -501,6 +507,9 @@ async function verstuurViaBrevoApi(args: {
     to: [{ email: args.naar, name: args.naam || undefined }],
     subject: args.subject,
     textContent: args.text,
+    // Zie ../mailpoort/html-versie.ts: de klikbare versie hoort erbij, anders
+    // breekt een regelovergang het token uit de link.
+    htmlContent: htmlVanTekst(args.text),
     ...(args.antwoordNaar && args.antwoordNaar.trim()
       ? { replyTo: { email: args.antwoordNaar.trim() } }
       : {}),

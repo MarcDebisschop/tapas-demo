@@ -17,7 +17,13 @@
 // ---------------------------------------------------------------------------
 
 import { describe, expect, it } from "vitest";
-import { normaliseerBasis, basisUitVerzoek, publiekeBasis, eenHekje } from "../server/publieke-basis";
+import {
+  normaliseerBasis,
+  basisUitVerzoek,
+  publiekeBasis,
+  eenHekje,
+  berichtLink,
+} from "../server/publieke-basis";
 import { herstelHash } from "../client/src/lib/hash-herstel";
 import { absoluteLink } from "../server/hdd/uitnodigingsmail";
 import { bouwDeelnemerLink } from "../server/uitnodigingsmail";
@@ -127,22 +133,32 @@ describe("eenHekje", () => {
 });
 
 describe("de linkbouwers samen", () => {
+  // Een link in een bericht draagt geen hekje meer: de server stuurt een kaal pad
+  // zelf door naar zijn plaats achter het hekje, met de zoekreeks vooraan. Zo is
+  // de link korter en kan geen mailprogramma er nog een stuk van afknippen.
   it("de HDD-link blijft heel, ook met een vervuilde basis", () => {
     expect(absoluteLink("https://tapas.example/#/hdd", "/deelnemer/abc")).toBe(
-      "https://tapas.example#/deelnemer/abc",
+      "https://tapas.example/deelnemer/abc",
     );
   });
 
-  it("de 2MINSCAN houdt zijn token in de zoekreeks, ook met een vervuilde basis", () => {
+  it("de 2MINSCAN houdt zijn token, ook met een vervuilde basis", () => {
     expect(absoluteLink("https://tapas.example/#/hdd", "/2minscan?uitnodiging=abc")).toBe(
-      "https://tapas.example/?uitnodiging=abc#/2minscan",
+      "https://tapas.example/2minscan?uitnodiging=abc",
     );
   });
 
   it("de gewone deelnemerslink blijft heel", () => {
     expect(bouwDeelnemerLink("https://tapas.example/admin/bulk-import", "abc")).toBe(
-      "https://tapas.example#/deelnemer/abc",
+      "https://tapas.example/deelnemer/abc",
     );
+  });
+
+  it("een link in een bericht draagt geen hekje", () => {
+    expect(berichtLink("https://tapas.example/#/hdd", "/deelnemer/abc")).toBe(
+      "https://tapas.example/deelnemer/abc",
+    );
+    expect(berichtLink("https://tapas.example", "/2minscan?uitnodiging=abc")).not.toContain("#");
   });
 });
 

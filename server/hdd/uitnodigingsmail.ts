@@ -36,7 +36,7 @@ import { verstuurBericht } from "../bulk-import/mailer";
 import { beoordeelBatch } from "../mailpoort/keuring";
 import { TEAMSCAN_INSTRUMENT, TWOMINSCAN_INSTRUMENT, T4P_INSTRUMENT } from "./uitsturen";
 import type { LidUitsturing } from "./uitsturen";
-import { eenHekje, normaliseerBasis } from "../publieke-basis";
+import { berichtLink, eenHekje } from "../publieke-basis";
 
 /** Wat de ontvanger leest in plaats van een instrument-id. */
 const INSTRUMENTNAMEN: Record<string, string> = {
@@ -52,23 +52,17 @@ export function instrumentnaam(instrumentId: string): string {
 /**
  * Een pad uit linkVoor() wordt een adres dat een browser kan openen.
  *
- * De client leest zijn route uit de hash, dus het pad hoort achter een hekje.
- * De 2MINSCAN is de uitzondering: die pagina leest het token uit de gewone
- * zoekreeks van het adres, en een zoekreeks achter de hash komt daar niet aan.
- * Voor dat ene geval zet deze functie het token vooraan en de route erachter.
+ * Kort en zonder hekje: "https://voorbeeld.be/deelnemer/abc123". De server kent
+ * elk kaal pad en stuurt het door naar zijn plaats achter het hekje, met de
+ * zoekreeks vooraan, want de 2MINSCAN leest zijn token uit de gewone zoekreeks
+ * van het adres. Een kort adres zonder hekje overleeft ook het knippen en
+ * herschrijven dat mailprogramma's met lange links doen.
  */
 export function absoluteLink(origin: string, pad: string): string {
-  // De basis wordt teruggebracht tot de voordeur van het platform. Stond er een
-  // pad of een hash in, dan kwamen er twee hekjes in de link en kreeg de
-  // deelnemer een foutpagina. Zie ../publieke-basis.ts.
-  const basis = normaliseerBasis(origin) || (origin ?? "").replace(/\/+$/, "");
-  const vraagteken = pad.indexOf("?");
-  if (vraagteken >= 0) {
-    const route = pad.slice(0, vraagteken);
-    const zoekreeks = pad.slice(vraagteken + 1);
-    return eenHekje(basis ? `${basis}/?${zoekreeks}#${route}` : `/?${zoekreeks}#${route}`);
-  }
-  return eenHekje(basis ? `${basis}#${pad}` : `#${pad}`);
+  // Geen hekje in de post. De server stuurt een kaal pad door naar zijn plaats
+  // achter het hekje, en houdt daarbij de zoekreeks vooraan. Zie
+  // ../publieke-basis.ts en ../static.ts.
+  return eenHekje(berichtLink(origin, pad));
 }
 
 export interface LidMailUitslag {
@@ -109,7 +103,11 @@ export function berichtVoorLid(opties: {
 }): string {
   const { naam, boardNaam, fase, links } = opties;
   const aanhef = naam.trim() ? `Beste ${naam.trim()},` : "Beste,";
-  const regels = links.map((l) => `${instrumentnaam(l.instrumentId)}: ${l.link}`);
+  // De naam staat op een eigen regel en het adres op de regel daaronder. Platte
+  // tekst breekt elke regel na hoogstens 76 tekens. Stond de naam voor het adres
+  // op dezelfde regel, dan brak het token eraf bij wie het bericht als platte
+  // tekst leest.
+  const regels = links.flatMap((l) => [`${instrumentnaam(l.instrumentId)}:`, l.link, ""]);
   const meervoud = links.length > 1;
   const inleiding =
     fase === 1
@@ -125,7 +123,6 @@ export function berichtVoorLid(opties: {
       : "De link hieronder is alleen voor jou. Vul hem niet samen met iemand anders in, want dan lopen de antwoorden door elkaar.",
     "",
     ...regels,
-    "",
     "Je kan halverwege stoppen en later verdergaan. Wat je al invulde, blijft staan.",
     "Kan je de link niet openen? Antwoord dan op dit bericht.",
     "",
@@ -170,6 +167,24 @@ export async function mailFaseUit(opties: {
         email,
         mailStatus: "-",
         melding: "In deze fase krijgt dit lid geen link, dus er valt niets te versturen.",
+      });
+      continue;
+    }
+
+    // De wacht aan de poort. Een link zonder token opent geen vragenlijst maar een
+    // foutpagina, en dat merkt de ontvanger pas nadat hij geklikt heeft. Liever
+    // hier een melding voor de beheerder dan een dood adres in de post.
+    const zonderToken = lid.links.filter((l) => !(l.token ?? "").trim());
+    if (zonderToken.length) {
+      leden.push({
+        lidId: lid.lidId,
+        naam: lid.naam,
+        email,
+        mailStatus: "fout",
+        melding:
+          "De uitnodiging van dit lid heeft geen geldige code. De link in de mail zou op " +
+          "een foutpagina uitkomen, dus verstuurde het platform geen mail. Verstuur de " +
+          "uitnodiging opnieuw.",
       });
       continue;
     }

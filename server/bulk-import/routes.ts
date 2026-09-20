@@ -32,7 +32,7 @@ import { beoordeelBatch, type Ontvangerkeuring } from "../mailpoort/keuring";
 import { poortVoorUitstuur } from "../t4students/uitstuurcontrole";
 import { t4oStorage } from "../t4organizations/storage";
 import { T4O_GROEPEN, type T4OGroep } from "../t4organizations/schema";
-import { eenHekje, publiekeBasis } from "../publieke-basis";
+import { berichtLink, eenHekje, publiekeBasis } from "../publieke-basis";
 
 // ---------------------------------------------------------------------------
 // Admin-sessiecheck (zelfde patroon als de rest van het platform).
@@ -194,7 +194,8 @@ function bouwUitnodigingsLink(origin: string, token: string | null, linkType: Li
     // Statische cijferslot-permalink; origin heeft geen trailing slash meer.
     return origin ? `${origin}/toegang.html?t=${t}` : `/toegang.html?t=${t}`;
   }
-  return eenHekje(origin ? `${origin}#/deelnemer/${t}` : `#/deelnemer/${t}`);
+  // Zonder hekje: zie ../publieke-basis.ts. De server stuurt het kale pad door.
+  return eenHekje(origin ? berichtLink(origin, `/deelnemer/${t}`) : `/deelnemer/${t}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -301,7 +302,10 @@ async function verwerkT4O(
     }
 
     const respondent = t4oStorage.maakRespondent(sessie.id, groep);
-    const link = origin ? `${origin}#/t4o/r/${respondent.token}` : `#/t4o/r/${respondent.token}`;
+    // Zonder hekje, zoals elke link die de post ingaat. Zie ../publieke-basis.ts.
+    const link = origin
+      ? eenHekje(berichtLink(origin, `/t4o/r/${respondent.token}`))
+      : `/t4o/r/${respondent.token}`;
 
     let mailStatus: "verstuurd" | "gesimuleerd" | "fout" | "-" = "-";
     let melding = "Respondent aangemaakt.";

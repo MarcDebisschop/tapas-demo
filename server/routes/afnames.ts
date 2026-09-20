@@ -73,7 +73,7 @@ import {
   magRapportDirectNaAfronden,
 } from "../afname-instrument";
 import { verstuurToegangsmail } from "../bulk-import/mailer";
-import { publiekeBasis } from "../publieke-basis";
+import { berichtLink, publiekeBasis } from "../publieke-basis";
 
 // Het instrument dat geldt wanneer de client er geen meestuurt.
 //
@@ -890,7 +890,9 @@ export function registerAfnameRoutes(app: Express): void {
       // De voordeur van het platform, niet de pagina van de beheerder. Zie
       // ../publieke-basis.ts.
       const origin = publiekeBasis(req, req.body?.origin);
-      const dashboardLink = `${origin}/#/dashboard/${deelnemer.dashboardToken}`;
+      // Zonder hekje, zoals elke link die de post ingaat: de server stuurt het
+      // kale pad zelf door. Zie ../publieke-basis.ts.
+      const dashboardLink = berichtLink(origin, `/dashboard/${deelnemer.dashboardToken}`);
       const instrumentId = instrumentVanAfname(leesContract(a.generatorContract), a.instrumentId);
       const descriptor = (instrumentId && getDescriptor(instrumentId)) || getDefaultDescriptor();
 

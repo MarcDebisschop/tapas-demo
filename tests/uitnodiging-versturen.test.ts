@@ -153,7 +153,7 @@ describe("POST /api/uitnodigingen", () => {
     expect(verzonden).toHaveLength(1);
     expect(verzonden[0].soort).toBe("uitnodiging");
     expect(verzonden[0].naar).toBe("herman@voorbeeld.be");
-    expect(verzonden[0].link).toBe("https://tapascity.example#/deelnemer/TOKEN123");
+    expect(verzonden[0].link).toBe("https://tapascity.example/deelnemer/TOKEN123");
     // Een leesbare instrumentnaam, geen interne sleutel.
     expect(verzonden[0].instrument).not.toBe("");
     expect(verzonden[0].instrument).not.toMatch(/^t4/);
@@ -228,9 +228,11 @@ describe("POST /api/uitnodigingen", () => {
     expect(res.status).toBe(200);
     expect(res.body.mailStatus).toBe("verstuurd");
     expect(verzonden).toHaveLength(1);
-    expect(verzonden[0].link).toContain("#/deelnemer/TOKEN123");
-    // Eén hekje, nooit twee. Twee hekjes gaven de deelnemer een foutpagina.
-    expect(verzonden[0].link.split("#")).toHaveLength(2);
+    expect(verzonden[0].link).toContain("/deelnemer/TOKEN123");
+    // Geen hekje in de post: de server stuurt het kale pad zelf door. Een hekje
+    // in een bericht overleeft het knippen en herschrijven van mailprogramma's
+    // niet altijd, en zonder hekje kan er ook geen tweede bijkomen.
+    expect(verzonden[0].link).not.toContain("#");
   });
 });
 
@@ -251,7 +253,7 @@ describe("POST /api/afnames/:id/herinner", () => {
     expect(verzonden[0].soort).toBe("herinnering");
     expect(verzonden[0].naar).toBe("herman@voorbeeld.be");
     // Dezelfde link als de uitnodiging: die blijft geldig.
-    expect(verzonden[0].link).toBe("https://tapascity.example#/deelnemer/TOKEN123");
+    expect(verzonden[0].link).toBe("https://tapascity.example/deelnemer/TOKEN123");
   });
 
   it("verstuurt niets wanneer er geen adres bekend is en zegt dat ook", async () => {

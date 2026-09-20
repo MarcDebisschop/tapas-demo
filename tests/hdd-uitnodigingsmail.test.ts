@@ -128,18 +128,19 @@ describe("een fase uitsturen verstuurt werkelijk post", () => {
 });
 
 describe("de link in het bericht", () => {
-  it("zet een gewoon pad achter de hash, want de client is hash-gerouteerd", () => {
+  // Een link in een bericht draagt geen hekje meer. De server stuurt elk kaal pad
+  // door naar zijn plaats achter het hekje (server/static.ts), en de korte vorm
+  // /s/:token zet het token van de 2MINSCAN terug in de zoekreeks. Reden: een
+  // deelnemer klikte zijn uitnodiging aan en kwam op een foutpagina, omdat het
+  // mailprogramma de te lange regel knipte en het token eraf brak.
+  it("zet een kaal pad achter de servernaam, zonder hekje", () => {
     expect(absoluteLink("https://tapas.example", "/deelnemer/abc")).toBe(
-      "https://tapas.example#/deelnemer/abc",
+      "https://tapas.example/deelnemer/abc",
     );
   });
 
-  it("zet het token van de 2MINSCAN in de zoekreeks vóór de hash", () => {
-    // De 2MINSCAN-pagina leest window.location.search. Een zoekreeks achter de
-    // hash komt daar nooit aan, en dan staat de deelnemer met een leeg formulier.
-    expect(absoluteLink("https://tapas.example", "/2minscan?uitnodiging=abc")).toBe(
-      "https://tapas.example/?uitnodiging=abc#/2minscan",
-    );
+  it("houdt de link van de 2MINSCAN kort", () => {
+    expect(absoluteLink("https://tapas.example", "/s/abc")).toBe("https://tapas.example/s/abc");
   });
 
   it("laat de volledige link in het bericht staan", async () => {
@@ -149,7 +150,19 @@ describe("de link in het bericht", () => {
       origin: "https://tapas.example/",
       uitsturingen: [lid(7, "Herman Van Esbroeck", "herman@example.com", ["twominscan"])],
     });
-    expect(verstuurd[0].tekst).toContain("https://tapas.example/?uitnodiging=t-7-twominscan#/2minscan");
+    expect(verstuurd[0].tekst).toContain("https://tapas.example/2minscan?uitnodiging=t-7-twominscan");
+  });
+
+  it("houdt elke adresregel onder de 76 tekens waarna platte tekst breekt", async () => {
+    await mailFaseUit({
+      boardNaam: "Asterra",
+      fase: 1,
+      origin: "https://tapas-demo.onrender.com",
+      uitsturingen: [lid(7, "Herman Van Esbroeck", "herman@example.com", ["twominscan"])],
+    });
+    const adresregels = verstuurd[0].tekst.split("\n").filter((r: string) => r.startsWith("https://"));
+    expect(adresregels.length).toBeGreaterThan(0);
+    for (const regel of adresregels) expect(regel.length).toBeLessThan(76);
   });
 });
 
@@ -164,5 +177,26 @@ describe("de tekst van het bericht", () => {
     expect(tekst).toContain("Beste Andrea Hoffmann,");
     expect(tekst).toContain("Asterra");
     expect(tekst).not.toMatch(/\u2014|\u2013/);
+  });
+});
+
+describe("de wacht aan de poort", () => {
+  it("verstuurt geen bericht wanneer de link geen code draagt", async () => {
+    const uitslag = await mailFaseUit({
+      boardNaam: "Asterra",
+      fase: 1,
+      origin: "https://tapas.example",
+      uitsturingen: [
+        {
+          lidId: 9,
+          naam: "Ophelia Debisschop",
+          email: "ophelia@example.com",
+          links: [{ instrumentId: "twominscan", token: "", link: "/s/", nieuw: true }],
+        },
+      ],
+    });
+    expect(verstuurd).toHaveLength(0);
+    expect(uitslag.leden[0].mailStatus).toBe("fout");
+    expect(uitslag.leden[0].melding).toContain("geen geldige code");
   });
 });

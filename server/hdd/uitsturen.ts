@@ -93,7 +93,10 @@ export function instrumentenVanFase(fase: number): string[] {
  */
 export function linkVoor(instrumentId: string, token: string): string {
   if (instrumentId === TEAMSCAN_INSTRUMENT) return `/teamscan/r/${token}`;
-  if (instrumentId === TWOMINSCAN_INSTRUMENT) return `/2minscan?uitnodiging=${token}`;
+  // De korte vorm voor de 2MINSCAN. De server zet het token terug in de
+  // zoekreeks (zie server/static.ts); zo blijft de link in een bericht onder de
+  // 76 tekens waarna platte tekst zijn regels breekt.
+  if (instrumentId === TWOMINSCAN_INSTRUMENT) return `/s/${token}`;
   return `/deelnemer/${token}`;
 }
 

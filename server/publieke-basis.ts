@@ -110,3 +110,22 @@ export function eenHekje(link: string): string {
   if (!route) return `${voor}#${stukken[stukken.length - 1] ?? ""}`;
   return `${voor}#${route}`;
 }
+
+/**
+ * Het adres dat in een bericht mag staan.
+ *
+ * Een link in een bericht draagt geen hekje meer. De server stuurt elk kaal pad
+ * door naar zijn plaats achter het hekje (zie server/static.ts), dus het hekje
+ * hoort niet in de post. Dat scheelt tekens, en het haalt het enige stuk van een
+ * adres weg dat een mailprogramma of een virusscanner mag weglaten: alles achter
+ * een hekje reist niet naar de server en overleeft een herschrijving niet altijd.
+ *
+ * Voorbeeld: basis "https://voorbeeld.be" en pad "/deelnemer/abc123" geeft
+ * "https://voorbeeld.be/deelnemer/abc123".
+ */
+export function berichtLink(basis: string, pad: string): string {
+  const voordeur = normaliseerBasis(basis);
+  const schoonPad = (pad ?? "").startsWith("/") ? pad : `/${pad ?? ""}`;
+  if (!voordeur) return schoonPad;
+  return `${voordeur}${schoonPad}`;
+}
