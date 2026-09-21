@@ -131,10 +131,11 @@ export default function TwominscanAfname() {
     // Kwam de deelnemer via een uitnodiging, dan wordt de uitkomst hier bewaard,
     // en niet achteraf met een knop in het rapport. Een lid van een traject ziet
     // dat rapport namelijk niet, en zonder deze stap zag de begeleider zijn scan
-    // nooit in de voortgang staan. Er gaat enkel de wielpositie naar de server,
-    // met de EG-code: geen antwoorden en geen scores. Mislukt het bewaren, dan
-    // gaat de deelnemer gewoon verder, want zijn rapport staat volledig in de
-    // link die hierna volgt.
+    // nooit in de voortgang staan. Er gaan de wielpositie en de afgeleide
+    // uitkomst mee, zodat de begeleider hetzelfde rapport later opnieuw kan
+    // openen. De gegeven antwoorden en de portretfoto blijven hier. Mislukt het
+    // bewaren, dan gaat de deelnemer gewoon verder, want zijn rapport staat
+    // volledig in de link die hierna volgt.
     if (uitnodiging) {
       try {
         await fetch(`/api/twominscan/uitnodiging/${encodeURIComponent(uitnodiging)}/resultaat`, {
@@ -146,6 +147,20 @@ export default function TwominscanAfname() {
             rol: rol || undefined,
             taal,
             datum,
+            rapport: {
+              score,
+              ie: {
+                uitkomst: ie.uitkomst,
+                label: ie.label,
+                verschil: ie.verschil,
+                xStand: ie.xStand,
+              },
+              egCode: match.egCodeIngevuld,
+              egCodePositief: match.egCodePositief,
+              minSegment: match.minSegment,
+              profielCode: match.profiel.egCode,
+              exact: match.exacteMatch,
+            },
           }),
         });
       } catch (e) {

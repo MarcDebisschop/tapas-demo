@@ -25,6 +25,7 @@ import { mailFaseUit } from "./uitnodigingsmail";
 import { keurVerzendweg } from "../mailpoort/poort";
 import { afzenderVoor } from "../bulk-import/mailer";
 import { bouwLedenInvoer, leesVoortgang } from "./bronnen";
+import { leesLidRapportBronnen, teamscanAlsHtml } from "./lidrapport";
 import { registerHddTeamanalyseRoutes } from "./teamanalyse-routes";
 import { publiekeBasis } from "../publieke-basis";
 
@@ -326,6 +327,46 @@ export function registerHddRoutes(app: Express): void {
         detail: err instanceof Error ? err.message : String(err),
       });
     }
+  });
+
+  // ---- De rapporten van één lid, gelezen door de begeleider ----
+  //
+  // De rapportsluis werkt op het token van het lid, en hield daardoor ook de
+  // begeleider buiten. Deze twee routes zijn de weg van de begeleider: ze gaan
+  // niet langs het token maar langs het traject, en ze staan achter de
+  // beheerderslogin. Vrijgeven verandert hier niets aan, want vrijgave gaat over
+  // wat het lid zelf mag zien. Zie ./lidrapport.ts.
+  function lidVanVerzoek(req: any) {
+    const traject = storage.getTraject(Number(req.params.id));
+    if (!traject) return { fout: "Niet gevonden" as const };
+    const lid = storage
+      .ledenVanTraject(traject.id)
+      .find((l) => l.id === Number(req.params.lidId));
+    if (!lid) return { fout: "Lid niet gevonden" as const };
+    return { traject, lid };
+  }
+
+  app.get("/api/hdd/trajecten/:id/leden/:lidId/rapportbronnen", async (req, res) => {
+    const gevonden = lidVanVerzoek(req);
+    if ("fout" in gevonden) return res.status(404).json({ error: gevonden.fout });
+    try {
+      res.json(await leesLidRapportBronnen(gevonden.traject!, gevonden.lid!));
+    } catch (err) {
+      res.status(500).json({
+        error: "De rapporten van dit lid lezen mislukte",
+        detail: err instanceof Error ? err.message : String(err),
+      });
+    }
+  });
+
+  app.get("/api/hdd/trajecten/:id/leden/:lidId/teamscan-rapport", (req, res) => {
+    const gevonden = lidVanVerzoek(req);
+    if ("fout" in gevonden) return res.status(404).json({ error: gevonden.fout });
+    const html = teamscanAlsHtml(gevonden.lid!);
+    if (!html) {
+      return res.status(404).json({ error: "Dit lid vulde de Teamscan nog niet in" });
+    }
+    res.type("html").send(html);
   });
 
   // ---- Go/No-Go-scharnier ----

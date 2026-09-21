@@ -39,7 +39,49 @@ export interface BewaardeAfname {
   taal: string;
   datum: string;
   bewaardOp: string;
+  /**
+   * De afgeleide uitkomst waarmee het rapport opnieuw op te bouwen valt: de
+   * kleurscores, de I/E-stand en de EG-code. Null bij een rij van voor deze
+   * uitbreiding, en dan valt er enkel een wielpositie te tonen.
+   */
+  rapport: RapportKern | null;
 }
+
+/**
+ * Wat een begeleider nodig heeft om het rapport van een lid opnieuw te tonen.
+ * Dit zijn afgeleide waarden, geen antwoorden: de vier kleurscores, de I/E-stand
+ * en de codes die naar het profiel wijzen. De gegeven antwoorden, de losse
+ * itemscores en de portretfoto blijven ook nu buiten de databank.
+ */
+export interface RapportKern {
+  score: { blauw: number; groen: number; geel: number; rood: number };
+  ie: { uitkomst: string; label: string; verschil: number; xStand: string };
+  egCode: string;
+  egCodePositief: string;
+  minSegment: string | null;
+  profielCode: string;
+  exact: boolean;
+}
+
+const rapportKernSchema = z.object({
+  score: z.object({
+    blauw: z.number(),
+    groen: z.number(),
+    geel: z.number(),
+    rood: z.number(),
+  }),
+  ie: z.object({
+    uitkomst: z.string().max(40),
+    label: z.string().max(80),
+    verschil: z.number(),
+    xStand: z.enum(["II", "EE", "X"]),
+  }),
+  egCode: z.string().max(24),
+  egCodePositief: z.string().max(24),
+  minSegment: z.string().max(4).nullable(),
+  profielCode: z.string().max(24),
+  exact: z.boolean(),
+}).strict();
 
 // De 24 wielposities zelf staan in de client (client/src/temperamentenwiel/
 // posities.ts), de bron van de speelmat. De server spiegelt die lijst NIET,
@@ -65,6 +107,7 @@ const bewaarSchema = z.object({
 // de voortgang van een traject zoekt de scan op precies die twee terug.
 const uitnodigingSchema = z.object({
   wielpositie: z.string().trim().regex(WIELPOSITIE),
+  rapport: rapportKernSchema.optional(),
   egCode: z.string().trim().max(24).optional(),
   rol: z.string().trim().max(120).optional(),
   taal: z.enum(["nl", "fr", "en", "es", "ru"]).optional(),
@@ -91,6 +134,16 @@ function zorgVoorTabel(): void {
   sqlite.exec(
     `CREATE INDEX IF NOT EXISTS idx_twominscan_afnames_org ON twominscan_afnames (organisatie, bewaard_op)`,
   );
+  // De kolom kwam er later bij, toen een begeleider het rapport van een lid
+  // moest kunnen nalezen. Een bestaande databank krijgt ze hier, want deze
+  // tabel staat buiten de migraties.
+  const kolommen = sqlite
+    .prepare(`PRAGMA table_info(twominscan_afnames)`)
+    .all()
+    .map((k: any) => String(k.name));
+  if (!kolommen.includes("rapport_json")) {
+    sqlite.exec(`ALTER TABLE twominscan_afnames ADD COLUMN rapport_json TEXT`);
+  }
   tabelKlaar = true;
 }
 
@@ -105,7 +158,19 @@ function naarAfname(rij: any): BewaardeAfname {
     taal: String(rij.taal ?? "nl"),
     datum: String(rij.datum ?? ""),
     bewaardOp: String(rij.bewaard_op ?? ""),
+    rapport: leesRapportKern(rij.rapport_json),
   };
+}
+
+/** Leest de bewaarde uitkomst terug en weigert een rij die niet meer klopt. */
+function leesRapportKern(ruw: unknown): RapportKern | null {
+  if (typeof ruw !== "string" || !ruw.trim()) return null;
+  try {
+    const ontleed = rapportKernSchema.safeParse(JSON.parse(ruw));
+    return ontleed.success ? (ontleed.data as RapportKern) : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Bewaart één afname en geeft de bewaarde rij terug. */
@@ -117,6 +182,7 @@ export function bewaarAfname(gegevens: {
   egCode?: string;
   taal?: string;
   datum?: string;
+  rapport?: RapportKern | null;
 }): BewaardeAfname {
   if (!sqlite) throw new Error("Geen databank beschikbaar.");
   zorgVoorTabel();
@@ -124,8 +190,8 @@ export function bewaarAfname(gegevens: {
   const info = sqlite
     .prepare(
       `INSERT INTO twominscan_afnames
-         (organisatie, naam, rol, eg_code, wielpositie, taal, datum, bewaard_op)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+         (organisatie, naam, rol, eg_code, wielpositie, taal, datum, bewaard_op, rapport_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       gegevens.organisatie?.trim() ?? "",
@@ -136,6 +202,7 @@ export function bewaarAfname(gegevens: {
       gegevens.taal ?? "nl",
       gegevens.datum?.trim() ?? "",
       bewaardOp,
+      gegevens.rapport ? JSON.stringify(gegevens.rapport) : null,
     );
   return {
     id: Number(info.lastInsertRowid),
@@ -147,7 +214,26 @@ export function bewaarAfname(gegevens: {
     taal: gegevens.taal ?? "nl",
     datum: gegevens.datum?.trim() ?? "",
     bewaardOp,
+    rapport: gegevens.rapport ?? null,
   };
+}
+
+/**
+ * De laatste bewaarde afname van één persoon binnen één organisatie. Het
+ * trajectscherm zoekt zo het rapport van een lid terug, want de 2MINSCAN draagt
+ * geen token in deze tabel.
+ */
+export function leesAfnameVoor(naam: string, organisatie: string): BewaardeAfname | null {
+  if (!sqlite) return null;
+  zorgVoorTabel();
+  const rij = sqlite
+    .prepare(
+      `SELECT * FROM twominscan_afnames
+         WHERE naam = ? COLLATE NOCASE AND organisatie = ? COLLATE NOCASE
+         ORDER BY bewaard_op DESC, id DESC LIMIT 1`,
+    )
+    .get(naam.trim(), organisatie.trim());
+  return rij ? naarAfname(rij) : null;
 }
 
 /**
@@ -258,6 +344,7 @@ export function registerTwominscanAfnameRoutes(app: Express): void {
           wielpositie: ontleed.data.wielpositie,
           taal: ontleed.data.taal,
           datum: ontleed.data.datum,
+          rapport: (ontleed.data.rapport as RapportKern | undefined) ?? null,
         });
         if (afname.status !== "voltooid") {
           await storage.updateAfname(afname.id, {

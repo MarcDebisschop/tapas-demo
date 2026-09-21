@@ -76,7 +76,7 @@ async function roep(route: HddRoute, aanmelding: "geen" | "organisatie" | "zonde
   await new Promise<void>((klaar) => server.listen(0, klaar));
   const poort = (server.address() as AddressInfo).port;
   try {
-    const antwoord = await fetch(`http://127.0.0.1:${poort}${route.pad.replace(":id", "1")}`, {
+    const antwoord = await fetch(`http://127.0.0.1:${poort}${route.pad.replace(":id", "1").replace(":lidId", "1")}`, {
       method: route.methode,
       headers: route.methode === "POST" ? { "Content-Type": "application/json" } : undefined,
       body: route.methode === "POST" ? "{}" : undefined,
@@ -90,7 +90,7 @@ async function roep(route: HddRoute, aanmelding: "geen" | "organisatie" | "zonde
 describe("HDD-endpoint-poort", () => {
   it("weigert zonder aanmelding elk geregistreerd HDD-endpoint", async () => {
     const routes = geregistreerdeHddRoutes(maakApp("geen"));
-    expect(routes).toHaveLength(16);
+    expect(routes).toHaveLength(18);
     for (const route of routes) {
       expect(await roep(route, "geen"), `${route.methode} ${route.pad}`).toBe(403);
     }
@@ -98,7 +98,7 @@ describe("HDD-endpoint-poort", () => {
 
   it("weigert een aangemelde beheerder zonder organisatie-scope", async () => {
     const routes = geregistreerdeHddRoutes(maakApp("zonderRecht"));
-    expect(routes).toHaveLength(16);
+    expect(routes).toHaveLength(18);
     for (const route of routes) {
       expect(await roep(route, "zonderRecht"), `${route.methode} ${route.pad}`).toBe(403);
     }

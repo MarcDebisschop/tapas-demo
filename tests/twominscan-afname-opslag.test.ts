@@ -68,7 +68,11 @@ describe("bewaarde 2MINSCAN-afnames", () => {
     expect(opslag.leesAfnames().some((a) => a.id === bewaard.id)).toBe(false);
   });
 
-  it("bewaart geen antwoorden, scores of foto's", () => {
+  // De kolom rapport_json draagt de afgeleide uitkomst: de vier kleurtotalen, de
+  // I/E-stand en de codes die naar het profiel wijzen. Die staat er sinds de
+  // begeleider het rapport van een lid moet kunnen nalezen. De gegeven
+  // antwoorden, de losse itemscores en de portretfoto blijven buiten de tabel.
+  it("bewaart geen antwoorden en geen foto's", () => {
     const kolommen = (sqlite.prepare("PRAGMA table_info(twominscan_afnames)").all() as any[]).map(
       (k) => String(k.name),
     );
@@ -80,12 +84,13 @@ describe("bewaarde 2MINSCAN-afnames", () => {
         "id",
         "naam",
         "organisatie",
+        "rapport_json",
         "rol",
         "taal",
         "wielpositie",
       ].sort(),
     );
-    for (const verboden of ["antwoorden", "scores", "foto", "portret", "main_responses"]) {
+    for (const verboden of ["antwoorden", "foto", "portret", "main_responses"]) {
       expect(kolommen).not.toContain(verboden);
     }
   });

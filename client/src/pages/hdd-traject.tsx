@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useParams } from "wouter";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Check, Layers, Compass, Lock, LockOpen, Mail, RefreshCw, UserPlus } from "lucide-react";
+import { ArrowLeft, Check, FileText, Layers, Compass, Lock, LockOpen, Mail, RefreshCw, UserPlus } from "lucide-react";
 import { AppHeader } from "@/components/Brand";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -287,8 +287,18 @@ export default function HddTraject() {
                   }}
                 >
                   <div style={{ color: INK, fontSize: 14, fontWeight: 600 }}>{lid.naam}</div>
-                  <div style={{ color: SUB, fontSize: 13 }}>
-                    {lid.email || "geen adres, geef de link zelf door"}
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                    <span style={{ color: SUB, fontSize: 13 }}>
+                      {lid.email || "geen adres, geef de link zelf door"}
+                    </span>
+                    {/* De begeleider leest eerst. Deze weg loopt achter de
+                        beheerderslogin en niet langs de link van het lid, dus de
+                        rapportsluis houdt hem hier niet tegen. */}
+                    <Link href={`/hdd/traject/${trajectId}/lid/${lid.id}`}>
+                      <Button size="sm" variant="outline" data-testid={`button-rapport-lid-${lid.id}`}>
+                        <FileText className="mr-1 h-4 w-4" /> Rapporten bekijken
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               ))}

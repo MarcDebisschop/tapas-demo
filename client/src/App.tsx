@@ -41,6 +41,7 @@ import DriverScanAfname from "@/pages/driverscan-afname";
 import HddHome from "@/pages/hdd-home";
 import HddRapport from "@/pages/hdd-rapport";
 import HddTraject from "@/pages/hdd-traject";
+import HddLidRapport from "@/pages/hdd-lid-rapport";
 import TwominscanRapport from "@/pages/twominscan-rapport";
 import TwominscanTeamwiel from "@/pages/twominscan-teamwiel";
 import ImpactHome from "@/pages/impact-home";
@@ -194,7 +195,7 @@ function AppRouter() {
       <Route path="/organisatie">{() => <OrganisatieLoginGate><OrganisatieDashboard /></OrganisatieLoginGate>}</Route>
       <Route path="/coaches" component={Coaches} />
       <Route path="/onderbouwing" component={Onderbouwing} />
-      {/* BELEVING — TaPasAcademy (achter feature-flag; default uit in TaPas Core) */}
+      {/* BELEVING, TaPasAcademy (achter feature-flag; default uit in TaPas Core) */}
       {BELEVING && <Route path="/academy/jester" component={AcademyJester} />}
       {BELEVING && <Route path="/academy" component={Academy} />}
       {/* /coach/dashboard = practitioner-dashboard met STM */}
@@ -212,11 +213,11 @@ function AppRouter() {
       <Route path="/teamscan" component={TeamscanHome} />
       <Route path="/teamscan/sessie/:id" component={TeamscanSessie} />
       <Route path="/teamscan/r/:token" component={TeamscanDeelnemer} />
-      {/* TaPas 4 Organizations (T4O) — nieuw, parallel aan teamscan (Regel 2). */}
+      {/* TaPas 4 Organizations (T4O), nieuw, parallel aan teamscan (Regel 2). */}
       <Route path="/t4o" component={T4OHome} />
       <Route path="/t4o/sessie/:id" component={T4OSessie} />
       <Route path="/t4o/r/:token" component={T4ODeelnemer} />
-      {/* Kwaliteit & Evaluaties — organisatie-evaluatie: publieke token-flow,
+      {/* Kwaliteit & Evaluaties, organisatie-evaluatie: publieke token-flow,
           geen login (het token is de authenticatie, zie §7 bouwspecificatie). */}
       <Route path="/evaluatie-organisatie/:token" component={EvaluatieOrganisatie} />
       <Route path="/2minscan" component={TwominscanAfname} />
@@ -227,12 +228,15 @@ function AppRouter() {
       {/* Het trajectscherm: leden toevoegen, de twee fasen uitsturen, voortgang lezen.
           Deze route ontbrak, waardoor de lijst op /hdd op de foutpagina uitkwam. */}
       <Route path="/hdd/traject/:id">{() => <CoachLoginGate><HddTraject /></CoachLoginGate>}</Route>
+      {/* De rapporten van één lid, gelezen door de begeleider. De rapportsluis
+          geldt voor het lid; deze weg loopt achter de beheerderslogin. */}
+      <Route path="/hdd/traject/:id/lid/:lidId">{() => <CoachLoginGate><HddLidRapport /></CoachLoginGate>}</Route>
       <Route path="/2minscan/rapport" component={TwominscanRapport} />
       <Route path="/2minscan/teamwiel" component={TwominscanTeamwiel} />
       <Route path="/t4sports" component={T4SportsVragenlijst} />
       <Route path="/t4sports/dashboard/:token" component={T4SportsDashboard} />
       <Route path="/t4sports/modules/:afnameId" component={T4SportsModules} />
-      {/* BELEVING — impact-etalage + TaPas Lounge (achter feature-flag) */}
+      {/* BELEVING, impact-etalage + TaPas Lounge (achter feature-flag) */}
       {BELEVING && <Route path="/impact" component={ImpactHome} />}
       {BELEVING && <Route path="/lounge" component={Lounge} />}
       {/* Wereld-shortcuts: redirect naar meest relevante bestaande pagina */}
@@ -255,18 +259,18 @@ function AppRouter() {
       <Route path="/partners" component={Partners} />
       <Route path="/demo" component={Demo} />
       <Route path="/aanmelden" component={AanmeldenPagina} />
-      {/* De Instrumentengids — brochure vóór de indexpagina (specificiteit) */}
+      {/* De Instrumentengids, brochure vóór de indexpagina (specificiteit) */}
       <Route path="/instrumenten/brochure" component={Brochure} />
       <Route path="/instrumenten" component={Instrumenten} />
-      {/* Privé-aankoopflow voor particulieren (nieuw — Regel 2). */}
+      {/* Privé-aankoopflow voor particulieren (nieuw, Regel 2). */}
       <Route path="/koop/:instrument" component={Koop} />
       <Route path="/voor-deelnemers">{() => <Redirect to="/mijn" />}</Route>
       <Route path="/voor-begeleiders" component={VoorBegeleiders} />
-      {/* BELEVING — Cijferslot-toegangsschil (drie skins). In TaPas Core logt de
+      {/* BELEVING, Cijferslot-toegangsschil (drie skins). In TaPas Core logt de
           deelnemer sober in via /mijn (zelfde backend: POST /api/deelnemers/login). */}
       {BELEVING && <Route path="/poort" component={Poort} />}
       {BELEVING && <Route path="/poort/:skin" component={Poort} />}
-      {/* Magic-link inwisselaar — /#/magic/:token → redirect naar dashboard.
+      {/* Magic-link inwisselaar, /#/magic/:token → redirect naar dashboard.
           FUNCTIONEEL (geen beleving): blijft altijd actief, ook in TaPas Core. */}
       <Route path="/magic/:token" component={Magic} />
       <Route component={NotFound} />
@@ -345,7 +349,7 @@ function App() {
                 <PoortenIntro onComplete={() => setIntroDone(true)} />
                 {/* Admin-bypass overlay: zweeft OVER de poorten-intro.
                     Klikt de beheerder op dit linkje, dan wijzigt de hash
-                    naar #/admin — de hashchange-listener in useEffect pikt
+                    naar #/admin, want de hashchange-listener in useEffect pikt
                     dat op en zet introDone=true zodat de Router mounts. */}
                 <a
                   href="#/admin"
@@ -363,7 +367,7 @@ function App() {
                 page-level effects afvuren terwijl de intro loopt. */}
             {introDone && (
               <Router hook={useHashLocation}>
-                {/* Globale scroll-reset bij elke paginawissel (apart bestand — Regel 2). */}
+                {/* Globale scroll-reset bij elke paginawissel (apart bestand, Regel 2). */}
                 <ScrollNaarBoven />
                 <AppRouter />
               </Router>

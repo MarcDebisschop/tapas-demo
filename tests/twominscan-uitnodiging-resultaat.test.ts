@@ -85,12 +85,22 @@ describe("het afnamescherm bewaart zelf bij het afronden", () => {
     expect(afnamePagina).toMatch(/wielpositie: match\.profiel\.wielpositie/);
   });
 
-  it("stuurt geen antwoorden en geen scores mee", () => {
+  // De vier kleurtotalen en de I/E-stand gaan sinds de begeleiderskant mee, want
+  // zonder die twee valt het rapport van een lid niet opnieuw te tonen. De
+  // gegeven antwoorden en de portretfoto blijven in de browser.
+  it("stuurt geen antwoorden en geen foto mee", () => {
     const blok = bewaarblok();
     expect(blok).not.toMatch(/ronde1/);
     expect(blok).not.toMatch(/ronde2/);
-    expect(blok).not.toMatch(/score,/);
     expect(blok).not.toMatch(/foto/);
+  });
+
+  it("stuurt de uitkomst mee waarmee de begeleider het rapport opnieuw opent", () => {
+    const blok = bewaarblok();
+    expect(blok).toMatch(/rapport: \{/);
+    expect(blok).toMatch(/score,/);
+    expect(blok).toMatch(/xStand: ie\.xStand/);
+    expect(blok).toMatch(/profielCode: match\.profiel\.egCode/);
   });
 
   it("laat de deelnemer verder gaan wanneer het bewaren mislukt", () => {
