@@ -133,6 +133,22 @@ export default function HddTraject() {
     enabled: Number.isFinite(trajectId),
   });
 
+  /**
+   * Wat dit lid al invulde, in één regel naast zijn naam. De gegevens komen uit
+   * dezelfde voortgang als de kaart onderaan, dus de twee kunnen niet uit de pas
+   * lopen. Als string opgebouwd, want JSX haalt de regeleindes tussen losse
+   * tekststukken weg.
+   */
+  function ingevuldeRegel(lidId: number): string {
+    const regel = voortgang.data?.leden?.find((l) => l.lidId === lidId);
+    if (!regel) return "";
+    const klaar = regel.instrumenten
+      .filter((i) => i.ingevuld)
+      .map((i) => INSTRUMENTNAAM[i.instrumentId] ?? i.instrumentId);
+    if (klaar.length === 0) return "Nog geen vragenlijst ingevuld";
+    return `Ingevuld: ${klaar.join(", ")}`;
+  }
+
   function verversAlles() {
     client.invalidateQueries({ queryKey: [`/api/hdd/trajecten/${trajectId}`] });
     client.invalidateQueries({ queryKey: [`/api/hdd/trajecten/${trajectId}/voortgang`] });
@@ -291,11 +307,24 @@ export default function HddTraject() {
                     <span style={{ color: SUB, fontSize: 13 }}>
                       {lid.email || "geen adres, geef de link zelf door"}
                     </span>
+                    {/* Wat dit lid al invulde. Zonder deze regel moest de
+                        begeleider eerst doorklikken om te zien of er iets stond. */}
+                    <span
+                      style={{ color: SUB, fontSize: 12 }}
+                      data-testid={`ingevuld-lid-${lid.id}`}
+                    >
+                      {ingevuldeRegel(lid.id)}
+                    </span>
                     {/* De begeleider leest eerst. Deze weg loopt achter de
                         beheerderslogin en niet langs de link van het lid, dus de
                         rapportsluis houdt hem hier niet tegen. */}
                     <Link href={`/hdd/traject/${trajectId}/lid/${lid.id}`}>
-                      <Button size="sm" variant="outline" data-testid={`button-rapport-lid-${lid.id}`}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        style={{ background: "#fff", borderColor: ACCENT, color: ACCENT, fontWeight: 600 }}
+                        data-testid={`button-rapport-lid-${lid.id}`}
+                      >
                         <FileText className="mr-1 h-4 w-4" /> Rapporten bekijken
                       </Button>
                     </Link>

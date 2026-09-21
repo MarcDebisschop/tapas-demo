@@ -219,24 +219,6 @@ export function bewaarAfname(gegevens: {
 }
 
 /**
- * De laatste bewaarde afname van één persoon binnen één organisatie. Het
- * trajectscherm zoekt zo het rapport van een lid terug, want de 2MINSCAN draagt
- * geen token in deze tabel.
- */
-export function leesAfnameVoor(naam: string, organisatie: string): BewaardeAfname | null {
-  if (!sqlite) return null;
-  zorgVoorTabel();
-  const rij = sqlite
-    .prepare(
-      `SELECT * FROM twominscan_afnames
-         WHERE naam = ? COLLATE NOCASE AND organisatie = ? COLLATE NOCASE
-         ORDER BY bewaard_op DESC, id DESC LIMIT 1`,
-    )
-    .get(naam.trim(), organisatie.trim());
-  return rij ? naarAfname(rij) : null;
-}
-
-/**
  * Verwijdert eerder bewaarde rijen van dezelfde persoon binnen dezelfde
  * organisatie. Wie zijn scan opnieuw doet, hoort één rij te houden en niet twee
  * die elkaar tegenspreken in een teamwiel.

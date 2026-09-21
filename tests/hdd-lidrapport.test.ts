@@ -36,7 +36,10 @@ vi.mock("../server/teamscan/rapport", () => ({
 }));
 
 vi.mock("../server/twominscan/afname-opslag", () => ({
-  leesAfnameVoor: () => bewaardeAfname,
+  // De echte functie leest alle rijen van een organisatie. De test geeft één rij
+  // terug, en de naam erin wijkt met opzet af in hoofdletters en spaties: het
+  // scherm hoort de scan toch te vinden, want de voortgang vindt ze ook.
+  leesAfnames: () => (bewaardeAfname ? [bewaardeAfname] : []),
 }));
 
 const { leesLidRapportBronnen, teamscanAlsHtml } = await import("../server/hdd/lidrapport");
@@ -86,8 +89,8 @@ describe("de rapporten van één lid, gelezen door de begeleider", () => {
     tokens.set(3, { twominscan: "tok-ms" });
     bewaardeAfname = {
       id: 1,
-      naam: "Herman Van Esbroeck",
-      organisatie: "Organisatie A",
+      naam: "herman  van esbroeck",
+      organisatie: "Veldstroom Audio",
       rol: "",
       egCode: "RgEEO-a",
       wielpositie: "24-44",

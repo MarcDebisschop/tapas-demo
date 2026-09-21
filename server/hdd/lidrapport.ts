@@ -27,7 +27,7 @@ import { hddStorage } from "./storage";
 import { storage } from "../storage";
 import { scoorIndividueel } from "../teamscan/scoring";
 import { renderIndividueelRapport } from "../teamscan/rapport";
-import { leesAfnameVoor, type BewaardeAfname } from "../twominscan/afname-opslag";
+import { leesAfnames, type BewaardeAfname } from "../twominscan/afname-opslag";
 import type { HddTraject, HddBoardLid } from "./schema";
 
 const TEAMSCAN = "tapas-teamscan";
@@ -106,12 +106,33 @@ export function teamscanAlsHtml(lid: HddBoardLid): string | null {
   return renderIndividueelRapport(bron.resultaat as any, bron.label ?? lid.naam);
 }
 
-/** De bewaarde 2MINSCAN van één lid, gezocht op naam binnen de organisatie. */
+/** Namen vergelijken zoals de voortgang dat doet: kleine letters, één spatie. */
+function normaliseerNaam(naam: string): string {
+  return naam.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+/**
+ * De bewaarde 2MINSCAN van één lid.
+ *
+ * De tabel twominscan_afnames draagt geen token, dus de naam is de enige
+ * sleutel. Deze functie zoekt precies zoals de voortgang op /hdd zoekt, eerst
+ * binnen de organisatie van het traject en daarna over alle organisaties. Die
+ * tweede ronde is er omdat de organisatie bij de scan uit de uitnodiging komt en
+ * niet altijd woord voor woord gelijk is aan het label van het traject. Zonder
+ * die ronde meldde dit scherm dat er niets was, terwijl de voortgang de scan wel
+ * zag staan.
+ */
 export function leesTwominscan(traject: HddTraject, lid: HddBoardLid): TwominscanBron {
   const token = tokensVan(lid.id)[TWOMINSCAN] ?? "";
+  const gezocht = normaliseerNaam(lid.naam);
   let afname: BewaardeAfname | null = null;
   try {
-    afname = leesAfnameVoor(lid.naam, traject.orgLabel ?? "");
+    const org = (traject.orgLabel ?? "").trim();
+    const binnenOrg = org ? leesAfnames(org, 500) : [];
+    afname = binnenOrg.find((r) => normaliseerNaam(r.naam) === gezocht) ?? null;
+    if (!afname) {
+      afname = leesAfnames(undefined, 500).find((r) => normaliseerNaam(r.naam) === gezocht) ?? null;
+    }
   } catch {
     afname = null;
   }
