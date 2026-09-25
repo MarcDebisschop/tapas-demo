@@ -203,6 +203,7 @@ describe("De migratieloper op een databank die al gevuld is", () => {
       "0009_mailverzendlog",
       "0010_herinnering_in_verzendlog",
       "0011_kwaliteit_evaluaties_organisatie",
+      "0012_role_fit",
     ]);
     expect(tabelBestaat(db, "traject")).toBe(true);
     expect(tabelBestaat(db, "mail_verzendlog")).toBe(true);

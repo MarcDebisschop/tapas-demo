@@ -105,6 +105,25 @@ export const AUDIT_ACTIES = [
   // handelingen met een gevolg buiten het platform, dus horen ze in het logboek.
   "mailpoort_proef",
   "mailpoort_deblokkeerd",
+  // TaPas CORE Role Fit met H-BOM Evidence Check. Elke lees-, download- en
+  // schrijfhandeling op een case komt in het logboek, want een case bevat
+  // profielgegevens en observaties van een kandidaat.
+  "role_fit_case_aangemaakt",
+  "role_fit_gelezen",
+  "role_fit_gewijzigd",
+  "role_fit_extractie",
+  "role_fit_bevroren",
+  "role_fit_hbom_goedgekeurd",
+  "role_fit_link_vernieuwd",
+  "role_fit_observatie_ingediend",
+  "role_fit_observatie_gecorrigeerd",
+  "role_fit_integratie",
+  "role_fit_besluit_getekend",
+  "role_fit_rapport_gemaakt",
+  "role_fit_rapport_gedownload",
+  "role_fit_gearchiveerd",
+  "role_fit_verwijderd",
+  "role_fit_toegang_geweigerd",
 ] as const;
 
 export type AuditActie = (typeof AUDIT_ACTIES)[number];

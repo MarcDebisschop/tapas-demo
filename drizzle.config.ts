@@ -9,6 +9,7 @@ export default defineConfig({
     "./server/hdd/schema.ts",
     "./server/kwaliteit-evaluaties/schema.ts",
     "./server/prive-aankoop/schema.ts",
+    "./server/role-fit/schema.ts",
     "./server/stm/schema.ts",
     "./server/t4organizations/schema.ts",
     "./server/t4r/schema.ts",
