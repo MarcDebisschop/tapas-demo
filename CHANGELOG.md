@@ -56,6 +56,38 @@ beschreven omdat weten beter is dan vermoeden.
 
 ### Toegevoegd
 
+- Module Recruitment & Role Fit met H-BOM Evidence Check (branch
+  `feat/role-fit-hbom`, bouwplan "TaPas CORE Role Fit HBOM"). De module staat
+  zelfstandig onder `server/role-fit/`, `shared/role-fit.ts` en
+  `client/src/pages/role-fit/`, met veertien tabellen onder het voorvoegsel
+  `role_fit_` (inline DDL in `server/role-fit/ddl.ts` en gespiegeld in de
+  strikt additieve migratie `migrations/0012_role_fit.sql`, met een toets in
+  `server/migratieloper.ts`).
+  - Fase 1: case aanmaken, wizard, bronnen, contextextractie met claimreview
+    (AI of regelgebaseerd), vereisten met kriticiteit en knock-out-gates,
+    bevestiging door recruiter en hiring manager en een bevroren context.
+  - Fase 2: fit-engine en Role & Organization Fit Dossier. Vier invalshoeken
+    met richting en bewijsbetrouwbaarheid, geen totaalscore en geen
+    percentage. Profielgegevens tellen als zelfrapportage en hypothese.
+  - Fase 3: H-BOM Evidence Check. Hypothesen uit fit-items, pakket Light (3)
+    of Standard (4 tot 6), goedkeuring, eenmalige observatorlinks,
+    semi-blinde observatie, kalibratie, taalcoach (verboden taal en
+    interpretatieve labels) en vergrendelde indiening met correctiespoor.
+  - Fase 4: integratie en convergentie met embargo tot beide observaties
+    binnen zijn, en een besluitkamer waar alleen de ondertekenaar een besluit
+    met motivering vastlegt. Knock-out-gates vragen technisch bewijs.
+  - Fase 5: rapporten (Fit Dossier, H-BOM Observer Guide, Integrated Decision
+    & Growth Dossier, feedback voor de kandidaat) als HTML en PDF, met een
+    rapportcontract dat totaalscores, percentages en diagnostische taal weert,
+    audit-events, archivering, verwijdering en bewaartermijn.
+  - Tests: `tests/role-fit-*.test.ts` (flow, engines, migratie, golden cases,
+    scenario). Documentatie: `docs/role-fit-intended-use.md`,
+    `docs/role-fit-dpia-checklist.md` en `docs/role-fit/README.md`.
+  - Bestaande bestanden alleen additief aangepast: `server/routes.ts`
+    (registratie), `server/audit-log.ts` (event-types), `drizzle.config.ts`,
+    `server/migratieloper.ts`, `tests/migratieloper.test.ts`,
+    `client/src/App.tsx` (routes) en `client/src/pages/admin.tsx` (menulink).
+
 - Eerste bouwfase van de module Kwaliteit & Evaluaties: de organisatie-evaluatie.
   Een beheerder nodigt een organisatiecontact uit voor een sessie
   (`POST /api/training-sessions/:id/evaluations/invite`), het contact vult de
