@@ -522,6 +522,13 @@ export default function Admin() {
                   <ClipboardCheck className="h-3.5 w-3.5 shrink-0" /> Kwaliteit &amp; Evaluaties
                 </a>
               </Link>
+              {/* Recruitment & Role Fit met H-BOM Evidence Check: eigen module
+                  onder /admin/role-fit (tabellen role_fit_*). */}
+              <Link href="/admin/role-fit">
+                <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-role-fit">
+                  <ClipboardCheck className="h-3.5 w-3.5 shrink-0" /> Recruitment &amp; Role Fit
+                </a>
+              </Link>
               {/* De bekwaamheidsmodule bestond wel als schermenreeks onder
                   /admin/bekwaamheid, maar stond in geen enkel menu. Ze was dus
                   alleen te bereiken door de adreslijn met de hand in te tikken.

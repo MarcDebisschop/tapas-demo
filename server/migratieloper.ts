@@ -82,6 +82,9 @@ export const REEDS_TOEGEPAST: Record<string, (db: BetterSqlite3.Database) => boo
   // dezelfde reden als bij 0006 en 0009. Getoetst wordt op de laatste tabel van
   // het bestand: wie die heeft, heeft alles wat ervoor komt ook.
   "0011_kwaliteit_evaluaties_organisatie": (db) => tabelBestaat(db, "evaluatie_signalen"),
+  // 0012 is strikt additief: CREATE TABLE, CREATE INDEX en CREATE TRIGGER, alles
+  // met IF NOT EXISTS. Getoetst wordt op de laatste tabel van het bestand.
+  "0012_role_fit": (db) => tabelBestaat(db, "role_fit_ai_runs"),
 };
 
 export function tabelBestaat(db: BetterSqlite3.Database, naam: string): boolean {

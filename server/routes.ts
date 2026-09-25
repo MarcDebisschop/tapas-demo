@@ -39,6 +39,7 @@ import { registerBeslissingRoutes } from "./bekwaamheid/routes-beslissingen";
 import { registerCyclusRoutes } from "./bekwaamheid/routes-cyclus";
 import { registerT4OrganizationsRoutes } from "./t4organizations/routes";
 import { registerKwaliteitEvaluatiesRoutes } from "./kwaliteit-evaluaties/routes";
+import { registerRoleFitRoutes } from "./role-fit/routes";
 import { registerNotulenTocRoutes } from "./notulen-toc/routes";
 import { registerMailpoortRoutes } from "./mailpoort/routes";
 import { registerDriverScanRoutes } from "./driverscan/routes";
@@ -129,6 +130,9 @@ export async function registerRoutes(
   // -------------------------------------------------------------------------
   registerT4OrganizationsRoutes(app);
   registerKwaliteitEvaluatiesRoutes(app);
+  // TaPas CORE Role Fit met H-BOM Evidence Check. Nieuwe module: eigen
+  // bestanden onder server/role-fit, eigen tabellen via migratie 0012.
+  registerRoleFitRoutes(app);
 
   // -------------------------------------------------------------------------
   // Notulen Team of Captains: beknopte notulen uit een Word-bestand omzetten
