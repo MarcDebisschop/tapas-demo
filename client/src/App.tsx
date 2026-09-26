@@ -91,6 +91,9 @@ import EvaluatieOrganisatie from "@/pages/evaluatie-organisatie";
 import RoleFitCaseList from "@/pages/role-fit/CaseList";
 import RoleFitCaseDetail from "@/pages/role-fit/CaseDetail";
 import RoleFitObserver from "@/pages/role-fit/Observer";
+import TocKompasRondeLijst from "@/pages/toc-kompas/RondeLijst";
+import TocKompasRondeDetail from "@/pages/toc-kompas/RondeDetail";
+import TocKompasInvullen from "@/pages/toc-kompas/Invullen";
 import AdminBekwaamheidNormprofiel from "@/pages/admin-bekwaamheid-normprofiel";
 import AdminBekwaamheidRegister from "@/pages/admin-bekwaamheid-register";
 import AdminBekwaamheidItems from "@/pages/admin-bekwaamheid-items";
@@ -175,6 +178,8 @@ function AppRouter() {
       <Route path="/admin/kwaliteit-evaluaties">{() => <AdminLoginGate><AdminKwaliteitEvaluaties /></AdminLoginGate>}</Route>
       <Route path="/admin/role-fit">{() => <AdminLoginGate><RoleFitCaseList /></AdminLoginGate>}</Route>
       <Route path="/admin/role-fit/:id">{() => <AdminLoginGate><RoleFitCaseDetail /></AdminLoginGate>}</Route>
+      <Route path="/admin/toc-kompas">{() => <AdminLoginGate><TocKompasRondeLijst /></AdminLoginGate>}</Route>
+      <Route path="/admin/toc-kompas/:id">{() => <AdminLoginGate><TocKompasRondeDetail /></AdminLoginGate>}</Route>
       <Route path="/admin/bekwaamheid/normprofiel">{() => <AdminLoginGate><AdminBekwaamheidNormprofiel /></AdminLoginGate>}</Route>
       <Route path="/admin/bekwaamheid/register">{() => <AdminLoginGate><AdminBekwaamheidRegister /></AdminLoginGate>}</Route>
       <Route path="/admin/bekwaamheid/items">{() => <AdminLoginGate><AdminBekwaamheidItems /></AdminLoginGate>}</Route>
@@ -226,6 +231,8 @@ function AppRouter() {
           geen login (het token is de authenticatie, zie §7 bouwspecificatie). */}
       <Route path="/evaluatie-organisatie/:token" component={EvaluatieOrganisatie} />
       <Route path="/role-fit/observatie/:token" component={RoleFitObserver} />
+      {/* TOC Commitmentkompas: persoonlijke invullink van een Captain; het token is de authenticatie. */}
+      <Route path="/toc-kompas/invullen/:token" component={TocKompasInvullen} />
       <Route path="/2minscan" component={TwominscanAfname} />
       <Route path="/driverscan" component={DriverScanAfname} />
       {/* Facilitator-only: HDD (Human Due Diligence) achter de coach-login. */}

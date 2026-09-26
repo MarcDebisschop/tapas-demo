@@ -617,6 +617,13 @@ export default function Admin() {
                   </a>
                 </Link>
               )}
+              {isPrior && (
+                <Link href="/admin/toc-kompas">
+                  <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-toc-kompas">
+                    <FileText className="h-3.5 w-3.5 shrink-0" /> TOC Commitmentkompas
+                  </a>
+                </Link>
+              )}
               <Link href="/coach">
                 <a className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground" data-testid="link-coach-omgeving">
                   <ArrowRight className="h-3.5 w-3.5 shrink-0" /> Coach-omgeving
