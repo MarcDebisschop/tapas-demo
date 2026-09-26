@@ -56,6 +56,18 @@ beschreven omdat weten beter is dan vermoeden.
 
 ### Toegevoegd
 
+- Module TOC Commitmentkompas (branch `feat/toc-commitmentkompas`). Elke
+  Captain van het Team of Captains vult via een eigen link in, het platform
+  bewaart, consolideert en maakt de rapporten. De module staat zelfstandig
+  onder `server/toc-kompas/`, `shared/toc-kompas.ts` en
+  `client/src/pages/toc-kompas/`, met zes tabellen onder het voorvoegsel
+  `toc_kompas_` (inline DDL en de strikt additieve migratie
+  `migrations/0013_toc_kompas.sql`). Rondes in vier fasen, invullink met
+  autosave en indiencontrole, consolidatie met signalen en heatmap, register,
+  Coverage Matrix, Decision Log, acceptatiecriteria en vier rapporten
+  (Captain Charter, Workshopdossier, Commitment Register, Kwartaalscorecard)
+  als HTML en PDF. Twaalf audit-acties `toc_kompas_*`. Documentatie in
+  `docs/toc-kompas/README.md`.
 - Module Recruitment & Role Fit met H-BOM Evidence Check (branch
   `feat/role-fit-hbom`, bouwplan "TaPas CORE Role Fit HBOM"). De module staat
   zelfstandig onder `server/role-fit/`, `shared/role-fit.ts` en
