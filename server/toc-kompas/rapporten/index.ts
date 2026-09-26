@@ -224,7 +224,7 @@ function registerTabel(c: any, metStatus: boolean): string {
     c.commitments
       .map(
         (k: any) =>
-          `<tr><td><b>${esc(k.code)}</b></td><td>${esc(COMMITMENT_TYPE_LABEL[k.type as "delivery"])}</td><td>${esc(naamVan(c, k.ownerCaptainId))}</td><td>${waarde(k.deliverable || k.objective)}</td><td>${waarde(k.deadline)}</td><td>${waarde(k.acceptatiebewijs)}</td><td>${waarde(k.urenPerWeek)}</td>${metStatus ? `<td>${statusLabel(k.status)}${k.statusToelichting ? `<div class="klein">${esc(k.statusToelichting)}</div>` : ""}</td>` : ""}</tr>`,
+          `<tr><td style="white-space:nowrap"><b>${esc(k.code)}</b></td><td>${esc(COMMITMENT_TYPE_LABEL[k.type as "delivery"])}</td><td>${esc(naamVan(c, k.ownerCaptainId))}</td><td>${waarde(k.deliverable || k.objective)}</td><td style="white-space:nowrap">${waarde(k.deadline)}</td><td>${waarde(k.acceptatiebewijs)}</td><td>${waarde(k.urenPerWeek)}</td>${metStatus ? `<td>${statusLabel(k.status)}${k.statusToelichting ? `<div class="klein">${esc(k.statusToelichting)}</div>` : ""}</td>` : ""}</tr>`,
       )
       .join("") || `<tr><td colspan="${metStatus ? 8 : 7}" class="leeg">Nog geen commitments in het register.</td></tr>`
   }</tbody></table>`;
