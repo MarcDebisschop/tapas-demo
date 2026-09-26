@@ -124,6 +124,22 @@ export const AUDIT_ACTIES = [
   "role_fit_gearchiveerd",
   "role_fit_verwijderd",
   "role_fit_toegang_geweigerd",
+  // TOC Commitmentkompas. Het indienen door een Captain staat erin zonder
+  // beheerder (adminId null): de Captain werkt via zijn persoonlijke link. Het
+  // lezen staat er apart in omdat de antwoorden na de nulmeting zichtbaar worden
+  // voor de hoofdbeheerder; bij een vraag over wie wat zag is dat het spoor.
+  "toc_kompas_ronde_aangemaakt",
+  "toc_kompas_link_vernieuwd",
+  "toc_kompas_ingediend",
+  "toc_kompas_heropend",
+  "toc_kompas_vergrendeld",
+  "toc_kompas_gelezen",
+  "toc_kompas_gewijzigd",
+  "toc_kompas_besluit_vastgelegd",
+  "toc_kompas_vastgesteld",
+  "toc_kompas_afgesloten",
+  "toc_kompas_rapport_gemaakt",
+  "toc_kompas_rapport_gedownload",
 ] as const;
 
 export type AuditActie = (typeof AUDIT_ACTIES)[number];
