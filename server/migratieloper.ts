@@ -85,6 +85,9 @@ export const REEDS_TOEGEPAST: Record<string, (db: BetterSqlite3.Database) => boo
   // 0012 is strikt additief: CREATE TABLE, CREATE INDEX en CREATE TRIGGER, alles
   // met IF NOT EXISTS. Getoetst wordt op de laatste tabel van het bestand.
   "0012_role_fit": (db) => tabelBestaat(db, "role_fit_ai_runs"),
+  // 0013 is strikt additief: CREATE TABLE, CREATE INDEX en CREATE TRIGGER, alles
+  // met IF NOT EXISTS. Getoetst wordt op de laatste tabel van het bestand.
+  "0013_toc_kompas": (db) => tabelBestaat(db, "toc_kompas_artefacten"),
 };
 
 export function tabelBestaat(db: BetterSqlite3.Database, naam: string): boolean {
